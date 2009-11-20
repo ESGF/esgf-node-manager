@@ -158,8 +158,9 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     //TODO: Think about how I could get a subset view of the
     //subscription list to use for firing events to a subset of
     //entities that adhere to a particular interface.  I.E. get all
-    //the objects in the list taht implement the FooListener interface
-    //for me to call back to.
+    //the objects in the list that implement the FooListener interface
+    //for me to call back to.  In the mean time we push events to
+    //everyone and let them deal with proper selection for handling
 
     protected void fireESGEvent(ESGEvent esgEvent) {
 	Collection<? extends ESGListener> esgListeners = components.values();
