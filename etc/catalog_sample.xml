@@ -1,0 +1,204 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<catalog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.unidata.ucar.edu/namespaces/thredds/InvCatalog/v1.0" name="TDS configuration file" xsi:schemaLocation="http://www.unidata.ucar.edu/namespaces/thredds/InvCatalog/v1.0 http://www.unidata.ucar.edu/schemas/thredds/InvCatalog.1.0.2.xsd">
+  <!-- 
+  Sample TDS configuration catalog, Version 2
+  -->
+  <!--
+  Define the services and associated applications. The associated properties are:
+    - requires_authorization: "true" if ESG authorization is required to access the service. Default is "true"
+    - application: application classes that operate with this service; one of:
+      - "Web Browser"
+      - "Web Script"
+      - "DataMover-Lite"
+      - "Storage Resource Manager"
+  --> 
+  <service serviceType="OpenDAP" base="/thredds/dodsC/" name="gridded" desc="PCMDI OPeNDAP">
+    <property name="requires_authorization" value="false"/>
+    <property name="application" value="Web Browser"/>
+    <property name="application" value="Web Script"/>
+  </service>
+  <service serviceType="Compound" base="" name="fileservice">
+    <service serviceType="HTTPServer" base="/thredds/fileServer/" name="HTTPServer" desc="PCMDI TDS">
+      <property name="requires_authorization" value="true"/>
+      <property name="application" value="Web Browser"/>
+      <property name="application" value="Web Script"/>
+    </service>
+    <service serviceType="GridFTP" base="gsiftp://pcmdi3.llnl.gov:2811/" name="GRIDFTPatPCMDI" desc="PCMDI GridFTP">
+      <property name="requires_authorization" value="true"/>
+      <property name="application" value="DataMover-Lite"/>
+    </service>
+  </service>
+  <!--
+  Define the catalog version, an integer
+  -->
+  <property name="catalog_version" value="2"/>
+  <dataset restrictAccess="esg-user" ID="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.1" name="project=IPCC Fourth Assessment Report, model=Hadley Centre for Climate Prediction, Met Office, UK, HadGEM1 Model, experiment=SRES A2, run=run1, time_frequency=monthly">
+    <!--
+    The dataset_id is persistent across all versions of the dataset. In general
+    it is different from the TDS catalog ID
+    --> 
+    <property name="dataset_id" value="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly"/>
+
+    <!--
+    If the master_gateway property is defined:
+      - publish the dataset as a replica
+      - the value is the originating gateway of the dataset, e.g: ESG-PCMDI | ESG-NCAR | ESG-ORNL
+    <property name="master_gateway" value="ESG-PCMDI"/>
+    -->
+    
+    <property name="project" value="ipcc4"/>
+    <property name="experiment" value="sresa2"/>
+    <property name="model" value="ukmo_hadgem1"/>
+    <property name="time_frequency" value="monthly"/>
+    <property name="run_name" value="run1"/>
+    <property name="title" value="Met Office  model output prepared for IPCC Fourth Assessment SRES A2 experiment"/>
+    <property name="creation_time" value="2009-03-13 12:18:19"/>
+    <property name="format" value="netCDF, CF-1.0"/>
+    <metadata>
+      <variables vocabulary="CF-1.0">
+        <variable name="hur" vocabulary_name="relative_humidity" units="%">Relative Humidity</variable>
+        <variable name="hus" vocabulary_name="specific_humidity" units="1">Specific Humidity</variable>
+      </variables>
+    </metadata>
+    <metadata inherited="true">
+      <dataType>Grid</dataType>
+      <dataFormat>NetCDF</dataFormat>
+    </metadata>
+    <dataset name="hur_A1_2000_Jan_to_2049_Dec.nc" ID="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.hur.hur_A1_2000_Jan_to_2049_Dec.nc.1" serviceName="HTTPServer" urlPath="ipcc4_sresa2/atm/mo/hur/ukmo_hadgem1/run1/hur_A1_2000_Jan_to_2049_Dec.nc">
+      <!--
+      file_id is persistent across all versions of the file, and is the combination of dataset_id and file basename.
+      In general it will differ from the TDS file identifier.
+      -->
+      <property name="file_id" value="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.hur.hur_A1_2000_Jan_to_2049_Dec.nc"/>
+
+      <!--
+      TDS munges dataSize, so we add an explicit size (in bytes).
+      -->
+      <property name="size" value="1061708972"/>
+      <property name="checksum" value="0853de6774e0f3ea6bc13d82c8c187d4"/>
+      <property name="checksum_type" value="MD5"/>
+      <property name="tracking_id" value="48d0993a-90b2-4093-8dea-1807b7185adc"/>
+      <property name="modification_time" value="2009-03-13 12:18:19"/>
+      <variables vocabulary="CF-1.0">
+        <variable name="hur" vocabulary_name="relative_humidity" units="%">Relative Humidity</variable>
+      </variables>
+      <dataSize units="bytes">1061708972</dataSize>
+
+      <!--
+      For files accessible from multiple services, the TDS http service is defined
+      in the <dataset serviceName=...> attribute, and non-TDS services are defined by separate <access> elements.
+      Note that the restrictAccess attribute does not apply to services defined by <access>
+      -->
+      <access serviceName="GRIDFTPatPCMDI" urlPath="/ipcc/sresa2/atm/mo/hur/ukmo_hadgem1/run1/hur_A1_2000_Jan_to_2049_Dec.nc"/>
+    </dataset>
+    <dataset name="hur_A1_2050_Jan_to_2099_Nov.nc" ID="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.hur.hur_A1_2050_Jan_to_2099_Nov.nc.1" serviceName="HTTPServer" urlPath="ipcc4_sresa2/atm/mo/hur/ukmo_hadgem1/run1/hur_A1_2050_Jan_to_2099_Nov.nc">
+      <property name="file_id" value="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.hur.hur_A1_2050_Jan_to_2099_Nov.nc"/>
+      <property name="size" value="1059939476"/>
+      <property name="checksum" value="9946639d44b787a63d676aefd186f199"/>
+      <property name="checksum_type" value="MD5"/>
+      <property name="tracking_id" value="a47413d0-5189-4f67-bb77-38bf76604b48"/>
+      <property name="modification_time" value="2009-03-13 12:18:19"/>
+      <variables vocabulary="CF-1.0">
+        <variable name="hur" vocabulary_name="relative_humidity" units="%">Relative Humidity</variable>
+      </variables>
+      <dataSize units="bytes">1059939476</dataSize>
+      <access serviceName="GRIDFTPatPCMDI" urlPath="/ipcc/sresa2/atm/mo/hur/ukmo_hadgem1/run1/hur_A1_2050_Jan_to_2099_Nov.nc"/>
+    </dataset>
+    <dataset urlPath="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.hur.aggregation" serviceName="gridded" ID="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.hur.aggregation.1" name="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.hur.aggregation">
+      <property name="aggregation_id" value="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.hur.aggregation"/>
+      <variables vocabulary="CF-1.0">
+        <variable name="hur" vocabulary_name="relative_humidity" units="%">Relative Humidity</variable>
+      </variables>
+      <metadata inherited="true">
+        <geospatialCoverage>
+          <northsouth>
+            <start>-89.375000</start>
+            <size>178.75</size>
+            <units>degrees_north</units>
+          </northsouth>
+          <eastwest>
+            <start>0.000000</start>
+            <size>358.125</size>
+            <units>degrees_east</units>
+          </eastwest>
+          <updown>
+            <start>100000.000000</start>
+            <size>-98000.0</size>
+            <units>Pa</units>
+          </updown>
+        </geospatialCoverage>
+        <timeCoverage>
+          <start>2000-01-16T00:00:00</start>
+          <end>2100-08-09T00:00:00</end>
+        </timeCoverage>
+      </metadata>
+      <netcdf xmlns="http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2">
+        <aggregation dimName="time" type="joinExisting">
+          <netcdf ncoords="600" location="/ipcc/sresa2/atm/mo/hur/ukmo_hadgem1/run1/hur_A1_2000_Jan_to_2049_Dec.nc"/>
+          <netcdf ncoords="599" location="/ipcc/sresa2/atm/mo/hur/ukmo_hadgem1/run1/hur_A1_2050_Jan_to_2099_Nov.nc"/>
+        </aggregation>
+      </netcdf>
+    </dataset>
+    <dataset name="hus_A1_2000_Jan_to_2049_Dec.nc" ID="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.hus.hus_A1_2000_Jan_to_2049_Dec.nc.1" serviceName="HTTPServer" urlPath="ipcc4_sresa2/atm/mo/hus/ukmo_hadgem1/run1/hus_A1_2000_Jan_to_2049_Dec.nc">
+      <property name="file_id" value="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.hus.hus_A1_2000_Jan_to_2049_Dec.nc"/>
+      <property name="size" value="1061708972"/>
+      <property name="checksum" value="ddb0c7b24751f7744e412588942dbd0d"/>
+      <property name="checksum_type" value="MD5"/>
+      <property name="tracking_id" value="5eb5c72f-ff31-432c-86d7-b9a72284743e"/>
+      <property name="modification_time" value="2009-03-13 12:18:19"/>
+      <variables vocabulary="CF-1.0">
+        <variable name="hus" vocabulary_name="specific_humidity" units="1">Specific Humidity</variable>
+      </variables>
+      <dataSize units="bytes">1061708972</dataSize>
+      <access serviceName="GRIDFTPatPCMDI" urlPath="/ipcc/sresa2/atm/mo/hus/ukmo_hadgem1/run1/hus_A1_2000_Jan_to_2049_Dec.nc"/>
+    </dataset>
+    <dataset name="hus_A1_2050_Jan_to_2099_Nov.nc" ID="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.hus.hus_A1_2050_Jan_to_2099_Nov.nc" serviceName="HTTPServer" urlPath="ipcc4_sresa2/atm/mo/hus/ukmo_hadgem1/run1/hus_A1_2050_Jan_to_2099_Nov.nc">
+      <property name="file_id" value="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.hus.hus_A1_2050_Jan_to_2099_Nov.nc"/>
+      <property name="size" value="1059939476"/>
+      <property name="checksum" value="98954322ec9a08b961c80a76cd4e1284"/>
+      <property name="checksum_type" value="MD5"/>
+      <property name="tracking_id" value="04d2142e-04c1-43b7-b16e-ace10a2e4bb5"/>
+      <property name="modification_time" value="2009-03-13 12:18:19"/>
+      <variables vocabulary="CF-1.0">
+        <variable name="hus" vocabulary_name="specific_humidity" units="1">Specific Humidity</variable>
+      </variables>
+      <dataSize units="bytes">1059939476</dataSize>
+      <access serviceName="GRIDFTPatPCMDI" urlPath="/ipcc/sresa2/atm/mo/hus/ukmo_hadgem1/run1/hus_A1_2050_Jan_to_2099_Nov.nc"/>
+    </dataset>
+    <dataset urlPath="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.hus.aggregation" serviceName="gridded" ID="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.hus.aggregation.1" name="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.hus.aggregation">
+      <property name="aggregation_id" value="pcmdi.ipcc4.ukmo_hadgem1.sresa2.run1.monthly.hus.aggregation"/>
+      <variables vocabulary="CF-1.0">
+        <variable name="hus" vocabulary_name="specific_humidity" units="1">Specific Humidity</variable>
+      </variables>
+      <metadata inherited="true">
+        <geospatialCoverage>
+          <northsouth>
+            <start>-89.375000</start>
+            <size>178.75</size>
+            <units>degrees_north</units>
+          </northsouth>
+          <eastwest>
+            <start>0.000000</start>
+            <size>358.125</size>
+            <units>degrees_east</units>
+          </eastwest>
+          <updown>
+            <start>100000.000000</start>
+            <size>-98000.0</size>
+            <units>Pa</units>
+          </updown>
+        </geospatialCoverage>
+        <timeCoverage>
+          <start>2000-01-16T00:00:00</start>
+          <end>2100-08-09T00:00:00</end>
+        </timeCoverage>
+      </metadata>
+      <netcdf xmlns="http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2">
+        <aggregation dimName="time" type="joinExisting">
+          <netcdf ncoords="600" location="/ipcc/sresa2/atm/mo/hus/ukmo_hadgem1/run1/hus_A1_2000_Jan_to_2049_Dec.nc"/>
+          <netcdf ncoords="599" location="/ipcc/sresa2/atm/mo/hus/ukmo_hadgem1/run1/hus_A1_2050_Jan_to_2099_Nov.nc"/>
+        </aggregation>
+      </netcdf>
+    </dataset>
+  </dataset>
+</catalog>
