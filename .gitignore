@@ -27,6 +27,7 @@ TAGS
 *.class
 *.pyc
 *.egg
+*#
 semantic.cache*
 generated/
 /build
