@@ -27,6 +27,7 @@ public abstract class Gateway extends AbstractDataNodeComponent{
     private Object proxyObject;
 
     protected boolean isValid = false;
+    protected boolean isAvailable = false;
     protected HessianProxyFactory factory;
     
     public Gateway(String name, String serviceURL) { 
@@ -38,9 +39,10 @@ public abstract class Gateway extends AbstractDataNodeComponent{
     public Gateway(String name) { this(name,null); }
 
     public abstract void init();
-    public void setServiceURL(String serviceURL) { this.serviceURL = serviceURL; }
+    protected void setServiceURL(String serviceURL) { this.serviceURL = serviceURL; }
     public String getServiceURL() { return serviceURL; }
     public boolean isValid() { return isValid; }
+    public boolean isAvailable() { return isAvailable; }
 
     
     //-----------------------------------------------------------------
@@ -61,9 +63,9 @@ public abstract class Gateway extends AbstractDataNodeComponent{
     //from the data node manager. (unrelated to RPC, internal management)
     //-----------------------------------------------------------------
     public void unregister() {
-	DataNodeManager mgr = getDataNodeManager();
-	if(mgr == null) return;
-	if(this instanceof Gateway) { mgr.removeGateway(this); }
+	DataNodeManager dataNodeManager = getDataNodeManager();
+	if(dataNodeManager == null) return;
+	if(this instanceof Gateway) { dataNodeManager.removeGateway(this); }
 	//Note: don't have to null out mgr like in the super class
 	//because I am never holding on to a mgr handle directly ;-)
     }

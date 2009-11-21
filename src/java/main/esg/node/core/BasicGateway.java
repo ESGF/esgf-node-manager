@@ -12,7 +12,12 @@
    Description:
         This is essentially the wrapped stubs to the gateway.
         They are the "client" side of the rpc call where calls
-        originate. (from DataNode -to-> Gateway).
+        ORIGINATE. (from DataNode -to-> Gateway).
+
+        ----------------------------------------------------
+        THIS CLASS REPRESNTS *EGRESS* CALLS TO THE GATEWAY!!
+        ----------------------------------------------------
+           (I don't think I can make this any clearer)
 
 *****************************************************************/
 package esg.node.core;
@@ -38,8 +43,21 @@ public class BasicGateway extends Gateway{
     public BasicGateway(String name) { this(name,null); }
 
     //The idea here is to establish communication with the rpc
-    //endpoint this class is a stub for.
+    //endpoint this class is a stub for. init() may be called multiple times until valid;
     public void init() {
+	if(isValid) {
+	    log.info("I am already valid... :-)");
+	    return;
+	}
+
+	//I am not a valid object if I don't have a name
+	if(getName() == null) {
+	    log.warn("Cannot initialize Gateway : NO NAME!!");
+	    isValid = false;
+	    return;
+	}
+
+	//I am not a valid object if I don't have an endpoint URL
 	if(getServiceURL() == null) {
 	    log.warn("Cannot initialize Gateway ["+getName()+"]: NO SERVICE URL!!");
 	    isValid = false;
@@ -50,46 +68,60 @@ public class BasicGateway extends Gateway{
 	    gatewayService = (ESGGatewayService)factory.create(ESGGatewayService.class, getServiceURL());
 	}catch(MalformedURLException ex) {
 	    log.warn("Could not connect to serviceURL ["+getServiceURL()+"]",ex);
-	    isValid = false;
+	    isAvailable = false;
 	}
 	
 	if(gatewayService != null) {
-	    log.trace(getName()+" Proxy initialized");
+	    log.trace(getName()+" Proxy properly initialized");
 	    isValid = true;
+	}else {
+	    log.warn(getName()+" Proxy NOT properly initialized");
+	    isValid = false;
 	}
     }
-
-
-
+    
+    
     //-----------------------------------------------
     //Delgated remote methods...
     //-----------------------------------------------
 
     //The simplest of communications to make sure folks are alive and
-    //that the RPC works at a basic level
-    public boolean ping() { 
-	log.trace("ping... ");
-	if(!isValid) {
-	    log.warn("May not issue \"ping\" rpc call unless object has been initialized and made valid!!!");
-	    return false;
-	}
+    //that the RPC works at a basic level... If and only if I can ping
+    //you and you respond (return true) that I can consider you a
+    //VALID end point, and therefore, my proxy ;-), *I* am valid to
+    //use for communicating to you, mr. gateway. gyot it? :-) 
 
+    //A return true of false indicate that you are able to be
+    //communicated with, however a return of false is you responding
+    //that you are open to being talked to and thus I, by proxy am not
+    //going to perform calls on your behalf, and therefore not valid.
+
+    //This semantically expected to be the START of the communication
+    //between data node and gateway.  (called by the bootstrapping
+    //service: ESGDataNodeService)
+    public boolean ping() { 
+	log.trace("ping -->> ["+getName()+"]");
+	boolean response = false;
 	try {
-	    //TODO see about changing the timeout so don't have to wait forever to fail!
-	    System.out.println( (gatewayService.ping() ? "[OK]" : "[FAIL]"));
-	    return true;
+	    //TODO see about changing the timeout so don't have to wait forever to fail!	    
+	    response = gatewayService.ping();
+	    System.out.println( (response ? "[OK]" : "[BUSY]") );
 	}catch (HessianRuntimeException ex) {
+	    System.out.println("[FAIL]");
 	    log.error("Problem calling \"ping\" on ["+getServiceURL()+"] "+ex.getMessage());
-	    return false;
+	    response = false;
 	}
+	isAvailable = (response && isValid);
+	return isAvailable;
+	//FYI: the isAvailable() method is defined in superclass)
     }
     
     //Present the gateway with this client's identity and thus
     //callback address for making calls back to the data node
     //services for sending notifications
     public boolean registerToGateway() { 
-	if(!isValid) {
-	    log.warn("May not issue \"register\" rpc call unless object has been initialized and made valid!!!");
+	if(!isValid  || !isAvailable) {
+	    log.warn("May not issue \"register\" rpc call unless object has been initialized to be made valid and ping has been issued to make sure I am available!!!");
 	    return false;
 	}
 
@@ -105,7 +137,7 @@ public class BasicGateway extends Gateway{
 	try {
 	    log.trace("Making Remote Call to \"register\" method, sending: "+registrationEvent);
 	    gatewayService.register(registrationEvent);
-	    log.trace("successful");
+	    log.trace("Registration Request Successfully Sent...");
 	    return true;
 	}catch (HessianRuntimeException ex) {
 	    log.error("Problem calling \"register\" on ["+getServiceURL()+"] "+ex.getMessage());

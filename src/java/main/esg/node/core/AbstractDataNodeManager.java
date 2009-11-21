@@ -37,11 +37,18 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	components = new HashMap<String,DataNodeComponent>();
     }
 
+    public abstract void init();
+
     //-------------------------------------------
     //DataNodeManager Interface Implementations...
     //-------------------------------------------
     public boolean registerComponent(DataNodeComponent component) {
 	if (component == null) return false; 
+	if (component.getName() == null) {
+	    log.warn("Will not register a component without a name... call setMyName(<name>)");
+	    return false;
+	}
+	
 	log.trace("Registering Component: "+component.getName());
 	if (component instanceof Gateway) {
 	    log.warn("WARNING: Will not register gateway ["+component.getName()+"] as a component!");
@@ -77,7 +84,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     protected DataNodeComponent getComponent(String name) {
 	return components.get(name);
     }
-
+    
     public int numOfComponents() { return components.size(); }
     public String[] getComponentNames() { 
 	return components.keySet().toArray(new String[] {""}); 
@@ -92,7 +99,12 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     //components.
     //-------------------------------------------
     public boolean registerGateway(Gateway gateway) {
-	if(gateway == null) return false;
+	if (gateway == null) return false;
+	if (gateway.getName() == null) {
+	    log.warn("Will not register a gateway without a name... call setMyName(<name>)");
+	    return false;
+	}
+
 	log.trace("Registering Gateway: "+gateway.getName());
 	gateways.put(gateway.getName(), gateway);
 	sendJoinNotification(gateway);

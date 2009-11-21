@@ -26,7 +26,10 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
     public ESGDataNodeManager() { }
 
     public void init() {
-	log.info("Initializing Data Node Manager...");
+	log.info("Initializing ESG Data Node Manager...");
+	
+	//TODO: Read configuration file to get the information on what services to load.
+	
     }
 
-}
+} 
