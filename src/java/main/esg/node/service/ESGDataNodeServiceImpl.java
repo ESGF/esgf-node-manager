@@ -49,6 +49,7 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     private ESGDataNodeManager mgr = null;
     private Map<String,BasicGateway> gateways = null;
     private Map<String,BasicGateway> unavailableGateways = null;
+    
 
     public ESGDataNodeServiceImpl() {
 	log.info("ESGDataNodeServiceImpl instantiated...");
@@ -63,12 +64,15 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 	mgr.registerComponent(this);
 	mgr.init();
 	periodicallyPokeGateways();
+
+	//test method...
+	periodicallyRegisterToGateways();
     }
 
     //Remote (ingress) calls to method...
     public boolean ping() { 
 	log.trace("DataNode service got \"ping\"");
-	return true; 
+	return amAvailable(); 
     }
 
     //TODO: Think about the performance implications of having a synchronious return value
@@ -99,6 +103,7 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     //--------------------------------------------
     // non-service utility methods...
     //--------------------------------------------
+
 
     //--
     //Communication maintenance... (this could become arbitrarily
@@ -141,10 +146,11 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 		gatewaysB.put(basicGateway.getName(),basicGateway);
 	    }
 	}
+	
     }
     
 
-    //We will consider this object no valid if there are no gateways
+    //We will consider this object not valid if there are no gateways
     //to communicate with. That would be because:
     //1) There are no gateway proxy objects available for us to use
     //2) If the gateway proxy objects we DO have are no longer valid
@@ -197,4 +203,26 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 	log.trace("Number of active service managed gateways = "+gateways.size());
     }
     
+
+    //----
+    //Test code.
+    //----
+    private void periodicallyRegisterToGateways() {
+	log.trace("launching ping timer...");
+	Timer timer = new Timer();
+
+	//This will transition from active map to inactive map
+	timer.schedule(new TimerTask() { 
+		public final void run() {
+		    ESGDataNodeServiceImpl.this.registerToGateways();
+		}
+	    },0,10*1000);
+    }
+    private void registerToGateways() {
+	Collection<? extends BasicGateway> basicGateways = gateways.values();
+	for(BasicGateway basicGateway: basicGateways) {
+	    basicGateway.registerToGateway();
+	}
+    }
+
 }

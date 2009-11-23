@@ -33,6 +33,7 @@ import java.net.InetAddress;
 
 import esg.gateway.service.ESGGatewayService;
 import esg.common.service.ESGRemoteEvent;
+import esg.common.Utils;
 
 public class BasicGateway extends Gateway{
 
@@ -132,7 +133,7 @@ public class BasicGateway extends Gateway{
 	    log.error("Could not build proper location string for myself",ex);
 	}
 	
-	ESGRemoteEvent registrationEvent = new ESGRemoteEvent(myLocation,ESGRemoteEvent.REGISTER);
+	ESGRemoteEvent registrationEvent = new ESGRemoteEvent(myLocation,ESGRemoteEvent.REGISTER,Utils.nextSeq());
 	
 	try {
 	    log.trace("Making Remote Call to \"register\" method, sending: "+registrationEvent);

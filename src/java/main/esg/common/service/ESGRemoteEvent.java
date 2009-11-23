@@ -34,26 +34,29 @@ public class ESGRemoteEvent implements java.io.Serializable {
     private String source  = null;
     private int    messageType = -1;
     private Object payload = null;
+    private long   seqNum = 0L;
 
-    public ESGRemoteEvent(String source, int messageType, Object payload) {
+    public ESGRemoteEvent(String source, int messageType, Object payload, Long seqNum) {
 	this.source  = source;
 	this.messageType = messageType;
+	this.seqNum = seqNum;
 	this.payload = payload;
     }
 
-    public ESGRemoteEvent(String source, int messageType) {
-	this(source,messageType,null);
+    public ESGRemoteEvent(String source, int messageType,long seqNum) {
+	this(source,messageType,null,seqNum);
     }
 
-    public ESGRemoteEvent(String source) { this(source,NOOP,null); }
+    public ESGRemoteEvent(String source) { this(source,NOOP,null,-1L); }
 
 
     public String getSource()  { return source;  }
     public int    getMessageType() { return messageType; }
+    public Object getSeqNum() { return seqNum; }
     public Object getPayload() { return payload; }
-    public void setPayload(Object obj) { this.payload = obj; }
+    public void   setPayload(Object obj) { this.payload = obj; }
 
-    public String toString() { return "s:["+source+"] m:["+messageType+"] p:["+payload+"]"; }
+    public String toString() { return "s:["+source+"] m:["+messageType+"] n:["+seqNum+"] p:["+payload+"]"; }
     
 }
 
