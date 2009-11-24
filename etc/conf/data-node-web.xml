@@ -1,7 +1,7 @@
 <web-app>
 
   <!-- ******************************************************** -->
-  <!-- ESG Data Node Service
+  <!-- ESG Data Node Service                                    -->
   <!-- ******************************************************** -->
   <servlet>
    <servlet-name>datanode</servlet-name>
