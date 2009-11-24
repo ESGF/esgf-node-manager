@@ -44,7 +44,6 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 
     private static final Log log = LogFactory.getLog(ESGConnectionManager.class);
 
-    //----
     private Map<String,Gateway> gateways = null;
     private Map<String,Gateway> unavailableGateways = null;
     
@@ -57,7 +56,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 	init();
     }
 
-    //Bootstrap the entire system...
+    //Bootstrap the rest of the subsystems... (ESGDataNodeServiceImpl really bootstraps)
     public void init() {
 	//NOTE:
 	//Just to make sure we have these guys if we decide to re-register.
@@ -205,7 +204,4 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 	log.trace("Available Gateways: ["+gateways.size()+"] Unavailable: ["+unavailableGateways.size()+"]");	
     }
     
-
-    //----
-
 }
