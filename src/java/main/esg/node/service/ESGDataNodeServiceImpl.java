@@ -121,7 +121,7 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 	//This will transition from active map to inactive map
 	timer.schedule(new TimerTask() { 
 		public final void run() {
-		    ESGDataNodeServiceImpl.this.pokeGateways(ESGDataNodeServiceImpl.this.gateways,
+		    ESGDataNodeServiceImpl.this.pingGateways(ESGDataNodeServiceImpl.this.gateways,
 							     ESGDataNodeServiceImpl.this.unavailableGateways);
 
 		}
@@ -130,16 +130,20 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 	//This will transition from inactive map to active map
 	timer.schedule(new TimerTask() { 
 		public final void run() {
-		    ESGDataNodeServiceImpl.this.pokeGateways(ESGDataNodeServiceImpl.this.unavailableGateways,
-							     ESGDataNodeServiceImpl.this.gateways);
-		    log.trace("Available Gateways: ["+gateways.size()+"] Unavailable: ["+unavailableGateways.size()+"]");
-
-		    //Okay, I have no connections!? Time to poll till I get at least one!
-		    if ((gateways.size() == 0) && (unavailableGateways.size() == 0)) {
-			List<Gateway> gatewaysList = ESGDataNodeServiceImpl.this.mgr.getGateways();
-			if(!gatewaysList.isEmpty()) {
-			    for(Gateway gateway : gatewaysList) {
-				ESGDataNodeServiceImpl.this.gateways.put(gateway.getName(),gateway);
+		    //only try to transfer nodes if there are nodes that are unavailable :-)
+		    if(!ESGDataNodeServiceImpl.this.unavailableGateways.isEmpty()) {
+			log.trace("Noticed that there are some unavailable gateways... checking on them ["+unavailableGateways.size()+"]");
+			ESGDataNodeServiceImpl.this.pingGateways(ESGDataNodeServiceImpl.this.unavailableGateways,
+								 ESGDataNodeServiceImpl.this.gateways);
+			log.trace("Available Gateways: ["+gateways.size()+"] Unavailable: ["+unavailableGateways.size()+"]");
+			
+			//Okay, I have no connections!? Time to poll till I get at least one!
+			if ((gateways.size() == 0) && (unavailableGateways.size() == 0)) {
+			    List<Gateway> gatewaysList = ESGDataNodeServiceImpl.this.mgr.getGateways();
+			    if(!gatewaysList.isEmpty()) {
+				for(Gateway gateway : gatewaysList) {
+				    ESGDataNodeServiceImpl.this.gateways.put(gateway.getName(),gateway);
+				}
 			    }
 			}
 		    }
@@ -150,17 +154,21 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     
     //Tries to contact gateways... 
     //if not moves gateways proxies from map A --to--> B
-    private void pokeGateways(Map<String,Gateway> gatewaysA, 
+    private void pingGateways(Map<String,Gateway> gatewaysA, 
 			      Map<String,Gateway> gatewaysB) {
+	boolean pingstat = false;
 	Collection<? extends Gateway> gateways = gatewaysA.values();
 	for(Gateway gateway: gateways) {
-	    gateway.ping();
+	    pingstat = gateway.ping();
+	    log.trace("Available stat ?= "+gateway.isAvailable());
 	    if(!gateway.isAvailable()) {
+		log.trace("moving from one list to other");
 		gatewaysA.remove(gateway.getName());
 		gatewaysB.put(gateway.getName(),gateway);
 	    }
 	}
-	
+	log.trace("Ping return value = "+pingstat);
+	log.trace("Available Gateways: ["+gateways.size()+"] Unavailable: ["+unavailableGateways.size()+"]");	
     }
     
 

@@ -113,6 +113,9 @@ public class BasicGateway extends Gateway{
 	    response = false;
 	}
 	isAvailable = (response && isValid);
+	log.trace("isValid = "+isValid);
+	log.trace("response = "+response);
+	log.trace("isAvailable = "+isAvailable);
 	return isAvailable;
 	//FYI: the isAvailable() method is defined in superclass)
     }
@@ -138,7 +141,6 @@ public class BasicGateway extends Gateway{
 	try {
 	    log.trace("Making Remote Call to \"register\" method, sending: "+registrationEvent);
 	    gatewayService.register(registrationEvent);
-	    log.trace("Registration Request Successfully Sent...");
 	    return true;
 	}catch (HessianRuntimeException ex) {
 	    log.error("Problem calling \"register\" on ["+getServiceURL()+"] "+ex.getMessage());
