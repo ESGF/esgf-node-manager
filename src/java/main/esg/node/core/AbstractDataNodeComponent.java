@@ -32,11 +32,11 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     //so that they too may be able to manage event listeners
     protected List<ESGListener> esgListeners = null;
 
-    public AbstractDataNodeComponent() { }
     public AbstractDataNodeComponent(String name) {
 	this.myName = name;
 	this.esgListeners = new ArrayList<ESGListener>();
     }
+    public AbstractDataNodeComponent() { this(DataNodeComponent.ANONYMOUS); }
 
     public abstract void init();
     

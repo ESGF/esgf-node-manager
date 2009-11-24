@@ -15,6 +15,8 @@
 package esg.node.core;
 
 public interface DataNodeComponent extends ESGListener{
+
+    public static final String ANONYMOUS = "ANONYMOUS";
     
     public void init();
     public String getName();

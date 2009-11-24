@@ -33,13 +33,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.List;
 
 import esg.common.service.ESGRemoteEvent;
 import esg.node.core.ESGDataNodeManager;
 import esg.node.core.AbstractDataNodeComponent;
 import esg.node.core.ESGEvent;
 import esg.node.core.ESGJoinEvent;
-import esg.node.core.BasicGateway;
+import esg.node.core.Gateway;
 
 public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent 
     implements ESGDataNodeService {
@@ -47,26 +48,26 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     private static final Log log = LogFactory.getLog(ESGDataNodeServiceImpl.class);
 
     private ESGDataNodeManager mgr = null;
-    private Map<String,BasicGateway> gateways = null;
-    private Map<String,BasicGateway> unavailableGateways = null;
+    private Map<String,Gateway> gateways = null;
+    private Map<String,Gateway> unavailableGateways = null;
     
 
     public ESGDataNodeServiceImpl() {
 	log.info("ESGDataNodeServiceImpl instantiated...");
 	setMyName("DataNodeService");
-	gateways = Collections.synchronizedMap(new HashMap<String,BasicGateway>());
-	unavailableGateways = Collections.synchronizedMap(new HashMap<String,BasicGateway>());
+	gateways = Collections.synchronizedMap(new HashMap<String,Gateway>());
+	unavailableGateways = Collections.synchronizedMap(new HashMap<String,Gateway>());
 	init();
     }
 
     //Bootstrap the entire system...
     public void init() {
 	mgr = new ESGDataNodeManager();
-	mgr.init();
 	mgr.registerComponent(this);
+	mgr.init();
 
-	periodicallyPokeGateways();
-
+	periodicallyPingGateways();
+	
 	//test method...
 	periodicallyRegisterToGateways();
     }
@@ -113,7 +114,7 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     //pings)
     //--
     
-    private void periodicallyPokeGateways() {
+    private void periodicallyPingGateways() {
 	log.trace("launching ping timer...");
 	Timer timer = new Timer();
 
@@ -132,20 +133,31 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 		    ESGDataNodeServiceImpl.this.pokeGateways(ESGDataNodeServiceImpl.this.unavailableGateways,
 							     ESGDataNodeServiceImpl.this.gateways);
 		    log.trace("Available Gateways: ["+gateways.size()+"] Unavailable: ["+unavailableGateways.size()+"]");
+
+		    //Okay, I have no connections!? Time to poll till I get at least one!
+		    if ((gateways.size() == 0) && (unavailableGateways.size() == 0)) {
+			List<Gateway> gatewaysList = ESGDataNodeServiceImpl.this.mgr.getGateways();
+			if(!gatewaysList.isEmpty()) {
+			    for(Gateway gateway : gatewaysList) {
+				ESGDataNodeServiceImpl.this.gateways.put(gateway.getName(),gateway);
+			    }
+			}
+		    }
 		}
+		
 	    },0,10*1000);
     }
     
     //Tries to contact gateways... 
     //if not moves gateways proxies from map A --to--> B
-    private void pokeGateways(Map<String,BasicGateway> gatewaysA, 
-			      Map<String,BasicGateway> gatewaysB) {
-	Collection<? extends BasicGateway> basicGateways = gatewaysA.values();
-	for(BasicGateway basicGateway: basicGateways) {
-	    basicGateway.ping();
-	    if(!basicGateway.isAvailable()) {
-		gatewaysA.remove(basicGateway.getName());
-		gatewaysB.put(basicGateway.getName(),basicGateway);
+    private void pokeGateways(Map<String,Gateway> gatewaysA, 
+			      Map<String,Gateway> gatewaysB) {
+	Collection<? extends Gateway> gateways = gatewaysA.values();
+	for(Gateway gateway: gateways) {
+	    gateway.ping();
+	    if(!gateway.isAvailable()) {
+		gatewaysA.remove(gateway.getName());
+		gatewaysB.put(gateway.getName(),gateway);
 	    }
 	}
 	
@@ -167,9 +179,9 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 	boolean amAvailable = false;
 	boolean haveValidGatewayProxies = false;
 	if (gateways.isEmpty()) { amAvailable = false; return false; }
-	Collection<? extends BasicGateway> basicGateways = gateways.values();
-	for(BasicGateway basicGateway: basicGateways) {
-	    haveValidGatewayProxies |= basicGateway.isAvailable();
+	Collection<? extends Gateway> gateways_ = gateways.values();
+	for(Gateway gateway: gateways_) {
+	    haveValidGatewayProxies |= gateway.isAvailable();
 	}
 	amAvailable = (amAvailable || haveValidGatewayProxies );
 	return amAvailable;
@@ -189,16 +201,16 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 
 	ESGJoinEvent event = (ESGJoinEvent)esgEvent;
 	
-	//we only care bout BasicGateways joining
-	if(!(event.getJoiner() instanceof BasicGateway)) return;
+	//we only care bout Gateways joining
+	if(!(event.getJoiner() instanceof Gateway)) return;
 
 	//manage the data structure for gateway 'stubs' locally while
 	//object is a participating managed component.
 	if(event.hasJoined()) {
-	    log.trace("Detected That A BasicGateway Component Has Joined: "+event.getJoiner().getName());
-	    gateways.put(event.getJoiner().getName(),(BasicGateway)event.getJoiner());
+	    log.trace("Detected That A Gateway Component Has Joined: "+event.getJoiner().getName());
+	    gateways.put(event.getJoiner().getName(),(Gateway)event.getJoiner());
 	}else {
-	    log.trace("Detected That A BasicGateway Component Has Left: "+event.getJoiner().getName());
+	    log.trace("Detected That A Gateway Component Has Left: "+event.getJoiner().getName());
 	    gateways.remove(event.getJoiner().getName());
 	    unavailableGateways.remove(event.getJoiner().getName());
 	}
@@ -221,9 +233,9 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 	    },0,10*1000);
     }
     private void registerToGateways() {
-	Collection<? extends BasicGateway> basicGateways = gateways.values();
-	for(BasicGateway basicGateway: basicGateways) {
-	    basicGateway.registerToGateway();
+	Collection<? extends Gateway> gateways_ = gateways.values();
+	for(Gateway gateway: gateways_) {
+	    gateway.registerToGateway();
 	}
     }
 

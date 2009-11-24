@@ -44,7 +44,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     //-------------------------------------------
     public boolean registerComponent(DataNodeComponent component) {
 	if (component == null) return false; 
-	if (component.getName() == null) {
+	if ((component.getName() == null) || (component.getName().equals(DataNodeComponent.ANONYMOUS)) ) {
 	    log.warn("Will not register a component without a name... call setMyName(<name>)");
 	    return false;
 	}
@@ -100,7 +100,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     //-------------------------------------------
     public boolean registerGateway(Gateway gateway) {
 	if (gateway == null) return false;
-	if (gateway.getName() == null) {
+	if ( (gateway.getName() == null)  || (gateway.getName().equals(DataNodeComponent.ANONYMOUS)) ) {
 	    log.warn("Will not register a gateway without a name... call setMyName(<name>)");
 	    return false;
 	}
@@ -134,7 +134,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     }
 
     //For getting the list of active gateways...
-    protected List<Gateway> getGateways() {
+    public List<Gateway> getGateways() {
 	return new ArrayList<Gateway>(gateways.values());
     }
 
