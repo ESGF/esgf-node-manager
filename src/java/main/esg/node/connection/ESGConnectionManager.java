@@ -11,6 +11,9 @@
 
    Description:
 
+      This class also MANAGES gateway proxy object(s)
+      (ex:BasicGateway) that communicate out to the gateway(s).
+
 *****************************************************************/
 package esg.node.connection;
 
@@ -49,6 +52,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent {
 	setMyName("ESGConnectionManager");
 	gateways = Collections.synchronizedMap(new HashMap<String,Gateway>());
 	unavailableGateways = Collections.synchronizedMap(new HashMap<String,Gateway>());
+	init();
     }
 
     //Bootstrap the entire system...
@@ -168,7 +172,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent {
     //we could imagine that it would only take just having one gateway
     //that is valid holding open the door for us to be DOS-ed by folks
     //maliciously sending us huge events that flood our system.
-    private boolean amAvailable() {
+    public boolean amAvailable() {
 	boolean amAvailable = false;
 	boolean haveValidGatewayProxies = false;
 	if (gateways.isEmpty()) { amAvailable = false; return false; }
