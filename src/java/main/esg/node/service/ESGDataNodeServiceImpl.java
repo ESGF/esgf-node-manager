@@ -54,6 +54,34 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 	datanodeMgr.init();
     }
 
+
+    //------------------------------------------------------------
+    //We will consider this object not valid if there are no gateways
+    //to communicate with. That would be because:
+    //1) There are no gateway proxy objects available for us to use
+    //2) If the gateway proxy objects we DO have are no longer valid
+    //(we just need one to be valid for us to be available) 
+
+    //NOTE: review this policy! *for now* good enough as we are only
+    //planning on having a 1:1 between data node and gateways... but
+    //we could imagine having just one gateway that is valid holding
+    //open the door for us to be DOS-ed by folks maliciously sending
+    //us huge events that flood our system.
+    private boolean amAvailable() { 
+	boolean ret = false;
+	ret = connMgr.amAvailable(); 
+	log.trace("amAvailable() -> "+ret);
+	return ret;
+    }
+    
+    public void unregister() {
+	//Intentionally a NO-OP
+	log.warn("Balking... What does it mean to unregister the service itself?... exactly... no can do ;-)");
+    }
+    //------------------------------------------------------------
+
+
+
     //Remote (ingress) calls to method...
     public boolean ping() { 
 	log.trace("DataNode service got \"ping\"");
@@ -79,27 +107,5 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     }
 
 
-    //We will consider this object not valid if there are no gateways
-    //to communicate with. That would be because:
-    //1) There are no gateway proxy objects available for us to use
-    //2) If the gateway proxy objects we DO have are no longer valid
-    //(we just need one to be valid for us to be available) 
-
-    //NOTE: review this policy! *for now* good enough as we are only
-    //planning on having a 1:1 between data node and gateways... but
-    //we could imagine having just one gateway that is valid holding
-    //open the door for us to be DOS-ed by folks maliciously sending
-    //us huge events that flood our system.
-    private boolean amAvailable() { 
-	boolean ret = false;
-	ret = connMgr.amAvailable(); 
-	log.trace("amAvailable() -> "+ret);
-	return ret;
-    }
-    
-    public void unregister() {
-	//Intentionally a NO-OP
-	log.warn("Balking... What does it mean to unregister the service itself?... exactly... no can do ;-)");
-    }
 
 }
