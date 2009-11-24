@@ -129,7 +129,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     }
 
     //For communicating with a specific gateway...
-    protected Gateway getGateway(String name) {
+    public Gateway getGateway(String name) {
 	return gateways.get(name);
     }
 
