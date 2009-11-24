@@ -6,8 +6,8 @@ import getopt
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from esgcet.publish import multiDirectoryIterator, directoryIterator, processIterator, readDatasetMap, processNodeMatchIterator
-from esgcet.config import loadConfig, getHandler, getHandlerByName, initLogging, registerHandlers, getOfflineLister
+from esgcet.publish import multiDirectoryIterator, directoryIterator, processIterator, readDatasetMap, processNodeMatchIterator, checksum
+from esgcet.config import loadConfig, getHandler, getHandlerByName, initLogging, registerHandlers, getOfflineLister, splitLine
 from esgcet.exceptions import *
 
 usage = """Usage:
@@ -115,6 +115,14 @@ def main(argv):
     registerHandlers()
 
     if not offline:
+
+        # Determine if checksumming is enabled
+        line = config.get('DEFAULT', 'checksum', default=None)
+        if line is not None:
+            checksumClient, checksumType = splitLine(line)
+        else:
+            checksumClient = None
+
         if projectName is not None:
             handler = getHandlerByName(projectName, None, Session)
         else:
@@ -134,15 +142,21 @@ def main(argv):
             direcTuple = datasetMap[datasetId]
             direcTuple.sort()
             for nodepath, filepath in direcTuple:
-                for filepath, size in directoryIterator(nodepath, filefilt=filefilt, followSubdirectories=False):
+                for filepath, sizet in directoryIterator(nodepath, filefilt=filefilt, followSubdirectories=False):
+                    size, mtime = sizet
+                    extraStuff = "mod_time=%f"%float(mtime)
+
+                    if checksumClient is not None:
+                        csum = checksum(filepath, checksumClient)
+                        extraStuff += " | checksum=%s | checksum_type=%s"%(csum, checksumType)
 
                     # Print the map entry if:
                     # - The map is being created, not appended, or
                     # - The existing map does not have the dataset, or
                     # - The existing map has the dataset, but not the file.
                     if (appendMap is None) or (not appendMap.has_key(datasetId)) or ((filepath, "%d"%size) not in appendMap[datasetId]):
-                        print >>output, "%s | %s | %d"%(datasetId, filepath, size)
-    else:
+                        print >>output, "%s | %s | %d | %s"%(datasetId, filepath, size, extraStuff)
+    else:                               # offline
         if projectName is not None:
             handler = getHandlerByName(projectName, None, Session, offline=True)
         else:
@@ -151,9 +165,13 @@ def main(argv):
         offlineLister = config.get(listerSection, 'offline_lister_executable')
         commandArgs = "--config-section %s "%listerSection
         commandArgs += " ".join(lastargs)
-        for dsetName, filepath, size in processNodeMatchIterator(offlineLister, commandArgs, handler, filefilt=filefilt, datasetName=datasetName):
+        for dsetName, filepath, sizet in processNodeMatchIterator(offlineLister, commandArgs, handler, filefilt=filefilt, datasetName=datasetName, offline=True):
+            size, mtime = sizet
+            extrastuff = ""
+            if mtime is not None:
+                extrastuff = "| mod_time=%f"%float(mtime)
             if (appendMap is None) or (not appendMap.has_key(dsetName)) or ((filepath, "%d"%size) not in appendMap[dsetName]):
-                print >>output, "%s | %s | %d"%(dsetName, filepath, size)
+                print >>output, "%s | %s | %d %s"%(dsetName, filepath, size, extrastuff)
 
     if output is not sys.stdout:
         output.close()

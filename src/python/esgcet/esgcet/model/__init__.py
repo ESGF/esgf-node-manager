@@ -1,5 +1,6 @@
 "Database class, table, and object/relational mapping definitions."
 import datetime
+import time
 
 from sqlalchemy import Column, MetaData, Table, types, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import mapper, relation
@@ -86,8 +87,6 @@ experimentTable = Table('experiment', metadata,
 datasetTable = Table('dataset', metadata,
                      Column('id', types.Integer, primary_key=True, autoincrement=True),
                      Column('name', types.String(255), unique=True),
-                     Column('version', types.Integer),
-                     Column('creation_time', types.DateTime),
                      Column('project', types.String(64), ForeignKey('project.name')),
                      Column('model', types.String(64), ForeignKey('model.name')),
                      Column('experiment', types.String(64), ForeignKey('experiment.name')),
@@ -97,13 +96,24 @@ datasetTable = Table('dataset', metadata,
                      Column('aggdim_units', types.String(64)),
                      Column('status_id', types.String(64)),
                      Column('offline', types.Boolean),
+                     Column('master_gateway', types.String(64)),
                      mysql_engine='InnoDB',
                      )
+
+datasetVersionTable = Table('dataset_version', metadata,
+                            Column('dataset_id', types.Integer, ForeignKey('dataset.id'), primary_key=True),
+                            Column('version', types.Integer, primary_key=True),
+                            Column('creation_time', types.DateTime),
+                            Column('comment', types.Text),
+                            mysql_engine='InnoDB',
+                            )
+
+# Index('datasetversion_index', datasetVersionTable.c.dataset_id, datasetVersionTable.c.version, unique=True)
 
 variableTable = Table('variable', metadata,
                       Column('id', types.Integer, primary_key=True, autoincrement=True),
                       Column('dataset_id', types.Integer, ForeignKey('dataset.id')),
-                      Column('short_name', types.String(64)),
+                      Column('short_name', types.String(255)),
                       Column('long_name', types.String(255)),
                       Column('standard_name', types.String(128), ForeignKey('standard_name.name')),
                       Column('vertical_granularity', types.String(64)),
@@ -121,21 +131,32 @@ variableTable = Table('variable', metadata,
 fileTable = Table('file', metadata,
                   Column('id', types.Integer, primary_key=True, autoincrement=True),
                   Column('dataset_id', types.Integer, ForeignKey('dataset.id'), nullable=False),
-                  Column('path', types.String(255), nullable=False),
+                  Column('base', types.String(255), nullable=False),
                   Column('format', types.String(16)),
-                  Column('size', MyBigInteger),
-                  Column('checksum', types.String(64)),
-                  Column('publication_time', types.DateTime),
-                  Column('tracking_id', types.String(64)),
-                  UniqueConstraint('dataset_id', 'path'),
+                  Column('deletion_time', types.DateTime),
+                  UniqueConstraint('dataset_id', 'base'),
                   mysql_engine='InnoDB',
                   )
+
+fileVersionTable = Table('file_version', metadata,
+                         Column('file_id', types.Integer, ForeignKey('file.id'), primary_key=True),
+                         Column('version', types.Integer, primary_key=True),
+                         Column('location', types.String(255), nullable=False),
+                         Column('size', MyBigInteger),
+                         Column('checksum', types.String(64)),
+                         Column('checksum_type', types.String(32)),
+                         Column('publication_time', types.DateTime),
+                         Column('tracking_id', types.String(64)),
+                         Column('mod_time', MyDouble),
+                         mysql_engine='InnoDB',
+                         )
+# Index('fileversion_index', fileVersionTable.c.file_id, fileVersionTable.c.version, unique=True)
 
 fileVariableTable = Table('file_variable', metadata,
                           Column('id', types.Integer, primary_key=True, autoincrement=True),
                           Column('file_id', types.Integer, ForeignKey('file.id'), nullable=False),
                           Column('variable_id', types.Integer, ForeignKey('variable.id')),
-                          Column('short_name', types.String(64), nullable=False),
+                          Column('short_name', types.String(255), nullable=False),
                           Column('long_name', types.String(255)),
                           Column('aggdim_first', MyDouble),
                           Column('aggdim_last', MyDouble),
@@ -281,9 +302,8 @@ class Experiment(object):
     
 class Dataset(object):
 
-    def __init__(self, name, version, project, model, experiment, run_name, calendar=None, aggdim_name=None, aggdim_units=None, status_id=None, offline=False, creation_time=None):
+    def __init__(self, name, project, model, experiment, run_name, calendar=None, aggdim_name=None, aggdim_units=None, status_id=None, offline=False, masterGateway=None):
         self.name = name
-        self.version = version
         self.project = project
         self.model = model
         self.experiment = experiment
@@ -293,9 +313,7 @@ class Dataset(object):
         self.aggdim_units = aggdim_units
         self.status_id = status_id
         self.offline = offline
-        if creation_time is None:
-            creation_time = datetime.datetime.now()
-        self.creation_time = creation_time
+        self.master_gateway = masterGateway
 
     @staticmethod
     def lookup(name, Session):
@@ -314,11 +332,6 @@ class Dataset(object):
     def get_name(self, Session):
         "Return the dataset name"
         return self.name
-
-    @persistent_get
-    def get_version(self, Session):
-        "Return the dataset version"
-        return self.version
 
     @persistent_get
     def get_project(self, Session):
@@ -363,44 +376,53 @@ class Dataset(object):
             
             # filevar ----------------------
             sess.execute("delete from file_variable using file as f where file_variable.file_id=f.id and f.dataset_id=%s"%self.id)
+            # file_version ----------------------
+            sess.execute("delete from file_version using file as f where file_version.file_id=f.id and f.dataset_id=%s"%self.id)
             # file ----------------------
             sess.execute("delete from file where dataset_id=%s"%self.id)
 
             # variable ----------------------
             sess.execute("delete from variable where variable.dataset_id=%s"%self.id)
+
+            # dataset_version ----------------------
+            sess.execute("delete from dataset_version where dataset_version.dataset_id=%s"%self.id)
 
             # status ----------------------
             sess.execute("delete from dataset_status where dataset_status.object_id=%s"%self.id)
 
         else:
 
-            # var_attr ----------------------
-            sess.execute("delete from va using var_attr as va, variable as v where va.variable_id=v.id and v.dataset_id=%s"%self.id)
+            raise ESGPublishError("Database not supported for dataset children delete: %s"%_database)
 
-            # dataset_attr ----------------------
-            sess.execute("delete from dataset_attr where dataset_id=%s"%self.id)
+##             # var_attr ----------------------
+##             sess.execute("delete from va using var_attr as va, variable as v where va.variable_id=v.id and v.dataset_id=%s"%self.id)
+
+##             # dataset_attr ----------------------
+##             sess.execute("delete from dataset_attr where dataset_id=%s"%self.id)
             
-            # file_attr ----------------------
-            sess.execute("delete from fa using file_attr as fa, file as f where fa.file_id=f.id and f.dataset_id=%s"%self.id)
-            # file_var_attr ----------------------
-            sess.execute("delete from fva using file_var_attr as fva, file_variable as fv, file as f where fva.filevar_id=fv.id and fv.file_id=f.id and f.dataset_id=%s"%self.id)
+##             # file_attr ----------------------
+##             sess.execute("delete from fa using file_attr as fa, file as f where fa.file_id=f.id and f.dataset_id=%s"%self.id)
+##             # file_var_attr ----------------------
+##             sess.execute("delete from fva using file_var_attr as fva, file_variable as fv, file as f where fva.filevar_id=fv.id and fv.file_id=f.id and f.dataset_id=%s"%self.id)
 
-            # var_dimension ----------------------
-            sess.execute("delete from vd using var_dimension as vd, variable as v where vd.variable_id=v.id and v.dataset_id=%s"%self.id)
+##             # var_dimension ----------------------
+##             sess.execute("delete from vd using var_dimension as vd, variable as v where vd.variable_id=v.id and v.dataset_id=%s"%self.id)
 
-            # filevar_dimension ----------------------
-            sess.execute("delete from fvd using filevar_dimension as fvd, file_variable as fv, file as f where fvd.filevar_id=fv.id and fv.file_id=f.id and f.dataset_id=%s"%self.id)
+##             # filevar_dimension ----------------------
+##             sess.execute("delete from fvd using filevar_dimension as fvd, file_variable as fv, file as f where fvd.filevar_id=fv.id and fv.file_id=f.id and f.dataset_id=%s"%self.id)
 
-            # filevar ----------------------
-            sess.execute("delete from fv using file_variable as fv, file as f where fv.file_id=f.id and f.dataset_id=%s"%self.id)
-            # file ----------------------
-            sess.execute("delete from file where dataset_id=%s"%self.id)
+##             # filevar ----------------------
+##             sess.execute("delete from fv using file_variable as fv, file as f where fv.file_id=f.id and f.dataset_id=%s"%self.id)
+##             # file_version ----------------------
+##             sess.execute("delete from fv using file_variable as fv, file as f where fv.file_id=f.id and f.dataset_id=%s"%self.id)
+##             # file ----------------------
+##             sess.execute("delete from file where dataset_id=%s"%self.id)
 
-            # variable ----------------------
-            sess.execute("delete from variable where variable.dataset_id=%s"%self.id)
+##             # variable ----------------------
+##             sess.execute("delete from variable where variable.dataset_id=%s"%self.id)
 
-            # status ----------------------
-            sess.execute("delete from dataset_status where dataset_status.object_id=%s"%self.id)
+##             # status ----------------------
+##             sess.execute("delete from dataset_status where dataset_status.object_id=%s"%self.id)
 
     def warning(self, message, level, module):
         """Create a warning status entry, and issue the warning to the logger.
@@ -514,8 +536,34 @@ class Dataset(object):
             session.close()
         return result
 
+    def getVersion(self):
+        return self.versions[-1].version
+
+    def setVersion(self, version):
+        self.versions[-1].version = version
+
+    def getFiles(self):
+        return [f for f in self.files if f.deletion_time is None]
+
     def __repr__(self):
-        return "<Dataset, id=%s, name=%s, version=%d, project=%s, model=%s, experiment=%s, run_name=%s>"%(`self.id`, self.name, self.version, `self.project`, `self.model`, `self.experiment`, self.run_name)
+        return "<Dataset, id=%s, name=%s, project=%s, model=%s, experiment=%s, run_name=%s>"%(`self.id`, self.name, `self.project`, `self.model`, `self.experiment`, self.run_name)
+    
+class DatasetVersion(object):
+
+    def __init__(self, version, creation_time=None, comment=None):
+        self.version = version
+        if creation_time is None:
+            creation_time = datetime.datetime.now()
+        self.creation_time = creation_time
+        self.comment = comment
+
+    @persistent_get
+    def get_version(self, Session):
+        "Return the dataset version"
+        return self.version
+
+    def __repr__(self):
+        return "<DatasetVersion, version=%s, creation_time=%s>"%(`self.version`, `self.creation_time`)
     
 class Variable(object):
 
@@ -544,20 +592,120 @@ class Variable(object):
     def __repr__(self):
         return "<Variable, id=%s, dataset_id=%s, short_name=%s, long_name=%s, standard_name=%s>"%(`self.id`, `self.dataset_id`, self.short_name, self.long_name, `self.standard_name`)
 
+def FileFactory(base, location, session, format='netCDF', deletedFileDictionary=None):
+    """
+    Create a new File object. If the file location is a key in
+    the deletedFileDictionary dictionary, the file is 'undeleted' and the existing file object is reused.
+
+    Returns the tuple (file_object, version_no).
+
+    base
+      String basename, unique wrt to all files in the dataset. Typically this is the basename of the file path.
+
+    format
+      String format of the file.
+
+    deletedFileDictionary
+      dictionary with keys of the locations of all files in the parent dataset that have been deleted.
+      If 
+    """
+    if deletedFileDictionary is not None and deletedFileDictionary.has_key(location):
+        fileobj = deletedFileDictionary[location]
+        fileobj.base = base
+        fileobj.format = format
+        fileobj.undelete()              # 'undelete' the file
+        versionNo = fileobj.getVersion()+1 # and bump the version number
+        fileobj.deleteChildren(session)
+        session.commit()
+    else:
+        fileobj = File(base, format)
+        versionNo = 1
+
+    return (fileobj, versionNo)
+
 class File(object):
 
-    def __init__(self, path, format, size, checksum=None, publication_time=None, tracking_id=None):
-        self.path = path
+    def __init__(self, base, format, deletion_time=None):
+        self.base = base
         self.format = format
+        self.deletion_time = deletion_time # File is deleted if not None
+
+    def delete(self, sess):
+        self.deletion_time = datetime.datetime.now()
+        self.deleteChildren(sess)
+        sess.commit()
+
+    def undelete(self):
+        self.deletion_time = None
+
+    def isDeleted(self):
+        return (self.deletion_time is not None)
+
+    def deleteChildren(self, sess):
+        """Delete children of this instance from the database with direct SQL calls, for efficiency."""
+
+        if _database!="postgres":
+            raise ESGPublishError("Database not supported for file children delete: %s"%_database)
+
+        # file_attr ----------------------
+        sess.execute("delete from file_attr using file as f where file_attr.file_id=%s"%self.id)
+
+        # file_var_attr ----------------------
+        sess.execute("delete from file_var_attr using file_variable as fv, file as f where file_var_attr.filevar_id=fv.id and fv.file_id=%s"%self.id)
+
+        # filevar_dimension ----------------------
+        sess.execute("delete from filevar_dimension using file_variable as fv, file as f where filevar_dimension.filevar_id=fv.id and fv.file_id=%s"%self.id)
+
+        # filevar ----------------------
+        sess.execute("delete from file_variable using file as f where file_variable.file_id=%s"%self.id)
+
+    def getModificationFtime(self):
+        latest = self.versions[-1]
+        return latest.getModificationFtime()
+
+    def getLocation(self):
+        return self.versions[-1].location
+
+    def getSize(self):
+        return self.versions[-1].size
+
+    def getVersion(self):
+        return self.versions[-1].version
+
+    def getModtime(self):
+        return self.versions[-1].mod_time
+
+    def getChecksum(self):
+        return self.versions[-1].checksum
+
+    def getChecksumType(self):
+        return self.versions[-1].checksum_type
+
+    def getTrackingID(self):
+        return self.versions[-1].tracking_id
+
+    def __repr__(self):
+        return "<File, id=%s, dataset_id=%s, base=%s, format=%s"%(`self.id`, `self.dataset_id`, self.base, self.format)
+
+class FileVersion(object):
+
+    def __init__(self, version, location, size, checksum=None, checksum_type=None, publication_time=None, tracking_id=None, mod_time=None):
+        self.version = version
+        self.location = location        # May differ from previous versions if the file has moved during versioning
         self.size = size
         self.checksum = checksum
+        self.checksum_type = checksum_type
         if publication_time is None:
             publication_time = datetime.datetime.now()
         self.publication_time = publication_time
         self.tracking_id = tracking_id
+        self.mod_time = mod_time        # Floating point seconds since epoch
+
+    def getModificationFtime(self):
+        return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.mod_time))
 
     def __repr__(self):
-        return "<File, id=%s, dataset_id=%s, path=%s, format=%s, size=%s, checksum=%s, publication_time=%s, tracking_id=%s>"%(`self.id`, `self.dataset_id`, self.path, self.format, `self.size`, `self.checksum`, `self.publication_time`, `self.tracking_id`)
+        return "<FileVersion, version=%s, location=%s, size=%s, checksum=%s, publication_time=%s, tracking_id=%s, mod_time=%s>"%(`self.version`, self.location, `self.size`, self.checksum, `self.publication_time`, self.tracking_id, `self.mod_time`)
 
 class FileVariable(Variable):
 
@@ -802,6 +950,7 @@ mapper(Dataset, datasetTable, properties={'variables':relation(Variable, cascade
                                                                 collection_class=attribute_mapped_collection('name')),
                                           'events':relation(Event, order_by=[eventTable.c.datetime]),
                                           'status':relation(DatasetStatus, order_by=[datasetStatusTable.c.datetime]),
+                                          'versions':relation(DatasetVersion, order_by=[datasetVersionTable.c.version], cascade="all, delete, delete-orphan"),
                                           })
 mapper(Variable, variableTable, properties={'attributes':relation(VariableAttribute, cascade="all, delete, delete-orphan"),
                                             'dimensions':relation(VariableDimension, cascade="all, delete, delete-orphan"),
@@ -809,6 +958,7 @@ mapper(Variable, variableTable, properties={'attributes':relation(VariableAttrib
                                             })
 mapper(File, fileTable, properties={'attributes':relation(FileAttribute, cascade="all, delete, delete-orphan"),
                                     'file_variables':relation(FileVariable, backref='file', cascade="all, delete, delete-orphan"),
+                                    'versions':relation(FileVersion, order_by=[fileVersionTable.c.version], cascade="all, delete, delete-orphan"),
                                     })
 mapper(FileVariable, fileVariableTable, properties={'attributes':relation(FileVariableAttribute, cascade="all, delete, delete-orphan"),
                                                     'dimensions':relation(FileVariableDimension, cascade="all, delete, delete-orphan")})
@@ -823,3 +973,5 @@ mapper(Event, eventTable)
 mapper(Catalog, catalogTable)
 mapper(LASCatalog, LASCatalogTable)
 mapper(DatasetStatus, datasetStatusTable)
+mapper(DatasetVersion, datasetVersionTable)
+mapper(FileVersion, fileVersionTable)

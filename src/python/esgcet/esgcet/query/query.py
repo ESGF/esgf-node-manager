@@ -151,6 +151,8 @@ def getEvents(dset, eventHeaders):
 def getDerived(dset, derivedHeaders, handler):
     result = []
     for attname in derivedHeaders:
+        if attname=='version':
+            value = str(dset.getVersion())
         if attname=='parent':
             dsetname = dset.name
             try:
@@ -187,15 +189,15 @@ def getQueryFields(handler, return_list=True):
       - True: Return a list of all query fields.
       - False: Return a tuple (*basicFields*, *eventFields*, *categories*) where:
       
-        * *basicFields* apply to all projects;
+        * *basicFields* apply to all datasets;
         * *eventFields* are events associated with the dataset;
         * *categories* are the handler-specific categories.
-        * *derivedFields* are fields such as *project*, derived from other fields.
+        * *derivedFields* are fields such as *parent*, derived from other objects.
     """
     
-    basicHeaders = ['id', 'name', 'version', 'project', 'model', 'experiment', 'run_name', 'offline']
+    basicHeaders = ['id', 'name', 'project', 'model', 'experiment', 'run_name', 'offline', 'master_gateway']
     eventHeaders = ['publish_time', 'publish_status']
-    derivedHeaders = ['parent']
+    derivedHeaders = ['parent', 'version']
     categories = handler.getFieldNames()
     if return_list:
         allProperties = list(set(basicHeaders+categories+eventHeaders+derivedHeaders))
@@ -291,7 +293,7 @@ def queryDatasets(projectName, handler, Session, properties, select=None):
         if not filterProperties(derivedResult, derivedProperties, derivedHeaders):
             continue
 
-        entry = [`dset.id`, dset.name, `dset.version`, dset.project, dset.model, dset.experiment, dset.run_name, `dset.offline`]+attResult+eventResult+derivedResult
+        entry = [`dset.id`, dset.name, dset.project, dset.model, dset.experiment, dset.run_name, `dset.offline`, dset.master_gateway]+attResult+eventResult+derivedResult
         if select is None:
             tupleResult.append(tuple(entry))
         else:
@@ -354,7 +356,7 @@ def updateDatasetFromContext(context, datasetName, Session):
     session.commit()
     session.close()
 
-def queryDatasetMap(datasetNames, Session):
+def queryDatasetMap(datasetNames, Session, extra_fields=False):
     """Query the database for a dataset map.
 
     Returns (dataset_map, offline_map) where dataset_map is a dictionary:
@@ -364,19 +366,42 @@ def queryDatasetMap(datasetNames, Session):
     and offline_map is a dictionary:
 
        dataset_id => True | False, where True iff the corresponding dataset is offline.
+
+    If extra_fields = True. returns (dataset_map, offline_map, extraFields) where 
     
+      extrafields[(dataset_id, absolute_file_path, *field_name*)] => field_value
+
+      where *field_name* is one of:
+
+      - ``mod_time``
+
     """
 
     dmap = {}
     offlineMap = {}
+    extraFields = {}
     for name in datasetNames:
         dset = Dataset.lookup(name, Session)
         session = Session()
         if dset is None:
             raise ESGQueryError("Dataset not found: %s"%name)
         session.add(dset)
-        dmap[name] = [(file.path, `file.size`) for file in dset.files]
+        dmap[name] = [(file.getLocation(), `file.getSize()`) for file in dset.getFiles()]
+        if extra_fields:
+            for file in dset.getFiles():
+                modtime = file.getModtime()
+                location = file.getLocation()
+                if modtime is not None:
+                    extraFields[(name, location, 'mod_time')] = modtime
+                checksum = file.getChecksum()
+                if checksum is not None:
+                    extraFields[(name, location, 'checksum')] = checksum
+                    extraFields[(name, location, 'checksum_type')] = file.getChecksumType()
+                    
         offlineMap[name] = dset.offline
         session.close()
 
-    return (dmap, offlineMap)
+    if extra_fields:
+        return (dmap, offlineMap, extraFields)
+    else:
+        return (dmap, offlineMap)

@@ -5,7 +5,7 @@ import cdtime
 import string
 from cdtime import reltime
 from lxml.etree import Element, SubElement as SE, ElementTree, Comment
-from esgcet.config import splitLine, splitRecord, getConfig, tagToCalendar, getThreddsServiceSpecs
+from esgcet.config import splitLine, splitRecord, getConfig, tagToCalendar, getThreddsServiceSpecs, getThreddsAuxiliaryServiceSpecs
 from esgcet.model import *
 from esgcet.exceptions import *
 from sqlalchemy.orm import join
@@ -21,7 +21,24 @@ SEQ=2
 EVEN = 1
 UNEVEN = 2
 DEFAULT_THREDDS_CATALOG_VERSION = "2"
-
+DEFAULT_THREDDS_SERVICE_APPLICATIONS = {
+    'GridFTP':['DataMover-Lite'],
+    'HTTPServer':['Web Browser','Web Script'],
+    'OpenDAP':['Web Browser'],
+    'SRM':[],
+    }
+DEFAULT_THREDDS_SERVICE_AUTH_REQUIRED = {
+    'GridFTP':'true',
+    'HTTPServer':'true',
+    'OpenDAP':'false',
+    'SRM':'false',
+    }
+DEFAULT_THREDDS_SERVICE_DESCRIPTIONS = {
+    'GridFTP':'GridFTP',
+    'HTTPServer':'HTTPServer',
+    'OpenDAP':'OpenDAP',
+    'SRM':'SRM',
+    }
 LAS2CDUnits = {
     "year" : cdtime.Year,
     "month" : cdtime.Month,
@@ -146,7 +163,7 @@ def hasThreddsService(serviceName, serviceDict):
     return result
 
 def _getRootPathAndLoc(fileobj, rootDict):
-    fileFields = fileobj.path.split(os.sep)
+    fileFields = fileobj.getLocation().split(os.sep)
     if fileFields[0]=='':
         del fileFields[0]
 
@@ -159,7 +176,7 @@ def _getRootPathAndLoc(fileobj, rootDict):
 
     return filesRootPath, filesRootLoc
 
-def _genService(parent, specs, initDictionary=None):
+def _genService(parent, specs, initDictionary=None, serviceApplications=None, serviceAuthRequired=None, serviceDescriptions=None):
 
     serviceDict = {}                    # name => element
     returnDict = initDictionary
@@ -172,6 +189,9 @@ def _genService(parent, specs, initDictionary=None):
     for serviceType, base, name, compoundName in specs:
         isThreddsService = (os.path.normpath(base) in ThreddsBases)
         isThreddsFileService = (os.path.normpath(base) == ThreddsFileServer)
+        desc = DEFAULT_THREDDS_SERVICE_DESCRIPTIONS[serviceType]
+        if serviceDescriptions is not None:
+            desc = serviceDescriptions.get(name, desc)
 
         # If the service is part of a compound service:
         if compoundName is not None:
@@ -184,7 +204,7 @@ def _genService(parent, specs, initDictionary=None):
                 returnDict[compoundName] = (False, [])
                             
             # Append the simple service to the compound
-            service = SE(compoundService, "service", name=name, serviceType=serviceType, base=base)
+            service = SE(compoundService, "service", name=name, serviceType=serviceType, base=base, desc=desc)
             serviceDict[name] = service
             returnDict[compoundName][1].append(name)
             returnDict[name] = (True, isThreddsService, serviceType, base, isThreddsFileService)
@@ -193,8 +213,21 @@ def _genService(parent, specs, initDictionary=None):
         else:
             if serviceDict.has_key(name):
                 raise ESGPublishError("Duplicate service name in configuration: %s"%name)
-            service = SE(parent, "service", name=name, serviceType=serviceType, base=base)
+            service = SE(parent, "service", name=name, serviceType=serviceType, base=base, desc=desc)
             returnDict[name] = (True, isThreddsService, serviceType, base, isThreddsFileService)
+
+        # Add the requires_authorization and application properties
+        auth_required = DEFAULT_THREDDS_SERVICE_AUTH_REQUIRED[serviceType]
+        if serviceAuthRequired is not None:
+            auth_required = serviceAuthRequired.get(name, auth_required)
+        reqAuth = SE(service, "property", name="requires_authorization", value=auth_required)
+
+        apps = DEFAULT_THREDDS_SERVICE_APPLICATIONS[serviceType]
+        if serviceApplications is not None:
+            apps = serviceApplications.get(name, apps)
+
+        for app in apps:
+            appElem = SE(service, "property", name="application", value=app)
 
     return returnDict
 
@@ -298,11 +331,21 @@ def _genFile(parent, path, size, ID, name, urlPath, serviceName, serviceDict):
             
     return dataset
 
-def _genFileV2(parent, path, size, ID, name, urlPath, serviceName, serviceDict, variable=None):
+def _genFileV2(parent, path, size, ID, name, urlPath, serviceName, serviceDict, fileid, trackingID, modTime, fileVersion, checksum, checksumType, variable=None):
     dataset = SE(parent, "dataset", ID=ID, name=name)
 
-    fileIDProp = SE(dataset, "property", name="file_id", value=ID)
+    fileIDProp = SE(dataset, "property", name="file_id", value=fileid)
+    fileVersionProp = SE(dataset, "property", name="file_version", value=str(fileVersion))
     sizeProp = SE(dataset, "property", name="size", value=str(size))
+    if trackingID is not None:
+        trackingProp = SE(dataset, "property", name="tracking_id", value=trackingID)
+
+    if modTime is not None:
+        modtimeProp = SE(dataset, "property", name="mod_time", value=modTime)
+
+    if checksum is not None:
+        checksumProp = SE(dataset, "property", name="checksum", value=checksum)
+        checksumTypeProp = SE(dataset, "property", name="checksum_type", value=checksumType)
 
     if variable is not None:
         perFileVariables = SE(dataset, "variables", vocabulary="CF-1.0")
@@ -374,7 +417,7 @@ def _genAggregations(parent, variable, variableID, handler, dataset, project, mo
         fvdomain = map(lambda x: (x.name, x.length, x.seq), filevar.dimensions)
         fvdomain.sort(lambda x,y: cmp(x[SEQ], y[SEQ]))
         if len(fvdomain)>0 and fvdomain[0][0]==aggdim_name:
-            fileNetcdf = SE(aggElem, "netcdf", location=filevar.file.path, ncoords="%d"%fvdomain[0][1])
+            fileNetcdf = SE(aggElem, "netcdf", location=filevar.file.getLocation(), ncoords="%d"%fvdomain[0][1])
             nvars += 1
 
     # Create the aggregation if at least one filevar has the aggregate dimension
@@ -415,7 +458,7 @@ def _genAggregationsV2(parent, variable, variableID, handler, dataset, project, 
         fvdomain = map(lambda x: (x.name, x.length, x.seq), filevar.dimensions)
         fvdomain.sort(lambda x,y: cmp(x[SEQ], y[SEQ]))
         if len(fvdomain)>0 and fvdomain[0][0]==aggdim_name:
-            fileNetcdf = SE(aggElem, "netcdf", location=filevar.file.path, ncoords="%d"%fvdomain[0][1])
+            fileNetcdf = SE(aggElem, "netcdf", location=filevar.file.getLocation(), ncoords="%d"%fvdomain[0][1])
             nvars += 1
 
     # Create the aggregation if at least one filevar has the aggregate dimension
@@ -434,7 +477,7 @@ def _genSubAggregation(parent, aggID, aggName, aggServiceName, aggdim_name, fvli
     netcdf = SE(aggDataset, "netcdf", nsmap=nsmap)
     aggElem = SE(netcdf, "aggregation", type="joinExisting", dimName=aggdim_name)
     for filevar, aggfirst, agglast, units, ncoords in fvlist:
-        fileNetcdf = SE(aggElem, "netcdf", location=filevar.file.path, ncoords="%d"%ncoords)
+        fileNetcdf = SE(aggElem, "netcdf", location=filevar.file.getLocation(), ncoords="%d"%ncoords)
     parent.append(aggDataset)    
 
 def _genLASAggregations(parent, variable, variableID, handler, dataset, project, model, experiment, aggServiceName, aggdim_name, lasTimeDelta):
@@ -553,7 +596,7 @@ def _genPerVariableDatasets(parent, dataset, datasetName, resolution, filesRootL
             timeCoverage = _genTimeCoverage(perVarMetadata2, timeFirst, timeLast, resolution)
 
         # Files
-        filelist = [(filevar.file.path, filevar.file.size) for filevar in variable.file_variables]
+        filelist = [(filevar.file.getLocation(), filevar.file.getSize()) for filevar in variable.file_variables]
         filesID = "%s.files"%variableID
         try:
             filesName = handler.generateNameFromContext('variable_files_dataset_name', project_description=project.description, model_description=model.description, experiment_description=experiment.description, variable=variable.short_name, variable_long_name=variable.long_name, variable_standard_name=variable.standard_name)
@@ -600,7 +643,7 @@ def _genPerVariableDatasets(parent, dataset, datasetName, resolution, filesRootL
             _genAggregations(perVarDataset, variable, variableID, handler, dataset, project, model, experiment, aggServiceName, aggdim_name)
 
 def _genPerTimeDatasets(parent, dataset, datasetName, filesRootLoc, filesRootPath, datasetRootDict, excludeVariables, offline, serviceName, serviceDict, handler, project, model, experiment):
-    filelist = [(file.path, file.size) for file in dataset.files]
+    filelist = [(file.getLocation(), file.getSize()) for file in dataset.getFiles()]
     filesID = "%s.files"%datasetName
     try:
         filesName = handler.generateNameFromContext('per_time_files_dataset_name', project_description=project.description, model_description=model.description, experiment_description=experiment.description)
@@ -653,17 +696,19 @@ def _genPerVariableDatasetsV2(parent, dataset, datasetName, resolution, filesRoo
             timeCoverage = _genTimeCoverage(perVarMetadata, timeFirst, timeLast, resolution)
 
         # Files
-        filelist = [(filevar.file.path, filevar.file.size) for filevar in variable.file_variables]
+        filelist = [(filevar.file.getLocation(), filevar.file.getSize(), filevar.file) for filevar in variable.file_variables]
         filesID = variableID
         try:
             filesName = handler.generateNameFromContext('variable_files_dataset_name', project_description=project.description, model_description=model.description, experiment_description=experiment.description, variable=variable.short_name, variable_long_name=variable.long_name, variable_standard_name=variable.standard_name)
         except Exception, e:
             filesName = filesID
         hasThreddsServ = hasThreddsService(serviceName, serviceDict)
-        for path, size in filelist:
+        for path, size, fileobj in filelist:
 
             basename = os.path.basename(path)
-            fileid = "%s.%s"%(filesID, basename)
+            fileid = "%s.%s"%(datasetName, fileobj.base)
+            fileVersion = fileobj.getVersion()
+            fileVersionID = "%s.%s.v%d"%(datasetName, fileobj.base, fileVersion)
 
             # There only needs to be an associated Thredds rootpath if at least
             # one associated service is a Thredds service
@@ -686,7 +731,11 @@ def _genPerVariableDatasetsV2(parent, dataset, datasetName, resolution, filesRoo
 
             urlpath = os.path.normpath(urlpath)
             path = os.path.normpath(path)
-            fileDataset = _genFileV2(parent, path, size, fileid, basename, urlpath, serviceName, serviceDict, variable=variable)
+            trackingID = fileobj.versions[-1].tracking_id
+            modTime = fileobj.getModificationFtime()
+            checksum = fileobj.getChecksum()
+            checksumType = fileobj.getChecksumType()
+            fileDataset = _genFileV2(parent, path, size, fileVersionID, basename, urlpath, serviceName, serviceDict, fileid, trackingID, modTime, fileVersion, checksum, checksumType, variable=variable)
 
         # Aggregation
         # Don't generate an aggregation if the variable has time overlaps or a non-monotonic aggregate dimension,
@@ -699,7 +748,7 @@ def _genPerVariableDatasetsV2(parent, dataset, datasetName, resolution, filesRoo
             _genAggregationsV2(parent, variable, variableID, handler, dataset, project, model, experiment, aggServiceName, aggdim_name, perVarMetadata)
 
 def _genPerTimeDatasetsV2(parent, dataset, datasetName, filesRootLoc, filesRootPath, datasetRootDict, excludeVariables, offline, serviceName, serviceDict, handler, project, model, experiment):
-    filelist = [(file.path, file.size) for file in dataset.files]
+    filelist = [(fileobj.getLocation(), fileobj.getSize(), fileobj) for fileobj in dataset.getFiles()]
     filesID = datasetName
     try:
         filesName = handler.generateNameFromContext('per_time_files_dataset_name', project_description=project.description, model_description=model.description, experiment_description=experiment.description)
@@ -707,7 +756,7 @@ def _genPerTimeDatasetsV2(parent, dataset, datasetName, filesRootLoc, filesRootP
         filesName = filesID
 ##     filesDataset = SE(parent, "dataset", name=filesName, ID=filesID)
     hasThreddsServ = hasThreddsService(serviceName, serviceDict)
-    for path, size in filelist:
+    for path, size, fileobj in filelist:
         basename = os.path.basename(path)
         fileid = "%s.%s"%(filesID, basename)
         if hasThreddsServ:
@@ -721,7 +770,12 @@ def _genPerTimeDatasetsV2(parent, dataset, datasetName, filesRootLoc, filesRootP
             urlpath = path
         urlpath = os.path.normpath(urlpath)
         path = os.path.normpath(path)
-        fileDataset = _genFileV2(parent, path, size, fileid, basename, urlpath, serviceName, serviceDict)
+        trackingID = fileobj.getTrackingID()
+        modTime = fileobj.getModificationFtime()
+        fileVersion = fileobj.getVersion()
+        checksum = fileobj.getChecksum()
+        checksumType = fileobj.getChecksumType()
+        fileDataset = _genFileV2(parent, path, size, fileid, basename, urlpath, serviceName, serviceDict, fileid, trackingID, modTime, fileVersion, checksum, checksumType)
 
 def generateThredds(datasetName, dbSession, outputFile, handler, datasetInstance=None, genRoot=False, service=None, perVariable=None):
     """
@@ -937,10 +991,10 @@ def _generateThreddsV1(datasetName, outputFile, handler, session, dset, context,
         datasetRootDict[rootPath] = fields
 
     # Get the rootPath for the dataset. rootPath is the 'shorthand' for the dataset's root directory
-    filesRootPath, filesRootLoc = _getRootPathAndLoc(dset.files[0], datasetRootDict)
+    filesRootPath, filesRootLoc = _getRootPathAndLoc(dset.getFiles()[0], datasetRootDict)
     hasThreddsServ = hasThreddsService(serviceName, serviceDict)
     if hasThreddsServ and filesRootPath is None:
-        raise ESGPublishError("File %s is not contained in any THREDDS root path. Please add an entry to thredds_dataset_roots in the configuration file."%dset.files[0].path)
+        raise ESGPublishError("File %s is not contained in any THREDDS root path. Please add an entry to thredds_dataset_roots in the configuration file."%dset.getFiles()[0].getLocation())
 
     # Save the rootLoc with the dataset catalog. When the full THREDDS catalog is written,
     # the rootpath is checked against the thredds_dataset_roots entries.
@@ -955,7 +1009,7 @@ def _generateThreddsV1(datasetName, outputFile, handler, session, dset, context,
         _genPerTimeDatasets(datasetElem, dset, datasetName, filesRootLoc, filesRootPath, datasetRootDict, excludeVariables, offline, serviceName, serviceDict, handler, project, model, experiment)
 
     doc.write(outputFile, xml_declaration=True, encoding='UTF-8', pretty_print=True)
-    event = Event(dset.name, dset.version, WRITE_THREDDS_CATALOG_EVENT)
+    event = Event(dset.name, dset.getVersion(), WRITE_THREDDS_CATALOG_EVENT)
     dset.events.append(event)
 
 def _generateThreddsV2(datasetName, outputFile, handler, session, dset, context, project, model, experiment, config, section, genRoot=False, service=None, perVariable=None):
@@ -970,6 +1024,9 @@ def _generateThreddsV2(datasetName, outputFile, handler, session, dset, context,
     threddsRestrictAccess = config.get(section, 'thredds_restrict_access')
     threddsDatasetRootsOption = config.get('DEFAULT', 'thredds_dataset_roots')
     threddsDatasetRootsSpecs = splitRecord(threddsDatasetRootsOption)
+    threddsServiceApplicationSpecs = getThreddsAuxiliaryServiceSpecs(config, section, 'thredds_service_applications', multiValue=True)
+    threddsServiceAuthRequiredSpecs = getThreddsAuxiliaryServiceSpecs(config, section, 'thredds_service_auth_required')
+    threddsServiceDescriptionSpecs = getThreddsAuxiliaryServiceSpecs(config, section, 'thredds_service_descriptions')
     excludeVariables = splitLine(config.get(section, 'thredds_exclude_variables', ''), sep=',')
     if not offline:
         if perVariable is None:
@@ -991,10 +1048,10 @@ def _generateThreddsV2(datasetName, outputFile, handler, session, dset, context,
     catalog.set(_XSI+"schemaLocation", "%s http://www.unidata.ucar.edu/schemas/thredds/InvCatalog.1.0.2.xsd"%_nsmap[None])
     doc = ElementTree(catalog)
 
-    serviceDict = _genService(catalog, threddsAggregationSpecs)
-    serviceDict = _genService(catalog, threddsFileSpecs, initDictionary=serviceDict)
+    serviceDict = _genService(catalog, threddsAggregationSpecs, serviceApplications=threddsServiceApplicationSpecs, serviceAuthRequired=threddsServiceAuthRequiredSpecs, serviceDescriptions=threddsServiceDescriptionSpecs)
+    serviceDict = _genService(catalog, threddsFileSpecs, initDictionary=serviceDict, serviceApplications=threddsServiceApplicationSpecs, serviceAuthRequired=threddsServiceAuthRequiredSpecs, serviceDescriptions=threddsServiceDescriptionSpecs)
     if len(threddsOfflineSpecs)>0:
-        serviceDict = _genService(catalog, threddsOfflineSpecs, initDictionary=serviceDict)
+        serviceDict = _genService(catalog, threddsOfflineSpecs, initDictionary=serviceDict, serviceApplications=threddsServiceApplicationSpecs, serviceAuthRequired=threddsServiceAuthRequiredSpecs, serviceDescriptions=threddsServiceDescriptionSpecs)
     else:
         info("No offline services specified (option=thredds_offline_services).")
     
@@ -1018,9 +1075,15 @@ def _generateThreddsV2(datasetName, outputFile, handler, session, dset, context,
                 # OK, give up
                 datasetDesc = datasetName
                 
-    datasetElem = SE(catalog, "dataset", name=datasetDesc, ID=datasetName, restrictAccess=threddsRestrictAccess)
+    dsetVersion = dset.getVersion()
+    dsetVersionID = "%s.v%d"%(datasetName, dsetVersion)
+    datasetElem = SE(catalog, "dataset", name=datasetDesc, ID=dsetVersionID, restrictAccess=threddsRestrictAccess)
 
     datasetIdProp = SE(datasetElem, "property", name="dataset_id", value=datasetName)
+    datasetVersionProp = SE(datasetElem, "property", name="dataset_version", value=str(dsetVersion))
+
+    if dset.master_gateway is not None:
+        SE(datasetElem, "property", name="master_gateway", value=dset.master_gateway)
 
     for name in handler.getFieldNames():
         if handler.isThreddsProperty(name):
@@ -1103,10 +1166,13 @@ def _generateThreddsV2(datasetName, outputFile, handler, session, dset, context,
         datasetRootDict[rootPath] = fields
 
     # Get the rootPath for the dataset. rootPath is the 'shorthand' for the dataset's root directory
-    filesRootPath, filesRootLoc = _getRootPathAndLoc(dset.files[0], datasetRootDict)
+    filelist = dset.getFiles()
+    if len(filelist)==0:
+        raise ESGPublishError("Dataset %s does not contain any files, cannot publish"%dset.name)
+    filesRootPath, filesRootLoc = _getRootPathAndLoc(dset.getFiles()[0], datasetRootDict)
     hasThreddsServ = hasThreddsService(serviceName, serviceDict)
     if hasThreddsServ and filesRootPath is None:
-        raise ESGPublishError("File %s is not contained in any THREDDS root path. Please add an entry to thredds_dataset_roots in the configuration file."%dset.files[0].path)
+        raise ESGPublishError("File %s is not contained in any THREDDS root path. Please add an entry to thredds_dataset_roots in the configuration file."%dset.getFiles()[0].getLocation())
 
     # Save the rootLoc with the dataset catalog. When the full THREDDS catalog is written,
     # the rootpath is checked against the thredds_dataset_roots entries.
@@ -1121,7 +1187,7 @@ def _generateThreddsV2(datasetName, outputFile, handler, session, dset, context,
         _genPerTimeDatasetsV2(datasetElem, dset, datasetName, filesRootLoc, filesRootPath, datasetRootDict, excludeVariables, offline, serviceName, serviceDict, handler, project, model, experiment)
 
     doc.write(outputFile, xml_declaration=True, encoding='UTF-8', pretty_print=True)
-    event = Event(dset.name, dset.version, WRITE_THREDDS_CATALOG_EVENT)
+    event = Event(dset.name, dset.getVersion(), WRITE_THREDDS_CATALOG_EVENT)
     dset.events.append(event)
 
 def readThreddsWithAuthentication(url, config):

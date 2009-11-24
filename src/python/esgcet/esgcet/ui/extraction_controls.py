@@ -39,6 +39,7 @@ def call_sessionmaker( root ):
     root.projectName = None
     root.firstFile = None
     root.dmap = None
+    root.extraFields = None
     root.directoryMap = None
     root.datasetMapfile = None
     root.filefilt = None

@@ -457,10 +457,11 @@ class dataset_widgets:
     def fill_in_data_information_file( self, dirfilename, onoff_line = "online" ):
        from esgcet.publish import readDatasetMap
 
-       dmap = readDatasetMap( dirfilename )
+       dmap, extraFields = readDatasetMap( dirfilename, parse_extra_fields=True )
        datasetNames = dmap.keys()
        datasetNames.sort()
        self.parent.parent.dmap = dmap
+       self.parent.parent.extraFields = extraFields
        self.parent.parent.datasetNames = datasetNames
        self.parent.parent.datasetMapfile = dirfilename
 
@@ -486,7 +487,8 @@ class dataset_widgets:
 
        # Set the iteration values for each page
        selected_page = self.parent.parent.main_frame.selected_top_page
-       self.parent.parent.main_frame.dmap[selected_page] = dmap 
+       self.parent.parent.main_frame.dmap[selected_page] = dmap
+       self.parent.parent.main_frame.extraFields[selected_page] = extraFields
        self.parent.parent.main_frame.datasetMapfile[selected_page] = dirfilename
        self.parent.parent.main_frame.dirp_firstfile[selected_page] = None
        self.parent.parent.offline_file_directory[selected_page] = "file"
@@ -546,6 +548,7 @@ class dataset_widgets:
        # Set the iteration values for each page
        selected_page = self.parent.parent.main_frame.selected_top_page
        self.parent.parent.main_frame.dmap[selected_page] = None
+       self.parent.parent.main_frame.extraFields[selected_page] = None
        self.parent.parent.main_frame.datasetMapfile[selected_page] = None
        self.parent.parent.main_frame.dirp_firstfile[selected_page] = firstFile
        self.parent.parent.offline_file_directory[selected_page] = "directory"

@@ -9,6 +9,7 @@ import glob
 import re
 import logging
 import subprocess
+from cdms2 import Cdunif
 from esgcet.config import getHandler, getHandlerByName, CFHandler, splitLine
 from esgcet.exceptions import *
 from esgcet.messaging import debug, info, warning, error, critical, exception
@@ -26,7 +27,7 @@ def getTypeAndLen(att):
         result = ('O', 1)
     return result
     
-def processIterator(command, commandArgs, filefilt=None):
+def processIterator(command, commandArgs, filefilt=None, offline=False):
     """Create an iterator from an external process.
 
     Returns an iterator that returns (path, size) at each iteration.
@@ -42,6 +43,9 @@ def processIterator(command, commandArgs, filefilt=None):
     filefilt
       A regular expression as defined in the Python re module. Each file returned has basename matching the filter.
 
+    offline
+      Boolean, if True don't try to stat files.
+
     """
 
     try:
@@ -49,12 +53,12 @@ def processIterator(command, commandArgs, filefilt=None):
     except:
         error("Error running command '%s %s', check configuration option 'offline_lister_executable'."%(command, commandArgs))
         raise
-    for path, size in filelistIterator_1(f, filefilt):
+    for path, size in filelistIterator_1(f, filefilt, offline=offline):
         yield (path, size)
     f.close()
     return
 
-def processNodeMatchIterator(command, commandArgs, handler, filefilt=None, datasetName=None):
+def processNodeMatchIterator(command, commandArgs, handler, filefilt=None, datasetName=None, offline=False):
     """Create an iterator from an external process, matching a list of node filters to each path.
     The node filters are generated from the ``directory_format`` option associated with the project
     represented by the handler.
@@ -78,13 +82,16 @@ def processNodeMatchIterator(command, commandArgs, handler, filefilt=None, datas
     datasetName
       String dataset name. If specified, always return this as the first item of the tuple, and ignore ``nodefilts``.
 
+    offline
+      Boolean, if True don't try to stat files.
+
     """
 
     nodefilts = handler.getDirectoryFormatFilters()
     idfields, formats = handler.getDatasetIdFields()
 
     idCache = {}
-    for path, size in processIterator(command, commandArgs, filefilt=filefilt):
+    for path, size in processIterator(command, commandArgs, filefilt=filefilt, offline=offline):
 
         # Check if any node filter matches the path
         if datasetName is None:
@@ -130,6 +137,9 @@ def filelistIterator(filelist, filefilt=None):
     filefilt
       A regular expression as defined in the Python re module. Each file returned has basename matching the filter.
 
+    offline
+      Boolean, if True don't try to stat files.
+
     """
     f = open(filelist)
     for path, size in filelistIterator_1(f, filefilt):
@@ -137,7 +147,7 @@ def filelistIterator(filelist, filefilt=None):
     f.close()
     return
 
-def filelistIterator_1(f, filefilt):
+def filelistIterator_1(f, filefilt, offline=False):
     line = f.readline()
     while line:
         line = line.strip()
@@ -147,17 +157,27 @@ def filelistIterator_1(f, filefilt):
         fields = line.split()
         if len(fields)==1:
             path = fields[0]
-            size = os.stat(path)[stat.ST_SIZE]
+            if not offline:
+                stats = os.stat(path)
+                size = stats[stat.ST_SIZE]
+                mtime = stats[stat.ST_MTIME]
+            else:
+                size = 0
+                mtime = None
             if filefilt is None or re.match(filefilt, os.path.basename(path)) is not None:
-                yield (path, size)
+                yield (path, (size, mtime))
         elif len(fields)==2:
             try:
                 path = fields[0]
                 size = string.atol(fields[1])
+                if not offline:
+                    mtime = os.stat(path)[stat.ST_MTIME]
+                else:
+                    mtime = None
             except:
-                raise ESGPublishError("Invalid filelist entry in %s: %s"%(filelist, line))
+                raise ESGPublishError("Invalid filelist entry in %s: %s"%(f.name, line))
             if filefilt is None or re.match(filefilt, os.path.basename(path)) is not None:
-                yield (path, size)
+                yield (path, (size, mtime))
         else:
             raise ESGPublishError("Filelist %s has invalid format."%filelist)
         line = f.readline()
@@ -172,8 +192,10 @@ def fnmatchIterator(pathexp):
     """
     pathlist = glob.glob(pathexp)
     for path in pathlist:
-        size = os.stat(path)[stat.ST_SIZE]
-        yield (path, size)
+        stats = os.stat(path)
+        size = stats[stat.ST_SIZE]
+        mtime = stats[stat.ST_MTIME]
+        yield (path, (size, mtime))
     return
 
 def fnIterator(pathlist):
@@ -185,8 +207,10 @@ def fnIterator(pathlist):
       A list or tuple of file paths.
     """
     for path in pathlist:
-        size = os.stat(path)[stat.ST_SIZE]
-        yield (path, size)
+        stats = os.stat(path)
+        size = stats[stat.ST_SIZE]
+        mtime = stats[stat.ST_MTIME]
+        yield (path, (size, mtime))
     return
 
 def directoryIterator(top, filefilt=None, followSymLinks=True, followSubdirectories=True):
@@ -225,7 +249,7 @@ def directoryIterator(top, filefilt=None, followSymLinks=True, followSubdirector
         # Search regular files in top directory
         if stat.S_ISREG(st.st_mode):
             if re.match(filefilt, basename) is not None:
-                yield (name, st.st_size)
+                yield (name, (st.st_size, st.st_mtime))
             
         # Search subdirectories
         elif followSubdirectories and stat.S_ISDIR(st.st_mode):
@@ -377,7 +401,7 @@ def readDatasetMap(mappath, parse_extra_fields=False):
 
     A dataset map is a text file, each line having the form:
 
-    dataset_id | absolute_file_path | size [ | ``from_path``=<path> [ | extra_field=extra_value ...]]
+    dataset_id | absolute_file_path | size [ | ``from_file``=<path> [ | extra_field=extra_value ...]]
 
     Returns (if parse_extra_fields=False) a dataset map - a dictionary: dataset_id => [(path, size), (path, size), ...]
     If parse_extra_fields=True, returns a tuple (dataset_map, extra_dictionary). See parse_extra_fields.
@@ -394,13 +418,15 @@ def readDatasetMap(mappath, parse_extra_fields=False):
 
       where *field_name* is one of:
 
-      - ``from_path``
+      - ``from_file``
+      - ``mod_time``
+
     """
     datasetMap = {}
     extraFieldMap = {}
     mapfile = open(mappath)
     for line in mapfile.readlines():
-        if line[0]=='#':
+        if line[0]=='#' or line.strip()=='':
             continue
 
         if parse_extra_fields:
@@ -431,7 +457,7 @@ def readDatasetMap(mappath, parse_extra_fields=False):
     else:
         return datasetMap
 
-def datasetMapIterator(datasetMap, datasetId):
+def datasetMapIterator(datasetMap, datasetId, extraFields=None, offline=False):
     """Create an iterator from a dataset map entry.
 
     Returns an iterator that returns (path, size) at each iteration. If sizes are omitted from the file, the sizes are inserted, provided the files are online.
@@ -442,6 +468,12 @@ def datasetMapIterator(datasetMap, datasetId):
     datasetId
       Dataset string identifier.
       
+    extraFields
+      Extra dataset map fields, as from **readDatasetMap**.
+
+    offline
+      Boolean, if true don't try to stat the file.
+
     """
 
     for path, csize in datasetMap[datasetId]:
@@ -450,9 +482,19 @@ def datasetMapIterator(datasetMap, datasetId):
             size = os.stat(path)[stat.ST_SIZE]
         else:
             size = string.atol(csize)
-        yield (path, size)
+        mtime = None
+        if extraFields is not None:
+            mtime = extraFields.get((datasetId, path, 'mod_time'))
+        if mtime is None:
+            if not offline:
+                mtime = os.stat(path)[stat.ST_MTIME]
+            else:
+                mtime = None
+        else:
+            mtime = float(mtime)
+        yield (path, (size, mtime))
 
-def iterateOverDatasets(projectName, dmap, directoryMap, datasetNames, Session, aggregateDimension, appendOpt, filefilt, initcontext, offlineArg, properties, testProgress1=None, testProgress2=None, handlerDictionary=None, keepVersion=False, newVersion=None):
+def iterateOverDatasets(projectName, dmap, directoryMap, datasetNames, Session, aggregateDimension, operation, filefilt, initcontext, offlineArg, properties, testProgress1=None, testProgress2=None, handlerDictionary=None, keepVersion=False, newVersion=None, extraFields=None, masterGateway=None, comment=None):
     """
     Scan and aggregate (if possible) a list of datasets. The datasets and associated files are specified
     in one of two ways: either as a *dataset map* (see ``dmap``) or a *directory map* (see ``directoryMap``).
@@ -479,8 +521,8 @@ def iterateOverDatasets(projectName, dmap, directoryMap, datasetNames, Session, 
     aggregateDimension
       Name of the dimension on which to aggregate the datasets.
 
-    appendOpt
-      Boolean flag: if True and a dataset exists, append the new files to the existing dataset.
+    operation
+      The publication operation, one of esgcet.publish.CREATE_OP, DELETE_OP, RENAME_OP, UPDATE_OP
 
     filefilt
       String regular expression as defined by the Python re module. If a ``directoryMap`` is specified, only files whose
@@ -521,6 +563,17 @@ def iterateOverDatasets(projectName, dmap, directoryMap, datasetNames, Session, 
     newVersion
       Set the new version number explicitly. By default the version number is incremented by 1. See keepVersion.
 
+    extraFields
+      Extra dataset map fields, as from **readDatasetMap**.
+
+    masterGateway
+      The gateway that owns the master copy of the datasets. If None, the dataset is not replicated.
+      Otherwise the TDS catalog is written with a 'master_gateway' property, flagging the dataset(s)
+      as replicated.
+
+    comment=None:
+      String comment to associate with new datasets created.
+
     """
     from esgcet.publish import extractFromDataset, aggregateVariables
 
@@ -543,7 +596,7 @@ def iterateOverDatasets(projectName, dmap, directoryMap, datasetNames, Session, 
                 warning("No files specified for dataset %s"%datasetName)
                 continue
             firstFile = dmap[datasetName][0][0]
-            fileiter = datasetMapIterator(dmap, datasetName)
+            fileiter = datasetMapIterator(dmap, datasetName, extraFields=extraFields, offline=offlineArg)
         else:
             direcTuples = directoryMap[datasetName]
             firstDirec, sampleFile = direcTuples[0]
@@ -599,7 +652,7 @@ def iterateOverDatasets(projectName, dmap, directoryMap, datasetNames, Session, 
               testProgress1[2] = (100./ct)*iloop + (50./ct)
            else:
               testProgress1[2] = (100./ct)*iloop + (100./ct)
-        dataset = extractFromDataset(datasetName, fileiter, Session, cfHandler, aggregateDimensionName=aggregateDimension, offline=offline, append=appendOpt, progressCallback=testProgress1, keepVersion=keepVersion, newVersion=newVersion, **context)
+        dataset = extractFromDataset(datasetName, fileiter, Session, cfHandler, aggregateDimensionName=aggregateDimension, offline=offline, operation=operation, progressCallback=testProgress1, keepVersion=keepVersion, newVersion=newVersion, extraFields=extraFields, masterGateway=masterGateway, comment=comment, **context)
 
         if not offline:
             if testProgress2 is not None:
@@ -631,3 +684,90 @@ def whereIrregular(ar, atol=1.e-8, rtol=1.e-5):
     step = diff[0]
     cond = abs(diff-step)>=(atol + abs(step)*rtol)
     return inds[cond]
+
+def compareFiles(fileobj, path, size, offline, checksum=None):
+    """Compare a database file object and physical file.
+
+    Returns True iff the files are the same.
+    
+    fileobj
+      File object
+
+    path
+      String path of file to compare.
+      
+    size
+      Size of physical file in bytes.
+
+    offline
+      Boolean, True iff the path is offline
+
+    checksum
+      String, checksum of the physical file
+    """
+
+    # If checksums are defined for both files, it is definitive
+    # to compare them.
+    fileVersion = fileobj.versions[-1]
+    if checksum is not None and fileVersion.checksum is not None:
+        return fileVersion.checksum==checksum
+
+    # If file sizes differ, files are different.
+    if fileVersion.size!=size:
+        return False
+
+    # For offline datasets, only compare sizes
+    if offline:
+        return True
+
+    f = Cdunif.CdunifFile(path)
+    if hasattr(f, 'tracking_id'):
+        trackingId = f.tracking_id
+    else:
+        trackingId = None
+    f.close()
+
+    # If at least one file has a tracking ID, and they differ,
+    # files are different.
+    if fileVersion.tracking_id != trackingId:
+        return False
+
+    # If tracking IDs are defined and equal, files are the same.
+    if trackingId is not None and fileVersion.tracking_id == trackingId:
+        return True
+
+    # If the checksum is defined for the new file, but not the old,
+    # assume the files differ, so that the new checksum will be recorded.
+    if checksum is not None and fileVersion.checksum is None:
+        return False
+
+    # Cannot decide definitively - assume they compare.
+    return True
+
+def checksum(path, client):
+    """
+    Calculate a file checksum.
+
+    Returns the String checksum.
+
+    path
+      String pathname.
+
+    client
+      String client name. The command executed is '``client path``'. The client may be an absolute path ("/usr/bin/md5sum") or basename ("md5sum"). For a basename, the executable must be in the user's search path.
+    """
+
+    if not os.path.exists(path):
+        raise ESGPublishError("No such file: %s"%path)
+
+    command = "%s %s"%(client, path)
+    info("Running: %s"%command)
+
+    try:
+        f = subprocess.Popen([client, path], stdout=subprocess.PIPE).stdout
+    except:
+        error("Error running command '%s %s', check configuration option 'checksum'."%command)
+    lines = f.readlines()
+    csum = lines[0].split()[0]
+
+    return csum

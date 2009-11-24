@@ -329,7 +329,7 @@ def generateLAS(datasetName, dbSession, outputFile, handler, datasetInstance=Non
         print >>outputFile, tostring(axes, pretty_print=True),
         print >>outputFile, tostring(lasCategories, pretty_print=True),
 
-        event = Event(dset.name, dset.version, WRITE_LAS_CATALOG_EVENT)
+        event = Event(dset.name, dset.getVersion(), WRITE_LAS_CATALOG_EVENT)
         dset.events.append(event)
 
     session.commit()

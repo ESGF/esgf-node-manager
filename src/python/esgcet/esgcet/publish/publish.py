@@ -117,19 +117,19 @@ def publishDataset(datasetName, parentId, service, threddsRootURL, session):
     # Create the publishing event
     state = status.getState()
     if state==PublicationState.PROCESSING:
-        event = Event(dset.name, dset.version, START_PUBLISH_DATASET_EVENT)
+        event = Event(dset.name, dset.getVersion(), START_PUBLISH_DATASET_EVENT)
         dset.events.append(event) 
     elif state==PublicationState.SUCCESSFUL:
-        event = Event(dset.name, dset.version, PUBLISH_DATASET_EVENT)
+        event = Event(dset.name, dset.getVersion(), PUBLISH_DATASET_EVENT)
         dset.events.append(event)
     else:
         message = status.getMessage()
         if message[0:7]=='That ID':
             dset.warning("Publication failed for dataset %s with message: %s"%(datasetName, message), WARNING_LEVEL, PUBLISH_MODULE)
-            event = Event(dset.name, dset.version, PUBLISH_STATUS_UNKNOWN_EVENT)
+            event = Event(dset.name, dset.getVersion(), PUBLISH_STATUS_UNKNOWN_EVENT)
         else:
             dset.warning("Publication failed for dataset %s with message: %s"%(datasetName, message), ERROR_LEVEL, PUBLISH_MODULE)
-            event = Event(dset.name, dset.version, PUBLISH_FAILED_EVENT)
+            event = Event(dset.name, dset.getVersion(), PUBLISH_FAILED_EVENT)
         dset.events.append(event)
 
     # Save the status ID
@@ -268,7 +268,7 @@ def publishDatasetList(datasetNames, Session, parentId=None, handlerDictionary=N
             for i in range(spi):
                 if state==PublicationState.SUCCESSFUL:
                     evname = PUBLISH_DATASET_EVENT
-                    event = Event(dset.name, dset.version, evname)
+                    event = Event(dset.name, dset.getVersion(), evname)
                     dset.events.append(event)
                     resultDict[dset.name] = evname
                     issueCallback(progressCallback, j*spi, n, 0, 1)
@@ -283,7 +283,7 @@ def publishDatasetList(datasetNames, Session, parentId=None, handlerDictionary=N
                     evname = PUBLISH_FAILED_EVENT
                     message = status.getMessage()
                     dset.warning("Publication failed for dataset %s with message: %s"%(datasetName, message), ERROR_LEVEL, PUBLISH_MODULE)
-                    event = Event(dset.name, dset.version, evname)
+                    event = Event(dset.name, dset.getVersion(), evname)
                     dset.events.append(event)
                     resultDict[dset.name] = evname
                     issueCallback(progressCallback, j*spi, n, 0, 1)
@@ -343,7 +343,7 @@ def pollDatasetPublicationStatus(datasetName, Session, service=None):
     pubState = statusObj.getState()
     if pubState==PublicationState.SUCCESSFUL:
         status = PUBLISH_DATASET_EVENT
-        event = Event(dset.name, dset.version, status)
+        event = Event(dset.name, dset.getVersion(), status)
         dset.events.append(event)
     elif pubState!=PublicationState.PROCESSING:
         message = statusObj.getMessage()
@@ -353,7 +353,7 @@ def pollDatasetPublicationStatus(datasetName, Session, service=None):
         else:
             dset.warning("Publication failed for dataset %s with message: %s"%(datasetName, message), ERROR_LEVEL, PUBLISH_MODULE)
             status = PUBLISH_FAILED_EVENT
-        event = Event(dset.name, dset.version, status)
+        event = Event(dset.name, dset.getVersion(), status)
         dset.events.append(event)
 
     session.commit()

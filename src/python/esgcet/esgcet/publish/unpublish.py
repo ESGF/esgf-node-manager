@@ -50,10 +50,10 @@ def retractDataset(datasetName, service, session):
     except RemoteCallException, e:
         fields = `e`.split('\n')
         dset.warning("Retraction failed for dataset %s with message: %s"%(datasetName, string.join(fields[0:2])), ERROR_LEVEL, PUBLISH_MODULE)
-        event = Event(dset.name, dset.version, UNPUBLISH_DATASET_FAILED_EVENT)
+        event = Event(dset.name, dset.getVersion(), UNPUBLISH_DATASET_FAILED_EVENT)
         stateName = 'UNSUCCESSFUL'
     else:
-        event = Event(dset.name, dset.version, UNPUBLISH_GATEWAY_DATASET_EVENT)
+        event = Event(dset.name, dset.getVersion(), UNPUBLISH_GATEWAY_DATASET_EVENT)
         stateName = 'SUCCESSFUL'
 
     dset.events.append(event)
@@ -81,29 +81,45 @@ def deleteDataset(datasetName, service, session):
     
     # Lookup the dataset
     dset = session.query(Dataset).filter_by(name=datasetName).first()
-    if dset is None:
-        raise ESGPublishError("Dataset not found: %s"%datasetName)
+    if dset is not None:
 
-    # Clear publication errors from dataset_status
-    dset.clear_warnings(session, PUBLISH_MODULE)
+        # Clear publication errors from dataset_status
+        dset.clear_warnings(session, PUBLISH_MODULE)
 
-    # Delete
-    try:
-        service.deleteDataset(datasetName, True, 'Deleting dataset')
-    except socket.error, e:
-        raise ESGPublishError("Socket error: %s\nIs the proxy certificate %s valid?"%(`e`, service._cert_file))
-    except RemoteCallException, e:
-        fields = `e`.split('\n')
-        dset.warning("Deletion failed for dataset %s with message: %s"%(datasetName, string.join(fields[0:2])), ERROR_LEVEL, PUBLISH_MODULE)
-        event = Event(dset.name, dset.version, DELETE_DATASET_FAILED_EVENT)
-        stateName = 'UNSUCCESSFUL'
-    else:
-        event = Event(dset.name, dset.version, DELETE_GATEWAY_DATASET_EVENT)
-        stateName = 'SUCCESSFUL'
+        # Delete
+        try:
+            service.deleteDataset(datasetName, True, 'Deleting dataset')
+        except socket.error, e:
+            raise ESGPublishError("Socket error: %s\nIs the proxy certificate %s valid?"%(`e`, service._cert_file))
+        except RemoteCallException, e:
+            fields = `e`.split('\n')
+            dset.warning("Deletion failed for dataset %s with message: %s"%(datasetName, string.join(fields[0:2])), ERROR_LEVEL, PUBLISH_MODULE)
+            event = Event(dset.name, dset.getVersion(), DELETE_DATASET_FAILED_EVENT)
+            stateName = 'UNSUCCESSFUL'
+        else:
+            event = Event(dset.name, dset.getVersion(), DELETE_GATEWAY_DATASET_EVENT)
+            stateName = 'SUCCESSFUL'
 
-    dset.events.append(event)
+        dset.events.append(event)
 
-    return event.event, stateName
+        return event.event, stateName
+
+    else:                               # Try to delete on the gateway only
+        warning("Dataset not found in data node database: %s"%datasetName)
+        
+        # Delete
+        try:
+            service.deleteDataset(datasetName, True, 'Deleting dataset')
+        except socket.error, e:
+            raise ESGPublishError("Socket error: %s\nIs the proxy certificate %s valid?"%(`e`, service._cert_file))
+        except RemoteCallException, e:
+            fields = `e`.split('\n')
+            warning("Deletion failed for dataset %s with message: %s"%(datasetName, string.join(fields[0:2])), ERROR_LEVEL, PUBLISH_MODULE)
+            stateName = 'UNSUCCESSFUL'
+        else:
+            stateName = 'SUCCESSFUL'
+
+        return DELETE_GATEWAY_DATASET_EVENT, stateName
 
 DELETE = 1
 UNPUBLISH = 2
@@ -180,6 +196,10 @@ def deleteDatasetList(datasetNames, Session, gatewayOperation=UNPUBLISH, thredds
                 fields = `e`.split('\n')
                 error("Deletion/retraction failed for dataset %s with message: %s"%(datasetName, string.join(fields[0:2], '\n')))
                 continue
+            except ESGPublishError, e:
+                fields = `e`.split('\n')
+                error("Deletion/retraction failed for dataset %s with message: %s"%(datasetName, string.join(fields[-2:], '\n')))
+                continue
             info("  Result: %s"%stateName)
             resultDict[datasetName] = eventName
 
@@ -210,7 +230,7 @@ def deleteDatasetList(datasetNames, Session, gatewayOperation=UNPUBLISH, thredds
             dset = session.query(Dataset).filter_by(name=datasetName).first()
             if dset is not None:
                 info("Deleting existing dataset: %s"%datasetName)
-                event = Event(dset.name, dset.version, DELETE_DATASET_EVENT)
+                event = Event(dset.name, dset.getVersion(), DELETE_DATASET_EVENT)
                 dset.events.append(event)
                 dset.deleteChildren(session)            # For efficiency
                 session.delete(dset)

@@ -426,6 +426,41 @@ def getOfflineLister(config, section, service=None):
 
     return result
 
+def getThreddsAuxiliaryServiceSpecs(config, section, option, multiValue=False):
+    """Get the specs for an THREDDS service option, such as thredds_service_applications.
+
+    Return a dictionary: service_name => value. If multiValue is true, value is a list of strings,
+    otherwise is a string. If the option is not set in the configuration file, return None
+
+    config
+      Configuration instance, e.g. from getConfig().
+
+    section
+      Project configuration section name.
+
+    option
+      String option name
+
+    multiValue
+      Boolean, if True return list of string values, if False return string values.
+    """
+    threddsOption = config.get(section, option, default=None)
+    if threddsOption is None:
+        return None
+    
+    threddsSpecs = splitRecord(threddsOption)
+    result = {}
+    for serviceName, value in threddsSpecs:
+        if multiValue:
+            if result.has_key(serviceName):
+                result[serviceName].append(value)
+            else:
+                result[serviceName] = [value]
+        else:
+            result[serviceName] = value
+
+    return result
+
 def getThreddsServiceSpecs(config, section, option):
     """Get the specs for a THREDDS service option.
 

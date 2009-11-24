@@ -169,6 +169,7 @@ class GUI_frame:
        self.offline_file_directory = root.offline_file_directory = {}
        self.hold_offline = root.hold_offline = {}
        self.dmap = root.dmap = {}
+       self.extraFields = root.extraFields = {}
        self.datasetMapfile = root.datasetMapfile = {}
        self.dirp_firstfile = root.dirp_firstfile = {}
        self.handlerDictionary = root.handlerDictionary = {}

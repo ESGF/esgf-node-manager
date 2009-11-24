@@ -20,8 +20,11 @@ Arguments:
 
 Options:
 
+    --all:
+        List superseded and deleted versions of file also.
+
     --echo-sql:
-        Echo SQL commands
+        Echo SQL commands.
 
     --full:
         Print a full listing.
@@ -43,7 +46,7 @@ Example:
 def main(argv):
 
     try:
-        args, lastargs = getopt.getopt(argv, "hi:", ['echo-sql', 'full'])
+        args, lastargs = getopt.getopt(argv, "hi:", ['all', 'echo-sql', 'full'])
     except getopt.error:
         print sys.exc_value
         print usage
@@ -59,10 +62,13 @@ def main(argv):
         print usage
         sys.exit(0)
 
+    listall = False
     echoSql = False
     fullList = False
     init_file = None
     for flag, arg in args:
+        if flag=='--all':
+            listall = True
         if flag=='--echo-sql':
             echoSql = True
         elif flag=='--full':
@@ -88,14 +94,23 @@ def main(argv):
             warning("Dataset not found: %s"%datasetId)
             continue
 
-        if fullList:
-            filetuples.extend([(file.path, str(file.size), str(file.publication_time), file.tracking_id, file.checksum) for file in dset.files])
+        if not listall:
+            if fullList:
+                filetuples.extend([(file.getLocation(), str(file.getVersion()), str(file.getSize()), str(file.versions[-1].publication_time), file.getModificationFtime(), file.getTrackingID(), file.getChecksum(), file.getChecksumType()) for file in dset.getFiles()])
+            else:
+                for file in dset.getFiles():
+                    print file.getLocation()
         else:
             for file in dset.files:
-                print file.path
+                if fullList:
+                    filetuples.extend([(version.location, str(version.version), str(version.size), str(version.publication_time), version.getModificationFtime(), version.tracking_id, version.checksum, version.checksum_type) for version in file.versions])
+                else:
+                    for version in file.versions:
+                        print version.location
 
     if fullList:
-        printResult(['path', 'size', 'publication_time', 'tracking_id', 'checksum'], filetuples)
+        filetuples.sort()
+        printResult(['path', 'version', 'size', 'publication_time', 'modification_time', 'tracking_id', 'checksum', 'checksum_type'], filetuples)
 
     session.close()
 

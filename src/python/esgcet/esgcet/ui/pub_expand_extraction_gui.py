@@ -25,7 +25,7 @@ from pub_controls import MyButton
 from pub_controls import font_weight
 from esgcet.query import getQueryFields
 from esgcet.messaging import warning
-from esgcet.publish import pollDatasetPublicationStatus, readDatasetMap
+from esgcet.publish import pollDatasetPublicationStatus, readDatasetMap, CREATE_OP, DELETE_OP, RENAME_OP, UPDATE_OP, REPLACE_OP
 from esgcet.ui import extraction_controls
 from esgcet.model import Dataset, ERROR_LEVEL
 from esgcet.config import getOfflineLister
@@ -177,6 +177,7 @@ class dataset_widgets:
            return
 
         if (selected_page is not None) or (self.parent.parent.hold_offline[selected_page] == True):
+           extraFields = None 
            if (self.parent.parent.hold_offline[selected_page] == False) or (isinstance(self.parent.parent.hold_offline[selected_page], types.DictType)):
               for x in self.parent.parent.main_frame.top_page_id[selected_page]:
                 dset_name = self.parent.parent.main_frame.top_page_id2[selected_page][x].cget('text')
@@ -191,6 +192,7 @@ class dataset_widgets:
                    datasetNames.append( self.parent.parent.main_frame.top_page_id2[selected_page][x].cget('text') )
 
               dmap = self.parent.parent.main_frame.dmap[selected_page]
+              extraFields = self.parent.parent.main_frame.extraFields[selected_page]
               datasetMapfile = self.parent.parent.main_frame.datasetMapfile[selected_page]
               projectName = self.parent.parent.main_frame.projectName[selected_page]
               directoryMap = self.parent.parent.directoryMap[selected_page]
@@ -231,11 +233,12 @@ class dataset_widgets:
 
               elif self.parent.parent.offline_file_directory[selected_page] == "file":
                  dmap = self.parent.parent.main_frame.dmap[selected_page]
+                 extraFields = self.parent.parent.main_frame.extraFields[selected_page]
                  datasetMapfile = self.parent.parent.main_frame.datasetMapfile[selected_page]
                  projectName = self.parent.parent.main_frame.projectName[selected_page]
                  directoryMap = None
                  if datasetMapfile is not None:
-                     dmap = readDatasetMap(datasetMapfile)
+                     dmap, extraFields = readDatasetMap(datasetMapfile, parse_extra_fields=True)
                      datasetNames = dmap.keys()
 
                  # get the handlers
@@ -244,7 +247,11 @@ class dataset_widgets:
 
 
            # Iterate over datasets
-           datasets = iterateOverDatasets(projectName, dmap, directoryMap, datasetNames, self.Session, self.parent.parent.aggregateDimension, appendOpt, self.parent.parent.filefilt, initcontext, self.parent.parent.hold_offline[selected_page], properties, testProgress1, testProgress2, self.parent.parent.handlerDictionary)
+           if appendOpt:
+               operation = UPDATE_OP
+           else:
+               operation = CREATE_OP
+           datasets = iterateOverDatasets(projectName, dmap, directoryMap, datasetNames, self.Session, self.parent.parent.aggregateDimension, operation, self.parent.parent.filefilt, initcontext, self.parent.parent.hold_offline[selected_page], properties, testProgress1, testProgress2, self.parent.parent.handlerDictionary, extraFields=extraFields)
 
            # If working on-line then replace the scanned list of datasets with 
            # the complete list of datasets

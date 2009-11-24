@@ -246,12 +246,13 @@ class generate_notebook:
       datasetNames = []
       for x in result:
           datasetNames.append( x[1] )
-      dmap, offline_map = queryDatasetMap( datasetNames, self.Session )
+      dmap, offline_map, extraFields = queryDatasetMap( datasetNames, self.Session, extra_fields=True )
       # Check if offline or not, then set the iteration values for each page
       selected_page = self.parent.parent.main_frame.selected_top_page
       self.parent.parent.hold_offline[selected_page] = offline_map
       self.parent.parent.main_frame.projectName[selected_page] = projectName
       self.parent.parent.main_frame.dmap[selected_page] = dmap
+      self.parent.parent.main_frame.extraFields[selected_page] = extraFields
       self.parent.parent.main_frame.datasetMapfile[selected_page] = None
       self.parent.parent.directoryMap[selected_page] = None
       self.parent.parent.main_frame.dirp_firstfile[selected_page] = None
