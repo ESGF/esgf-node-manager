@@ -56,13 +56,15 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 	setMyName("DataNodeService");
 	gateways = Collections.synchronizedMap(new HashMap<String,BasicGateway>());
 	unavailableGateways = Collections.synchronizedMap(new HashMap<String,BasicGateway>());
+	init();
     }
 
     //Bootstrap the entire system...
     public void init() {
 	mgr = new ESGDataNodeManager();
-	mgr.registerComponent(this);
 	mgr.init();
+	mgr.registerComponent(this);
+
 	periodicallyPokeGateways();
 
 	//test method...
