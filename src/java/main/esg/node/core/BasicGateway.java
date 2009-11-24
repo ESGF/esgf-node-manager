@@ -30,17 +30,25 @@ import com.caucho.hessian.client.HessianRuntimeException;
 
 import java.net.MalformedURLException;
 import java.net.InetAddress;
+import java.util.List;
+import java.util.ArrayList;
 
+import esg.node.core.ESGGatewayListener;
 import esg.gateway.service.ESGGatewayService;
 import esg.common.service.ESGRemoteEvent;
 import esg.common.Utils;
 
-public class BasicGateway extends Gateway{
+public class BasicGateway extends Gateway {
 
     private static final Log log = LogFactory.getLog(BasicGateway.class);
     private ESGGatewayService gatewayService = null;
+    private List<ESGGatewayListener> gatewayEventListeners = null;
 
-    public BasicGateway(String name, String serviceURL) { super(name,serviceURL); }
+    public BasicGateway(String name, String serviceURL) { 
+	super(name,serviceURL); 
+	gatewayEventListeners = new ArrayList<ESGGatewayListener>();
+    }
+    
     public BasicGateway(String name) { this(name,null); }
 
     //The idea here is to establish communication with the rpc
@@ -107,10 +115,12 @@ public class BasicGateway extends Gateway{
 	    //TODO see about changing the timeout so don't have to wait forever to fail!	    
 	    response = gatewayService.ping();
 	    System.out.println( (response ? "[OK]" : "[BUSY]") );
+	    if(response  && isValid) fireConnectionAvailable(); else fireConnectionBusy();
 	}catch (HessianRuntimeException ex) {
 	    System.out.println("[FAIL]");
 	    log.error("Problem calling \"ping\" on ["+getServiceURL()+"] "+ex.getMessage());
 	    response = false;
+	    fireConnectionFailed(ex);
 	}
 	isAvailable = (response && isValid);
 	log.trace("isValid = "+isValid);
@@ -144,8 +154,32 @@ public class BasicGateway extends Gateway{
 	    return true;
 	}catch (HessianRuntimeException ex) {
 	    log.error("Problem calling \"register\" on ["+getServiceURL()+"] "+ex.getMessage());
+	    fireConnectionFailed(ex);
 	    return false;
 	}
     }
+
+
+    protected void fireConnectionAvailable() {
+	fireESGGatewayEvent(new ESGGatewayEvent(this,ESGGatewayEvent.CONNECTION_AVAILABLE));
+    }
+    protected void fireConnectionFailed(Throwable t) {
+	fireESGGatewayEvent(new ESGGatewayEvent(this,t.getMessage(),ESGGatewayEvent.CONNECTION_FAILED));
+    }
+    protected void fireConnectionBusy() {
+	fireESGGatewayEvent(new ESGGatewayEvent(this,ESGGatewayEvent.CONNECTION_BUSY));
+    }
+    //--------------------------------------------
+    //Event dispatching to all registered ESGGatewayListeners
+    //calling their handleGatewayEvent method
+    //--------------------------------------------
+    protected void fireESGGatewayEvent(ESGGatewayEvent esgEvent) {
+	log.trace("Firing Event: "+esgEvent);
+	for(ESGGatewayListener listener: gatewayEventListeners) {
+	    listener.handleGatewayEvent(esgEvent);
+	}
+    }
+
+
     
 }

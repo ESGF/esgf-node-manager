@@ -30,15 +30,17 @@ import java.util.TimerTask;
 import java.util.List;
 
 import esg.common.service.ESGRemoteEvent;
+import esg.node.core.ESGGatewayListener;
 import esg.node.core.ESGDataNodeManager;
 import esg.node.core.AbstractDataNodeComponent;
 import esg.node.core.AbstractDataNodeManager;
 import esg.node.core.ESGEvent;
 import esg.node.core.ESGJoinEvent;
+import esg.node.core.ESGGatewayEvent;
 import esg.node.core.Gateway;
 
 
-public class ESGConnectionManager extends AbstractDataNodeComponent {
+public class ESGConnectionManager extends AbstractDataNodeComponent implements ESGGatewayListener {
 
     private static final Log log = LogFactory.getLog(ESGConnectionManager.class);
 
@@ -64,7 +66,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent {
 	if(gateways == null) gateways = Collections.synchronizedMap(new HashMap<String,Gateway>());
 	if(unavailableGateways == null) unavailableGateways = Collections.synchronizedMap(new HashMap<String,Gateway>());
 	
-	periodicallyPingGateways();
+	periodicallyPingToGateways();
 	periodicallyRegisterToGateways(); //zoiks: test method (not permanent)
     }
 
@@ -81,61 +83,20 @@ public class ESGConnectionManager extends AbstractDataNodeComponent {
     //pings, and simple registration)
     //--
     
-    private void periodicallyPingGateways() {
+    private void periodicallyPingToGateways() {
 	log.trace("launching ping timer...");
 	Timer timer = new Timer();
-
-	//This will transition from active map to inactive map
 	timer.schedule(new TimerTask() { 
 		public final void run() {
-		    ESGConnectionManager.this.pingGateways(ESGConnectionManager.this.gateways,
-							     ESGConnectionManager.this.unavailableGateways);
-
+		    ESGConnectionManager.this.pingToGateways();
 		}
 	    },0,5*1000);
-	
-	//This will transition from inactive map to active map
-	timer.schedule(new TimerTask() { 
-		public final void run() {
-		    //only try to transfer nodes if there are nodes that are unavailable :-)
-		    if(!ESGConnectionManager.this.unavailableGateways.isEmpty()) {
-			log.trace("Noticed that there are some unavailable gateways... checking on them ["+unavailableGateways.size()+"]");
-			ESGConnectionManager.this.pingGateways(ESGConnectionManager.this.unavailableGateways,
-								 ESGConnectionManager.this.gateways);
-			log.trace("Available Gateways: ["+gateways.size()+"] Unavailable: ["+unavailableGateways.size()+"]");
-			
-			//Okay, I have no connections!? Time to poll till I get at least one!
-			if ((gateways.size() == 0) && (unavailableGateways.size() == 0)) {
-			    List<Gateway> gatewaysList = ((AbstractDataNodeManager)ESGConnectionManager.this.getDataNodeManager()).getGateways();
-			    if(!gatewaysList.isEmpty()) {
-				for(Gateway gateway : gatewaysList) {
-				    ESGConnectionManager.this.gateways.put(gateway.getName(),gateway);
-				}
-			    }
-			}
-		    }
-		}
-		
-	    },0,10*1000);
     }
-    
-    //Tries to contact gateways... 
-    //if not moves gateways proxies from map A --to--> B
-    private void pingGateways(Map<String,Gateway> gatewaysA, 
-			      Map<String,Gateway> gatewaysB) {
-	boolean pingstat = false;
-	Collection<? extends Gateway> gateways = gatewaysA.values();
-	for(Gateway gateway: gateways) {
-	    pingstat = gateway.ping();
-	    log.trace("Available stat ?= "+gateway.isAvailable());
-	    if(!gateway.isAvailable()) {
-		log.trace("moving from one list to other");
-		gatewaysA.remove(gateway.getName());
-		gatewaysB.put(gateway.getName(),gateway);
-	    }
+    private void pingToGateways() {
+	Collection<? extends Gateway> gateways_ = gateways.values();
+	for(Gateway gateway: gateways_) {
+	    gateway.ping();
 	}
-	log.trace("Ping return value = "+pingstat);
-	log.trace("Available Gateways: ["+gateways.size()+"] Unavailable: ["+unavailableGateways.size()+"]");	
     }
 
     //----
@@ -188,6 +149,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent {
 	//clear out my datastrutures of node proxies
 	gateways.clear(); gateways = null;
 	unavailableGateways.clear(); unavailableGateways = null;
+	super.unregister();
     }
 
     //--------------------------------------------
@@ -213,6 +175,34 @@ public class ESGConnectionManager extends AbstractDataNodeComponent {
 	    unavailableGateways.remove(event.getJoiner().getName());
 	}
 	log.trace("Number of active service managed gateways = "+gateways.size());
+    }
+
+    //--------------------------------------------
+    //Event handling... (for gateway events)
+    //--------------------------------------------
+    public void handleGatewayEvent(ESGGatewayEvent evt) {
+	log.trace("Got Gateway Event: "+evt);
+
+	//TODO: I know I know... use generics in the event!!! (todo)
+	Gateway gway = (Gateway)evt.getSource();
+	switch(evt.getEventType()) {
+	case ESGGatewayEvent.CONNECTION_FAILED:
+	case ESGGatewayEvent.CONNECTION_BUSY:
+	    log.trace("Transfering from active -to-> inactive list");
+	    if(gateways.remove(gway.getName()) != null) {
+		unavailableGateways.put(gway.getName(),gway);
+	    }
+	    break;
+	case ESGGatewayEvent.CONNECTION_AVAILABLE:
+	    log.trace("Transfering from inactive -to-> active list");
+	    if(unavailableGateways.remove(gway.getName()) != null) {
+		gateways.put(gway.getName(),gway);
+	    }
+	    break;
+	default:
+	    break;
+	}
+	log.trace("Available Gateways: ["+gateways.size()+"] Unavailable: ["+unavailableGateways.size()+"]");	
     }
     
 
