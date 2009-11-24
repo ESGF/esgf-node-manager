@@ -29,6 +29,9 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
 	log.info("Initializing ESG Data Node Manager...");
 	
 	Gateway gateway = new BasicGateway("VM_GWAY","http://172.16.49.129/esg-node/gateway");
+	gateway.init();
+	registerGateway(gateway);
+	
     }
 
 } 
