@@ -97,6 +97,11 @@ Builds the project via ant (obviously).
     <property name="log_file"         	  value="${log_dir}/esg-node_v${version_num}.log"/>
     <property name="javadoc_link_src" 	  value="true"/>
     <property name="main_class"           value="esg.node.core.DataNodeMain"/>
+
+    <property name="jaxb_xsd_dir"         value="${etc_dir}/xsd/"/>
+    <property name="jaxb_gen_src_dir" value="${src_dir}/esg/common/generated"/>
+    <property name="jaxb_gen_package" value="esg.common.generated"/>
+
     
     <path id="main_classpath">
       <fileset dir="${lib_dir}">
@@ -105,7 +110,11 @@ Builds the project via ant (obviously).
       </fileset>
       <pathelement path="${build_dir}"/>
     </path>
-    
+  
+    <taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
+      <classpath refid="main_classpath"/>
+    </taskdef>
+ 
     <echo message="--------------------------------"/> 
     <echo message="version_num       = ${version_num} "/> 
     <echo message="release_name      = ${release_name} "/> 
@@ -144,7 +153,20 @@ Builds the project via ant (obviously).
       ************************************************************
     -->
 
-  <target name="make" depends="init" 
+  <target name="gen_jaxb" depends="init" 
+	  description="(Generates Java Objects from XML schema)">
+    <mkdir dir="${jaxb_gen_src_dir}"/>
+    <xjc package="${jaxb_gen_package}"
+	 destdir="${src_dir}"
+	 removeOldOutput="yes"
+	 readonly="yes">
+      <classpath refid="main_classpath"/>
+      <schema dir="${jaxb_xsd_dir}" includes="*.xsd"/>
+      <produces dir="${jaxb_gen_src_dir}" includes="*.java" />
+    </xjc>
+  </target>
+
+  <target name="make" depends="gen_jaxb" 
 	  description="(Java compiles all the source code)">
     <echo message="Java Compiling Esg-Node..."/> 
     
@@ -309,9 +331,16 @@ Builds the project via ant (obviously).
     <delete file="${dist_dir}/${module}-test.${version_num}.jar"/>
     <tstamp/>
   </target>
+
+  <target name="clean_jaxb" depends="init"
+	  description="(Cleans out the JAXB generated Java source files!)">
+    <echo message="Removing JAXB generated Java source files"/>
+    <delete dir="${jaxb_gen_src_dir}"/>
+  </target>
+
   
   <target name="clean_all"
-	  depends="clean,clean_dist"
+	  depends="clean,clean_dist,clean_jaxb"
 	  description="(Cleans out generatable artifacts)"/>
   
   <!--
