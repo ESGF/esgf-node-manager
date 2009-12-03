@@ -166,7 +166,7 @@ Builds the project via ant (obviously).
     </xjc>
   </target>
 
-  <target name="make" depends="gen_jaxb" 
+  <target name="make" depends="init" 
 	  description="(Java compiles all the source code)">
     <echo message="Java Compiling Esg-Node..."/> 
     
