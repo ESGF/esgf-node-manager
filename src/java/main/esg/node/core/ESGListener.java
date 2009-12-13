@@ -61,8 +61,11 @@
 **/
 package esg.node.core;
 
+import java.util.List;
+
 public interface ESGListener {
 
-    public void esgActionPerformed(ESGEvent event);
+    public void handleESGEvents(List<ESGEvent> events);
+    public void handleESGEvent(ESGEvent event);
     
 }

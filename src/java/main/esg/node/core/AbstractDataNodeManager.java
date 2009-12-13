@@ -65,27 +65,78 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import java.util.Properties;
+import java.util.Enumeration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.regex.PatternSyntaxException;
+import java.io.InputStream;
+import java.io.IOException;
+
 
 public abstract class AbstractDataNodeManager implements DataNodeManager {
 
     private static Log log = LogFactory.getLog(AbstractDataNodeManager.class);
 
-    private Map<String,Gateway> gateways=null;
-    private Map<String,DataNodeComponent> components=null;
+    private Map<String,Gateway> gateways = null;
+    private Map<String,DataNodeComponent> components = null;
+    private Properties props = null;
     
     public AbstractDataNodeManager() {
 	gateways = new HashMap<String,Gateway>();
 	components = new HashMap<String,DataNodeComponent>();
+	loadProperties();
     }
 
     public abstract void init();
 
+    //-------------------------------------------
+    //Property Loading and providing...
+    //-------------------------------------------
+    private void loadProperties() {
+	log.trace("Loading Properties");
+	InputStream in = null;
+	try {
+	    in = this.getClass().getResourceAsStream("datanode.properties");
+	    props = new Properties();
+	    props.load(in);
+	}catch(IOException ex) {
+	    log.error("Problem loading datanode's property file!", ex);
+	}finally {
+	    try { if(in != null) in.close(); } catch (IOException ex) { log.error(ex); }
+	}
+	log.trace("Loaded "+props.size()+" Properties");
+    }
+    
+    public String getNodeProperty(String key) {
+	return props.getProperty(key);
+    }
+    
+    public Properties getMatchingProperties(String regex) {
+	log.trace("getting matching properties for "+regex);
+	Properties matchProps = new Properties();
+	String key = null;
+	for(Enumeration keys = props.propertyNames(); keys.hasMoreElements();) {
+	    key = (String)keys.nextElement();
+	    //TODO: Perform regular expression matching against keys
+	    log.trace("inspecting: "+key);
+	    try{
+		if(key.matches(regex)) {
+		    log.trace("matched: adding...");
+		    matchProps.put(key, props.getProperty(key));
+		}
+	    }catch(PatternSyntaxException ex) {
+		log.error(ex.getMessage(),ex);
+		break;
+	    }
+	}
+	return matchProps;
+    }
+    
     //-------------------------------------------
     //DataNodeManager Interface Implementations...
     //-------------------------------------------
@@ -192,7 +243,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 
     //--------------------------------------------
     //Event dispatching to all registered ESGListeners
-    //calling their esgActionPerformed method
+    //calling their handleESGEvent method
     //--------------------------------------------
 
     private void sendJoinNotification(DataNodeComponent component) {
@@ -225,7 +276,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	Collection<? extends ESGListener> esgListeners = components.values();
 	log.trace("Firing ESGEvent: "+esgEvent);
 	for(ESGListener listener: esgListeners) {
-	    listener.esgActionPerformed(esgEvent);
+	    listener.handleESGEvent(esgEvent);
 	}
     }
 
@@ -233,7 +284,13 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     //-------------------------------------------
     //ESGListener Interface Implementation...
     //-------------------------------------------
-    public void esgActionPerformed(ESGEvent event) {
+    public void handleESGEvents(List<ESGEvent> events) {
+	for(ESGEvent event : events) {
+	    handleESGEvent(event);
+	}
+    }
+    
+    public void handleESGEvent(ESGEvent event) {
 	//TODO:
 	//Just stubbed for now...
 	log.debug("DNM: Got An Event!!!!: "+event+"\nmessage: "+event.getMessage());

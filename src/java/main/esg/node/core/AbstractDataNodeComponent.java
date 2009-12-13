@@ -116,19 +116,25 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
 
     //--------------------------------------------
     //Event dispatching to all registered ESGListeners
-    //calling their esgActionPerformed method
+    //calling their handleESGEvent method
     //--------------------------------------------
     protected void fireESGEvent(ESGEvent esgEvent) {
 	log.trace("Firing Event: "+esgEvent);
 	for(ESGListener listener: esgListeners) {
-	    listener.esgActionPerformed(esgEvent);
+	    listener.handleESGEvent(esgEvent);
 	}
     }
 
     //-------------------------------------------
     //ESGListener Interface Implementation...
     //-------------------------------------------
-    public void esgActionPerformed(ESGEvent event) {
+    public void handleESGEvents(List<ESGEvent> events) {
+	for(ESGEvent event : events) {
+	    handleESGEvent(event);
+	}
+    }
+    
+    public void handleESGEvent(ESGEvent event) {
 	//TODO:
 	//Just stubbed for now...
 	log.trace("Got Action Performed: ["+myName+"]:["+this.getClass().getName()+"]: Got An Event!!!!: "+event);
