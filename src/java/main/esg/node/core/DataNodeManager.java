@@ -61,6 +61,8 @@
 **/
 package esg.node.core;
 
+import java.util.Properties;
+
 public interface DataNodeManager extends ESGListener {
     
     public boolean registerComponent(DataNodeComponent component);
@@ -73,5 +75,6 @@ public interface DataNodeManager extends ESGListener {
     public void removeGateway(Gateway gateway);
     public int numOfGateways();
     public String[] getGatewayNames();
+    public Properties getMatchingProperties(String regex);
     
 }
