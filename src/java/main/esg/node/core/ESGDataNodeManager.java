@@ -89,8 +89,8 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
 	Gateway gateway = new BasicGateway("VM_GWAY","http://172.16.49.129/esg-node/gateway");
 	registerGateway(gateway);
 
-	//ESGNotifier notifier = new ESGNotifier("NOTIFIER");
-	//registerComponent(notifier);
+	ESGNotifier notifier = new ESGNotifier("NOTIFIER");
+	registerComponent(notifier);
 	
 	sendAllLoadedNotification();
     }
