@@ -232,7 +232,7 @@ Builds the project via ant (obviously).
 	   nowarn="on"/>
 
     <copy todir="${build_dir}" filtering="true">
-      <fileset dir="${conf_dir}" includes="**/*.properties"/>
+      <fileset dir="${conf_dir}" includes="**/*.properties,**/*.template"/>
     </copy> 
 
     <tstamp/>
@@ -318,7 +318,7 @@ Builds the project via ant (obviously).
     
     <delete file="${dist_dir}/${module}.war"/> 
     <war destfile="${dist_dir}/${module}.war" webxml="${conf_dir}/datanode-web.xml">
-      <fileset dir="${web_dir}" excludes="WEB-INF/**/web.xml/**"/>
+      <fileset dir="${web_dir}" excludes="WEB-INF/**/web.xml/**,**semantic.cache**"/>
       <lib dir="${dist_dir}/tmplib">
 	<include name="**/*.jar"/>
 	<exclude name="**/*-test*.jar,**/*-common*.jar"/>
