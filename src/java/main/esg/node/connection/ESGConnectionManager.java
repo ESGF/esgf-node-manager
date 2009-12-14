@@ -130,7 +130,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     //--
     
     private void periodicallyPingToGateways() {
-	log.trace("launching ping timer...");
+	log.trace("Launching ping timer...");
 	Timer timer = new Timer();
 	timer.schedule(new TimerTask() { 
 		public final void run() {
@@ -149,7 +149,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     //Test code.
     //----
     private void periodicallyRegisterToGateways() {
-	log.trace("launching ping timer...");
+	log.trace("Launching ping timer...");
 	Timer timer = new Timer();
 
 	//This will transition from active map to inactive map

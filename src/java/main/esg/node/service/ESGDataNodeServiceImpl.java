@@ -73,6 +73,8 @@ import org.apache.commons.logging.impl.*;
 
 import esg.node.core.ESGDataNodeManager;
 import esg.node.core.AbstractDataNodeComponent;
+import esg.node.core.ESGEvent;
+import esg.node.core.ESGJoinEvent;
 import esg.node.connection.ESGConnectionManager;
 import esg.common.service.ESGRemoteEvent;
 
@@ -87,20 +89,21 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     public ESGDataNodeServiceImpl() {
 	log.info("ESGDataNodeServiceImpl instantiated...");
 	setMyName("DataNodeService");
-	init();
+	boot();
     }
 
+    //******************************
     //Bootstrap the entire system...
-    public void init() {
+    //******************************
+    public void boot() {
+	log.trace("Bootstrapping System...");
 	datanodeMgr = new ESGDataNodeManager();
-	connMgr = new ESGConnectionManager();
-	
 	datanodeMgr.registerComponent(this);
-	datanodeMgr.registerComponent(connMgr);
-
 	datanodeMgr.init();
     }
-
+    //******************************
+    
+    public void init() { log.trace("no-op initialization"); }
 
     //------------------------------------------------------------
     //We will consider this object not valid if there are no gateways
@@ -116,7 +119,7 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     //us huge events that flood our system.
     private boolean amAvailable() { 
 	boolean ret = false;
-	ret = connMgr.amAvailable(); 
+	ret = (connMgr == null) ? false : connMgr.amAvailable(); 
 	log.trace("amAvailable() -> "+ret);
 	return ret;
     }
@@ -151,6 +154,28 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 	//(for example)
 
 	return true;
+    }
+
+    //--------------------------------------------
+    //Event handling... (for join events) needs connection manager!
+    //--------------------------------------------
+    public void esgActionPerformed(ESGEvent esgEvent) {
+	//we only care about join events
+	if(!(esgEvent instanceof ESGJoinEvent)) return;
+
+	ESGJoinEvent event = (ESGJoinEvent)esgEvent;
+	
+	//we only care bout Gateways joining
+	if(!(event.getJoiner() instanceof ESGConnectionManager)) return;
+
+	if(event.hasJoined()) {
+	    log.trace("Detected That The ESGConnectionManager Has Joined: "+event.getJoiner().getName());
+	    connMgr = (ESGConnectionManager)event.getJoiner();
+	}else {
+	    log.trace("Detected That The ESGConnectionManager Has Left: "+event.getJoiner().getName());
+	    connMgr = null;
+	}
+	log.trace("connMgr = "+connMgr);
     }
 
 

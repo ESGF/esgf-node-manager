@@ -61,6 +61,9 @@
 **/
 package esg.node.core;
 
+import esg.node.connection.ESGConnectionManager;
+import esg.node.components.notification.ESGNotifier;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
@@ -68,17 +71,28 @@ import org.apache.commons.logging.impl.*;
 public class ESGDataNodeManager extends AbstractDataNodeManager {
 
     private static Log log = LogFactory.getLog(ESGDataNodeManager.class);
-    //TODO: the logic of the system, pulling in the components and
-    //managing them.
-    public ESGDataNodeManager() { }
+    private ESGConnectionManager connMgr = null;
+
+    //TODO: the logic of the system, pulling in the components from a
+    //config file and managing them.
+    
+    public ESGDataNodeManager() {
+	log.info("Instantiating ESGDataNodeManager...");
+    }
 
     public void init() {
 	log.info("Initializing ESG Data Node Manager...");
+	
+	connMgr = new ESGConnectionManager();
+	registerComponent(connMgr);
 
 	Gateway gateway = new BasicGateway("VM_GWAY","http://172.16.49.129/esg-node/gateway");
-	gateway.init();
 	registerGateway(gateway);
+
+	//ESGNotifier notifier = new ESGNotifier("NOTIFIER");
+	//registerComponent(notifier);
 	
+	sendAllLoadedNotification();
     }
 
 } 

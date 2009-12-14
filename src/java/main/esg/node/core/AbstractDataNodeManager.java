@@ -101,11 +101,16 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	log.trace("Loading Properties");
 	InputStream in = null;
 	try {
-	    in = this.getClass().getResourceAsStream("datanode.properties");
+	    Resource config = new Resource("datanode.properties");
+	    in = config.getInputStream();
 	    props = new Properties();
 	    props.load(in);
+	    log.trace("Properties of datanode.properties file: "+props);
 	}catch(IOException ex) {
 	    log.error("Problem loading datanode's property file!", ex);
+	}catch(NullPointerException ex) {
+	    log.error("PROPERTY FILE INPUT STREAM IS NULL!!",ex);
+	    throw ex;
 	}finally {
 	    try { if(in != null) in.close(); } catch (IOException ex) { log.error(ex); }
 	}
@@ -158,6 +163,10 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	//interface but by the AbstractDataNodeComponent abstract
 	//class)
 	((AbstractDataNodeComponent)component).setDataNodeManager(this);
+
+	log.trace("Initializing newly registered component: "+component.getName());
+	component.init();
+
 	sendJoinNotification(component);
 	component.addESGListener(this);
 	return true;
@@ -262,6 +271,12 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 					       component,
 					       ESGJoinEvent.UNJOIN);	
 	fireESGEvent(unjoinEvent);
+    }
+
+    protected void sendAllLoadedNotification() {
+	log.trace("Sending All-Loaded Notification Broadcast...");
+	ESGSystemEvent allLoadedEvent = new ESGSystemEvent(this,ESGSystemEvent.ALL_LOADED);
+	fireESGEvent(allLoadedEvent);
     }
 
 
