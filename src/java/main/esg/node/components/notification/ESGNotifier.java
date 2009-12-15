@@ -88,6 +88,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import esg.common.db.DatabaseResource;
 import esg.node.core.*;
 
 public class ESGNotifier extends AbstractDataNodeComponent {
@@ -121,7 +122,7 @@ public class ESGNotifier extends AbstractDataNodeComponent {
 
 	messageTemplate = loadMessage(props.getProperty("mail.notification.messageTemplateFile"));
 	session = Session.getInstance(props, null);
-	notificationDAO = new NotificationDAO();
+	notificationDAO = new NotificationDAO(DatabaseResource.getInstance().getDataSource());
 
 	dataset_pattern = Pattern.compile("@@dataset@@");
 	files_pattern   = Pattern.compile("@@updated_files@@");

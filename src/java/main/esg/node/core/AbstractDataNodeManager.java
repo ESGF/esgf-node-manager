@@ -77,6 +77,10 @@ import java.util.regex.PatternSyntaxException;
 import java.io.InputStream;
 import java.io.IOException;
 
+//TODO: think about if we want this dependence on an outside package...
+//may want to move the datasource managing to the ESGDataNodeManager subclass
+//to keep this class prestine w.r.t. dependencies... think about it... -gmb
+import esg.common.db.DatabaseResource; 
 
 public abstract class AbstractDataNodeManager implements DataNodeManager {
 
@@ -84,12 +88,17 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 
     private Map<String,Gateway> gateways = null;
     private Map<String,DataNodeComponent> components = null;
+    private Map<String,Properties> propCache = null;
     private Properties props = null;
     
     public AbstractDataNodeManager() {
 	gateways = new HashMap<String,Gateway>();
 	components = new HashMap<String,DataNodeComponent>();
+	propCache = new HashMap<String,Properties>();
 	loadProperties();
+
+	//Parcel out the database properties... and setup database connection pool.
+	DatabaseResource.init(props.getProperty("db.driver")).setupDataSource(getMatchingProperties("^db.*"));
     }
 
     public abstract void init();
@@ -101,6 +110,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	log.trace("Loading Properties");
 	InputStream in = null;
 	try {
+	    propCache.clear();
 	    Resource config = new Resource("datanode.properties");
 	    in = config.getInputStream();
 	    props = new Properties();
@@ -121,9 +131,24 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	return props.getProperty(key);
     }
     
+    
+    //NOTE: the caching is a space vs speed trade off I think it is
+    //cleaner to worry about such things (optimizations) at the root
+    //of the issue than to make the interested parties (callers) worry
+    //about how to parismoniously use this call. right? :-).  The
+    //memory trade off is not so concrete since we are saving on "new"
+    //property object creation, so if many calls are made it is
+    //efficient.  If few calls are made, well... oh well... Just as
+    //important, we are giving our callers less to worry about! :-)
+
+    //Regex filtering the global properties by regex on keys
     public Properties getMatchingProperties(String regex) {
 	log.trace("getting matching properties for "+regex);
-	Properties matchProps = new Properties();
+	Properties matchProps = null;
+	if( (matchProps = propCache.get(regex)) != null) {
+	    return matchProps;
+	}
+	matchProps = new Properties();
 	String key = null;
 	for(Enumeration keys = props.propertyNames(); keys.hasMoreElements();) {
 	    key = (String)keys.nextElement();
@@ -139,6 +164,8 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 		break;
 	    }
 	}
+	propCache.put(regex,matchProps);
+	log.trace("propCache size = "+propCache.size());
 	return matchProps;
     }
     

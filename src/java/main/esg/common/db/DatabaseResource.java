@@ -57,109 +57,92 @@
 
 /**
    Description:
-   Perform sql query to find out all the people who
-   Return Tuple of info needed (dataset_id, recipients/(user), names of updated files)
-   
-**/
-package esg.node.components.notification;
 
-import java.io.Serializable;
+**/
+package esg.common.db;
+
 import java.util.Properties;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import javax.sql.DataSource;
 
-import org.apache.commons.dbutils.QueryRunner;
-import org.apache.commons.dbutils.ResultSetHandler;
+import org.apache.commons.pool.ObjectPool;
+import org.apache.commons.pool.impl.GenericObjectPool;
+import org.apache.commons.dbcp.ConnectionFactory;
+import org.apache.commons.dbcp.PoolingDataSource;
+import org.apache.commons.dbcp.PoolableConnectionFactory;
+import org.apache.commons.dbcp.DriverManagerConnectionFactory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-public class NotificationDAO implements Serializable {
+//Singleton class for getting database DataSources
+public class DatabaseResource {
 
-    //TODO figure out what these queries should be!
-    private static final String notificationQuery = "Select blah from foo where ? = alpha";
-    private static final String markTimeQuery = "insert ?  into blah";
+    private static Log log = LogFactory.getLog(DatabaseResource.class);
+    private static DatabaseResource instance = null;
+    private ObjectPool connectionPool = null;
+    private PoolingDataSource dataSource = null;
+    private String driverName = null;
 
-    private static final Log log = LogFactory.getLog(NotificationDAO.class);
-
-    private DataSource dataSource = null;
-    private QueryRunner queryRunner = null;
-    private ResultSetHandler<NotificationRecipientInfo> handler = null;
-
-    public NotificationDAO(DataSource dataSource) {
-	this.setDataSource(dataSource);
+    public static DatabaseResource init(String driverName) {
+	return ( (instance == null) ? instance : (instance = new DatabaseResource(driverName)) );
     }
-    
-    //Not preferred constructor but here for serialization requirement.
-    public NotificationDAO() { this(null); }
-
-    //Initialize result set handlers...
-    public void init() {
-	handler = new ResultSetHandler<NotificationRecipientInfo>() {
-	    public NotificationRecipientInfo handle(ResultSet rs) throws SQLException {
-		NotificationRecipientInfo nri = new NotificationRecipientInfo();
-		if(!rs.next()) { return null; }
-		
-		//DO STUFF...
-		//Wrestle results into nri object...
-		
-		return nri;
-	    }
-	};
-	
+    public static DatabaseResource getInstance() { 
+	if(instance == null) log.warn("Instance is NULL!!! \"init\" must be called prior to calling this method!!");
+	return instance; 
     }
 
-    public void setDataSource(DataSource dataSource) {
-	this.dataSource = dataSource;
-	this.queryRunner = new QueryRunner(dataSource);
-    }
-    
-    
-    public NotificationRecipientInfo getNotificationRecipientInfo() {
-	if(this.dataSource == null) {
-	    log.error("The datasource ["+dataSource+"] is not valid, Please call setDataSource(...) first!!!");
-	    return null;
+    //Private Singleton Constructor...
+    private DatabaseResource(String driverName) { 
+	log.trace("Instantating DatabaseResource object...");
+	try {
+	    log.info("Loading JDBC driver: "+driverName);
+	    Class.forName(driverName);
+	    this.driverName = driverName;
+	} catch (ClassNotFoundException e) {
+	    log.error(e);
 	}
-	log.trace("Getting Notification Recipient Info... \n Query = notificationQuery");
-	NotificationRecipientInfo nri = null;
+    }
+    
+    public void setupDataSource(Properties props) {
+	log.trace("Setting up data source ");
+	if(props == null) { log.error("Property object is ["+props+"]: Cannot setup up data source"); return; }
+	//Ex: jdbc:postgresql://pcmdi3.llnl.gov:5432/esg-datanode
+	String protocol = props.getProperty("db.protocol","jdbc:postgresql:");
+	String host = props.getProperty("db.host","localhost");
+	String port = props.getProperty("db.port","5432");
+	String database = props.getProperty("db.database","esg-datanode");
+	String user = props.getProperty("db.user","dbsuper");
+	String password = props.getProperty("db.password","changeme");
+
+	String connectURI = protocol+"//"+host+":"+port+"/"+database; //zoiks
+	log.info("Connection URI = "+connectURI);
+	connectionPool = new GenericObjectPool(null);
+ 	ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connectURI,user,password);
+ 	PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory,connectionPool,null,null,false,true);
+	dataSource = new PoolingDataSource(connectionPool);
+    }
+
+    public String getDriverName() { return driverName; }
+    
+    public DataSource getDataSource() {
+	if(null == dataSource) log.error("Data Source Is NULL!!!");
+	return dataSource;
+    }
+
+    public void showDriverStats() {
+ 	System.out.println(" NumActive: " + (connectionPool == null ? "X" : connectionPool.getNumActive()));
+ 	System.out.println(" NumIdle:   " + (connectionPool == null ? "X" : connectionPool.getNumIdle()));
+    }
+
+    public void shutdownResource() {
+	log.info("Shutting Down Database Resource! ("+driverName+")");
 	try{
-	    nri = queryRunner.query(notificationQuery, handler);
-	}catch(SQLException ex) {
-	    log.error(ex);
+	    connectionPool.close();
+	}catch(Exception ex) {
+	    log.error("Problem with closing connection Pool!",ex);
 	}
-	
-	//TODO: fake data...
-	nri = new NotificationRecipientInfo();
-	nri.dataset_id="faux_dataset_id_v1";
-	nri.endusers = new String[] {"gavin@llnl.gov","williams13@llnl.gov","drach1@llnl.gov"};
-	nri.changedFiles = new String[] {"faux_file1","faux_file2","faux_file3","faux_file4"};
-	
-	return nri;
-    }
-    
-    public int markLastCompletionTime(){
-	int ret = 0;
-	try{
-	    ret = queryRunner.update(markTimeQuery);
-	}catch(SQLException ex) {
-	    log.error(ex);
-	}
-	return ret;
-    }
-
-    //Result data holder object....
-    public static class NotificationRecipientInfo {
-	String dataset_id = null;
-	String[] endusers = null;
-	String[] changedFiles = null;
-    }
-
-    public String toString() {
-	StringBuilder out = new StringBuilder();
-	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+notificationQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]\n"));
-	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+notificationQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]"));
-	return out.toString();
+	dataSource = null;
+	instance = null;
     }
 }
