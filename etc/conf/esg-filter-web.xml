@@ -1,0 +1,32 @@
+
+
+  <!-- **************************************** -->
+  <!-- Snippet of web.xml entry for this filter -->
+  <!-- **************************************** -->
+
+  <filter>
+    <filter-name>AccessLoggingFilter</filter-name>
+    <filter-class>esg.node.filters.AccessLoggingFilter</filter-class>
+    <init-param>
+      <param-name>db.driver</param-name>
+      <param-value>@db.driver@</param-value>
+      <param-name>db.protocol</param-name>
+      <param-value>@db.protocol@</param-value>
+      <param-name>db.host</param-name>
+      <param-value>@db.host@</param-value>
+      <param-name>db.port</param-name>
+      <param-value>@db.port@</param-value>
+      <param-name>db.database</param-name>
+      <param-value>@db.database@</param-value>
+      <param-name>db.user</param-name>
+      <param-value>@db.user@</param-value>
+      <param-name>db.password</param-name>
+      <param-value>@db.password@</param-value>
+    </init-param>
+  </filter>
+  <filter-mapping>
+    <filter-name>AccessLoggingFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <!-- **************************************** -->
