@@ -251,7 +251,7 @@ Builds the project via ant (obviously).
 	  description="(Creates the jar file distribution of this project)">
     <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}.${version_num}.jar"/> 
     <delete> 
-      <fileset dir="." includes="${dist_dir}/${module}*.jar"/>
+      <fileset dir="." includes="${dist_dir}/${module}.${version_num}.jar"/>
     </delete>
     <mkdir dir="${dist_dir}" />
     <jar destfile="${dist_dir}/${module}.${version_num}.jar">
@@ -273,7 +273,7 @@ Builds the project via ant (obviously).
   <target name="make_test_jar" depends="make_test" description="(Creates test jar file)">
     <echo message="JAR -  ${test_build_dir} ->> ${dist_dir}/${module}-test.${version_num}.jar"/> 
     <delete> 
-      <fileset dir="." includes="${dist_dir}/${module}*.jar"/>
+      <fileset dir="." includes="${dist_dir}/${module}-test.${version_num}.jar"/>
     </delete>
     <mkdir dir="${dist_dir}" />
     <jar destfile="${dist_dir}/${module}-test.${version_num}.jar">
@@ -288,11 +288,34 @@ Builds the project via ant (obviously).
       </manifest>
     </jar>
   </target>
+  
+  <target name="make_filter_jar" depends="make"
+	  description="(Creates the jar file distribution for service filters)">
+    <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}-filters.${version_num}.jar"/> 
+    <delete> 
+      <fileset dir="." includes="${dist_dir}/${module}-filters.${version_num}.jar"/>
+    </delete>
+    <mkdir dir="${dist_dir}" />
+    <jar destfile="${dist_dir}/${module}-filters.${version_num}.jar">
+      <fileset dir="${build_dir}" 
+	       includes="esg/node/filters/**,esg/common/db/**,**/*.properties"
+	       excludes="**/test/**"/>
+      <manifest>
+	<attribute name="Organization" value="Earth Systems Grid"/>
+	<attribute name="Author"       value="Gavin M. Bell"/>
+	<attribute name="Project"      value="Esg-Node"/>
+	<attribute name="Version"      value="${version_num}"/>
+	<attribute name="Release-Name" value="${release_name}"/>
+	<section name="org/"/>
+      </manifest>
+    </jar>
+  </target>
+  
 
   <target name="make_common_jar" depends="make" description="(Creates common jar file)">
     <echo message="JAR -  ${test_build_dir} ->> ${dist_dir}/${module}-common.${version_num}.jar"/> 
     <delete> 
-      <fileset dir="." includes="${dist_dir}/${module}*.jar"/>
+      <fileset dir="." includes="${dist_dir}/${module}-common*.jar"/>
     </delete>
     <mkdir dir="${dist_dir}" />
     <jar destfile="${dist_dir}/${module}-common.${version_num}.jar">
@@ -308,6 +331,8 @@ Builds the project via ant (obviously).
       </manifest>
     </jar>
   </target>
+
+  <target name="make_all_jars" depends="make_jar,make_test_jar,make_filter_jar,make_common_jar"/>
 
   <target name="make_war" depends="make,init"
 	  description="(Creates war file of this project)">
@@ -330,14 +355,15 @@ Builds the project via ant (obviously).
     <delete dir="${dist_dir}/tmplib"/>
   </target>
 
+
   <target name="make_dist" depends="make_war"
 	  description="(Creates full software distribution)">
-    
+    <!-- TODO -->
   </target>
 
   <target name="make_dist_in_place" depends="make_war"
 	  description="(Creates full software distribution deployed directly to local web app server)">
-    <!-- TODO -->
+    <!-- TODO: integrate the tomcat ant tasks to do this properly -->
   </target>
   
   
