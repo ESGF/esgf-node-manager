@@ -203,15 +203,18 @@ public class ESGNotifier extends AbstractDataNodeComponent {
 	return success;
     }
     
+    //THE CALL TO FETCH INFO FROM THE DATABASE... (one level removed)
     protected boolean fetchNextUpdates() {
 	log.trace("Fetching Next set of notification updates");
+
+	//TODO: May have to take a list of datasets here...
 	NotificationDAO.NotificationRecipientInfo nri = notificationDAO.getNotificationRecipientInfo();
 	return sendNotification(nri.dataset_id,nri.endusers,nri.changedFiles);
     }
 
-    protected void markTime() {
+    protected int markTime() {
 	log.trace("Marking Time of notification completion");
-	notificationDAO.markLastCompletionTime();
+	return notificationDAO.markLastCompletionTime();
     }
 
     private void performNextNotification() {
@@ -248,6 +251,8 @@ public class ESGNotifier extends AbstractDataNodeComponent {
 	
 	//TODO: Put in code to be more discerning regarding what
 	//events we choose to handle.
+
+	//May have to get back an event object with dataset values!!!
 	
 	dataAvailable = true;
 	log.trace("Setting dataAvailable to : "+dataAvailable);

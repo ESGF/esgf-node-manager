@@ -90,9 +90,12 @@ public class NotificationDAO implements Serializable {
 
     public NotificationDAO(DataSource dataSource) {
 	this.setDataSource(dataSource);
+	init();
     }
     
-    //Not preferred constructor but here for serialization requirement.
+    /**
+       Not preferred constructor but here for serialization requirement.
+    */
     public NotificationDAO() { this(null); }
 
     //Initialize result set handlers...
@@ -102,7 +105,7 @@ public class NotificationDAO implements Serializable {
 		NotificationRecipientInfo nri = new NotificationRecipientInfo();
 		if(!rs.next()) { return null; }
 		
-		//DO STUFF...
+		//TODO...
 		//Wrestle results into nri object...
 		
 		return nri;
@@ -116,13 +119,13 @@ public class NotificationDAO implements Serializable {
 	this.queryRunner = new QueryRunner(dataSource);
     }
     
-    
+    //TODO: May have to take a list of update datasets here...
     public NotificationRecipientInfo getNotificationRecipientInfo() {
 	if(this.dataSource == null) {
 	    log.error("The datasource ["+dataSource+"] is not valid, Please call setDataSource(...) first!!!");
 	    return null;
 	}
-	log.trace("Getting Notification Recipient Info... \n Query = notificationQuery");
+	log.trace("Getting Notification Recipient Info... \n Query = "+notificationQuery);
 	NotificationRecipientInfo nri = null;
 	try{
 	    nri = queryRunner.query(notificationQuery, handler);
@@ -131,16 +134,16 @@ public class NotificationDAO implements Serializable {
 	}
 	
 	//TODO: fake data...
-	nri = new NotificationRecipientInfo();
-	nri.dataset_id="faux_dataset_id_v1";
-	nri.endusers = new String[] {"gavin@llnl.gov","williams13@llnl.gov","drach1@llnl.gov"};
-	nri.changedFiles = new String[] {"faux_file1","faux_file2","faux_file3","faux_file4"};
+	//nri = new NotificationRecipientInfo();
+	//nri.dataset_id="faux_dataset_id_v1";
+	//nri.endusers = new String[] {"gavin@llnl.gov","williams13@llnl.gov","drach1@llnl.gov"};
+	//nri.changedFiles = new String[] {"faux_file1","faux_file2","faux_file3","faux_file4"};
 	
 	return nri;
     }
     
     public int markLastCompletionTime(){
-	int ret = 0;
+	int ret = -1;
 	try{
 	    ret = queryRunner.update(markTimeQuery);
 	}catch(SQLException ex) {
@@ -159,7 +162,7 @@ public class NotificationDAO implements Serializable {
     public String toString() {
 	StringBuilder out = new StringBuilder();
 	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+notificationQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]\n"));
-	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+notificationQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]"));
+	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+markTimeQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]"));
 	return out.toString();
     }
 }
