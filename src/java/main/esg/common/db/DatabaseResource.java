@@ -85,7 +85,13 @@ public class DatabaseResource {
     private String driverName = null;
 
     public static DatabaseResource init(String driverName) {
-	return ( (instance == null) ? instance : (instance = new DatabaseResource(driverName)) );
+	log.trace("Initializing... with Driver: ["+driverName+"]");
+	if(instance == null) {
+	    instance = new DatabaseResource(driverName);
+	}else {
+	    log.trace("fetching instance: ["+instance+"]");
+	}
+	return instance;
     }
     public static DatabaseResource getInstance() { 
 	if(instance == null) log.warn("Instance is NULL!!! \"init\" must be called prior to calling this method!!");
@@ -96,7 +102,7 @@ public class DatabaseResource {
     private DatabaseResource(String driverName) { 
 	log.trace("Instantating DatabaseResource object...");
 	try {
-	    log.info("Loading JDBC driver: "+driverName);
+	    log.info("Loading JDBC driver: ["+driverName+"]");
 	    Class.forName(driverName);
 	    this.driverName = driverName;
 	} catch (ClassNotFoundException e) {
@@ -104,9 +110,9 @@ public class DatabaseResource {
 	}
     }
     
-    public void setupDataSource(Properties props) {
+    public DatabaseResource setupDataSource(Properties props) {
 	log.trace("Setting up data source ");
-	if(props == null) { log.error("Property object is ["+props+"]: Cannot setup up data source"); return; }
+	if(props == null) { log.error("Property object is ["+props+"]: Cannot setup up data source"); return this; }
 	//Ex: jdbc:postgresql://pcmdi3.llnl.gov:5432/esg-datanode
 	String protocol = props.getProperty("db.protocol","jdbc:postgresql:");
 	String host = props.getProperty("db.host","localhost");
@@ -121,6 +127,7 @@ public class DatabaseResource {
  	ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connectURI,user,password);
  	PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory,connectionPool,null,null,false,true);
 	dataSource = new PoolingDataSource(connectionPool);
+	return this;
     }
 
     public String getDriverName() { return driverName; }
