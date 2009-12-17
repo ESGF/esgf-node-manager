@@ -153,10 +153,10 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	for(Enumeration keys = props.propertyNames(); keys.hasMoreElements();) {
 	    key = (String)keys.nextElement();
 	    //TODO: Perform regular expression matching against keys
-	    log.trace("inspecting: "+key);
+	    //log.trace("inspecting: "+key);
 	    try{
 		if(key.matches(regex)) {
-		    log.trace("matched: adding...");
+		    //log.trace("matched: adding...");
 		    matchProps.put(key, props.getProperty(key));
 		}
 	    }catch(PatternSyntaxException ex) {

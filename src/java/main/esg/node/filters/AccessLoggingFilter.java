@@ -152,6 +152,7 @@ public class AccessLoggingFilter implements Filter {
 	DatabaseResource.getInstance().shutdownResource();
     }
 
+    @SuppressWarnings("unchecked")
     public void doFilter(ServletRequest request,
 			 ServletResponse response, 
 			 FilterChain chain) throws IOException, ServletException {
@@ -171,6 +172,16 @@ public class AccessLoggingFilter implements Filter {
 		    String email = validationMap.get("email");
 		    
 		    accessLoggingDAO.log(userid,url,email);
+		    
+		    //Want to make sure that any snooping filters
+		    //behind this one does not have access to this
+		    //information (posted by the
+		    //authorizationTokenValidationFilter, which should
+		    //immediately preceed this one).  This is in
+		    //effort to keep limit information exposure the
+		    //best we can.
+		    req.removeAttribute("validationMap");
+		    
 		}else{
 		    log.warn("Validation Map is null ["+validationMap+"]");
 		}

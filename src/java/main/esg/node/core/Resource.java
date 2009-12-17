@@ -215,6 +215,7 @@ public class Resource implements Serializable {
     // Splits a String into pieces according to a delimiter.
     // Uses JDK 1.1 classes for backward compatibility.
     // JDK 1.4 actually has a split(  ) method now.
+    @SuppressWarnings("unchecked")
     private static String[  ] split(String str, String delim) {
 	// Use a Vector to hold the split strings.
 	Vector v = new Vector(  );
