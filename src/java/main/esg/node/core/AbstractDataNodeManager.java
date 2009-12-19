@@ -111,11 +111,11 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	InputStream in = null;
 	try {
 	    propCache.clear();
-	    Resource config = new Resource("datanode.properties");
+	    Resource config = new Resource("node.properties");
 	    in = config.getInputStream();
 	    props = new Properties();
 	    props.load(in);
-	    log.trace("Properties of datanode.properties file: "+props);
+	    log.trace("Properties of node.properties file: "+props);
 	}catch(IOException ex) {
 	    log.error("Problem loading datanode's property file!", ex);
 	}catch(NullPointerException ex) {
