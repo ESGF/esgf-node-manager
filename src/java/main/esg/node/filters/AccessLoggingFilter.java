@@ -168,10 +168,10 @@ public class AccessLoggingFilter implements Filter {
 		if(validationMap != null) {
 		    
 		    String userid = validationMap.get("user");
-		    String url = req.getRequestURL().toString();
 		    String email = validationMap.get("email");
+		    String url = req.getRequestURL().toString();
 		    
-		    accessLoggingDAO.log(userid,url,email);
+		    accessLoggingDAO.log(userid,email,url);
 		    
 		    //Want to make sure that any snooping filters
 		    //behind this one does not have access to this
