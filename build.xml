@@ -316,7 +316,7 @@ Builds the project via ant (obviously).
     <jar destfile="${dist_dir}/${module}-filters.${version_num}.jar">
       <fileset dir="${build_dir}" 
 	       includes="esg/node/filters/**,esg/common/db/**,**/*.properties,**/*filter-web.xml"
-	       excludes="**/test/**,**/datanode.properties/**"/>
+	       excludes="**/test/**,**/node.properties/**"/>
       <manifest>
 	<attribute name="Organization" value="Earth Systems Grid"/>
 	<attribute name="Author"       value="Gavin M. Bell"/>
@@ -361,7 +361,7 @@ Builds the project via ant (obviously).
     </copy>
     
     <delete file="${dist_dir}/${module}.war"/> 
-    <war destfile="${dist_dir}/${module}.war" webxml="${conf_dir}/datanode-web.xml">
+    <war destfile="${dist_dir}/${module}.war" webxml="${conf_dir}/node-web.xml">
       <fileset dir="${web_dir}" excludes="WEB-INF/**/web.xml/**,**semantic.cache**"/>
       <lib dir="${dist_dir}/tmplib">
 	<include name="**/*.jar"/>
