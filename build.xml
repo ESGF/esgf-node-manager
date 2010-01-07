@@ -384,9 +384,21 @@ Builds the project via ant (obviously).
   </target>
 
 
-  <target name="make_dist" depends="make_war"
+  <target name="make_dist" depends="make_war,make_all_jars"
 	  description="(Creates full software distribution)">
-    <!-- TODO -->
+    <delete file="${dist_dir}/${module}.${version_num}.tar.gz"/> 
+    <tar destfile="${dist_dir}/${module}.${version_num}.tar">
+      <fileset dir="${dist_dir}" includes="**/*.jar,**/*.war"/>
+      <tarfileset dir="${etc_dir}/db" prefix="db"/>
+      <tarfileset dir="${basedir}">
+	<include name="LICENSE"/>
+	<include name="INSTALL"/>
+	<include name="README"/>
+      </tarfileset>
+    </tar>
+    <gzip destfile="${dist_dir}/${module}.${version_num}.tar.gz" src="${dist_dir}/${module}.${version_num}.tar"/>
+    <delete file="${dist_dir}/${module}.${version_num}.tar"/> 
+
   </target>
 
   <target name="make_dist_in_place" depends="make_war"
