@@ -90,6 +90,8 @@ Builds the project via ant (obviously).
   <property file="./etc/esg-node.ant.properties"/> 
   <echo message="user property file ./etc/esg-node.ant.properties"/>
 
+  <property name="filter" value="false"/>
+
   <!-- **static defines** -->
   <property name="version_num" value="0.0.0"/>
   <filter token="version_num"  value="${version_num}"/>
@@ -261,7 +263,7 @@ Builds the project via ant (obviously).
       <compilerarg value="-Xlint"/>
     </javac>
 
-    <copy todir="${build_dir}" filtering="true">
+    <copy todir="${build_dir}" filtering="${filter}">
       <fileset dir="${conf_dir}" includes="**/*.properties,**/*.template,**/*filter-web.xml"/>
     </copy> 
 
@@ -388,9 +390,9 @@ Builds the project via ant (obviously).
 	  description="(Creates full software distribution)">
     <delete file="${dist_dir}/${module}.${version_num}.tar.gz"/> 
     <tar destfile="${dist_dir}/${module}.${version_num}.tar">
-      <fileset dir="${dist_dir}" includes="**/*.jar,**/*.war"/>
-      <tarfileset dir="${etc_dir}/db" prefix="db"/>
-      <tarfileset dir="${basedir}">
+      <tarfileset dir="${dist_dir}" includes="**/*.jar,**/*.war" prefix="esg-node.${version_num}"/>
+      <tarfileset dir="${etc_dir}/db" prefix="esg-node.${version_num}/db"/>
+      <tarfileset dir="${basedir}" prefix="esg-node.${version_num}">
 	<include name="LICENSE"/>
 	<include name="INSTALL"/>
 	<include name="README"/>
