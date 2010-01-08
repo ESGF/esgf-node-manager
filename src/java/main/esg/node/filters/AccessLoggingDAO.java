@@ -78,7 +78,7 @@ import org.apache.commons.logging.impl.*;
 public class AccessLoggingDAO implements Serializable {
 
     //TODO figure out what these queries should be!
-    private static final String accessLoggingQuery = "Insert ? ? ? into blah";
+    private static final String accessLoggingQuery = "Insert ? ? ? ? into blah";
 
     private static final Log log = LogFactory.getLog(AccessLoggingDAO.class);
 
@@ -101,12 +101,12 @@ public class AccessLoggingDAO implements Serializable {
     }
     
     //TODO: put in args and setup query!!!
-    public int log(String userid,  String email, String url) {
+    public int log(String userid,  String email, String url, String remoteAddress) {
 	int ret = -1;
 	try{
 	    //TODO perhaps the url can be used to resolve the dataset???
 	    //That is the bit of information we really want to also have.
-	    ret = queryRunner.update(accessLoggingQuery,userid,url,email);
+	    ret = queryRunner.update(accessLoggingQuery,userid,url,email,remoteAddress);
 	}catch(SQLException ex) {
 	    log.error(ex);
 	}
