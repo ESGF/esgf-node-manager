@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+
+<!--
+/***************************************************************************
+*                                                                          *
+*  Organization: Lawrence Livermore National Lab (LLNL)                    *
+*   Directorate: Computation                                               *
+*    Department: Computing Applications and Research                       *
+*      Division: S&T Global Security                                       *
+*        Matrix: Atmospheric, Earth and Energy Division                    *
+*       Program: PCMDI                                                     *
+*       Project: Earth Systems Grid (ESG) Data Node Software Stack         *
+*  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
+*                                                                          *
+****************************************************************************
+*                                                                          *
+*   Copyright (c) 2009, Lawrence Livermore National Security, LLC.         *
+*   Produced at the Lawrence Livermore National Laboratory                 *
+*   Written by: Gavin M. Bell (gavin@llnl.gov)                             *
+*   LLNL-CODE-420962                                                       *
+*                                                                          *
+*   All rights reserved. This file is part of the:                         *
+*   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
+*                                                                          *
+*   For details, see http://esg-repo.llnl.gov/esg-node/                    *
+*   Please also read this link                                             *
+*    http://esg-repo.llnl.gov/LICENSE                                      *
+*                                                                          *
+*   * Redistribution and use in source and binary forms, with or           *
+*   without modification, are permitted provided that the following        *
+*   conditions are met:                                                    *
+*                                                                          *
+*   * Redistributions of source code must retain the above copyright       *
+*   notice, this list of conditions and the disclaimer below.              *
+*                                                                          *
+*   * Redistributions in binary form must reproduce the above copyright    *
+*   notice, this list of conditions and the disclaimer (as noted below)    *
+*   in the documentation and/or other materials provided with the          *
+*   distribution.                                                          *
+*                                                                          *
+*   Neither the name of the LLNS/LLNL nor the names of its contributors    *
+*   may be used to endorse or promote products derived from this           *
+*   software without specific prior written permission.                    *
+*                                                                          *
+*   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS    *
+*   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT      *
+*   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS      *
+*   FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE    *
+*   LIVERMORE NATIONAL SECURITY, LLC, THE U.S. DEPARTMENT OF ENERGY OR     *
+*   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,           *
+*   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT       *
+*   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF       *
+*   USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND    *
+*   ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,     *
+*   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT     *
+*   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF     *
+*   SUCH DAMAGE.                                                           *
+*                                                                          *
+***************************************************************************/
+
+/**
+   Description:
+
+   This is the ant build file for the esg-node project.  This file
+   should not be modified.  A user must set the values of the
+   properties used in this file.  The point of this ant script is to
+   leverage Ant to make contact to the database and run scripts.
+
+   Ex: How to call this ant script... (snippet from esg-node install script)
+   ${ANT_HOME}/bin/ant -buildfile database-tasks.ant.xml \
+      -Dsql.jdbc.base.url=${postgress_protocol}//${postgress_host}:${postgress_port}/ \
+      -Dsql.jdbc.database.name=${node_db_name} \
+      -Dsql.jdbc.database.user=${postgress_user} \
+      -Dsql.jdbc.database.password=${pg_sys_acct_passwd} \
+      -Dsql.jdbc.driver.jar=${node_app_home}/WEB-INF/lib/${postgress_jar} make_node_db
+
+
+   NOTE:
+   If you get this error:
+
+   BUILD FAILED
+   java.lang.NoSuchMethodError: org.apache.tools.ant.util.FileUtils.getFileUtils()L
+   org/apache/tools/ant/util/FileUtils;
+    
+   It means somewhere in your system and/or classpath is an old ANT clobbering
+   the one you want to run. Use the "-noclasspath" flag in the ant command.
+ 
+**/
+-->
+
+<project name="node_db_tasks"  basedir=".">
+  <description>Node Database Tasks.</description>
+
+  <property file="${node.property.file}"/>
+  <echo message="Loaded property file ${node.property.file}"/>
+
+  <property name="sql.jdbc.driver.jar" location="foo" />
+  <property name="sql.jdbc.base.url" value="foo"/>
+  <property name="sql.jdbc.database.name" value="foo"/>
+  <property name="sql.jdbc.database.user" value="foo"/>
+  <property name="sql.jdbc.database.password" value="foo"/>
+  
+  <property name="sql.driver" value="org.postgresql.Driver" />
+  <property name="sql.jdbc.url" value="${sql.jdbc.base.url}${sql.jdbc.database.name}" />
+  
+  <path id="classpath.runtime.jdbc.driver">
+    <fileset file="${sql.jdbc.driver.jar}" />
+  </path>
+  
+  <target name="make_node_db" description="Runs scripts for creating
+					   the database tables used by
+					   node">
+
+    <echo message="Connecting to database: ${sql.jdbc.url} as user: ${sql.jdbc.database.user}"/>
+    
+    <!-- Make sure the encoding is not specified any of the script files -->
+    <replace file="Database/DDL/full-schema.sql" token="SET client_encoding = 'UTF8';" value=""/>
+    
+    <sql driver="${sql.driver}" 
+	 url="${sql.jdbc.url}" 
+	 userid="${sql.jdbc.database.user}" 
+	 password="${sql.jdbc.database.password}" 
+	 classpathref="classpath.runtime.jdbc.driver" 
+	 keepformat="yes" 
+	 delimitertype="row" 
+	 delimiter=";">
+      <transaction  src="node-schema.sql"/>
+    </sql>
+  </target>
+  
+</project>
