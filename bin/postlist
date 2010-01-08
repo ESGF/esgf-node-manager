@@ -1,0 +1,56 @@
+#!/bin/bash
+
+#*****************************************************************
+#
+# Organization: Lawrence Livermore National Lab (LLNL)
+#  Directorate: Computation
+#   Department: Computing Applications and Research
+#     Division: S&T Global Security
+#       Matrix: Atmospheric, Earth and Energy Division
+#      Program: PCMDI
+#      Project: Earth Systems Grid
+# First Author: Gavin M. Bell (gavin@llnl.gov)
+#
+#  Description:
+#
+#  Simple script for pushing files from the repsitory to the website
+#  for general consumption.  The motivation here was to not have
+#  people pummel our source code repository getting these files, which
+#  is slow and not what a repo is for.  Web servers are made exactly
+#  for this task, so put the necessary files on one, right? :-)
+#
+#  This file reads a manifest file by default postlist.manif
+#
+#*****************************************************************
+
+#uses: rsync (and thus ssh)
+
+debug=${debug:-0}
+
+manifest_file=${manifest_file:-$0.manif}
+esg_dist_url="rainbow.llnl.gov:/pcmdi_web/dist/"
+
+fail=0
+good=0
+total=0
+
+for file in `cat ${manifest_file}`; do 
+    [ ! -e $file ] && echo -n "x" && continue
+    ((debug)) && echo -n "pushing $file ---> ${esg_dist_url} " || echo -n "*"
+    md5sum $file > ${file}.md5
+    rsync -c ${file}.md5 ${esg_dist_url}/esg-node/${file##*/}.md5 >& /dev/null
+    echo -n "-"
+    rsync -c ${file} ${esg_dist_url}/esg-node/${file##*/} >& /dev/null
+    if [ $? != 0 ]; then
+	((debug)) && echo "[FAIL]"
+	((++fail))
+    else
+	((debug)) && echo "[OK]" 
+	((++good))
+    fi
+    ((++total))
+done
+echo 
+echo total=${total} good=${good} fail=${fail}
+echo "done."
+exit 0
