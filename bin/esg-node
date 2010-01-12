@@ -1447,6 +1447,8 @@ setup_filter() {
     echo " [OK]"
     popd #>& /dev/null
     #----------------------
+    chown -R ${tomcat_user} ${dest_dir}/WEB-INF
+    chgrp -R ${tomcat_user} ${dest_dir}/WEB-INF
 
     return 0
 }
