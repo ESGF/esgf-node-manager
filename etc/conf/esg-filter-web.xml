@@ -1,7 +1,7 @@
 
 
   <!-- **************************************** -->
-  <!-- Snippet of web.xml entry for this filter -->
+  <!-- web.xml entry for the esg node filter    -->
   <!-- **************************************** -->
 
   <filter>

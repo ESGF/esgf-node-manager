@@ -114,7 +114,7 @@
     <echo message="Connecting to database: ${sql.jdbc.url} as user: ${sql.jdbc.database.user}"/>
     
     <!-- Make sure the encoding is not specified any of the script files -->
-    <replace file="Database/DDL/full-schema.sql" token="SET client_encoding = 'UTF8';" value=""/>
+    <replace file="node-schema.sql" token="SET client_encoding = 'UTF8';" value=""/>
     
     <sql driver="${sql.driver}" 
 	 url="${sql.jdbc.url}" 

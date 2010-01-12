@@ -8,7 +8,7 @@ SET client_min_messages = warning;
 SET escape_string_warning = off;
 
 
-CREATE TABLE  access_logging_table (
+CREATE TABLE  access_logging (
     id uuid NOT NULL,
     userid character varying NOT NULL,
     email character varying NOT NULL,
@@ -19,3 +19,8 @@ CREATE TABLE  access_logging_table (
     success boolean DEFAULT true
 );
 
+CREATE TABLE notification_run_log (
+    id uuid NOT NULL,
+    notify_time timestamp with time zone DEFAULT now(),
+    success boolean DEFAULT true
+);
