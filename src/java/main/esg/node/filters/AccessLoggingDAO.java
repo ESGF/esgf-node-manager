@@ -101,12 +101,12 @@ public class AccessLoggingDAO implements Serializable {
     }
     
     //TODO: put in args and setup query!!!
-    public int log(String userid,  String email, String url, String remoteAddress) {
+    public int log(String userid,  String email, String url, String remoteAddress, String fileID) {
 	int ret = -1;
 	try{
 	    //TODO perhaps the url can be used to resolve the dataset???
 	    //That is the bit of information we really want to also have.
-	    ret = queryRunner.update(accessLoggingQuery,userid,url,email,remoteAddress);
+	    ret = queryRunner.update(accessLoggingQuery,userid,email,url,remoteAddress,fileID);
 	}catch(SQLException ex) {
 	    log.error(ex);
 	}

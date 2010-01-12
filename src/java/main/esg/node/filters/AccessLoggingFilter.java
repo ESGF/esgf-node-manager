@@ -171,15 +171,16 @@ public class AccessLoggingFilter implements Filter {
 		    String email = validationMap.get("email");
 		    String url = req.getRequestURL().toString();
 		    String remoteAddress = req.getRemoteAddr();
+		    String file_id = "";
 		    
-		    accessLoggingDAO.log(userid,email,url,remoteAddress);
+		    accessLoggingDAO.log(userid,email,url,remoteAddress,file_id);
 		    
 		    //Want to make sure that any snooping filters
 		    //behind this one does not have access to this
 		    //information (posted by the
 		    //authorizationTokenValidationFilter, which should
 		    //immediately preceed this one).  This is in
-		    //effort to keep limit information exposure the
+		    //effort to limit information exposure the
 		    //best we can.
 		    req.removeAttribute("validationMap");
 		    
