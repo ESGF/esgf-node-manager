@@ -3,7 +3,7 @@
 #####
 # chkconfig: 345 98 02
 # description: Installer for the ESG Data Node application stack
-#             (author: gavin@llnl.gov)
+#
 #****************************************************************************
 #*                                                                          *
 #*  Organization: Lawrence Livermore National Lab (LLNL)                    *
@@ -65,13 +65,17 @@
 #uses: perl, awk, ifconfig, tar, wget, curl, su, useradd, id, chmod,
 #      chown, chgrp, cut, svn, mkdir, killall, java
 
+#note: usage of readlink not macosx friendly :-(
+#      usage of useradd is RedHat/CentOS dependent :-(
+
 DEBUG=${DEBUG:-1}
 
 #--------------
 #User Defined / Settable (public)
 #--------------
 progname=esg-node
-version="0.2.9"
+version="0.3.0"
+node_version=".0.0.1"
 envfile=${envfile:-"/etc/esg.env"}
 t=${0%.*}
 logfile=${logfile:-"/var/tmp/${t##*/}.out"}
@@ -98,7 +102,7 @@ init() {
     myproxy_endpoint=${myproxy_endpoint:-${gateway_service_root%%/*}}
     myproxy_port=${myproxy_port:-2119} #TODO: change this for final release... default -> 7512
     esg_root_id=${ESG_ROOT_ID:-$(echo `hostname -s`.`hostname --domain` | awk -F. ' {print $(NF-1)} ')}
-    mail_smtp_host=${mail_smtp_host}
+    mail_smtp_host=${mail_smtp_host:-smtp.`hostname --domain`} #standard guess.
     mail_admin_address=${mail_admin_address}
     
     ############################################
@@ -129,18 +133,19 @@ init() {
     #--------------
     #Script vars (internal)
     #--------------
+    date_format="+%Y_%m_%d_%H%M%S"
+    num_backups_to_keep=${num_backups_to_keep:-7}
     ant_dist_url=http://mirror.cloudera.com/apache/ant/binaries/apache-ant-1.7.1-bin.tar.gz
     postgress_workdir=${workdir}/../postgress
     postgress_jar=postgresql-8.3-603.jdbc3.jar
     postgress_driver=org.postgresql.Driver
     postgress_protocol=jdbc:postgresql:
     pg_sys_acct=postgres
-    db_password=${db_password:=changeme}
     postgress_dist_url=http://wwwmaster.postgresql.org/redir/198/h/source/v8.3.7/postgresql-8.3.7.tar.gz
     repo=http://www-pcmdi.llnl.gov/svn/repository/cdat/tags
     esgcet_egg_file=esgcet-2.0-py2.5.egg
     esg_dist_url=http://rainbow.llnl.gov/dist
-    esg_testdir=$workdir/../esg_test
+    esg_testdir=${workdir}/../esg_test
     cdat_version=${cdat_version:=5.1.1}
     tomcat_dist_url=http://download.filehat.com/apache/tomcat/tomcat-6/v6.0.20/bin/apache-tomcat-6.0.20.tar.gz
     tomcat_pid_file=/var/run/tomcat-jsvc.pid
@@ -150,8 +155,8 @@ init() {
     #NOTE: This root dir should match a root set in the thredds setup 
     thredds_root_dir=/esg/data
     thredds_replica_dir=/esg/data.replica
-    node_dist_url=http://rainbow.llnl.gov/dist/esg-node/esg-node.tar.gz
-    node_db_name=esg-node
+    node_dist_url=http://rainbow.llnl.gov/dist/esg-node/esg-node${node_version}.tar.gz
+    node_db_name=esgcet
     node_app_context_root=esg-node
     node_app_home=${tomcat_install_dir}/webapps/${node_app_context_root}
     #NOTE: This is another RedHat/CentOS specific portion!!! it will break on another OS!
@@ -356,7 +361,7 @@ setup_postgress() {
     if [ $? != 0 ]; then
 	echo " WARNING: There is no postgres system account user \"$pg_sys_acct\" present on system"
 	#NOTE: "useradd" is a RedHat/CentOS thing... to make this cross distro compatible clean this up.
-	/usr/sbin/useradd -r -u26 -c"PostgreSQL Service" -p $db_password $pg_sys_acct
+	/usr/sbin/useradd -r -u26 -c"PostgreSQL Service" -p $pg_sys_acct_passwd $pg_sys_acct
 	[ $? != 0 ] && echo "ERROR: Could not add postgres system account user" && popd && checked_done 1
     fi
     ########
@@ -894,6 +899,7 @@ stop_tomcat() {
 	[ $? != 0 ] && echo "Hmmm... still could not shutdown... process may have already been stopped"
     fi
     /bin/ps -elf | grep jsvc | grep -v grep
+    popd #>& /dev/null
     return 0
 }
 
@@ -1231,7 +1237,8 @@ setup_node() {
 
 
     node_dist_file=${node_dist_url##*/}
-    #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
+    #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name 
+    #(Ex: esg-node.0.0.1.tar.gz -> esg-node.0.0.1)
     node_dist_dir=$(echo ${node_dist_file} | awk '{print substr($1,1,length($1)-7)}')
         
     #Check to see if we have postgres distribution directory
@@ -1257,7 +1264,10 @@ setup_node() {
 
     stop_tomcat
 
-    node_war_file=${node_dist_dir}.war
+    #strip the version number off(.#.#.#) the dir and append .war to get the name of war file
+    #(Ex: esg-node.0.0.1 -> esg-node.war)
+    local trimmed_name=$(echo ${node_dist_dir} | awk '{print substr($1,1,length($1)-6)}')
+    node_war_file=${trimmed_name}.war
     echo "node_war_file = "${node_war_file}
 
     mkdir -p ${node_app_home}
@@ -1273,8 +1283,8 @@ setup_node() {
     #----------------------------
     pushd WEB-INF/classes #>& /dev/null
     fetch_file=node.properties
-    checked_get $fetch_file ${gateway_dist_url%/*}/${fetch_file}
-    [ $? != 0 ] && popd && checked_done 1
+    #checked_get $fetch_file ${gateway_dist_url%/*}/${fetch_file}
+    #[ $? != 0 ] && popd && checked_done 1
     #----------------------
     pwd
     echo -n "Replacing tokens... "
@@ -1287,27 +1297,26 @@ setup_node() {
     echo -n "*"
     eval "perl -p -i -e 's/\\@db.port\\@/${postgress_port}/g' ${fetch_file}"
     echo -n "*"
-    eval "perl -p -i -e 's/\\@db.database\\@/${gateway_db_name}/g' ${fetch_file}"
+    eval "perl -p -i -e 's/\\@db.database\\@/${node_db_name}/g' ${fetch_file}"
     echo -n "*"
     eval "perl -p -i -e 's/\\@db.user\\@/${postgress_user}/g' ${fetch_file}"
     echo -n "*"
-    eval "perl -p -i -e 's/\\@db.passport\\@/${pg_sys_acct_passwd}/g' ${fetch_file}"
+    eval "perl -p -i -e 's/\\@db.password\\@/${pg_sys_acct_passwd}/g' ${fetch_file}"
     echo -n "*"
 
-    echo -n "*"
     eval "perl -p -i -e 's/\\@mail.smtp.host\\@/${mail_smtp_host}/g' ${fetch_file}"
     echo -n "*"
     eval "perl -p -i -e 's/\\@mail.admin.address\\@/${mail_admin_address}/g' ${fetch_file}"
     echo -n "*"
     echo " [OK]"
     #----------------------
-    chown -R ${tomcat_user} ${gateway_app_home}
-    chgrp -R ${tomcat_user} ${gateway_app_home}
-    cp -v ${fetch_file} ${gateway_app_home}
+    chown -R ${tomcat_user} ${node_app_home}
+    chgrp -R ${tomcat_user} ${node_app_home}
+    cp -v ${fetch_file} ${node_app_home}
     unset fetch_file
     popd #>& /dev/null
     #----------------------------
-    
+
     popd #>& /dev/null
     echo
     echo
@@ -1323,58 +1332,124 @@ configure_postgress() {
     
     echo
     echo "*******************************"
-    echo "Configuring Postgres... (Prep for  Data Node Manager)"
+    echo "Configuring Postgres... (for Data Node Manager [and filters])"
     echo "*******************************"
     echo
 
     start_postgress
 
-    #Create the database esg-gateway    
+
+    #Create the database...
     echo "Creating esg node database: ${node_db_name}"
     echo "${postgress_install_dir}/bin/createdb ${node_db_name}"
     ${postgress_install_dir}/bin/createdb ${node_db_name}
-    [ $? != 0 ] && echo "ERROR: Could not create esg node database: ${node_db_name}" && return 0
+    #[ $? != 0 ] && echo " ERROR: Could not create esg node database: ${node_db_name}" && return 0
         
-    #TODO... Make this function idempotent...
+    #TODO... Make the above call idempotent...
     #NOTE: (zoiks) Need to be able to tell the difference between a
     #database already there vs another error
 
-    #Experimental way... Perhaps try using a code block on the createdb call?? Hmmm
-    ##Create the database....    
-    #echo "Creating gateway database: ${node_db_name}"
-    #echo "${postgress_install_dir}/bin/createdb ${node_db_name}"
-    #local output=$(${postgress_install_dir}/bin/createdb ${node_db_name})
-    #local error=$?
-    #echo ${output} | grep -i "already exists"
-    #[ $? != 0 ] && echo "skipping since database already exists..." && return 0
-    #[ error != 0 ] && echo "ERROR: Could not create esg node database: ${node_db_name}" && checked_done 1
-    
-    [ "${type}" != "$1" ] && echo " ERROR: Semantic failure ${type} != $1" && checked_done 1
+    pushd ${workdir}/${node_dist_dir:-esg-node${node_version}}/db
+    [ $? != 0 ] && echo " ERROR: Could not find node distribution dir ${workdir}/${node_dist_dir}" && checked_done 1
 
-    echo "Running configuration for: $1"
-    [ -z "$1" ] && echo "argument for --type must be: [pcmdi | ncar | ornl] (!= [$1])"
-
-    #(Contents of the init_database.sh script)
-
-    #TODO change the location where it finds the ant db script
-    echo "${ANT_HOME}/bin/ant -buildfile ${node_app_home}/Ant/database-tasks.ant.xml \
+    echo "${ANT_HOME}/bin/ant -buildfile database-tasks.ant.xml \
+	-Dnode.property.file=${node_app_home}/WEB-INF/classes/node.properties \
         -Dsql.jdbc.base.url=${postgress_protocol}//${postgress_host}:${postgress_port}/ \
         -Dsql.jdbc.database.name=${node_db_name} \
         -Dsql.jdbc.database.user=${postgress_user} \
-        -Dsql.jdbc.database.password=${db_password} \
+        -Dsql.jdbc.database.password=${pg_sys_acct_passwd} \
         -Dsql.jdbc.driver.jar=${node_app_home}/WEB-INF/lib/${postgress_jar} make_node_db"
 
-    ${ANT_HOME}/bin/ant -buildfile ${node_app_home}/Ant/database-tasks.ant.xml \
+    ${ANT_HOME}/bin/ant -buildfile database-tasks.ant.xml \
+	-Dnode.property.file=${node_app_home}/WEB-INF/classes/node.properties \
         -Dsql.jdbc.base.url=${postgress_protocol}//${postgress_host}:${postgress_port}/ \
         -Dsql.jdbc.database.name=${node_db_name} \
         -Dsql.jdbc.database.user=${postgress_user} \
-        -Dsql.jdbc.database.password=${db_password} \
+        -Dsql.jdbc.database.password=${pg_sys_acct_passwd} \
         -Dsql.jdbc.driver.jar=${node_app_home}/WEB-INF/lib/${postgress_jar} make_node_db
-    [ $? != 0 ] && echo "ERROR: Could not create esg node database: ${node_db_name}" && checked_done 1
-    
+    [ $? != 0 ] && echo "ERROR: Could not create esg node database tables in ${node_db_name}" && checked_done 1
+
+    popd #>& /dev/null
+    echo
+    echo
     checked_done 0
 }
 
+#Takes 2 arguments: 
+# First  - The top level directory of the webapp where filter is to be installed.
+# Second - The file containing the filter entry xml snippet
+setup_filter() {
+
+    local dest_dir=$1
+    echo "Filter installation destination dir = ${dest_dir}"
+    local esg_filter_entry_file=${2:-esg-filter-web.xml}
+    
+    #Installs esg filter into Thredds' web.xml file, directly after
+    #the AuthorizationTokenValidationFilter's mapping, by replacing a
+    #place holder token with the contents of the filter snippet file
+    #"esg-filter-web.xml".  Copies the filter jar file to the thredds'
+    #lib dir
+
+    local node_dist_dir=${node_dist_dir:-esg-node${node_version}}
+    
+    #pre-checking... make sure the files we need in thredds are there....
+    [ ! -e ${dest_dir}/WEB-INF ] && echo " ERROR: Could not find THREDDS installation dir" && checked_done 1
+    [ ! -e ${dest_dir}/WEB-INF/web.xml ] && echo " ERROR no web.xml file found!!" && checked_done 1
+    [ ! -e ${workdir}/${node_dist_dir} ] && echo " ERROR: Could not locate node distribution dir ${workdir}/${node_dist_dir}" && return 1
+
+    stop_tomcat
+
+    pushd ${dest_dir} #>& /dev/null
+    echo "Checking for / Installing required jars..."
+    [ ! -e WEB-INF/lib/commons-dbcp-1.2.2.jar ]  && echo "no commons-dbcp" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/commons-dbcp-1.2.2.jar
+    [ ! -e WEB-INF/lib/commons-dbutils-1.3.jar ] && echo "no commons-dbutils" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/commons-dbutils-1.3.jar
+    [ ! -e WEB-INF/lib/commons-pool-1.5.4.jar ]  && echo "no commons-pool" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/commons-pool-1.5.4.jar
+    popd #>& /dev/null
+
+    pushd ${workdir}/${node_dist_dir} #>& /dev/null
+
+    #Pull out the templated filter entry snippet file...
+    jar xvf esg-node-filters.*.jar ${esg_filter_entry_file} #only need file name to pull out of jar
+    esg_filter_entry_file=`pwd`/${esg_filter_entry_file} #going to need full path for pattern replacement below
+
+    #Place (copy) the filter jar in the WEB-INF/lib
+    echo "Installing ESG Filter jar..."
+    cp -v esg-node-filters.*.jar ${dest_dir}/WEB-INF/lib
+    
+    popd #>& /dev/null
+    
+    #----------------------
+    #Thredds configuration...
+    pushd ${dest_dir}/WEB-INF #>& /dev/null
+    [ $? != 0 ] && echo " ERROR: Could not find thredds web application (${tomcat_install_dir}/webapps/thredds/)" && return 0
+    local target_file=web.xml
+
+    #Replace the filter's place holder token in thredds' web.xml file with the filter entry.
+    #Use utility function...
+    insert_file_at_pattern $(readlink -f ${target_file}) ${esg_filter_entry_file} "<!--@@esg_filter_entry@@-->"
+
+    #Edit the web.xml file for Thredds to include these token replacement values
+    echo -n "Replacing tokens... "
+    eval "perl -p -i -e 's/\\@db.driver\\@/${postgress_driver}/g' ${target_file}"    
+    echo -n "*"
+    eval "perl -p -i -e 's/\\@db.protocol\\@/${postgress_protocol}/g' ${target_file}"
+    echo -n "*"
+    eval "perl -p -i -e 's/\\@db.host\\@/${postgress_host}/g' ${target_file}"    
+    echo -n "*"
+    eval "perl -p -i -e 's/\\@db.port\\@/${postgress_port}/g' ${target_file}"
+    echo -n "*"
+    eval "perl -p -i -e 's/\\@db.database\\@/${node_db_name}/g' ${target_file}"
+    echo -n "*"
+    eval "perl -p -i -e 's/\\@db.user\\@/${postgress_user}/g' ${target_file}"
+    echo -n "*"
+    eval "perl -p -i -e 's/\\@db.password\\@/${pg_sys_acct_passwd}/g' ${target_file}"
+    echo -n "*"
+    echo " [OK]"
+    popd #>& /dev/null
+    #----------------------
+
+    return 0
+}
 
 #####
 
@@ -1702,6 +1777,7 @@ backup() {
 
     #-------------
     #keep only the last num_backups_to_keep files
+    num_backups_to_keep=${num_backups_to_keep:-7}
     pushd ${backupdir} >& /dev/null
     files=(`ls -t | grep ${source##*/}.\*.tgz | tail -n +$((${num_backups_to_keep}+1)) | xargs`)
     if (( ${#files[@]} > 0 )); then
@@ -1732,6 +1808,21 @@ backup_db() {
     popd #>& /dev/null
     return 0
 }
+
+#Replace a pattern inside the target file with the contents of the input file
+insert_file_at_pattern() {
+    local target_file=$1
+    local input_file=$2
+    local pattern=$3
+
+    echo "Inserting into ${target_file} <- ${input_file} at pattern ${pattern}"
+
+    python -c "infile = '${target_file}';filterfile = '${input_file}';pattern='${pattern}';f=open(infile);s=f.read();f.close();f=open(filterfile);filter = f.read();f.close();s=s.replace(pattern,filter);f=open(infile,'w');f.write(s);f.close()"
+    ret=$?
+    [ $ret != 0 ] && echo "Problem in function insert_file_at_pattern in $0"
+    return ${ret}
+}
+
 
 ############################################
 # Main
@@ -1841,7 +1932,7 @@ done_remark() {
     echo ""
     echo "Finished!..."
     echo "In order to see if this data node has been installed properly you may direct your browser to:"
-    echo "http://${my_ip_address}/${node_app_context_root} and..."
+    echo "http://${my_ip_address}/${node_app_context_root}"
     echo "http://${my_ip_address}/thredds"
     echo 
     echo "To see the published test, go your specified gateway: [${GATEWAY_NAME}]"
@@ -1983,12 +2074,13 @@ main() {
     [ $((sel & 1)) != 0 ] && echo "setup_tomcat" && setup_tomcat 
     [ $((sel & 2)) != 0 ] && echo "test_tomcat" && sleep 5 && test_tomcat
     [ $((sel & 1)) != 0 ] && echo "setup_node" && setup_node #(tomcat off)
-    [ $((sel & 1)) != 0 ] && echo "configure_postgress" && configure_postgress
+    [ $((sel & 1)) != 0 ] && echo "configure_postgress" && configure_postgress #(database on)
     [ $((sel & 1)) != 0 ] && echo "setup_tds" && setup_tds 
     [ $((sel & 2)) != 0 ] && echo "test_tds" && test_tds 
+    [ $((sel & 1)) != 0 ] && echo "setup_filter" && setup_filter ${tomcat_install_dir}/webapps/thredds
     [ $((sel & 1)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus
     [ $((sel & 2)) != 0 ] && (( ! no_globus )) && echo "test_globus" && source ${scripts_dir}/esg-globus >& /dev/null \
-	&& test_globus_services datanode
+    	&& test_globus_services datanode
     [ $((sel & 2)) != 0 ] && echo "test_publication" && test_publication 
     #[ $((sel & 1)) != 0 ] && echo "setup_products" && setup_products
     [ $((sel & 1)) != 0 ] && echo "show_summary" && show_summary 
