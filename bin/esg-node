@@ -142,7 +142,6 @@ init() {
     postgress_protocol=jdbc:postgresql:
     pg_sys_acct=postgres
     postgress_dist_url=http://ftp9.us.postgresql.org/pub/mirrors/postgresql/source/v8.3.8/postgresql-8.3.8.tar.gz
-    #postgress_dist_url=http://wwwmaster.postgresql.org/redir/198/h/source/v8.3.7/postgresql-8.3.7.tar.gz
     repo=http://www-pcmdi.llnl.gov/svn/repository/cdat/tags
     esgcet_egg_file=esgcet-2.0-py2.5.egg
     esg_dist_url=http://rainbow.llnl.gov/dist

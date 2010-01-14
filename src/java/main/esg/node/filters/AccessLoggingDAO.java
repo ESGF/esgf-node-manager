@@ -78,7 +78,9 @@ import org.apache.commons.logging.impl.*;
 public class AccessLoggingDAO implements Serializable {
 
     //TODO figure out what these queries should be!
-    private static final String accessLoggingQuery = "Insert ? ? ? ? into blah";
+    private static final String accessLoggingQuery = 
+	"insert into access_logging (id, userid, email, url, remote_addr, file_id, date_fetched, success) "+
+	"values ( nextval('seq_access_logging'), ?, ?, ?, ?, ?, ?, ?)";
 
     private static final Log log = LogFactory.getLog(AccessLoggingDAO.class);
 
@@ -104,9 +106,11 @@ public class AccessLoggingDAO implements Serializable {
     public int log(String userid,  String email, String url, String remoteAddress, String fileID) {
 	int ret = -1;
 	try{
-	    //TODO perhaps the url can be used to resolve the dataset???
+	    //TODO: Perhaps the url can be used to resolve the dataset???
 	    //That is the bit of information we really want to also have.
-	    ret = queryRunner.update(accessLoggingQuery,userid,email,url,remoteAddress,fileID);
+	    //What we really need is an absolute id for a file!!!
+	    ret = queryRunner.update(accessLoggingQuery,
+				     userid,email,url,remoteAddress,fileID,System.currentTimeMillis()/1000,true);
 	}catch(SQLException ex) {
 	    log.error(ex);
 	}
