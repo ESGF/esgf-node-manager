@@ -64,7 +64,6 @@
 package esg.node.components.notification;
 
 import java.io.Serializable;
-import java.util.Properties;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -80,16 +79,19 @@ public class NotificationDAO implements Serializable {
 
     //TODO figure out what these queries should be!
     private static final String notificationQuery = "Select blah from foo where ? = alpha";
-    private static final String markTimeQuery = "insert ?  into blah";
+    private static final String markTimeQuery = "UPDATE notification_run_log SET notify_time = ? WHERE id = ?";
+    private static final String regWithNotificationRunLogQuery = "SELECT COUNT(*) FROM notification_run_log WHERE id = ?";
 
     private static final Log log = LogFactory.getLog(NotificationDAO.class);
 
     private DataSource dataSource = null;
     private QueryRunner queryRunner = null;
     private ResultSetHandler<NotificationRecipientInfo> handler = null;
+    private String nodeID = null;
 
     public NotificationDAO(DataSource dataSource) {
 	this.setDataSource(dataSource);
+	nodeID = "FauxNodeName";
 	init();
     }
     
@@ -112,12 +114,17 @@ public class NotificationDAO implements Serializable {
 	    }
 	};
 	
+	//inserts entry into table for this node
+	registerWithNotificationRunLog();
+	
     }
 
     public void setDataSource(DataSource dataSource) {
 	this.dataSource = dataSource;
 	this.queryRunner = new QueryRunner(dataSource);
     }
+    
+    public void setID(String nodeID) { this.nodeID = nodeID; }
     
     //TODO: May have to take a list of update datasets here...
     public NotificationRecipientInfo getNotificationRecipientInfo() {
@@ -145,9 +152,38 @@ public class NotificationDAO implements Serializable {
     public int markLastCompletionTime(){
 	int ret = -1;
 	try{
-	    ret = queryRunner.update(markTimeQuery);
+	    ret = queryRunner.update(markTimeQuery,System.currentTimeMillis()/1000,nodeID);
 	}catch(SQLException ex) {
 	    log.error(ex);
+	}
+	return ret;
+    }
+
+    private int registerWithNotificationRunLog() {
+	int ret = -1;
+	if (nodeID == null) {
+	    log.error("NodeID is not set!");
+	    return ret;
+	}
+
+	try{
+	    int count = queryRunner.query(regWithNotificationRunLogQuery, new ResultSetHandler<Integer>() {
+		    public Integer handle(ResultSet rs) throws SQLException {
+			if(!rs.next()) { return -1; }
+			return rs.getInt(1);
+		    }
+		},nodeID);
+	    
+	    if(count > 0) {
+		log.info("Yes, "+nodeID+" exists in notification run log table");
+	    }else {
+		log.info("No, "+nodeID+" does NOT exist in notification run log table");
+		String query = "INSERT INTO notification_run_log (id, notify_time) VALUES ( ? , ? )";
+		ret = queryRunner.update(query,nodeID,0);
+	    }
+
+	}catch(SQLException ex) {
+	    log.error(ex);	    
 	}
 	return ret;
     }
@@ -162,6 +198,7 @@ public class NotificationDAO implements Serializable {
     public String toString() {
 	StringBuilder out = new StringBuilder();
 	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+notificationQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]\n"));
+	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+regWithNotificationRunLogQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]\n"));
 	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+markTimeQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]"));
 	return out.toString();
     }
