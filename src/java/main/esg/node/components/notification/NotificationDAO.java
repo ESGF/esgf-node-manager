@@ -91,7 +91,6 @@ public class NotificationDAO implements Serializable {
 
     public NotificationDAO(DataSource dataSource) {
 	this.setDataSource(dataSource);
-	nodeID = "FauxNodeName";
 	init();
     }
     
@@ -124,7 +123,16 @@ public class NotificationDAO implements Serializable {
 	this.queryRunner = new QueryRunner(dataSource);
     }
     
-    public void setID(String nodeID) { this.nodeID = nodeID; }
+    public void setNodeID(String nodeID) { this.nodeID = nodeID; }
+    private String getNodeID() {
+	if(null != nodeID) { return nodeID; }
+	try{
+	    nodeID = java.net.InetAddress.getLocalHost().getHostAddress();
+	}catch(java.net.UnknownHostException ex) {
+	    log.error(ex);
+	}
+	return nodeID;
+    }
     
     //TODO: May have to take a list of update datasets here...
     public NotificationRecipientInfo getNotificationRecipientInfo() {
@@ -152,7 +160,7 @@ public class NotificationDAO implements Serializable {
     public int markLastCompletionTime(){
 	int ret = -1;
 	try{
-	    ret = queryRunner.update(markTimeQuery,System.currentTimeMillis()/1000,nodeID);
+	    ret = queryRunner.update(markTimeQuery,System.currentTimeMillis()/1000,getNodeID());
 	}catch(SQLException ex) {
 	    log.error(ex);
 	}
@@ -161,25 +169,20 @@ public class NotificationDAO implements Serializable {
 
     private int registerWithNotificationRunLog() {
 	int ret = -1;
-	if (nodeID == null) {
-	    log.error("NodeID is not set!");
-	    return ret;
-	}
-
 	try{
 	    int count = queryRunner.query(regWithNotificationRunLogQuery, new ResultSetHandler<Integer>() {
 		    public Integer handle(ResultSet rs) throws SQLException {
 			if(!rs.next()) { return -1; }
 			return rs.getInt(1);
 		    }
-		},nodeID);
+		},NotificationDAO.this.getNodeID());
 	    
 	    if(count > 0) {
-		log.info("Yes, "+nodeID+" exists in notification run log table");
+		log.info("Yes, "+NotificationDAO.this.getNodeID()+" exists in notification run log table");
 	    }else {
-		log.info("No, "+nodeID+" does NOT exist in notification run log table");
+		log.info("No, "+NotificationDAO.this.getNodeID()+" does NOT exist in notification run log table");
 		String query = "INSERT INTO notification_run_log (id, notify_time) VALUES ( ? , ? )";
-		ret = queryRunner.update(query,nodeID,0);
+		ret = queryRunner.update(query,NotificationDAO.this.getNodeID(),System.currentTimeMillis()/1000);
 	    }
 
 	}catch(SQLException ex) {
