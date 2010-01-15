@@ -68,6 +68,8 @@ import java.util.Properties;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.List;
+import java.util.Vector;
 
 import javax.mail.Session;
 import javax.mail.Message;
@@ -206,10 +208,15 @@ public class ESGNotifier extends AbstractDataNodeComponent {
     //THE CALL TO FETCH INFO FROM THE DATABASE... (one level removed)
     protected boolean fetchNextUpdates() {
 	log.trace("Fetching Next set of notification updates");
+	boolean ret = true;
 
 	//TODO: May have to take a list of datasets here...
-	NotificationDAO.NotificationRecipientInfo nri = notificationDAO.getNotificationRecipientInfo();
-	return sendNotification(nri.dataset_id,nri.endusers,nri.changedFiles);
+	List<NotificationDAO.NotificationRecipientInfo> nris = notificationDAO.getNotificationRecipientInfo();
+	for(NotificationDAO.NotificationRecipientInfo nri : nris) {
+	    ret &= sendNotification(nri.dataset_id,nri.endusers,nri.changedFiles);
+	}
+
+	return ret;
     }
 
     protected int markTime() {

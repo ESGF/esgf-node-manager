@@ -63,6 +63,8 @@
 **/
 package esg.node.components.notification;
 
+import java.util.List;
+import java.util.Vector;
 import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -78,15 +80,16 @@ import org.apache.commons.logging.impl.*;
 public class NotificationDAO implements Serializable {
 
     //TODO figure out what these queries should be!
-    private static final String notificationQuery = "Select blah from foo where ? = alpha";
-    private static final String markTimeQuery = "UPDATE notification_run_log SET notify_time = ? WHERE id = ?";
-    private static final String regWithNotificationRunLogQuery = "SELECT COUNT(*) FROM notification_run_log WHERE id = ?";
+    private static final String notificationQuery = "SELECT DISTINCT d.userid, d.email, ds.name, d.url, fv.location FROM dataset as ds, file as f, access_logging as d, file_version as fv WHERE ds.id=f.dataset_id and fv.file_id=f.id and d.url=fv.url and fv.mod_time>d.date_fetched AND d.date_fetched > (SELECT distinct MAX(notify_time) FROM notification_run_log where id = ? )";
+    private static final String markTimeQuery      = "UPDATE notification_run_log SET notify_time = ? WHERE id = ?";
+    private static final String regCheckEntryQuery = "SELECT COUNT(*) FROM notification_run_log WHERE id = ?";
+    private static final String regAddEntryQuery   = "INSERT INTO notification_run_log (id, notify_time) VALUES ( ? , ? )";
 
     private static final Log log = LogFactory.getLog(NotificationDAO.class);
 
     private DataSource dataSource = null;
     private QueryRunner queryRunner = null;
-    private ResultSetHandler<NotificationRecipientInfo> handler = null;
+    private ResultSetHandler<List<NotificationDAO.NotificationRecipientInfo> > handler = null;
     private String nodeID = null;
 
     public NotificationDAO(DataSource dataSource) {
@@ -101,15 +104,16 @@ public class NotificationDAO implements Serializable {
 
     //Initialize result set handlers...
     public void init() {
-	handler = new ResultSetHandler<NotificationRecipientInfo>() {
-	    public NotificationRecipientInfo handle(ResultSet rs) throws SQLException {
+	handler = new ResultSetHandler<List<NotificationDAO.NotificationRecipientInfo> > () {
+	    public List<NotificationDAO.NotificationRecipientInfo> handle(ResultSet rs) throws SQLException {
+		List<NotificationDAO.NotificationRecipientInfo> nris = new Vector<NotificationDAO.NotificationRecipientInfo>();
 		NotificationRecipientInfo nri = new NotificationRecipientInfo();
 		if(!rs.next()) { return null; }
 		
 		//TODO...
-		//Wrestle results into nri object...
+		//Wrestle results into nri objects...
 		
-		return nri;
+		return nris;
 	    }
 	};
 	
@@ -135,15 +139,15 @@ public class NotificationDAO implements Serializable {
     }
     
     //TODO: May have to take a list of update datasets here...
-    public NotificationRecipientInfo getNotificationRecipientInfo() {
+    public List<NotificationRecipientInfo> getNotificationRecipientInfo() {
 	if(this.dataSource == null) {
 	    log.error("The datasource ["+dataSource+"] is not valid, Please call setDataSource(...) first!!!");
 	    return null;
 	}
 	log.trace("Getting Notification Recipient Info... \n Query = "+notificationQuery);
-	NotificationRecipientInfo nri = null;
+	List<NotificationRecipientInfo> nris = null;
 	try{
-	    nri = queryRunner.query(notificationQuery, handler);
+	    nris = queryRunner.query(notificationQuery, handler,getNodeID());
 	}catch(SQLException ex) {
 	    log.error(ex);
 	}
@@ -154,7 +158,7 @@ public class NotificationDAO implements Serializable {
 	//nri.endusers = new String[] {"gavin@llnl.gov","williams13@llnl.gov","drach1@llnl.gov"};
 	//nri.changedFiles = new String[] {"faux_file1","faux_file2","faux_file3","faux_file4"};
 	
-	return nri;
+	return nris;
     }
     
     public int markLastCompletionTime(){
@@ -170,7 +174,7 @@ public class NotificationDAO implements Serializable {
     private int registerWithNotificationRunLog() {
 	int ret = -1;
 	try{
-	    int count = queryRunner.query(regWithNotificationRunLogQuery, new ResultSetHandler<Integer>() {
+	    int count = queryRunner.query(regCheckEntryQuery, new ResultSetHandler<Integer>() {
 		    public Integer handle(ResultSet rs) throws SQLException {
 			if(!rs.next()) { return -1; }
 			return rs.getInt(1);
@@ -181,8 +185,7 @@ public class NotificationDAO implements Serializable {
 		log.info("Yes, "+NotificationDAO.this.getNodeID()+" exists in notification run log table");
 	    }else {
 		log.info("No, "+NotificationDAO.this.getNodeID()+" does NOT exist in notification run log table");
-		String query = "INSERT INTO notification_run_log (id, notify_time) VALUES ( ? , ? )";
-		ret = queryRunner.update(query,NotificationDAO.this.getNodeID(),System.currentTimeMillis()/1000);
+		ret = queryRunner.update(regAddEntryQuery,NotificationDAO.this.getNodeID(),System.currentTimeMillis()/1000);
 	    }
 
 	}catch(SQLException ex) {
@@ -201,7 +204,8 @@ public class NotificationDAO implements Serializable {
     public String toString() {
 	StringBuilder out = new StringBuilder();
 	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+notificationQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]\n"));
-	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+regWithNotificationRunLogQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]\n"));
+	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+regCheckEntryQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]\n"));
+	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+regAddEntryQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]\n"));
 	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+markTimeQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]"));
 	return out.toString();
     }
