@@ -1277,7 +1277,9 @@ setup_node() {
 
     pushd ${node_dist_dir}
 
-    ((action_performed > 1)) && echo "No action to perform (exiting setup_node function)" && return 0
+    if((upgrade)); then
+	((action_performed > 1)) && echo "No upgrade action to perform (exiting setup_node function)" && return 0
+    fi
 
     stop_tomcat
 
