@@ -35,7 +35,13 @@ good=0
 total=0
 
 for file in `cat ${manifest_file}`; do 
-    [ ! -e $file ] && echo -n "x" && continue
+    if [ ! -e $file ]; then
+	echo -n "x"
+	((debug)) && echo " [FAIL] No Such File $file"
+	((++total))
+	((++fail))
+	continue
+    fi
     ((debug)) && echo -n "pushing $file ---> ${esg_dist_url} " || echo -n "*"
     md5sum $file > ${file}.md5
     rsync -c ${file}.md5 ${esg_dist_url}/esg-node/${file##*/}.md5 >& /dev/null
