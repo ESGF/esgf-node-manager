@@ -61,12 +61,32 @@
 **/
 package esg.common;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
+
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Utils {
 
+    private static final Log log = LogFactory.getLog(Utils.class);
+    
     private static AtomicLong msgCounter = new AtomicLong(0);
-
     public static long nextSeq() { return msgCounter.getAndIncrement(); }
+
+    //-----
+    public static String getNodeID() {
+	String nodeID = null;
+	if(null != nodeID) { return nodeID; }
+	try{
+	    nodeID = java.net.InetAddress.getLocalHost().getHostAddress();
+	}catch(java.net.UnknownHostException ex) {
+	    log.error(ex);
+	}
+	//NOTE: Doing the call to "toString" on purpose to force a null
+	//pointer exception the return value should NEVER be null!
+	return nodeID.toString();
+    }
+    //-----
 
 }
