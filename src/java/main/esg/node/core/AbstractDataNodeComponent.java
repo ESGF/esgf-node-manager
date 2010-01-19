@@ -85,7 +85,9 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     }
     public AbstractDataNodeComponent() { this(DataNodeComponent.ANONYMOUS); }
 
+    public void start() { log.info("Starting... "+this.getClass().getName()); init(); }
     public abstract void init();
+
     
     protected final void setMyName(String myName) { this.myName=myName; }
     protected final void setDataNodeManager(DataNodeManager dataNodeManager) {
@@ -97,6 +99,7 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
 
     //To be nice this should be called upon destruction
     //(TODO: Make this a phantom reference in the manager)
+    public void stop()  { log.info("Stopping... "+this.getClass().getName()); unregister();}
     public void unregister() {
 	if(dataNodeManager == null) return;
 	dataNodeManager.removeComponent(this);

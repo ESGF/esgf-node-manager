@@ -143,7 +143,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 
     //Regex filtering the global properties by regex on keys
     public Properties getMatchingProperties(String regex) {
-	log.trace("getting matching properties for "+regex);
+	log.trace("getting matching properties for ["+regex+"]");
 	Properties matchProps = null;
 	if( (matchProps = propCache.get(regex)) != null) {
 	    return matchProps;
@@ -152,7 +152,6 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	String key = null;
 	for(Enumeration keys = props.propertyNames(); keys.hasMoreElements();) {
 	    key = (String)keys.nextElement();
-	    //TODO: Perform regular expression matching against keys
 	    //log.trace("inspecting: "+key);
 	    try{
 		if(key.matches(regex)) {
@@ -165,6 +164,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	    }
 	}
 	propCache.put(regex,matchProps);
+	log.trace("["+regex+"] => ("+matchProps.size()+" entries)");
 	log.trace("propCache size = "+propCache.size());
 	return matchProps;
     }
