@@ -1235,7 +1235,7 @@ setup_node() {
 
     mkdir -p $workdir
     [ $? != 0 ] && return 1
-    pushd $workdir #>& /dev/null
+    pushd $workdir >& /dev/null
     local fetch_file
 
 
@@ -1251,6 +1251,7 @@ setup_node() {
 	    tar czf ${node_dist_dir}.arch.$(date ${date_format}).tgz ${node_dist_dir}
 	    echo "...removing..."
 	    rm -rf ${node_dist_dir}
+	    mv ${node_dist_file} ${node_dist_file}.bak
 	fi
     fi
 
@@ -1271,11 +1272,12 @@ setup_node() {
     #If you don't see the directory but see the tar.gz distribution
     #then expand it and go from there....
     if [ -e ${node_dist_file} ] && [ ! -e ${node_dist_dir} ]; then
+	echo "Expanding distribution file ${node_dist_file}"
 	tar xzf ${node_dist_file}
 	((++action_performed))
     fi
 
-    pushd ${node_dist_dir}
+    pushd ${node_dist_dir} >& /dev/null
 
     if((upgrade)); then
 	((action_performed > 1)) && echo "No upgrade action to perform (exiting setup_node function)" && return 0
@@ -1292,16 +1294,15 @@ setup_node() {
     mkdir -p ${node_app_home}
     cd ${node_app_home}
 
+    echo "Expanding war ${node_war_file}"
     $JAVA_HOME/bin/jar xf ${node_war_file}
     
     
     #----------------------------
     #Property file fetching and token replacement...
     #----------------------------
-    pushd WEB-INF/classes #>& /dev/null
+    pushd WEB-INF/classes >& /dev/null
     fetch_file=node.properties
-    #checked_get $fetch_file ${gateway_dist_url%/*}/${fetch_file}
-    #[ $? != 0 ] && popd && checked_done 1
     #----------------------
     pwd
     echo -n "Replacing tokens... "
@@ -1330,10 +1331,10 @@ setup_node() {
     chown -R ${tomcat_user} ${node_app_home}
     chgrp -R ${tomcat_user} ${node_app_home}
     unset fetch_file
-    popd #>& /dev/null
+    popd >& /dev/null
     #----------------------------
 
-    popd #>& /dev/null
+    popd >& /dev/null
     echo
     echo
     checked_done 0
