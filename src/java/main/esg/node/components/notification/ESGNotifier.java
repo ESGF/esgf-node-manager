@@ -61,6 +61,27 @@
    This class provides the notification logic for alerting users when
    specific events occur
 
+   The way this class works is that calls the NotificationDAO to query
+   the data base to gather the information of who needs to be
+   notifified of what.  The call to
+   NotificationDAO.getNotificationRecipientInfo() currently pulls
+   together *ALL the database results* into objects where each object
+   in the returned collection corresponds to a specific recipient.
+   That list is then given to the function generateNotification, which
+   does the token replacements in the template text file with the
+   necessary data, then sends an email to the particular recipient
+   indicated in that iteration.  This mechanism is straight forward
+   and provides good separation of concerns between this object and
+   the DAO.  However, it could potentially use a lot of memory if the
+   returned list of recipients and files becomes very large.  One
+   change to this code to accomodate a smaller memory footprint would
+   be to pass *this* object to the DAO's getNotificationRecipientInfo
+   and change that function so that instead of building a list, it
+   does a callback to sendNotification for each different user.  Then
+   the footprint would be the amount of memory to hold one recipeint's
+   worth of information.  This is an optimization so right now, don't
+   sweat it - better to have cleaner code for the first cut.
+
 **/
 package esg.node.components.notification;
 
@@ -91,6 +112,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
 import esg.common.db.DatabaseResource;
+import esg.common.Utils;
 import esg.node.core.*;
 
 public class ESGNotifier extends AbstractDataNodeComponent {
@@ -107,8 +129,8 @@ public class ESGNotifier extends AbstractDataNodeComponent {
     private String messageTemplate = null;
     private NotificationDAO notificationDAO = null;
 
-    private Pattern dataset_pattern = null;
-    private Pattern files_pattern = null;
+    private Pattern userid_pattern = null;
+    private Pattern update_info_pattern = null;
     
 
     public ESGNotifier(String name) { 
@@ -124,10 +146,10 @@ public class ESGNotifier extends AbstractDataNodeComponent {
 
 	messageTemplate = loadMessage(props.getProperty("mail.notification.messageTemplateFile"));
 	session = Session.getInstance(props, null);
-	notificationDAO = new NotificationDAO(DatabaseResource.getInstance().getDataSource());
+	notificationDAO = new NotificationDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
 
-	dataset_pattern = Pattern.compile("@@dataset@@");
-	files_pattern   = Pattern.compile("@@updated_files@@");
+	userid_pattern = Pattern.compile("@@esg_userid@@");
+	update_info_pattern   = Pattern.compile("@@update_info@@");
 
 	performNextNotification();
     }
@@ -151,53 +173,44 @@ public class ESGNotifier extends AbstractDataNodeComponent {
 	return message.toString();
     }
 
-    private boolean sendNotification(String dataset_id, String[] endusers, String[] changedFiles) {
+    private boolean generateNotification(NotificationDAO.NotificationRecipientInfo nri) {
+	Matcher matcher = null;
+	String messageText = "";
+
+	//NOTE: This is a two pass replacement... This could
+	//probably be done more elegantly in one, read up more
+	//about regex and make it happen.
+
+	matcher = userid_pattern.matcher(messageTemplate);
+	String tmp = matcher.replaceAll(nri.userid);
+	matcher = update_info_pattern.matcher(tmp);
+	messageText = matcher.replaceAll(nri.toString());
+	
+	return sendNotification(nri.userid, nri.userAddress, messageText);
+    }
+
+    private boolean sendNotification(String userid, String userAddress, String messageText) {
 	Message msg = null;
 	boolean success = false;
-	String messageText = "";
 	String myAddress = null;
-	Matcher matcher = null;
+
 	try {
 	    msg=new MimeMessage(session);
 	    msg.setHeader("X-Mailer","ESG DataNode IshMailer");
 	    msg.setSentDate(new Date());
 	    myAddress = props.getProperty("mail.admin.address");
 	    msg.setFrom(new InternetAddress(myAddress));
-	    msg.setSubject(subject+"("+dataset_id+")");
+	    msg.setSubject(subject+"ESG File Update Notification");
 	    
-	    //Create our comma separated list of email addresses...
-	    boolean notfirst = false;
-	    StringBuilder recipientAddresses = new StringBuilder();
-	    for(String enduser : endusers) {
-		if(notfirst) recipientAddresses.append(",");
-		recipientAddresses.append(enduser);
-		notfirst=true;
-	    }
 	    msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(myAddress));
-	    msg.setRecipients(Message.RecipientType.BCC, InternetAddress.parse(recipientAddresses.toString()));
-	    
-	    notfirst = false;
-	    StringBuilder files = new StringBuilder();
-	    for(String file : changedFiles) {
-		if(notfirst) files.append("\n");
-		files.append(file);
-		notfirst=true;
-	    }
-	    
-	    //NOTE: This is a two pass replacement... This could
-	    //probably be done more elegantly in one, read up about
-	    //regex and make it happen.
-	    matcher = dataset_pattern.matcher(messageTemplate);
-	    String tmp = matcher.replaceAll(dataset_id);
-	    matcher = files_pattern.matcher(tmp);
-	    messageText = matcher.replaceAll(files.toString());
-	    
+	    msg.setRecipients(Message.RecipientType.BCC, InternetAddress.parse(userAddress));
+	    	    
 	    msg.setText(messageText);
 	    
 	    Transport.send(msg);
 	    success = true;
 	}catch(MessagingException ex) {
-	    log.error("Problem Sending Email Notification: ("+subject+")\n"+messageText+"\n",ex);
+	    log.error("Problem Sending Email Notification: to "+userid+": "+userAddress+" ("+subject+")\n"+messageText+"\n",ex);
 	}
 	
 	msg = null; //gc niceness
@@ -210,12 +223,20 @@ public class ESGNotifier extends AbstractDataNodeComponent {
 	log.trace("Fetching Next set of notification updates");
 	boolean ret = true;
 
-	//TODO: May have to take a list of datasets here...
+	//Gets a list of result objects from DAO (one per end user) and pass them to mail generation method...
 	List<NotificationDAO.NotificationRecipientInfo> nris = notificationDAO.getNotificationRecipientInfo();
-	for(NotificationDAO.NotificationRecipientInfo nri : nris) {
-	    ret &= sendNotification(nri.dataset_id,nri.endusers,nri.changedFiles);
+	try{
+	    if(null != nris) {
+		log.trace("Number of recipients to notify = "+nris.size());
+		for(NotificationDAO.NotificationRecipientInfo nri : nris) {
+		    ret &= generateNotification(nri);
+		}
+	    }else {
+		log.warn("No Notification Recipient Infos");
+	    }
+	}catch(NullPointerException ex) {
+	    log.warn(ex);
 	}
-
 	return ret;
     }
 
@@ -234,8 +255,10 @@ public class ESGNotifier extends AbstractDataNodeComponent {
 	Timer timer = new Timer();
 	timer.schedule(new TimerTask() {
 		public final void run() {
-		    //log.trace("Checking for new notification updates...");
-		    if(ESGNotifier.this.dataAvailable && !ESGNotifier.this.isBusy) {
+		    log.trace("Checking for new notification updates... "+
+			      //"[new data? "+ESGNotifier.this.dataAvailable+"]"+
+			      "[busy? "+ESGNotifier.this.isBusy+"]");
+		    if(/*ESGNotifier.this.dataAvailable &&*/ !ESGNotifier.this.isBusy) {
 			ESGNotifier.this.isBusy = true;
 			if(fetchNextUpdates()) {
 			    markTime();

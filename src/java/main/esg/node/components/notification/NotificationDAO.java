@@ -65,6 +65,11 @@ package esg.node.components.notification;
 
 import java.util.List;
 import java.util.Vector;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -77,10 +82,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import esg.common.Utils;
+import esg.common.ESGInvalidObjectStateException;
+
+
 public class NotificationDAO implements Serializable {
 
-    //TODO figure out what these queries should be!
-    private static final String notificationQuery = "SELECT DISTINCT d.userid, d.email, ds.name, d.url, fv.location FROM dataset as ds, file as f, access_logging as d, file_version as fv WHERE ds.id=f.dataset_id and fv.file_id=f.id and d.url=fv.url and fv.mod_time>d.date_fetched AND d.date_fetched > (SELECT distinct MAX(notify_time) FROM notification_run_log where id = ? )";
+    private static final String notificationQuery = "SELECT DISTINCT d.userid, d.email, ds.name, d.url, fv.mod_time FROM dataset as ds, file as f, access_logging as d, file_version as fv WHERE ds.id=f.dataset_id and fv.file_id=f.id and d.url=fv.url and fv.mod_time>d.date_fetched AND d.date_fetched > (SELECT distinct MAX(notify_time) FROM notification_run_log where id = ? ) ORDER BY d.email";
     private static final String markTimeQuery      = "UPDATE notification_run_log SET notify_time = ? WHERE id = ?";
     private static final String regCheckEntryQuery = "SELECT COUNT(*) FROM notification_run_log WHERE id = ?";
     private static final String regAddEntryQuery   = "INSERT INTO notification_run_log (id, notify_time) VALUES ( ? , ? )";
@@ -92,27 +100,70 @@ public class NotificationDAO implements Serializable {
     private ResultSetHandler<List<NotificationDAO.NotificationRecipientInfo> > handler = null;
     private String nodeID = null;
 
-    public NotificationDAO(DataSource dataSource) {
+    public NotificationDAO(DataSource dataSource,String nodeID) {
 	this.setDataSource(dataSource);
+	this.setNodeID(nodeID);
 	init();
     }
-    
+
+    /**
+       Not preferred constructor.  Uses default node id value...
+     */
+    public NotificationDAO(DataSource dataSource) {
+	this(dataSource,Utils.getNodeID());
+    }
+
     /**
        Not preferred constructor but here for serialization requirement.
     */
-    public NotificationDAO() { this(null); }
+    public NotificationDAO() { 
+	this(null,null); 
+    }
 
     //Initialize result set handlers...
     public void init() {
+	log.trace("Setting up result handler");
 	handler = new ResultSetHandler<List<NotificationDAO.NotificationRecipientInfo> > () {
 	    public List<NotificationDAO.NotificationRecipientInfo> handle(ResultSet rs) throws SQLException {
 		List<NotificationDAO.NotificationRecipientInfo> nris = new Vector<NotificationDAO.NotificationRecipientInfo>();
-		NotificationRecipientInfo nri = new NotificationRecipientInfo();
+		NotificationDAO.NotificationRecipientInfo nri = new NotificationDAO.NotificationRecipientInfo(); 
+		String lastUserid = null;
+		String lastUserAddress = null;
 		if(!rs.next()) { return null; }
-		
-		//TODO...
-		//Wrestle results into nri objects...
-		
+		do{
+
+		    String userid = rs.getString(1);
+		    String userAddress = rs.getString(2);
+		    
+		    //Create a new object PER NEW EMAIL ADDRESS...
+		    if( (lastUserAddress == null) || (!lastUserAddress.equals(userAddress)) ) {
+			//NOTE - Memory Optimization: See comment section of ESGNotifier...
+			//(memory optimization place to put callback to notifier.generateNotification(lastUserid,lastUserAddress,nri);)
+			//(and then remove the call to nris.add(nri))
+			//(also would have to make this object take a [final] 'notifier' obj, prob via the call getNotificationInfo)
+			nri = new NotificationDAO.NotificationRecipientInfo();
+			nri.withValues(userid,userAddress);
+		    }
+
+		    //NOTE: As a refinement take a look at using a
+		    //"BeanListHandler" I think it would provide
+		    //flexibility with ordering of columns, but has
+		    //the additional stipulation of having to have to
+		    //name attributes the same as column headings or
+		    //alias the result column names from the query.
+		    //At the moment I am going with what I
+		    //know. (K.I.S.S.)
+		    
+		    //For more info on bean handling in dbUtil see: http://commons.apache.org/dbutils/examples.html
+		    //For reference on jdbc/sql type mapping: //http://java.sun.com/j2se/1.3/docs/guide/jdbc/getstart/mapping.html
+
+		    nri.withDatasetInfo(rs.getString(3),rs.getString(4),rs.getDouble(5));
+		    nris.add(nri);
+
+		    lastUserid = userid;
+		    lastUserAddress = userAddress;
+
+		}while(rs.next());
 		return nris;
 	    }
 	};
@@ -123,28 +174,35 @@ public class NotificationDAO implements Serializable {
     }
 
     public void setDataSource(DataSource dataSource) {
+	log.trace("Setting Up Notification DAO's Pooled Data Source");
 	this.dataSource = dataSource;
 	this.queryRunner = new QueryRunner(dataSource);
     }
     
-    public void setNodeID(String nodeID) { this.nodeID = nodeID; }
-    private String getNodeID() {
-	if(null != nodeID) { return nodeID; }
-	try{
-	    nodeID = java.net.InetAddress.getLocalHost().getHostAddress();
-	}catch(java.net.UnknownHostException ex) {
-	    log.error(ex);
-	}
-	return nodeID;
+    //NOTE: I made this private because I can't think of any
+    //circumstance where an instance of a DAO would need to change
+    //it's nodeID.  The nodeID is a intrinsic identifying
+    //characteristic of a DAO that qualifies many of the queries it
+    //performs.  It is especially critical when nodes may use existing
+    //postgres installations that is shared by other nodes. (just
+    //thinking ahead into the state preserving cloud-ish model of
+    //operation.
+    private void setNodeID(String nodeID) { 
+	log.trace("Notification DAO's nodeID: "+nodeID);
+	this.nodeID = nodeID; 
+    }
+    private String getNodeID() { 
+	if(nodeID == null) throw new ESGInvalidObjectStateException("NodeID cannot be NULL!");
+	return nodeID; 
     }
     
-    //TODO: May have to take a list of update datasets here...
     public List<NotificationRecipientInfo> getNotificationRecipientInfo() {
 	if(this.dataSource == null) {
 	    log.error("The datasource ["+dataSource+"] is not valid, Please call setDataSource(...) first!!!");
 	    return null;
 	}
-	log.trace("Getting Notification Recipient Info... \n Query = "+notificationQuery);
+	//log.trace("Getting Notification Recipient Info... \n Query = "+notificationQuery);
+	log.trace("Getting Notification Recipient Info...");
 	List<NotificationRecipientInfo> nris = null;
 	try{
 	    nris = queryRunner.query(notificationQuery, handler,getNodeID());
@@ -152,19 +210,15 @@ public class NotificationDAO implements Serializable {
 	    log.error(ex);
 	}
 	
-	//TODO: fake data...
-	//nri = new NotificationRecipientInfo();
-	//nri.dataset_id="faux_dataset_id_v1";
-	//nri.endusers = new String[] {"gavin@llnl.gov","williams13@llnl.gov","drach1@llnl.gov"};
-	//nri.changedFiles = new String[] {"faux_file1","faux_file2","faux_file3","faux_file4"};
-	
 	return nris;
     }
     
     public int markLastCompletionTime(){
 	int ret = -1;
 	try{
-	    ret = queryRunner.update(markTimeQuery,System.currentTimeMillis()/1000,getNodeID());
+	    long now = System.currentTimeMillis()/1000;
+	    log.trace("marking completion time: "+now);
+	    ret = queryRunner.update(markTimeQuery,now,getNodeID());
 	}catch(SQLException ex) {
 	    log.error(ex);
 	}
@@ -174,6 +228,7 @@ public class NotificationDAO implements Serializable {
     private int registerWithNotificationRunLog() {
 	int ret = -1;
 	try{
+	    log.trace("Registering this node ["+getNodeID()+"] into database");
 	    int count = queryRunner.query(regCheckEntryQuery, new ResultSetHandler<Integer>() {
 		    public Integer handle(ResultSet rs) throws SQLException {
 			if(!rs.next()) { return -1; }
@@ -194,12 +249,66 @@ public class NotificationDAO implements Serializable {
 	return ret;
     }
 
-    //Result data holder object....
+    //----------------------------------------------
+    //Result data holder objects....
+    //----------------------------------------------
     public static class NotificationRecipientInfo {
-	String dataset_id = null;
-	String[] endusers = null;
-	String[] changedFiles = null;
+	String userid = null;
+	String userAddress = null;
+	Map<String,Set<FileInfo>>  datasets = new HashMap<String,Set<FileInfo>>();
+
+	//Using a more "fluent" model of setting vars: convention is to use "withXXX"
+	public NotificationRecipientInfo withValues(String userid, String userAddress) {
+	    this.userid = userid;
+	    this.userAddress = userAddress;
+	    return this;
+	}
+	
+	public NotificationRecipientInfo withDatasetInfo(String datasetName,String fileUrl,double modTime) {
+	    Set<FileInfo> fileInfoSet = datasets.get(datasetName);
+	    if(fileInfoSet == null) {
+		datasets.put(datasetName, fileInfoSet = new HashSet<FileInfo>());
+	    }
+	    fileInfoSet.add(new FileInfo(fileUrl,modTime));
+	    return this;
+	}
+
+	public String toString() {
+	    StringBuilder sb = new StringBuilder();
+	    String datasetName = null;
+	    for(Iterator<String> dsIt = datasets.keySet().iterator(); dsIt.hasNext();) {
+		datasetName = dsIt.next();
+		sb.append("Dataset: "+datasetName+"\n");
+		for(Iterator<FileInfo> fiIt = datasets.get(datasetName).iterator(); fiIt.hasNext();) { 
+		    sb.append("   File URL: "+fiIt.next());
+		}
+	    }
+	    return sb.toString();
+	}
     }
+
+    public static class FileInfo {
+	String url = null;
+	double modTime = 0L;
+	
+	FileInfo(String url, double modTime) {
+	    this.url = url;
+	    this.modTime = modTime;
+	}
+
+	//FileInfos are equal if the urls are the same
+	//(Not counting mod time)
+	public boolean equals(Object obj) {
+	    return this.url.equals(((FileInfo)obj).url);
+	}
+
+	public String toString() {
+	    return url+" : "+modTime; //TODO: turn modTime into a human readable date
+	}
+	
+    }
+    //----------------------------------------------
+
 
     public String toString() {
 	StringBuilder out = new StringBuilder();
