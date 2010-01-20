@@ -1204,6 +1204,12 @@ test_tds() {
 #####
 # Install The Data Node Manager
 #####
+# - Takes boolean arg: 0 = setup / install mode (default)
+#                      1 = updated mode
+#
+# In setup mode it is an idempotent install (default)
+# In update mode it will always pull down latest after archiving old
+#
 setup_node() {
     echo
     echo "*******************************"
