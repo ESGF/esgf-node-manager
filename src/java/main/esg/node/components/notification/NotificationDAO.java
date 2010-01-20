@@ -70,6 +70,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Calendar;
 import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -157,7 +158,7 @@ public class NotificationDAO implements Serializable {
 		    //For more info on bean handling in dbUtil see: http://commons.apache.org/dbutils/examples.html
 		    //For reference on jdbc/sql type mapping: //http://java.sun.com/j2se/1.3/docs/guide/jdbc/getstart/mapping.html
 
-		    nri.withDatasetInfo(rs.getString(3),rs.getString(4),rs.getDouble(5));
+		    nri.withDatasetInfo(rs.getString(3),rs.getString(4),rs.getLong(5));
 		    nris.add(nri);
 
 		    lastUserid = userid;
@@ -202,7 +203,6 @@ public class NotificationDAO implements Serializable {
 	    return null;
 	}
 	//log.trace("Getting Notification Recipient Info... \n Query = "+notificationQuery);
-	log.trace("Getting Notification Recipient Info...");
 	List<NotificationRecipientInfo> nris = null;
 	try{
 	    nris = queryRunner.query(notificationQuery, handler,getNodeID());
@@ -217,7 +217,9 @@ public class NotificationDAO implements Serializable {
 	int ret = -1;
 	try{
 	    long now = System.currentTimeMillis()/1000;
-	    log.trace("marking completion time: "+now);
+	    //Calendar cal = Calendar.getInstance();
+	    //cal.setTimeInMillis(now*1000);
+	    //log.trace("marking completion time: "+now+" : "+cal.getTime());
 	    ret = queryRunner.update(markTimeQuery,now,getNodeID());
 	}catch(SQLException ex) {
 	    log.error(ex);
@@ -264,7 +266,7 @@ public class NotificationDAO implements Serializable {
 	    return this;
 	}
 	
-	public NotificationRecipientInfo withDatasetInfo(String datasetName,String fileUrl,double modTime) {
+	public NotificationRecipientInfo withDatasetInfo(String datasetName,String fileUrl,long modTime) {
 	    Set<FileInfo> fileInfoSet = datasets.get(datasetName);
 	    if(fileInfoSet == null) {
 		datasets.put(datasetName, fileInfoSet = new HashSet<FileInfo>());
@@ -288,10 +290,11 @@ public class NotificationDAO implements Serializable {
     }
 
     public static class FileInfo {
+	Calendar cal = Calendar.getInstance();
 	String url = null;
-	double modTime = 0L;
+	long modTime = 0L;
 	
-	FileInfo(String url, double modTime) {
+	FileInfo(String url, long modTime) {
 	    this.url = url;
 	    this.modTime = modTime;
 	}
@@ -303,7 +306,8 @@ public class NotificationDAO implements Serializable {
 	}
 
 	public String toString() {
-	    return url+" : "+modTime; //TODO: turn modTime into a human readable date
+	    cal.setTimeInMillis(modTime*1000);
+	    return url+" : "+cal.getTime(); //TODO: turn modTime into a human readable date
 	}
 	
     }

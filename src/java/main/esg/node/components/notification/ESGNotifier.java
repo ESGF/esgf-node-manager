@@ -124,7 +124,7 @@ public class ESGNotifier extends AbstractDataNodeComponent {
     private Properties props = null;
     private Session session = null;
     private boolean isBusy = false;
-    private boolean dataAvailable = true; //zoiks make false, just true for testing!
+    //private boolean dataAvailable = true; //zoiks make false, just true for testing!
     private StringBuilder endusers = null;
     private String messageTemplate = null;
     private NotificationDAO notificationDAO = null;
@@ -202,8 +202,8 @@ public class ESGNotifier extends AbstractDataNodeComponent {
 	    msg.setFrom(new InternetAddress(myAddress));
 	    msg.setSubject(subject+"ESG File Update Notification");
 	    
-	    msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(myAddress));
-	    msg.setRecipients(Message.RecipientType.BCC, InternetAddress.parse(userAddress));
+	    msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(userAddress));
+	    //msg.setRecipients(Message.RecipientType.BCC, InternetAddress.parse(userAddress));
 	    	    
 	    msg.setText(messageText);
 	    
@@ -220,7 +220,7 @@ public class ESGNotifier extends AbstractDataNodeComponent {
     
     //THE CALL TO FETCH INFO FROM THE DATABASE... (one level removed)
     protected boolean fetchNextUpdates() {
-	log.trace("Fetching Next set of notification updates");
+	//log.trace("Fetching Next set of notification updates");
 	boolean ret = true;
 
 	//Gets a list of result objects from DAO (one per end user) and pass them to mail generation method...
@@ -232,7 +232,7 @@ public class ESGNotifier extends AbstractDataNodeComponent {
 		    ret &= generateNotification(nri);
 		}
 	    }else {
-		log.warn("No Notification Recipient Infos");
+		//log.trace("No Notification Recipient Infos");
 	    }
 	}catch(NullPointerException ex) {
 	    log.warn(ex);
@@ -241,7 +241,7 @@ public class ESGNotifier extends AbstractDataNodeComponent {
     }
 
     protected int markTime() {
-	log.trace("Marking Time of notification completion");
+	//log.trace("Marking Time of notification completion");
 	return notificationDAO.markLastCompletionTime();
     }
 
@@ -255,14 +255,12 @@ public class ESGNotifier extends AbstractDataNodeComponent {
 	Timer timer = new Timer();
 	timer.schedule(new TimerTask() {
 		public final void run() {
-		    log.trace("Checking for new notification updates... "+
-			      //"[new data? "+ESGNotifier.this.dataAvailable+"]"+
-			      "[busy? "+ESGNotifier.this.isBusy+"]");
+		    //log.trace("Checking for new notification updates... [busy? "+ESGNotifier.this.isBusy+"]");
 		    if(/*ESGNotifier.this.dataAvailable &&*/ !ESGNotifier.this.isBusy) {
 			ESGNotifier.this.isBusy = true;
 			if(fetchNextUpdates()) {
 			    markTime();
-			    ESGNotifier.this.dataAvailable = false;
+			    /*ESGNotifier.this.dataAvailable = false;*/
 			}
 			ESGNotifier.this.isBusy = false;
 		    }
@@ -284,8 +282,8 @@ public class ESGNotifier extends AbstractDataNodeComponent {
 
 	//May have to get back an event object with dataset values!!!
 	
-	dataAvailable = true;
-	log.trace("Setting dataAvailable to : "+dataAvailable);
+	//dataAvailable = true;
+	//log.trace("Setting dataAvailable to : "+dataAvailable);
 
     }
 
