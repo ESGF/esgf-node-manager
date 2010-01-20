@@ -24,5 +24,5 @@ ALTER  SEQUENCE seq_access_logging OWNED BY access_logging.id;
 
 CREATE TABLE notification_run_log (
     id character varying NOT NULL,
-    notify_time double precision NOT NULL,
+    notify_time double precision NOT NULL
 );
