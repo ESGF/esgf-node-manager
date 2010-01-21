@@ -75,13 +75,17 @@ DEBUG=${DEBUG:-1}
 #--------------
 progname=esg-node
 version="0.3.0"
-node_version=".0.0.2"
+
 envfile=${envfile:-"/etc/esg.env"}
 t=${0%.*}
 logfile=${logfile:-"/var/tmp/${t##*/}.out"}
 
 init() {
     [ -e ${envfile} ] && source ${envfile} && printf "sourcing environment from: ${envfile} \n\n"
+
+    cdat_version=${cdat_version:-"5.1.1"}
+    esgcet_version=${esgcet_version:-"2.1"}
+    node_version=${node_version:-".0.0.2"}
 
     workdir=${workdir:-~/workbench/esg}
     postgress_install_dir=${PGHOME:-/usr/local/pgsql}
@@ -143,10 +147,9 @@ init() {
     pg_sys_acct=postgres
     postgress_dist_url=http://ftp9.us.postgresql.org/pub/mirrors/postgresql/source/v8.3.8/postgresql-8.3.8.tar.gz
     repo=http://www-pcmdi.llnl.gov/svn/repository/cdat/tags
-    esgcet_egg_file=esgcet-2.0-py2.5.egg
+    esgcet_egg_file=esgcet-${esgcet_version}-py2.5.egg
     esg_dist_url=http://rainbow.llnl.gov/dist
     esg_testdir=${workdir}/../esg_test
-    cdat_version=${cdat_version:=5.1.1}
     tomcat_dist_url=http://download.filehat.com/apache/tomcat/tomcat-6/v6.0.20/bin/apache-tomcat-6.0.20.tar.gz
     tomcat_pid_file=/var/run/tomcat-jsvc.pid
     utils_url=http://rainbow.llnl.gov/dist/utils
@@ -270,7 +273,7 @@ setup_ant() {
 	[ $? != 0 ] && \
 	    echo " ERROR: Could not create sym link ${ant_install_dir%/*}/${ant_dist_dir} -> ${ant_install_dir}" && popd && checked_done 1
     else
-	printf "Using Ant installation found at ${ant_install_dir}:\n `stat ${ant_install_dir}`"
+	printf "Using Ant installation found at ${ant_install_dir}:\n `stat ${ant_install_dir}`\n"
     fi
 
     ${ant_install_dir}/bin/ant -version
@@ -316,6 +319,14 @@ setup_postgress() {
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
     postgress_dist_dir=$(echo ${postgress_dist_file} | awk '{print substr($1,1,length($1)-7)}')
         
+    #There is this pesky case of having a zero sized dist file... WTF!?
+    if [ -e ${postgress_dist_file} ]; then
+        ls -l ${postgress_dist_file}
+	#NOTE: I know there must be a cleaner way to get this, maybe stat?
+        local size=$(ls -l | grep ${postgress_dist_file} | tr -s " " | cut -d " " -f 5)
+        (( size == 0 )) && rm -v ${postgress_dist_file}
+    fi
+
     #Check to see if we have postgres distribution directory
     if [ ! -e ${postgress_dist_dir} ]; then
 	echo "Don't see postgress distribution dir ${postgress_dist_dir}"
@@ -402,14 +413,14 @@ setup_postgress() {
     #Get files
     fetch_file=pg_hba.conf
     checked_get ./${fetch_file} ${esg_dist_url}/externals/bootstrap/${fetch_file}
-    [ $? != 0 ] && popd && checked_done 1
+    (( $? > 1 )) && popd && checked_done 1
     chmod 600 ${fetch_file}
 
 
     #Get File...
     fetch_file=postgresql.conf
     checked_get ./${fetch_file} ${esg_dist_url}/externals/bootstrap/${fetch_file}
-    [ $? != 0 ] && popd && checked_done 1
+    (( $? > 1 )) && popd && checked_done 1
     chmod 600 ${fetch_file}
 
     #@@postgress_host@@ #Token in file...
@@ -447,9 +458,10 @@ write_postgress_env() {
 }
 
 start_postgress() {
-    check_postgress_process && echo "Postgress Already Running..." && return 1
+    check_postgress_process && return 1
     
-    echo "start postgress: su $pg_sys_acct -c \"$postgress_install_dir/bin/pg_ctl -D $postgress_install_dir/data start\""
+    echo "Starting Postgress..."
+    echo "su $pg_sys_acct -c \"$postgress_install_dir/bin/pg_ctl -D $postgress_install_dir/data start\""
     su $pg_sys_acct -c "$postgress_install_dir/bin/pg_ctl -D $postgress_install_dir/data start"
     [ $? != 0 ] && echo " ERROR: Could not start database!" && popd && return 1
 
@@ -466,12 +478,8 @@ stop_postgress() {
     #su postgres -c "pg_ctl -D /usr/local/pgsql/data stop" #(gently stop server) 
     #
 
-    if check_postgress_process 
-    then 
-	echo "Detected Running Postgres..."
-    else
-	echo "No Postgres Process Currently Running..." && return 1
-    fi
+    check_postgress_process 
+    [ $? != 0 ] && return 1    
 
     echo 
     echo "stop postgress: su $pg_sys_acct -c \"pg_ctl -D $postgress_install_dir/data -m i stop\""
@@ -666,7 +674,7 @@ test_esgcet() {
     local fetch_file
     fetch_file=sftlf.nc
     checked_get ${esgcet_testdir}/${fetch_file} ${esg_dist_url}/externals/${fetch_file}
-    [ $? != 0 ] && echo " ERROR: Problem pulling down ${fetch_file} from esg distribution" && popd && checked_done 1
+    (( $? > 1 )) && echo " ERROR: Problem pulling down ${fetch_file} from esg distribution" && popd && checked_done 1
 
 
     #Run test...
@@ -715,6 +723,14 @@ setup_tomcat() {
     tomcat_dist_file=${tomcat_dist_url##*/}
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
     tomcat_dist_dir=$(echo ${tomcat_dist_file} | awk '{print substr($1,1,length($1)-7)}')
+
+    #There is this pesky case of having a zero sized dist file... WTF!?                                                                            
+    if [ -e ${tomcat_dist_file} ]; then
+        ls -l ${tomcat_dist_file}
+	#NOTE: I know there must be a cleaner way to get this, maybe stat?
+        local size=$(ls -l | grep ${tomcat_dist_file} | tr -s " " | cut -d " " -f 5)
+        (( size == 0 )) && rm -v ${tomcat_dist_file}
+    fi
 
     #Check to see if we have a tomcat distribution directory
     if [ ! -e ${tomcat_install_dir%/*}/${tomcat_dist_dir} ]; then
@@ -791,7 +807,7 @@ setup_tomcat() {
 
     fetch_file=server.xml
     checked_get ./${fetch_file} ${esg_dist_url}/externals/bootstrap/dnode.${fetch_file}
-    [ $? != 0 ] && popd && checked_done 1
+    (( $? > 1 )) && popd && checked_done 1
     chmod 600 ${fetch_file}
 
     #Create a keystore in $tomcat_install_dir/conf
@@ -845,9 +861,10 @@ write_tomcat_env() {
 
 
 start_tomcat() {
-    check_tomcat_process && echo "Tomcat Already Running..." && return 1
+    check_tomcat_process && return 1
 
-    pushd $tomcat_install_dir
+    echo "Starting Tomcat (jsvc)..."
+    pushd $tomcat_install_dir >& /dev/null
     jsvc_launch_command="JAVA_HOME=$java_home ./bin/jsvc -pidfile $tomcat_pid_file -cp $(find $(readlink -f `pwd`/bin/) | grep jar | xargs | perl -pe 's/ /:/g') -outfile ./logs/catalina.out -errfile ./logs/catalina.err -user $tomcat_user $java_opts org.apache.catalina.startup.Bootstrap"
     echo "$jsvc_launch_command"
     JAVA_HOME=$java_home ./bin/jsvc -pidfile $tomcat_pid_file \
@@ -859,7 +876,7 @@ start_tomcat() {
     if [ $? != 0 ]; then 
 	echo " ERROR: Could not start up tomcat"
 	tail ./logs/catalina.err
-	popd #>& /dev/null
+	popd >& /dev/null
 	checked_done 1
     fi
     
@@ -870,7 +887,7 @@ start_tomcat() {
     echo "[OK]"
     ps -elf | grep jsvc  | grep -v grep
     date
-    popd
+    popd >& /dev/null
     checked_done 0
 }
 
@@ -880,14 +897,10 @@ stop_tomcat() {
     #% sudo /usr/local/tomcat/bin/jsvc -pidfile /var/run/tomcat-jsvc.pid -stop org.apache.catalina.startup.Boostrap
     #
 
-    if check_tomcat_process 
-    then 
-	echo "Detected Running Tomcat..."
-    else
-	echo "No Tomcat Processes Currently Running..." && return 1
-    fi
+    check_tomcat_process 
+    [ $? != 0 ] && return 1
 
-    pushd $tomcat_install_dir
+    pushd $tomcat_install_dir >& /dev/null
     echo 
     echo "stop tomcat: ./bin/jsvc -pidfile $tomcat_pid_file -stop org.apache.catalina.startup.Bootstrap"
     sleep 1
@@ -899,7 +912,7 @@ stop_tomcat() {
 	[ $? != 0 ] && echo "Hmmm... still could not shutdown... process may have already been stopped"
     fi
     /bin/ps -elf | grep jsvc | grep -v grep
-    popd #>& /dev/null
+    popd >& /dev/null
     return 0
 }
 
@@ -936,9 +949,9 @@ register() {
     pushd ${workdir} # >& /dev/null
     #Download the Java code used for certificate installation (into $workdir)
     checked_get ${utils_url}/InstallCert.class
-    [ $? != 0 ] && echo " ERROR: Could not download utility class(1) for installing certificates" && popd && return 1
+    (( $? > 1 )) && echo " ERROR: Could not download utility class(1) for installing certificates" && popd && return 1
     checked_get ${utils_url}/'InstallCert$SavingTrustManager.class'
-    [ $? != 0 ] && echo " ERROR: Could not download utility class(2) for installing certificates" && popd && return 1
+    (( $? > 1 )) && echo " ERROR: Could not download utility class(2) for installing certificates" && popd && return 1
     popd # >& /dev/null
 
     pushd $tomcat_install_dir/conf #>& /dev/null
@@ -997,6 +1010,14 @@ setup_tds() {
 
     thredds_dist_file=${thredds_dist_file:-${thredds_dist_url##*/}}
     
+    #There is this pesky case of having a zero sized dist file... WTF!?                                                                            
+    if [ -e ${thredds_dist_file} ]; then
+        ls -l ${thredds_dist_file}
+	#NOTE: I know there must be a cleaner way to get this, maybe stat?
+        local size=$(ls -l | grep ${thredds_dist_file} | tr -s " " | cut -d " " -f 5)
+        (( size == 0 )) && rm -v ${thredds_dist_file}
+    fi
+
     #Check to see if we have this war file already in the workbench...
     if [ ! -e ${thredds_dist_file} ]; then
 	wget -O ${thredds_dist_file} ${thredds_dist_url}
@@ -1026,7 +1047,7 @@ setup_tds() {
 
     fetch_file=tomcat-users.xml
     checked_get $tomcat_install_dir/conf/${fetch_file} ${esg_dist_url}/externals/bootstrap/${fetch_file}
-    [ $? != 0 ] && popd && checked_done 1
+    (( $? > 1 )) && popd && checked_done 1
     chown tomcat $tomcat_install_dir/conf/${fetch_file}
     chgrp tomcat $tomcat_install_dir/conf/${fetch_file}
     
@@ -1078,7 +1099,7 @@ setup_tds() {
     mkdir -p $tomcat_install_dir/conf/Catalina/localhost
     fetch_file=thredds.xml
     checked_get $tomcat_install_dir/conf/Catalina/localhost/${fetch_file} ${esg_dist_url}/externals/bootstrap/${fetch_file}
-    [ $? != 0 ] && echo " ERROR: Problem pulling down ${fetch_file} from esg distribution" && popd && checked_done 1
+    (( $? > 1 )) && echo " ERROR: Problem pulling down ${fetch_file} from esg distribution" && popd && checked_done 1
 
     
     ############################
@@ -1087,17 +1108,17 @@ setup_tds() {
 
     fetch_file=eske.jar
     checked_get $tomcat_install_dir/webapps/thredds/WEB-INF/lib/${fetch_file} ${esg_dist_url}/externals/${fetch_file}
-    [ $? != 0 ] && popd && checked_done 1
+    (( $? > 1 )) && popd && checked_done 1
     chown tomcat.tomcat $tomcat_install_dir/webapps/thredds/WEB-INF/lib/${fetch_file}
     
     fetch_file=hessian-3.0.20.jar
     checked_get $tomcat_install_dir/webapps/thredds/WEB-INF/lib/${fetch_file} ${esg_dist_url}/externals/${fetch_file}
-    [ $? != 0 ] && popd && checked_done 1
+    (( $? > 1 )) && popd && checked_done 1
     chown tomcat.tomcat $tomcat_install_dir/webapps/thredds/WEB-INF/lib/${fetch_file}
 
     fetch_file=web.xml
     checked_get $tomcat_install_dir/webapps/thredds/WEB-INF/${fetch_file} ${esg_dist_url}/externals/bootstrap/thredds.${fetch_file}
-    [ $? != 0 ] && popd && checked_done 1
+    (( $? > 1 )) && popd && checked_done 1
     chown tomcat.tomcat $tomcat_install_dir/webapps/thredds/WEB-INF/${fetch_file}
 
     #(Making this assignment for the sake of readability for the code below)
@@ -1250,44 +1271,24 @@ setup_node() {
     #(Ex: esg-node.0.0.1.tar.gz -> esg-node.0.0.1)
     node_dist_dir=$(echo ${node_dist_file} | awk '{print substr($1,1,length($1)-7)}')
 
+    checked_get ${node_dist_file} ${node_dist_url}
+    no_new_update=$?
+
     if((upgrade)); then
+	((no_new_update == 1)) && echo "nothing more to do, you are up2date" && return 1
 	echo "Upgrading the ESG Node Manager..."
 	if [ -e ${node_dist_dir} ]; then
-	    echo "...archiving..."
+	    echo "...archiving... ${node_dist_dir} -> ${node_dist_dir}.arch.$(date ${date_format}).tgz ${node_dist_dir}"
 	    tar czf ${node_dist_dir}.arch.$(date ${date_format}).tgz ${node_dist_dir}
-	    echo "...removing..."
+	    echo "...removing... ${node_dist_dir}"
 	    rm -rf ${node_dist_dir}
-	    mv ${node_dist_file} ${node_dist_file}.bak
 	fi
     fi
-
-    #Check to see if we have postgres distribution directory
-    if [ ! -e ${node_dist_dir} ]; then
-	echo "Don't see node distribution dir ${node_dist_dir}"
-	if [ ! -e ${node_dist_file} ]; then
-	    echo "Don't see node distribution file ${node_dist_file} either"
-	    echo "Downloading ESG Node from ${node_dist_url}"
-	    checked_get ${node_dist_file} ${node_dist_url}
-	    [ $? != 0 ] && popd && checked_done 1
-	    tar xzf ${node_dist_file}
-	    [ $? != 0 ] && echo " ERROR: Could not extract the ESG Node: ${node_dist_file}" && popd && checked_done 1
-	    ((++action_performed))
-	fi
-    fi
-
-    #If you don't see the directory but see the tar.gz distribution
-    #then expand it and go from there....
-    if [ -e ${node_dist_file} ] && [ ! -e ${node_dist_dir} ]; then
-	echo "Expanding distribution file ${node_dist_file}"
-	tar xzf ${node_dist_file}
-	((++action_performed))
-    fi
-
+    
+    tar xzf ${node_dist_file}
+    [ $? != 0 ] && echo " ERROR: Could not extract the ESG Node: ${node_dist_file}" && popd && checked_done 1
+    
     pushd ${node_dist_dir} >& /dev/null
-
-    if((upgrade)); then
-	((action_performed > 1)) && echo "No upgrade action to perform (exiting setup_node function)" && return 0
-    fi
 
     stop_tomcat
 
@@ -1300,7 +1301,7 @@ setup_node() {
     mkdir -p ${node_app_home}
     cd ${node_app_home}
 
-    echo "Expanding war ${node_war_file}"
+    echo "Expanding war ${node_war_file} in $(pwd)"
     $JAVA_HOME/bin/jar xf ${node_war_file}
     
     
@@ -1390,7 +1391,7 @@ configure_postgress() {
         -Dsql.jdbc.database.user=${postgress_user} \
         -Dsql.jdbc.database.password=${pg_sys_acct_passwd} \
         -Dsql.jdbc.driver.jar=${node_app_home}/WEB-INF/lib/${postgress_jar} make_node_db
-    [ $? != 0 ] && echo "ERROR: Could not create esg node database tables in ${node_db_name}" && checked_done 1
+    [ $? != 0 ] && echo "ERROR: Could not create esg node database tables in ${node_db_name}" && return 1
 
     popd #>& /dev/null
     echo
@@ -1400,7 +1401,7 @@ configure_postgress() {
 
 #Takes 2 arguments: 
 # First  - The top level directory of the webapp where filter is to be installed.
-# Second - The file containing the filter entry xml snippet
+# Second - The file containing the filter entry xml snippet (optional: defaulted)
 setup_filter() {
 
     local dest_dir=$1
@@ -1494,7 +1495,7 @@ setup_globus() {
     pushd ${scripts_dir} # >& /dev/null
     local fetch_file=esg-globus
     checked_get ./${fetch_file} ${esg_dist_url}/externals/bootstrap/${fetch_file}
-    [ $? != 0 ] && popd && return 1
+    (( $? > 1 )) && popd && return 1
     chmod 755 ${fetch_file}
     popd # >& /dev/null
 
@@ -1567,7 +1568,7 @@ setup_products() {
     pushd ${scripts_dir} # >& /dev/null
     local fetch_file=esg-product-server
     checked_get ./${fetch_file} ${esg_dist_url}/externals/bootstrap/${fetch_file}
-    [ $? != 0 ] && popd && return 1
+    (( $? > 1 )) && popd && return 1
     chmod 755 ${fetch_file}
     popd # >& /dev/null
 
@@ -1722,14 +1723,14 @@ set_classpath() {
 #This function "succeeds" (is true)  if there *are* running processes found
 check_postgress_process() {
     val=$(ps -elf | grep postgres | grep -v grep | awk ' END { print NR }')
-    [ $(($val > 0 )) == 1 ] && echo "postgres process is running..." && return 0
+    [ $(($val > 0 )) == 1 ] && echo "Postgres process is running..." && return 0
     return 1
 }
 
 #This function "succeeds" (is true)  if there *are* running processes found
 check_tomcat_process() {
     val=$(ps -elf | grep jsvc | grep -v grep | awk ' END { print NR }')
-    [ $(($val > 0 )) == 1 ] && echo "tomcat (jsvc) process is running..." && return 0
+    [ $(($val > 0 )) == 1 ] && echo "Tomcat (jsvc) process is running..." && return 0
     return 1
 }
 
@@ -1756,8 +1757,51 @@ checked_done() {
     return 0
 }
 
-#usage: checked_get [file] http://www.foo.com/file
+# Does an md5 check between local and remote resource
+# returns 0 (success) iff there is no match and thus indicating that
+# an update is available.
+# USAGE: checked_for_update [file] http://www.foo.com/file
+#
+check_for_update() {
+    local local_file
+    local remote_file
+    if (( $# == 1 )); then
+        remote_file=${1}
+        local_file=$(readlink -f ${1##*/})
+    elif (( $# == 2 )); then
+        local_file=${1}
+        remote_file=${2}
+    else
+        echo "function \"checked_for_update\":  Called with incorrect number of args! (fatal)"
+        exit 1
+    fi                      
+    
+    [ ! -e ${local_file} ] && echo " WARNING: Could not find local file ${local_file}" && return 0
+    [ ! -x ${local_file} ] && echo " WARNING: local file ${local_file} not executible" && chmod 755 ${local_file}
+    diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
+    [ $? != 0 ] && echo " Update Available @ ${remote_file}" && return 0
+    echo " ==> ${local_file} is up to date"
+    return 1
+}
+
+# If an update is available then pull it down... then check the md5 sums again!
+#
+#  Yes, this results in 3 network calls to pull down a file, but it
+#  saves total bandwidth and it also allows the updating from the
+#  network process to be cronttab-able while parsimonious with
+#  resources.  It is also very good practice to make sure that code
+#  being executed is the RIGHT code!
+#
+# NOTE: Has multiple return values test for (( $? > 1 )) when looking or errors
+#       A return value fo 1 only means that the file is up-to-date and there
+#       Is no reason to fetch it.
+#
+# USAGE: checked_get [file] http://www.foo.com/file
+#
 checked_get() {
+    check_for_update $@
+    [ $? != 0 ] && return 1
+
     local local_file
     local remote_file
     if (( $# == 1 )); then
@@ -1774,9 +1818,9 @@ checked_get() {
     [ -e ${local_file} ] && cp -v ${local_file} ${local_file}.bak 
     chmod 600 ${local_file}.bak
     wget -O ${local_file} ${remote_file}
-    [ $? != 0 ] && echo " ERROR: Problem pulling down [${remote_file##*/}] from esg distribution site" && return 1
+    [ $? != 0 ] && echo " ERROR: Problem pulling down [${remote_file##*/}] from esg distribution site" && return 2
     diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
-    [ $? != 0 ] && echo " WARNING: Could not verify this file!" && return 2
+    [ $? != 0 ] && echo " WARNING: Could not verify this file!" && return 3
     echo "[VERIFIED]"
     return 0
 }
@@ -1917,6 +1961,7 @@ usage() {
         --test-pub  - performs the publication test directly (same publication called in last step of install)
         --info      - provides a brief explaination of the DataNode
         --register  - connects to desired gateway, fetches and stores their certificate to enable SSL connection
+        --upgrade   - upgrades the node manager
         --no-globus - will not install any globus tools (for those with existing globus setups)
 
         start   - start the data node services
