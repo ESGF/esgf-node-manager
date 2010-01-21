@@ -115,18 +115,17 @@ public class AccessLoggingFilter implements Filter {
 
     private static Log log = LogFactory.getLog(AccessLoggingFilter.class);
     
-    private FilterConfig filterConfig = null;
-    private AccessLoggingDAO accessLoggingDAO = null;
-    private Properties dbProperties = null;
+    FilterConfig filterConfig = null;
+    AccessLoggingDAO accessLoggingDAO = null;
+    Properties dbProperties = null;
 
-    public AccessLoggingFilter() {
-	log.trace("Instantiating AccessLoggingFilter...");
-	dbProperties = new Properties();
-	
-    }
 
     public void init(FilterConfig filterConfig) throws ServletException {
+	log.debug("Initializing filter: "+this.getClass().getName());
 	this.filterConfig = filterConfig;
+	dbProperties = new Properties();
+	System.out.println("FilterConfig is : "+filterConfig);
+	System.out.println("db.protocol is  : "+filterConfig.getInitParameter("db.protocol"));
 	dbProperties.put("db.protocol",filterConfig.getInitParameter("db.protocol"));
 	dbProperties.put("db.host",filterConfig.getInitParameter("db.host"));
 	dbProperties.put("db.port",filterConfig.getInitParameter("db.port"));
@@ -162,7 +161,7 @@ public class AccessLoggingFilter implements Filter {
 	//firewall off any errors so that nothing stops the show...
 	try {
 	    if(accessLoggingDAO != null) {
-
+		
 		HttpServletRequest req = (HttpServletRequest)request;
 		Map<String,String> validationMap = (Map<String,String>)req.getAttribute("validationMap");
 		if(validationMap != null) {
@@ -185,16 +184,22 @@ public class AccessLoggingFilter implements Filter {
 		    req.removeAttribute("validationMap");
 		    
 		}else{
-		    log.warn("Validation Map is null ["+validationMap+"]");
+		    log.warn("Validation Map is ["+validationMap+"]");
 		}
 	    }else{
-		log.warn("DAO is null :["+accessLoggingDAO+"]");
+		log.error("DAO is null :["+accessLoggingDAO+"]");
+		HttpServletResponse resp = (HttpServletResponse)response;
+		resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Invalid token validation service");
 	    }
+	    	    
 	}catch(Throwable t) {
 	    log.error(t);
+	    HttpServletResponse resp = (HttpServletResponse)response;
+	    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Invalid token validation service");
 	}
-	
+
 	chain.doFilter(request, response);
+	
     }
     
 }
