@@ -63,6 +63,10 @@
 #uses: egrep, rsync (and thus ssh)
 
 debug=${debug:-0}
+noop=${noop:-0}
+
+((debug)) && echo "Debug is ON"
+((noop)) && echo "Noop is ON"
 
 manifest_file=${manifest_file:-$0.manif}
 esg_dist_url="rainbow.llnl.gov:/pcmdi_web/dist"
@@ -98,10 +102,10 @@ while read file dest_dir; do
     #echo "[$file] >> [$dest_dir]"
     
     ((debug)) && echo -n "pushing $file ---> ${esg_dist_url}/${dest_dir} " || echo -n "*"
-    md5sum $file > ${file}.md5
-    rsync -c ${file}.md5 ${esg_dist_url}/${dest_dir}/${file##*/}.md5 >& /dev/null
+    ((!noop))  && md5sum $file > ${file}.md5
+    ((!noop))  && rsync -c ${file}.md5 ${esg_dist_url}/${dest_dir}/${file##*/}.md5 >& /dev/null
     echo -n "-"
-    rsync -c ${file} ${esg_dist_url}/${dest_dir}/${file##*/} >& /dev/null
+    ((!noop))  && rsync -c ${file} ${esg_dist_url}/${dest_dir}/${file##*/} >& /dev/null
     if [ $? != 0 ]; then
 	((debug)) && echo "[FAIL]"
 	((++fail))
