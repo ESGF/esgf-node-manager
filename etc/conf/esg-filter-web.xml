@@ -10,16 +10,28 @@
     <init-param>
       <param-name>db.driver</param-name>
       <param-value>@db.driver@</param-value>
+    </init-param>
+    <init-param>
       <param-name>db.protocol</param-name>
       <param-value>@db.protocol@</param-value>
+    </init-param>
+    <init-param>
       <param-name>db.host</param-name>
       <param-value>@db.host@</param-value>
+    </init-param>
+    <init-param>
       <param-name>db.port</param-name>
       <param-value>@db.port@</param-value>
+    </init-param>
+    <init-param>
       <param-name>db.database</param-name>
       <param-value>@db.database@</param-value>
+    </init-param>
+    <init-param>
       <param-name>db.user</param-name>
       <param-value>@db.user@</param-value>
+    </init-param>
+    <init-param>
       <param-name>db.password</param-name>
       <param-value>@db.password@</param-value>
     </init-param>
