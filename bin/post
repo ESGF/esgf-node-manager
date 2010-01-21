@@ -20,21 +20,72 @@
 #  for this task, so put the necessary files on one, right? :-)
 #
 #  This file reads a manifest file by default postlist.manif
+# 
+# The format of the manifest file is pseudo "ini" like.  You can
+# specifiy the destination directory extending from the esg_dist_url
+# value by putting that value on a single line in []s.  files must be
+# listed with either absolute path or directory relative to the
+# execution of the "post" script.  There may be a second value after the
+# file location that determines where this particular entry is put on
+# the server (after the esg_dist_url value).  If no destination
+# directory value is set the default is esg_node set at the top of the
+# script.
+#
+# NOTE: Because we use rsync -c files will not be pushed if they have
+# not changed since the last push! :-) Pretty damn sweet!
+# 
+# Ex: 
+# -----
+# 
+# #lines starting with "#" are ignored :-)
+# /path/file1
+# 
+# [server_dir]
+# 
+# path/file2
+# path/file3 other_server_dir
+# ../path/file4
+# 
+# [another_path/foo]
+# 
+# path/file4
+# 
+# -----
+# file1 will go to ${esg_dist_url}/esg_node (the default server dir)
+# file2 will go to ${esg_dist_url}/server_dir
+# file3 will to go ${esg_dist_url}/other_server_dir
+# file4 will go to ${esg_dist_url}/server_dir
+# file5 will go to ${esg_dist_url}/another_path/foo
+# 
 #
 #*****************************************************************
 
-#uses: rsync (and thus ssh)
+#uses: egrep, rsync (and thus ssh)
 
 debug=${debug:-0}
 
 manifest_file=${manifest_file:-$0.manif}
-esg_dist_url="rainbow.llnl.gov:/pcmdi_web/dist/"
+esg_dist_url="rainbow.llnl.gov:/pcmdi_web/dist"
+current_dir=${current_dir:="esg_node"}
 
 fail=0
 good=0
 total=0
 
-for file in `cat ${manifest_file}`; do 
+while read file dest_dir; do
+    
+    #skip comment lines (#) and blank lines...
+    if [ -n "$(echo $file | grep ^#)" ] || [ -z "$file" ]; then
+    	continue
+    fi
+    
+    t=$(echo $file | egrep "[[](.*)[]]" | awk '{print substr($1,2,length($1)-2)}')
+    if [ -n "$t" ]; then
+	current_dir=$t
+	continue
+    fi
+
+
     if [ ! -e $file ]; then
 	echo -n "x"
 	((debug)) && echo " [FAIL] No Such File $file"
@@ -42,11 +93,15 @@ for file in `cat ${manifest_file}`; do
 	((++fail))
 	continue
     fi
-    ((debug)) && echo -n "pushing $file ---> ${esg_dist_url} " || echo -n "*"
+
+    dest_dir=${dest_dir:-"${current_dir}"}
+    #echo "[$file] >> [$dest_dir]"
+    
+    ((debug)) && echo -n "pushing $file ---> ${esg_dist_url}/${dest_dir} " || echo -n "*"
     md5sum $file > ${file}.md5
-    rsync -c ${file}.md5 ${esg_dist_url}/esg-node/${file##*/}.md5 >& /dev/null
+    rsync -c ${file}.md5 ${esg_dist_url}/${dest_dir}/${file##*/}.md5 >& /dev/null
     echo -n "-"
-    rsync -c ${file} ${esg_dist_url}/esg-node/${file##*/} >& /dev/null
+    rsync -c ${file} ${esg_dist_url}/${dest_dir}/${file##*/} >& /dev/null
     if [ $? != 0 ]; then
 	((debug)) && echo "[FAIL]"
 	((++fail))
@@ -55,7 +110,8 @@ for file in `cat ${manifest_file}`; do
 	((++good))
     fi
     ((++total))
-done
+done < $manifest_file
+
 echo 
 echo total=${total} good=${good} fail=${fail}
 echo "done."
