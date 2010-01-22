@@ -189,15 +189,15 @@ public class AccessLoggingFilter implements Filter {
 	    }else{
 		log.error("DAO is null :["+accessLoggingDAO+"]");
 		HttpServletResponse resp = (HttpServletResponse)response;
-		resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Invalid token validation service");
+		resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Invalid State Of ESG Access Logging Filter");
 	    }
 	    	    
 	}catch(Throwable t) {
 	    log.error(t);
 	    HttpServletResponse resp = (HttpServletResponse)response;
-	    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Invalid token validation service");
+	    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
 	}
-
+	
 	chain.doFilter(request, response);
 	
     }
