@@ -653,6 +653,8 @@ setup_esgcet() {
     echo "$cdat_home/bin/esgsetup --config --rootid ${esg_root_id}" 
     $cdat_home/bin/esgsetup --config --rootid ${esg_root_id}
     [ $? != 0 ] && popd && checked_done 1
+    
+    start_postgress
 
     echo "$cdat_home/bin/esgsetup --db"
     $cdat_home/bin/esgsetup --db

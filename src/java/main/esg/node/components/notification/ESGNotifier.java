@@ -198,7 +198,7 @@ public class ESGNotifier extends AbstractDataNodeComponent {
 	    msg=new MimeMessage(session);
 	    msg.setHeader("X-Mailer","ESG DataNode IshMailer");
 	    msg.setSentDate(new Date());
-	    myAddress = props.getProperty("mail.admin.address");
+	    myAddress = props.getProperty("mail.admin.address","esg-admin@llnl.gov");
 	    msg.setFrom(new InternetAddress(myAddress));
 	    msg.setSubject(subject+"ESG File Update Notification");
 	    
