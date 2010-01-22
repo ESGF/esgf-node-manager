@@ -624,14 +624,14 @@ setup_esgcet() {
 	    #echo "$cdat_home/bin/easy_install -f ${esg_dist_url}/externals esgcet"
 	    #$cdat_home/bin/easy_install -f ${esg_dist_url}/externals esgcet
 	    checked_get http://rainbow.llnl.gov/dist/externals/${esgcet_egg_file}
-	    (( $? == 1)) return 0
+	    (( $? == 1)) && return 0
 	    $cdat_home/bin/easy_install ${esgcet_egg_file}
 	    [ $? != 0 ] && checked_done 1
 	elif [ "${choice}" = "u" ] || [ "${choice}" = "U" ]; then
 	    #echo "$cdat_home/bin/easy_install --upgrade -f ${esg_dist_url}/externals esgcet"
 	    #$cdat_home/bin/easy_install --upgrade -f ${esg_dist_url}/externals esgcet
 	    checked_get http://rainbow.llnl.gov/dist/externals/${esgcet_egg_file}
-	    (( $? == 1)) return 0
+	    (( $? == 1)) && return 0
 	    $cdat_home/bin/easy_install --upgrade ${esgcet_egg_file}
 	    [ $? != 0 ] && checked_done 1
 	else
