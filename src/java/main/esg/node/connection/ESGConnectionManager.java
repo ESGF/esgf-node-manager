@@ -97,7 +97,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 
     public ESGConnectionManager() {
 	log.info("ESGConnectionManager instantiated...");
-	setMyName("ESGConnectionManager");
+	setMyName("CONN_MGR");
 	gateways = Collections.synchronizedMap(new HashMap<String,Gateway>());
 	unavailableGateways = Collections.synchronizedMap(new HashMap<String,Gateway>());
 	init();
