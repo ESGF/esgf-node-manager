@@ -65,7 +65,7 @@
 package esg.node.core;
 
 public class DataNodeMain {
-    public static final String VERSION = "0.0.1";
+    public static final String VERSION = "0.0.2";
     public static final String RELEASE = "Flatbush";
     public static void main(String[] args) {
 	System.out.println("ESG Data Node: "+RELEASE+" Release v"+VERSION);
