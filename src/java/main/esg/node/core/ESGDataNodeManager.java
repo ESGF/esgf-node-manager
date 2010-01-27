@@ -63,6 +63,8 @@ package esg.node.core;
 
 import esg.node.connection.ESGConnectionManager;
 import esg.node.components.notification.ESGNotifier;
+import esg.node.components.monitoring.ESGMonitor;;
+import esg.node.components.metrics.ESGMetrics;;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -80,10 +82,10 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
 	log.info("Instantiating ESGDataNodeManager...");
     }
 
-    public void init() {
-	log.info("Initializing ESG Data Node Manager...");
-	
-	connMgr = new ESGConnectionManager();
+    private void initCoreServices() {
+	log.info("Loading core components");
+
+	connMgr = new ESGConnectionManager("CONN_MGR");
 	registerComponent(connMgr);
 
 	Gateway gateway = new BasicGateway("DEFAULT_GWAY","http://172.16.49.129/esg-node/gateway");
@@ -91,6 +93,21 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
 
 	ESGNotifier notifier = new ESGNotifier("NOTIFIER");
 	registerComponent(notifier);
+
+	ESGMonitor monitor = new ESGMonitor("MONITOR");
+	registerComponent(monitor);
+	
+	ESGMetrics metrics = new ESGMetrics("METRICS");
+	registerComponent(metrics);
+	
+    }
+
+    public void init() {
+	log.info("Initializing ESG Data Node Manager...");
+	initCoreServices();
+	
+	//TODO
+	//load up other services....
 	
 	sendAllLoadedNotification();
     }

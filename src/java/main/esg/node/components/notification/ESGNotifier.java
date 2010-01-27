@@ -124,7 +124,6 @@ public class ESGNotifier extends AbstractDataNodeComponent {
     private Properties props = null;
     private Session session = null;
     private boolean isBusy = false;
-    //private boolean dataAvailable = true; //zoiks make false, just true for testing!
     private StringBuilder endusers = null;
     private String messageTemplate = null;
     private NotificationDAO notificationDAO = null;
@@ -147,7 +146,7 @@ public class ESGNotifier extends AbstractDataNodeComponent {
 	messageTemplate = loadMessage(props.getProperty("mail.notification.messageTemplateFile"));
 	session = Session.getInstance(props, null);
 	notificationDAO = new NotificationDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
-
+	
 	userid_pattern = Pattern.compile("@@esg_userid@@");
 	update_info_pattern   = Pattern.compile("@@update_info@@");
 
@@ -256,11 +255,10 @@ public class ESGNotifier extends AbstractDataNodeComponent {
 	timer.schedule(new TimerTask() {
 		public final void run() {
 		    //log.trace("Checking for new notification updates... [busy? "+ESGNotifier.this.isBusy+"]");
-		    if(/*ESGNotifier.this.dataAvailable &&*/ !ESGNotifier.this.isBusy) {
+		    if(!ESGNotifier.this.isBusy) {
 			ESGNotifier.this.isBusy = true;
 			if(fetchNextUpdates()) {
 			    markTime();
-			    /*ESGNotifier.this.dataAvailable = false;*/
 			}
 			ESGNotifier.this.isBusy = false;
 		    }
@@ -269,22 +267,8 @@ public class ESGNotifier extends AbstractDataNodeComponent {
     }
     
 
-    //Triggers the "sweep" in our mark-and-sweep notification
-    //mechanism.  At the next timer interval we will fetch the
-    //next bach of updates and send them out if it has been
-    //indicated to us that data is available (i.e. this method has
-    //been called)
     public void handleESGEvent(ESGEvent event) {
 	super.handleESGEvent(event);
-	
-	//TODO: Put in code to be more discerning regarding what
-	//events we choose to handle.
-
-	//May have to get back an event object with dataset values!!!
-	
-	//dataAvailable = true;
-	//log.trace("Setting dataAvailable to : "+dataAvailable);
-
     }
 
     
