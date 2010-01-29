@@ -57,72 +57,59 @@
 
 /**
    Description:
-
-   This class is a component implementation that is responsible for
-   collecting and disseminating system metrics.  Data that has to do
-   with the system and the host machine's health.
-
+   Base class for basic Data Access Objects.
+   
 **/
-package esg.node.components.metrics;
+package esg.node.core;
 
-import java.util.Properties;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.List;
+import java.util.Vector;
+import java.io.Serializable;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import javax.sql.DataSource;
+
+import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.ResultSetHandler;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-import esg.node.core.*;
+import esg.common.Utils;
+import esg.common.ESGInvalidObjectStateException;
 
-public class ESGMetrics extends AbstractDataNodeComponent {
+public abstract class ESGDAO implements Serializable {
     
-    private static Log log = LogFactory.getLog(ESGMetrics.class);
-    private Properties props = null;
-    private boolean isBusy = false;
+    private static final Log log = LogFactory.getLog(ESGDAO.class);
+    
+    protected DataSource dataSource = null;
+    private QueryRunner queryRunner = null;
+    private String nodeID = null;
 
-    public ESGMetrics(String name) {
-	super(name);
-	log.debug("Instantiating ESGMetrics...");
-    }
-    
-    public void init() {
-	log.info("Initializing ESGMetrics...");
-	props = getDataNodeManager().getMatchingProperties("^metrics.*");
-	startMetricsCollecting();
-    }
-    
-    public boolean getSystemInfo() {
-	log.trace("metrics getSystemInfo called....");
-	boolean ret = true;
-	//TODO
-	return ret;
-    }
-    
-    private void startMetricsCollecting() {
-	log.trace("launching system monitor timer");
-	long delay  = Long.parseLong(props.getProperty("metrics.notification.initialDelay"));
-	long period = Long.parseLong(props.getProperty("metrics.notification.period"));
-	log.trace("monitoring delay: "+delay+" sec");
-	log.trace("monitoring period: "+period+" sec");
-	
-	Timer timer = new Timer();
-	timer.schedule(new TimerTask() {
-		public final void run() {
-		    log.trace("Checking for new system metrics... [busy? "+ESGMetrics.this.isBusy+"]");
-		    if(!ESGMetrics.this.isBusy) {
-			ESGMetrics.this.isBusy = true;
-			if(getSystemInfo()) {
-			    //TODO
-			}
-			ESGMetrics.this.isBusy = false;
-		    }
-		}
-	    },delay*1000,period*1000);
+    public ESGDAO(DataSource dataSource, String nodeID) {
+	this.setDataSource(dataSource);
+	this.setNodeID(nodeID);
+	init();
     }
 
-    public void handleESGEvent(ESGEvent event) {
-	super.handleESGEvent(event);
+    public ESGDAO(DataSource dataSource) { this(dataSource,Utils.getNodeID()); }
+    public ESGDAO() { this(null,null); }
+
+    public final void setDataSource(DataSource dataSource) {
+	this.dataSource = dataSource;
+	this.queryRunner = new QueryRunner(dataSource);
+    }
+    protected final DataSource getDataSource() { return this.dataSource; }
+    protected final QueryRunner getQueryRunner() { return this.queryRunner; }
+    protected final void setNodeID(String nodeID) { this.nodeID = nodeID; }
+    protected final String getNodeID() {
+	if(nodeID == null) throw new ESGInvalidObjectStateException("NodeID cannot be NULL!");
+	return nodeID; 
     }
 
+    public abstract void init();
+    protected abstract void buildResultSetHandler();
+    
 }

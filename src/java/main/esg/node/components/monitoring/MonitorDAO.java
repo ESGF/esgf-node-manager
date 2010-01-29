@@ -57,72 +57,137 @@
 
 /**
    Description:
-
-   This class is a component implementation that is responsible for
-   collecting and disseminating system metrics.  Data that has to do
-   with the system and the host machine's health.
-
+   Perform sql query to find out all the people who
+   Return Tuple of info needed (dataset_id, recipients/(user), names of updated files)
+   
 **/
-package esg.node.components.metrics;
+package esg.node.components.monitoring;
 
-import java.util.Properties;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.List;
+import java.util.Vector;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Calendar;
+import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import javax.sql.DataSource;
+
+import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.ResultSetHandler;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-import esg.node.core.*;
+import esg.common.Utils;
+import esg.common.ESGInvalidObjectStateException;
 
-public class ESGMetrics extends AbstractDataNodeComponent {
+
+public class MonitorDAO implements Serializable {
+
+    private static final String markTimeQuery      = "UPDATE notification_run_log SET last_run_time = ? WHERE id = ?";
+    private static final String regCheckEntryQuery = "SELECT COUNT(*) FROM monitor_run_log WHERE id = ?";
+    private static final String regAddEntryQuery   = "INSERT INTO monitor_run_log (id, last_run_time) VALUES ( ? , ? )";
     
-    private static Log log = LogFactory.getLog(ESGMetrics.class);
-    private Properties props = null;
-    private boolean isBusy = false;
+    private static final Log log = LogFactory.getLog(MonitorDAO.class);
 
-    public ESGMetrics(String name) {
-	super(name);
-	log.debug("Instantiating ESGMetrics...");
+    private DataSource dataSource = null;
+    private QueryRunner queryRunner = null;
+    private String nodeID = null;
+
+    public MonitorDAO(DataSource dataSource,String nodeID) {
+	this.setDataSource(dataSource);
+	this.setNodeID(nodeID);
+	init();
     }
-    
+
+    /**
+       Not preferred constructor.  Uses default node id value...
+     */
+    public MonitorDAO(DataSource dataSource) {
+	this(dataSource,Utils.getNodeID());
+    }
+
+    /**
+       Not preferred constructor but here for serialization requirement.
+    */
+    public MonitorDAO() { 
+	this(null,null); 
+    }
+
+    //Initialize result set handlers...
     public void init() {
-	log.info("Initializing ESGMetrics...");
-	props = getDataNodeManager().getMatchingProperties("^metrics.*");
-	startMetricsCollecting();
+	log.trace("Setting up result handlers");
+	registerWithMonitorRunLog();
+    }
+
+    public void setDataSource(DataSource dataSource) {
+	log.trace("Setting Up Monitor DAO's Pooled Data Source");
+	this.dataSource = dataSource;
+	this.queryRunner = new QueryRunner(dataSource);
     }
     
-    public boolean getSystemInfo() {
-	log.trace("metrics getSystemInfo called....");
-	boolean ret = true;
-	//TODO
+    private void setNodeID(String nodeID) { 
+	log.trace("Monitor DAO's nodeID: "+nodeID);
+	this.nodeID = nodeID; 
+    }
+    
+    private String getNodeID() { 
+	if(nodeID == null) throw new ESGInvalidObjectStateException("NodeID cannot be NULL!");
+	return nodeID; 
+    }
+        
+
+    //------------------------------------
+    //Query function calls...
+    //------------------------------------
+    
+    public int markLastCompletionTime(){
+	int ret = -1;
+	try{
+	    long now = System.currentTimeMillis()/1000;
+	    ret = queryRunner.update(markTimeQuery,now,getNodeID());
+	}catch(SQLException ex) {
+	    log.error(ex);
+	}
 	return ret;
     }
-    
-    private void startMetricsCollecting() {
-	log.trace("launching system monitor timer");
-	long delay  = Long.parseLong(props.getProperty("metrics.notification.initialDelay"));
-	long period = Long.parseLong(props.getProperty("metrics.notification.period"));
-	log.trace("monitoring delay: "+delay+" sec");
-	log.trace("monitoring period: "+period+" sec");
-	
-	Timer timer = new Timer();
-	timer.schedule(new TimerTask() {
-		public final void run() {
-		    log.trace("Checking for new system metrics... [busy? "+ESGMetrics.this.isBusy+"]");
-		    if(!ESGMetrics.this.isBusy) {
-			ESGMetrics.this.isBusy = true;
-			if(getSystemInfo()) {
-			    //TODO
-			}
-			ESGMetrics.this.isBusy = false;
+
+    private int registerWithMonitorRunLog() {
+	int ret = -1;
+	try{
+	    log.trace("Registering this node ["+getNodeID()+"] into database");
+	    int count = queryRunner.query(regCheckEntryQuery, new ResultSetHandler<Integer>() {
+		    public Integer handle(ResultSet rs) throws SQLException {
+			if(!rs.next()) { return -1; }
+			return rs.getInt(1);
 		    }
-		}
-	    },delay*1000,period*1000);
+		},MonitorDAO.this.getNodeID());
+	    
+	    if(count > 0) {
+		log.info("Yes, "+MonitorDAO.this.getNodeID()+" exists in monitor run log table");
+	    }else {
+		log.info("No, "+MonitorDAO.this.getNodeID()+" does NOT exist in monitor run log table");
+		ret = queryRunner.update(regAddEntryQuery,MonitorDAO.this.getNodeID(),System.currentTimeMillis()/1000);
+	    }
+	    
+	}catch(SQLException ex) {
+	    log.error(ex);	    
+	}
+	return ret;
     }
 
-    public void handleESGEvent(ESGEvent event) {
-	super.handleESGEvent(event);
-    }
+    //------------------------------------
 
+    public String toString() {
+	StringBuilder out = new StringBuilder();
+	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+regCheckEntryQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]\n"));
+	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+regAddEntryQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]\n"));
+	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+markTimeQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]"));
+	return out.toString();
+    }
 }

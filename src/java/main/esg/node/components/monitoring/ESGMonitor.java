@@ -73,6 +73,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import esg.common.db.DatabaseResource;
+import esg.common.Utils;
 import esg.node.core.*;
 
 public class ESGMonitor extends AbstractDataNodeComponent {
@@ -80,6 +82,10 @@ public class ESGMonitor extends AbstractDataNodeComponent {
     private static Log log = LogFactory.getLog(ESGMonitor.class);
     private Properties props = null;
     private boolean isBusy = false;
+    private MonitorDAO monitorDAO = null;
+    private MonitorExpDAO monitorExpDAO = null;
+    private MonitorVarsDAO monitorVarsDAO = null;
+    private MonitorUsersDAO monitorUsersDAO = null;
 
     public ESGMonitor(String name) {
 	super(name);
@@ -89,10 +95,14 @@ public class ESGMonitor extends AbstractDataNodeComponent {
     public void init() {
 	log.info("Initializing ESGMonitor...");
 	props = getDataNodeManager().getMatchingProperties("^monitor.*");
+	monitorDAO = new MonitorDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
+	monitorExpDAO = new MonitorExpDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
+	monitorVarsDAO = new MonitorVarsDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
+	monitorUsersDAO = new MonitorUsersDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
 	startMonitoring();
     }
     
-    public boolean getStats() {
+    public boolean fetchNextStats() {
 	log.trace("monitor getStats called....");
 	boolean ret = true;
 	//TODO
@@ -112,8 +122,8 @@ public class ESGMonitor extends AbstractDataNodeComponent {
 		    log.trace("Checking for new datanode information... [busy? "+ESGMonitor.this.isBusy+"]");
 		    if(!ESGMonitor.this.isBusy) {
 			ESGMonitor.this.isBusy = true;
-			if(getStats()) {
-			    //TODO
+			if(fetchNextStats()) {
+			    monitorDAO.markLastCompletionTime();
 			}
 			ESGMonitor.this.isBusy = false;
 		    }
