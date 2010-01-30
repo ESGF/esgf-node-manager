@@ -59,8 +59,7 @@
    Description:
 
    This class is a component implementation that is responsible for
-   collecting and disseminating system metrics.  Data that has to do
-   with the system and the host machine's health.
+   collecting and disseminating host and system wide information.
 
 **/
 package esg.node.components.metrics;
@@ -73,6 +72,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import esg.common.db.DatabaseResource;
+import esg.common.Utils;
 import esg.node.core.*;
 
 public class ESGMetrics extends AbstractDataNodeComponent {
@@ -80,40 +81,48 @@ public class ESGMetrics extends AbstractDataNodeComponent {
     private static Log log = LogFactory.getLog(ESGMetrics.class);
     private Properties props = null;
     private boolean isBusy = false;
+    private MetricsDAO metricsDAO = null;
+    private MetricsExpDAO metricsExpDAO = null;
+    private MetricsVarsDAO metricsVarsDAO = null;
+    private MetricsUsersDAO metricsUsersDAO = null;
 
     public ESGMetrics(String name) {
 	super(name);
-	log.debug("Instantiating ESGMetrics...");
+	log.info("Instantiating ESGMetrics...");
     }
     
     public void init() {
 	log.info("Initializing ESGMetrics...");
 	props = getDataNodeManager().getMatchingProperties("^metrics.*");
-	startMetricsCollecting();
+	metricsDAO = new MetricsDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
+	metricsExpDAO = new MetricsExpDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
+	metricsVarsDAO = new MetricsVarsDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
+	metricsUsersDAO = new MetricsUsersDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
+	startMetricsCollection();
     }
     
-    public boolean getSystemInfo() {
-	log.trace("metrics getSystemInfo called....");
+    public boolean fetchNodeStats() {
+	log.trace("metrics' fetchNodeStats() called....");
 	boolean ret = true;
 	//TODO
 	return ret;
     }
     
-    private void startMetricsCollecting() {
-	log.trace("launching system monitor timer");
-	long delay  = Long.parseLong(props.getProperty("metrics.notification.initialDelay"));
-	long period = Long.parseLong(props.getProperty("metrics.notification.period"));
-	log.trace("monitoring delay: "+delay+" sec");
-	log.trace("monitoring period: "+period+" sec");
+    private void startMetricsCollection() {
+	log.trace("launching node metrics timer");
+	long delay  = Long.parseLong(props.getProperty("metrics.initialDelay"));
+	long period = Long.parseLong(props.getProperty("metrics.period"));
+	log.trace("metrics delay: "+delay+" sec");
+	log.trace("metrics period: "+period+" sec");
 	
 	Timer timer = new Timer();
 	timer.schedule(new TimerTask() {
 		public final void run() {
-		    log.trace("Checking for new system metrics... [busy? "+ESGMetrics.this.isBusy+"]");
+		    log.trace("Checking for new datanode information... [busy? "+ESGMetrics.this.isBusy+"]");
 		    if(!ESGMetrics.this.isBusy) {
 			ESGMetrics.this.isBusy = true;
-			if(getSystemInfo()) {
-			    //TODO
+			if(fetchNodeStats()) {
+			    metricsDAO.markLastCompletionTime();
 			}
 			ESGMetrics.this.isBusy = false;
 		    }

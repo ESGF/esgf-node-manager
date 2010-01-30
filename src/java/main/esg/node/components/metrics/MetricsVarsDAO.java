@@ -56,11 +56,12 @@
 ***************************************************************************/
 
 /**
-   Description: Perform sql query to find out all the people who have
-   downloaded data and how many times.
+   Description: Perform sql query to collect information about
+   variables.  The idea is to provide the raw data for building a
+   histogram of variable "usage" as it pertains to downloads.
    
 **/
-package esg.node.components.monitoring;
+package esg.node.components.metrics;
 
 import java.util.List;
 import java.util.Vector;
@@ -79,65 +80,67 @@ import org.apache.commons.logging.impl.*;
 
 import esg.node.core.*;
 
-public class MonitorUsersDAO extends ESGDAO {
+public class MetricsVarsDAO extends ESGDAO {
     
-    private static final Log log = LogFactory.getLog(MonitorUsersDAO.class);
+    private static final Log log = LogFactory.getLog(MetricsVarsDAO.class);
 
-    public MonitorUsersDAO(DataSource dataSource, String nodeID) {
+    public MetricsVarsDAO(DataSource dataSource, String nodeID) {
 	super(dataSource,nodeID);
     }
-    public MonitorUsersDAO(DataSource dataSource) { super(dataSource); }
-    public MonitorUsersDAO() { super(); }
+    public MetricsVarsDAO(DataSource dataSource) { super(dataSource); }
+    public MetricsVarsDAO() { super(); }
     
     public void init() {
 	buildResultSetHandler();
     }
+    
 
     //------------------------------------
     //Query...
     //------------------------------------
     //TODO What's the query?
     private static final String query = "";
-    public List<MonitorUsersDAO.UserInfo> getMonitorInfo() {
+    
+    public List<MetricsVarsDAO.VarInfo> getMetricsInfo() {
 	if(this.dataSource == null) {
 	    log.error("The datasource ["+dataSource+"] is not valid, Please call setDataSource(...) first!!!");
 	    return null;
 	}
-	log.trace("Getting Monitor: User Infos... \n Query = "+query);
+	log.trace("Getting Metrics: Var Infos... \n Query = "+query);
 	
-	List<UserInfo> userInfos = null;
+	List<VarInfo> varInfos = null;
 	try{
-	    userInfos = getQueryRunner().query(query, monitorUsersHandler, getNodeID());
+	    varInfos = getQueryRunner().query(query, metricsVarsHandler, getNodeID());
 	}catch(SQLException ex) {
 	    log.error(ex);
 	}
 	
-	return userInfos;
+	return varInfos;
     }
-
+    
     //------------------------------------
     //Result Handling...
     //------------------------------------
-    private ResultSetHandler<List <MonitorUsersDAO.UserInfo>> monitorUsersHandler = null;
+    private ResultSetHandler<List <MetricsVarsDAO.VarInfo>> metricsVarsHandler = null;
     protected void buildResultSetHandler() {
-	monitorUsersHandler = new ResultSetHandler<List<MonitorUsersDAO.UserInfo>> () {
-	    public List<MonitorUsersDAO.UserInfo> handle(ResultSet rs) throws SQLException {
-		List<MonitorUsersDAO.UserInfo> userInfos = new Vector<UserInfo>();
-		UserInfo userInfo = new UserInfo();
-		if(!rs.next()) return userInfos;
+	metricsVarsHandler = new ResultSetHandler<List<MetricsVarsDAO.VarInfo>> () {
+	    public List<MetricsVarsDAO.VarInfo> handle(ResultSet rs) throws SQLException {
+		List<MetricsVarsDAO.VarInfo> varInfos = new Vector<VarInfo>();
+		VarInfo varInfo = new VarInfo();
+		if(!rs.next()) return varInfos;
 		do{
 		    //TODO pull out results...
 		}while(rs.next());
-		return userInfos;
+		return varInfos;
 	    }
 	};
     }
-        
+    
     //------------------------------------
     //Result Encapsulation...
     //------------------------------------
-    public class UserInfo {
-	//TODO what the results look like...
+    public class VarInfo {
+	//TODO what the results look like...	
     }
 
     public String toString() {

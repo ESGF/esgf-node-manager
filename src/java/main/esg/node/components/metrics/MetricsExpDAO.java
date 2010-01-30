@@ -61,7 +61,7 @@
    histogram of variable "usage" as it pertains to downloads.
    
 **/
-package esg.node.components.monitoring;
+package esg.node.components.metrics;
 
 import java.util.List;
 import java.util.Vector;
@@ -80,15 +80,15 @@ import org.apache.commons.logging.impl.*;
 
 import esg.node.core.*;
 
-public class MonitorExpDAO extends ESGDAO {
+public class MetricsExpDAO extends ESGDAO {
     
-    private static final Log log = LogFactory.getLog(MonitorExpDAO.class);
+    private static final Log log = LogFactory.getLog(MetricsExpDAO.class);
 
-    public MonitorExpDAO(DataSource dataSource, String nodeID) {
+    public MetricsExpDAO(DataSource dataSource, String nodeID) {
 	super(dataSource,nodeID);
     }
-    public MonitorExpDAO(DataSource dataSource) { super(dataSource); }
-    public MonitorExpDAO() { super(); }
+    public MetricsExpDAO(DataSource dataSource) { super(dataSource); }
+    public MetricsExpDAO() { super(); }
     
     public void init() {
 	buildResultSetHandler();
@@ -101,16 +101,16 @@ public class MonitorExpDAO extends ESGDAO {
     //TODO What's the query?
     private static final String query = "";
     
-    public List<MonitorExpDAO.ExpInfo> getMonitorInfo() {
+    public List<MetricsExpDAO.ExpInfo> getMetricsInfo() {
 	if(this.dataSource == null) {
 	    log.error("The datasource ["+dataSource+"] is not valid, Please call setDataSource(...) first!!!");
 	    return null;
 	}
-	log.trace("Getting Monitor: Var Infos... \n Query = "+query);
+	log.trace("Getting Metrics: Var Infos... \n Query = "+query);
 	
 	List<ExpInfo> expInfos = null;
 	try{
-	    expInfos = getQueryRunner().query(query, monitorExpHandler, getNodeID());
+	    expInfos = getQueryRunner().query(query, metricsExpHandler, getNodeID());
 	}catch(SQLException ex) {
 	    log.error(ex);
 	}
@@ -121,11 +121,11 @@ public class MonitorExpDAO extends ESGDAO {
     //------------------------------------
     //Result Handling...
     //------------------------------------
-    private ResultSetHandler<List <MonitorExpDAO.ExpInfo>> monitorExpHandler = null;
+    private ResultSetHandler<List <MetricsExpDAO.ExpInfo>> metricsExpHandler = null;
     protected void buildResultSetHandler() {
-	monitorExpHandler = new ResultSetHandler<List<MonitorExpDAO.ExpInfo>> () {
-	    public List<MonitorExpDAO.ExpInfo> handle(ResultSet rs) throws SQLException {
-		List<MonitorExpDAO.ExpInfo> expInfos = new Vector<ExpInfo>();
+	metricsExpHandler = new ResultSetHandler<List<MetricsExpDAO.ExpInfo>> () {
+	    public List<MetricsExpDAO.ExpInfo> handle(ResultSet rs) throws SQLException {
+		List<MetricsExpDAO.ExpInfo> expInfos = new Vector<ExpInfo>();
 		ExpInfo expInfo = new ExpInfo();
 		if(!rs.next()) return expInfos;
 		do{

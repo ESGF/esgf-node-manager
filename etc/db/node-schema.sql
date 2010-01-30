@@ -29,10 +29,10 @@ CREATE TABLE notification_run_log (
 
 CREATE TABLE monitor_run_log (
     id character varying NOT NULL,
-    notify_time double precision NOT NULL
+    last_run_time double precision NOT NULL
 );
 
 CREATE TABLE metrics_run_log (
     id character varying NOT NULL,
-    notify_time double precision NOT NULL
+    last_run_time double precision NOT NULL
 );

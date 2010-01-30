@@ -56,22 +56,16 @@
 ***************************************************************************/
 
 /**
-   Description:
-   Perform sql query to find out all the people who
-   Return Tuple of info needed (dataset_id, recipients/(user), names of updated files)
+   Description: Perform sql query to find out all the people who have
+   downloaded data and how many times.
    
 **/
-package esg.node.components.monitoring;
+package esg.node.components.metrics;
 
 import java.util.List;
 import java.util.Vector;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Calendar;
 import java.io.Serializable;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -83,111 +77,71 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-import esg.common.Utils;
-import esg.common.ESGInvalidObjectStateException;
+import esg.node.core.*;
 
-
-public class MonitorDAO implements Serializable {
-
-    private static final String markTimeQuery      = "UPDATE monitor_run_log SET last_run_time = ? WHERE id = ?";
-    private static final String regCheckEntryQuery = "SELECT COUNT(*) FROM monitor_run_log WHERE id = ?";
-    private static final String regAddEntryQuery   = "INSERT INTO monitor_run_log (id, last_run_time) VALUES ( ? , ? )";
+public class MetricsUsersDAO extends ESGDAO {
     
-    private static final Log log = LogFactory.getLog(MonitorDAO.class);
+    private static final Log log = LogFactory.getLog(MetricsUsersDAO.class);
 
-    private DataSource dataSource = null;
-    private QueryRunner queryRunner = null;
-    private String nodeID = null;
-
-    public MonitorDAO(DataSource dataSource,String nodeID) {
-	this.setDataSource(dataSource);
-	this.setNodeID(nodeID);
-	init();
+    public MetricsUsersDAO(DataSource dataSource, String nodeID) {
+	super(dataSource,nodeID);
     }
-
-    /**
-       Not preferred constructor.  Uses default node id value...
-     */
-    public MonitorDAO(DataSource dataSource) {
-	this(dataSource,Utils.getNodeID());
-    }
-
-    /**
-       Not preferred constructor but here for serialization requirement.
-    */
-    public MonitorDAO() { 
-	this(null,null); 
-    }
-
-    //Initialize result set handlers...
+    public MetricsUsersDAO(DataSource dataSource) { super(dataSource); }
+    public MetricsUsersDAO() { super(); }
+    
     public void init() {
-	log.trace("Setting up result handlers");
-	registerWithMonitorRunLog();
+	buildResultSetHandler();
     }
 
-    public void setDataSource(DataSource dataSource) {
-	log.trace("Setting Up Monitor DAO's Pooled Data Source");
-	this.dataSource = dataSource;
-	this.queryRunner = new QueryRunner(dataSource);
-    }
-    
-    private void setNodeID(String nodeID) { 
-	log.trace("Monitor DAO's nodeID: "+nodeID);
-	this.nodeID = nodeID; 
-    }
-    
-    private String getNodeID() { 
-	if(nodeID == null) throw new ESGInvalidObjectStateException("NodeID cannot be NULL!");
-	return nodeID; 
-    }
-        
-
     //------------------------------------
-    //Query function calls...
+    //Query...
     //------------------------------------
-    
-    public int markLastCompletionTime(){
-	int ret = -1;
+    //TODO What's the query?
+    private static final String query = "";
+    public List<MetricsUsersDAO.UserInfo> getMetricsInfo() {
+	if(this.dataSource == null) {
+	    log.error("The datasource ["+dataSource+"] is not valid, Please call setDataSource(...) first!!!");
+	    return null;
+	}
+	log.trace("Getting Metrics: User Infos... \n Query = "+query);
+	
+	List<UserInfo> userInfos = null;
 	try{
-	    long now = System.currentTimeMillis()/1000;
-	    ret = queryRunner.update(markTimeQuery,now,getNodeID());
+	    userInfos = getQueryRunner().query(query, metricsUsersHandler, getNodeID());
 	}catch(SQLException ex) {
 	    log.error(ex);
 	}
-	return ret;
-    }
-
-    private int registerWithMonitorRunLog() {
-	int ret = -1;
-	try{
-	    log.trace("Registering this node ["+getNodeID()+"] into database");
-	    int count = queryRunner.query(regCheckEntryQuery, new ResultSetHandler<Integer>() {
-		    public Integer handle(ResultSet rs) throws SQLException {
-			if(!rs.next()) { return -1; }
-			return rs.getInt(1);
-		    }
-		},MonitorDAO.this.getNodeID());
-	    
-	    if(count > 0) {
-		log.info("Yes, "+MonitorDAO.this.getNodeID()+" exists in monitor run log table");
-	    }else {
-		log.info("No, "+MonitorDAO.this.getNodeID()+" does NOT exist in monitor run log table");
-		ret = queryRunner.update(regAddEntryQuery,MonitorDAO.this.getNodeID(),System.currentTimeMillis()/1000);
-	    }
-	    
-	}catch(SQLException ex) {
-	    log.error(ex);	    
-	}
-	return ret;
+	
+	return userInfos;
     }
 
     //------------------------------------
+    //Result Handling...
+    //------------------------------------
+    private ResultSetHandler<List <MetricsUsersDAO.UserInfo>> metricsUsersHandler = null;
+    protected void buildResultSetHandler() {
+	metricsUsersHandler = new ResultSetHandler<List<MetricsUsersDAO.UserInfo>> () {
+	    public List<MetricsUsersDAO.UserInfo> handle(ResultSet rs) throws SQLException {
+		List<MetricsUsersDAO.UserInfo> userInfos = new Vector<UserInfo>();
+		UserInfo userInfo = new UserInfo();
+		if(!rs.next()) return userInfos;
+		do{
+		    //TODO pull out results...
+		}while(rs.next());
+		return userInfos;
+	    }
+	};
+    }
+        
+    //------------------------------------
+    //Result Encapsulation...
+    //------------------------------------
+    public class UserInfo {
+	//TODO what the results look like...
+    }
 
     public String toString() {
-	StringBuilder out = new StringBuilder();
-	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+regCheckEntryQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]\n"));
-	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+regAddEntryQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]\n"));
-	out.append("DAO:(1)["+this.getClass().getName()+"] - [Q:"+markTimeQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]"));
-	return out.toString();
+	return this.getClass().getName()+":(1)["+this.getClass().getName()+"] - [Q:"+query+"] "+((dataSource == null) ? "[OK]\n" : "[INVALID]\n");	
     }
+
 }

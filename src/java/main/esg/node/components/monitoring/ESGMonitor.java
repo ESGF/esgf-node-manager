@@ -59,8 +59,8 @@
    Description:
 
    This class is a component implementation that is responsible for
-   collecting and disseminating ESG specific data with respect to how
-   this system is being used.
+   collecting and disseminating data node information. Statistics
+   about the data node operation / usage.
 
 **/
 package esg.node.components.monitoring;
@@ -83,27 +83,21 @@ public class ESGMonitor extends AbstractDataNodeComponent {
     private Properties props = null;
     private boolean isBusy = false;
     private MonitorDAO monitorDAO = null;
-    private MonitorExpDAO monitorExpDAO = null;
-    private MonitorVarsDAO monitorVarsDAO = null;
-    private MonitorUsersDAO monitorUsersDAO = null;
 
     public ESGMonitor(String name) {
 	super(name);
-	log.info("Instantiating ESGMonitor...");
+	log.debug("Instantiating ESGMonitor...");
     }
     
     public void init() {
 	log.info("Initializing ESGMonitor...");
 	props = getDataNodeManager().getMatchingProperties("^monitor.*");
 	monitorDAO = new MonitorDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
-	monitorExpDAO = new MonitorExpDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
-	monitorVarsDAO = new MonitorVarsDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
-	monitorUsersDAO = new MonitorUsersDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
 	startMonitoring();
     }
     
-    public boolean fetchNextStats() {
-	log.trace("monitor getStats called....");
+    public boolean fetchNodeInfo() {
+	log.trace("monitor's fetchNodeInfo() called....");
 	boolean ret = true;
 	//TODO
 	return ret;
@@ -111,18 +105,19 @@ public class ESGMonitor extends AbstractDataNodeComponent {
     
     private void startMonitoring() {
 	log.trace("launching system monitor timer");
-	long delay  = Long.parseLong(props.getProperty("monitor.notification.initialDelay"));
-	long period = Long.parseLong(props.getProperty("monitor.notification.period"));
+	long delay  = Long.parseLong(props.getProperty("monitor.initialDelay"));
+	long period = Long.parseLong(props.getProperty("monitor.period"));
 	log.trace("monitoring delay: "+delay+" sec");
 	log.trace("monitoring period: "+period+" sec");
 	
 	Timer timer = new Timer();
 	timer.schedule(new TimerTask() {
 		public final void run() {
-		    log.trace("Checking for new datanode information... [busy? "+ESGMonitor.this.isBusy+"]");
+		    log.trace("Checking for new node information... [busy? "+ESGMonitor.this.isBusy+"]");
 		    if(!ESGMonitor.this.isBusy) {
 			ESGMonitor.this.isBusy = true;
-			if(fetchNextStats()) {
+			if(fetchNodeInfo()) {
+			    //TODO
 			    monitorDAO.markLastCompletionTime();
 			}
 			ESGMonitor.this.isBusy = false;
