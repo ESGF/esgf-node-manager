@@ -97,7 +97,7 @@ public class ESGMonitor extends AbstractDataNodeComponent {
     }
     
     public boolean fetchNodeInfo() {
-	log.trace("monitor's fetchNodeInfo() called....");
+	//log.trace("monitor's fetchNodeInfo() called....");
 	boolean ret = true;
 	//TODO
 	return ret;
@@ -113,7 +113,7 @@ public class ESGMonitor extends AbstractDataNodeComponent {
 	Timer timer = new Timer();
 	timer.schedule(new TimerTask() {
 		public final void run() {
-		    log.trace("Checking for new node information... [busy? "+ESGMonitor.this.isBusy+"]");
+		    //log.trace("Checking for new node information... [busy? "+ESGMonitor.this.isBusy+"]");
 		    if(!ESGMonitor.this.isBusy) {
 			ESGMonitor.this.isBusy = true;
 			if(fetchNodeInfo()) {

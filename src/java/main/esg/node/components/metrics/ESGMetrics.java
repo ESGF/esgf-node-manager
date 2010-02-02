@@ -102,7 +102,7 @@ public class ESGMetrics extends AbstractDataNodeComponent {
     }
     
     public boolean fetchNodeStats() {
-	log.trace("metrics' fetchNodeStats() called....");
+	//log.trace("metrics' fetchNodeStats() called....");
 	boolean ret = true;
 	//TODO
 	return ret;
@@ -118,7 +118,7 @@ public class ESGMetrics extends AbstractDataNodeComponent {
 	Timer timer = new Timer();
 	timer.schedule(new TimerTask() {
 		public final void run() {
-		    log.trace("Checking for new datanode information... [busy? "+ESGMetrics.this.isBusy+"]");
+		    //log.trace("Checking for new datanode information... [busy? "+ESGMetrics.this.isBusy+"]");
 		    if(!ESGMetrics.this.isBusy) {
 			ESGMetrics.this.isBusy = true;
 			if(fetchNodeStats()) {
