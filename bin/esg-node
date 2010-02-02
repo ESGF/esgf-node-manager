@@ -108,6 +108,7 @@ init() {
     esg_root_id=${ESG_ROOT_ID:-$(echo `hostname -s`.`hostname --domain` | awk -F. ' {print $(NF-1)} ')}
     mail_smtp_host=${mail_smtp_host:-smtp.`hostname --domain`} #standard guess.
     mail_admin_address=${mail_admin_address}
+    gridftp_config_args=${gridftp_config_args:-""}
     
     ############################################
     ####  DO NOT EDIT BELOW THIS POINT!!!!! ####
@@ -1497,7 +1498,7 @@ setup_filter() {
 #####
 # Globus Toolkit ->  MyProxy (client) & GridFTP (server)
 #####
-
+# Takes arg ["with-bdm-config"|"bdm-config-only"] see esg-globus script
 setup_globus() {
     echo -n "Globus Setup for Data-Node... (GridFTP server)"
     mkdir -p $workdir
@@ -1511,7 +1512,7 @@ setup_globus() {
     chmod 755 ${fetch_file}
     popd # >& /dev/null
 
-    source ${scripts_dir}/${fetch_file} && setup_globus_services datanode
+    source ${scripts_dir}/${fetch_file} && setup_globus_services datanode $@
     local ret=$?
     popd # >& /dev/null
     [ ${ret} = 0 ] && write_globus_env || checked_done 1
@@ -1523,6 +1524,7 @@ write_globus_env() {
     ((show_summary_latch++))
     echo "export GLOBUS_LOCATION=$GLOBUS_LOCATION" >> ${envfile}
     echo "export X509_CERT_DIR=\$GLOBUS_LOCATION/share/certificates/" >>  ${envfile}
+    echo "export gridftp_config_args=$gridftp_config_args" >> ${envfile}
     return 0
 }
 
@@ -1984,6 +1986,7 @@ usage() {
         --register  - connects to desired gateway, fetches and stores their certificate to enable SSL connection
         --upgrade   - upgrades the node manager
         --no-globus - will not install any globus tools (for those with existing globus setups)
+        --griftp-config - [ with-bdm-config | bdm-config-only ] without this arg uses default end-user config
 
         start   - start the data node services
         stop    - stops the data node services
@@ -2004,6 +2007,7 @@ usage() {
          ${progname} --test-pub OR
          ${progname} --info OR
          ${progname} --register [gateway.host.address] ([truststore passwd])
+         ${progname} --gridftp-config [ with-bdm-config | bdm-config-only ]
          ${progname} stop  OR
          ${progname} start OR
          ${progname} status OR
@@ -2036,6 +2040,7 @@ main() {
     let sel=0
     while [ -n "$1" ]; do
     #echo "arg ${i} = $1"
+	local unshift=0
 	case $1 in
 	    --install | -i)
 		#echo "INSTALL SERVICES"
@@ -2049,7 +2054,7 @@ main() {
 		#echo "START SERVICES"
 		init
 		source ${scripts_dir}/esg-globus >& /dev/null && \
-		    start_globus_services datanode
+		    start_globus_services datanode $gridftp_config_args
 		echo "start_postgress" && start_postgress
 		echo "start_tomcat" && start_tomcat
 		#let sel+=4
@@ -2120,6 +2125,22 @@ main() {
 	    --no-globus)
 		no_globus=1
 		;;
+	    --gridftp-config)
+		#acceptable args:  "with-bdm-config" | "bdm-config-only"
+		#Gather up tokens after this switch as long as the
+		#subsequent tokens do not start with "--"
+		local tmpargs #array to store args for this switch.
+		local let index=0
+		shift
+		until [ $(echo $1 | egrep '^\s*--') ]; do
+		    tmpargs[((index++))]=$1
+		    echo "added $1 to args list: ${tmpargs[@]}"
+		    shift
+		done
+		unshift=1
+		gridftp_config_args=${tmpargs[@]}
+		unset tmpargs
+		;;
 	    status)
 		#TODO conditionally reflect the status of globus (gridftp) process
 		if check_postgress_process && check_tomcat_process; then
@@ -2131,9 +2152,10 @@ main() {
 		exit 0
 		;;
 	    *)
+		echo " WARNING: unknown switch $1"
 		break;;
 	esac
-	shift
+	((!unshift)) && shift
     done
 
     #echo "SEL = $sel"
@@ -2172,7 +2194,7 @@ main() {
     [ $((sel & 1)) != 0 ] && echo "setup_tds" && setup_tds 
     [ $((sel & 2)) != 0 ] && echo "test_tds" && test_tds 
     [ $((sel & 1)) != 0 ] && echo "setup_filter" && setup_filter ${tomcat_install_dir}/webapps/thredds
-    [ $((sel & 1)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus
+    [ $((sel & 1)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus $gridftp_config_args
     [ $((sel & 2)) != 0 ] && (( ! no_globus )) && echo "test_globus" && source ${scripts_dir}/esg-globus >& /dev/null \
     	&& test_globus_services datanode
     [ $((sel & 2)) != 0 ] && echo "test_publication" && test_publication 
