@@ -56,83 +56,53 @@
 ***************************************************************************/
 
 /**
-   Description:
-
-   This class is a component implementation that is responsible for
-   collecting and disseminating data node information. Statistics
-   about the data node operation / usage.
-
+   Description: This is solely a data aggregation / encapsulation
+   object.  It is kept as simple as possible because it may be put on
+   the wire and we want the serialization to be as simple as possible.
+   
 **/
 package esg.node.components.monitoring;
 
-import java.util.Properties;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.List;
+import java.util.Map;
+import java.io.Serializable;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.commons.logging.impl.*;
+public class MonitorInfo implements Serializable {
 
-import esg.common.db.DatabaseResource;
-import esg.common.Utils;
-import esg.node.core.*;
+    //---------
+    //MAP KEYS:
+    //---------
 
-public class ESGMonitor extends AbstractDataNodeComponent {
-    
-    private static Log log = LogFactory.getLog(ESGMonitor.class);
-    private Properties props = null;
-    private boolean isBusy = false;
-    private MonitorDAO monitorDAO = null;
-    private MonitorInfo monitorInfo = null;
+    //Disk Info
+    public static final String TOTAL_SPACE = "TOTAL_SPACE";
+    public static final String FREE_SPACE  = "FREE_SPACE";
+    public static final String USED_SPACE  = "USED_SPACE";
+    //Memory Info
+    public static final String TOTAL_MEMORY = "TOTAL_MEMORY";
+    public static final String FREE_MEMORY  = "FREE_MEMORY";
+    public static final String TOTAL_SWAP   = "TOTAL_SWAP";
+    public static final String FREE_SWAP    = "FREE_SWAP";
+    public static final String USED_MEMORY  = "USED_MEMORY";
+    //CPU Info
+    public static final String CORES       = "CORES";
+    public static final String CLOCK_SPEED = "CLOCK_SPEED";
+    //UPTIME
+    public static final String UPTIME = "UPTIME";
+    public static final String USERS  = "USERS";
+    public static final String LOAD_AVG1 = "LOAD_AVG1";
+    public static final String LOAD_AVG2 = "LOAD_AVG2";
+    public static final String LOAD_AVG3 = "LOAD_AVG3";
+    //XFER Info
+    public static final String XFER_AVG = "XFER_AVG";
 
-    public ESGMonitor(String name) {
-	super(name);
-	log.debug("Instantiating ESGMonitor...");
-    }
-    
-    public void init() {
-	log.info("Initializing ESGMonitor...");
-	props = getDataNodeManager().getMatchingProperties("^monitor.*");
-	monitorInfo = new MonitorInfo();
-	monitorDAO = new MonitorDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID(),props);
-	startMonitoring();
-    }
-
-    public MonitorInfo getMonitorInfo() { return monitorInfo; }
-    
-    public boolean fetchNodeInfo() {
-	//log.trace("monitor's fetchNodeInfo() called....");
-	boolean ret = true;
-	monitorDAO.setMonitorInfo(monitorInfo);
-	monitorInfo.componentList = getDataNodeManager().getComponentNames();
-	return ret;
-    }
-    
-    private void startMonitoring() {
-	log.trace("launching system monitor timer");
-	long delay  = Long.parseLong(props.getProperty("monitor.initialDelay"));
-	long period = Long.parseLong(props.getProperty("monitor.period"));
-	log.trace("monitoring delay: "+delay+" sec");
-	log.trace("monitoring period: "+period+" sec");
-	
-	Timer timer = new Timer();
-	timer.schedule(new TimerTask() {
-		public final void run() {
-		    //log.trace("Checking for new node information... [busy? "+ESGMonitor.this.isBusy+"]");
-		    if(!ESGMonitor.this.isBusy) {
-			ESGMonitor.this.isBusy = true;
-			if(fetchNodeInfo()) {
-			    //TODO
-			    monitorDAO.markLastCompletionTime();
-			}
-			ESGMonitor.this.isBusy = false;
-		    }
-		}
-	    },delay*1000,period*1000);
-    }
-
-    public void handleESGEvent(ESGEvent event) {
-	super.handleESGEvent(event);
-    }
+    //---------
+    //MAPS
+    //---------
+    public Map<String,Map<String,String>> diskInfo = null;
+    public Map<String,String> memInfo = null;
+    public Map<String,String> cpuInfo = null; 
+    public Map<String,String> uptimeInfo = null; 
+    public Map<String,String> xferInfo = null;
+    public String[] componentList = null;
 
 }
