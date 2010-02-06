@@ -109,9 +109,20 @@ public class MonitorDAO implements Serializable {
     private DataSource dataSource = null;
     private QueryRunner queryRunner = null;
     private String nodeID = null;
+
+    //Used for fetching disk usage information
     private Pattern disk_info_dsroot_pat = null;
     private Pattern disk_info_dsroot_keyval_pat = null;
     private ByteBuffer disk_info_byte_buffer = null;
+
+    //Used for fetching system memory information
+    private InfoResources memInfoResource = null;
+    private Pattern memInfoPattern = null;
+
+    //Used for fetching system cpu information
+    private InfoResources cpuInfoResource = null;
+    private Pattern cpuInfoPattern = null;
+    
 
     public MonitorDAO(DataSource dataSource,String nodeID,Properties props) {
 	this.setDataSource(dataSource);
@@ -139,6 +150,7 @@ public class MonitorDAO implements Serializable {
 	log.trace("Setting up result handlers");
 	registerWithMonitorRunLog();
 	loadDiskInfoResource();
+	loadMemInfoResource();
     }
 
     public void setDataSource(DataSource dataSource) {
@@ -215,7 +227,7 @@ public class MonitorDAO implements Serializable {
     }
 
     //This method should be called once during initialization 
-    //This sets up the resourcess used for the setDiskInfo call (below)
+    //This sets up the resources used for the setDiskInfo call (below)
     private void loadDiskInfoResource() {
 	disk_info_dsroot_pat  = Pattern.compile("thredds_dataset_roots\\s*=\\s*(.*?)\\s*\\w+\\s*?=");
 	disk_info_dsroot_keyval_pat = Pattern.compile("\\s*(\\w+)\\s*\\|\\s*(\\S+)\\s*");
@@ -291,40 +303,75 @@ public class MonitorDAO implements Serializable {
 	    log.error(e);
 	}
     }
+
+    //This method should be called once during initialization 
+    //This sets up the resources used for the setMemInfo call (below)
+    private void loadMemInfoResource() {
+	memInfoResource = new InfoResources("/proc/meminfo");
+	memInfoPattern  = Pattern.compile("(\\w+):\\s*([0-9]*)");
+    }
     
     private void setMemInfo(MonitorInfo info) { 
 	if(info.memInfo == null) {
 	    info.memInfo = new HashMap<String,String>();
 	}
-	
-	//TODO read the /proc/meminfo file pull out values
-
-	info.memInfo.put(MonitorInfo.TOTAL_MEMORY,"1");
-	info.memInfo.put(MonitorInfo.FREE_MEMORY,"2");
-	info.memInfo.put(MonitorInfo.TOTAL_SWAP,"3");
-	info.memInfo.put(MonitorInfo.FREE_SWAP,"4");
-	info.memInfo.put(MonitorInfo.USED_MEMORY,"5");
-	
+	try {
+	    //TODO read the /proc/meminfo file pull out values
+	    Matcher m = memInfoPattern.matcher(memInfoResource.scan());
+	    while(m.find()) {
+		//System.out.println("Collected key vals: ["+m.group(1)+"] ["+m.group(2)+"]");
+	    }	
+	    
+	    info.memInfo.put(MonitorInfo.TOTAL_MEMORY,"1");
+	    info.memInfo.put(MonitorInfo.FREE_MEMORY,"2");
+	    info.memInfo.put(MonitorInfo.TOTAL_SWAP,"3");
+	    info.memInfo.put(MonitorInfo.FREE_SWAP,"4");
+	    info.memInfo.put(MonitorInfo.USED_MEMORY,"5");
+	    
+	}catch(Exception e) {
+	    log.error(e);
+	}
     }
+
+    
+    //This method should be called once during initialization 
+    //This sets up the resources used for the setMemInfo call (below)
+    private void loadCPUInfoResource() {
+	cpuInfoResource = new InfoResources("/proc/cpuinfo");
+	cpuInfoPattern  = Pattern.compile("(\\w+):\\s*([0-9]*)");
+    }
+    
     private void setCPUInfo(MonitorInfo info) { 
 	if(info.cpuInfo == null) {
 	    info.cpuInfo = new HashMap<String,String>();
 	}
 
-	//TODO read the /proc/cpuinfo file pull out values
-
-	info.cpuInfo.put(MonitorInfo.CORES, ""+Runtime.getRuntime().availableProcessors());
-	info.cpuInfo.put(MonitorInfo.CLOCK_SPEED,"2");
+	try {
+	    
+	    //TODO read the /proc/cpuinfo file pull out values
+	    Matcher m = cpuInfoPattern.matcher(cpuInfoResource.scan());
+	    while(m.find()) {
+		//System.out.println("Collected key vals: ["+m.group(1)+"] ["+m.group(2)+"]");
+	    }	
+	    
+	    
+	    info.cpuInfo.put(MonitorInfo.CORES, ""+Runtime.getRuntime().availableProcessors());
+	    info.cpuInfo.put(MonitorInfo.CLOCK_SPEED,"2");
+	    
+	}catch(Exception e) {
+	    log.error(e);
+	}
     }
+
     private void setUptime(MonitorInfo info) {
 	if(info.uptimeInfo == null) {
 	    info.uptimeInfo = new HashMap<String,String>();
 	}
+	
+	//TODO run the /proc/uptime command and pull out values
 
-	//TODO runthe /proc/meminfo command and pull out values
-
-	info.uptimeInfo.put(MonitorInfo.UPTIME,"1");
-	info.uptimeInfo.put(MonitorInfo.USERS,"2");
+	info.uptimeInfo.put(MonitorInfo.HOST_UPTIME,"0");
+	info.uptimeInfo.put(MonitorInfo.DNM_UPTIME,"1");
 	info.uptimeInfo.put(MonitorInfo.LOAD_AVG1,"3");
 	info.uptimeInfo.put(MonitorInfo.LOAD_AVG2,"4");
 	info.uptimeInfo.put(MonitorInfo.LOAD_AVG3,"5");
