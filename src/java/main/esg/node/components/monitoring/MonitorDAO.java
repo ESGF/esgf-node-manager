@@ -122,7 +122,14 @@ public class MonitorDAO implements Serializable {
     //Used for fetching system cpu information
     private InfoResources cpuInfoResource = null;
     private Pattern cpuInfoPattern = null;
+
+    //Used for fetching uptime information
+    private InfoResources uptimeInfoResource = null;
+    private Pattern uptimeInfoPattern = null;
+    private InfoResources loadAvgInfoResource = null;
+    private Pattern loadAvgInfoPattern = null;
     
+    private long startTime = 0L;
 
     public MonitorDAO(DataSource dataSource,String nodeID,Properties props) {
 	this.setDataSource(dataSource);
@@ -149,8 +156,10 @@ public class MonitorDAO implements Serializable {
     public void init() {
 	log.trace("Setting up result handlers");
 	registerWithMonitorRunLog();
+	startTime = System.currentTimeMillis()/1000;
 	loadDiskInfoResource();
 	loadMemInfoResource();
+	loadUptimeInfoResource();
     }
 
     public void setDataSource(DataSource dataSource) {
@@ -220,7 +229,7 @@ public class MonitorDAO implements Serializable {
 	this.setDiskInfo(info);
 	this.setMemInfo(info);
 	this.setCPUInfo(info);
-	this.setUptime(info);
+	this.setUptimeInfo(info);
 	this.setXferInfo(info);
 	infoAsString(info);
 	return info;
@@ -306,8 +315,9 @@ public class MonitorDAO implements Serializable {
 
     //This method should be called once during initialization 
     //This sets up the resources used for the setMemInfo call (below)
+
     private void loadMemInfoResource() {
-	memInfoResource = new InfoResources("/proc/meminfo");
+	memInfoResource = new InfoResources("/proc/meminfo",771);
 	memInfoPattern  = Pattern.compile("(\\w+):\\s*([0-9]*)");
     }
     
@@ -317,16 +327,18 @@ public class MonitorDAO implements Serializable {
 	}
 	try {
 	    //TODO read the /proc/meminfo file pull out values
+	    int totalMem = 0;
+	    int freeMem  = 0;
 	    Matcher m = memInfoPattern.matcher(memInfoResource.scan());
 	    while(m.find()) {
 		//System.out.println("Collected key vals: ["+m.group(1)+"] ["+m.group(2)+"]");
+		info.memInfo.put(MonitorInfo.TOTAL_MEMORY,""+(totalMem = 1));
+		info.memInfo.put(MonitorInfo.FREE_MEMORY,""+(freeMem = 2));
+		info.memInfo.put(MonitorInfo.TOTAL_SWAP,"3");
+		info.memInfo.put(MonitorInfo.FREE_SWAP,"4");
 	    }	
 	    
-	    info.memInfo.put(MonitorInfo.TOTAL_MEMORY,"1");
-	    info.memInfo.put(MonitorInfo.FREE_MEMORY,"2");
-	    info.memInfo.put(MonitorInfo.TOTAL_SWAP,"3");
-	    info.memInfo.put(MonitorInfo.FREE_SWAP,"4");
-	    info.memInfo.put(MonitorInfo.USED_MEMORY,"5");
+	    info.memInfo.put(MonitorInfo.USED_MEMORY,""+(totalMem-freeMem));
 	    
 	}catch(Exception e) {
 	    log.error(e);
@@ -351,30 +363,53 @@ public class MonitorDAO implements Serializable {
 	    //TODO read the /proc/cpuinfo file pull out values
 	    Matcher m = cpuInfoPattern.matcher(cpuInfoResource.scan());
 	    while(m.find()) {
-		//System.out.println("Collected key vals: ["+m.group(1)+"] ["+m.group(2)+"]");
+		//TODO
+		info.cpuInfo.put(MonitorInfo.CLOCK_SPEED,m.group(1));
 	    }	
 	    
-	    
 	    info.cpuInfo.put(MonitorInfo.CORES, ""+Runtime.getRuntime().availableProcessors());
-	    info.cpuInfo.put(MonitorInfo.CLOCK_SPEED,"2");
 	    
 	}catch(Exception e) {
 	    log.error(e);
 	}
     }
 
-    private void setUptime(MonitorInfo info) {
+    private void loadUptimeInfoResource() {
+	uptimeInfoResource  = new InfoResources("/proc/uptime",22);
+	uptimeInfoPattern   = Pattern.compile("");
+	loadAvgInfoResource = new InfoResources("/proc/loadavg",27);
+	loadAvgInfoPattern  = Pattern.compile("");
+    }
+
+    private void setUptimeInfo(MonitorInfo info) {
 	if(info.uptimeInfo == null) {
 	    info.uptimeInfo = new HashMap<String,String>();
 	}
 	
 	//TODO run the /proc/uptime command and pull out values
+	try {
+	    Matcher m = null;
 
-	info.uptimeInfo.put(MonitorInfo.HOST_UPTIME,"0");
-	info.uptimeInfo.put(MonitorInfo.DNM_UPTIME,"1");
-	info.uptimeInfo.put(MonitorInfo.LOAD_AVG1,"3");
-	info.uptimeInfo.put(MonitorInfo.LOAD_AVG2,"4");
-	info.uptimeInfo.put(MonitorInfo.LOAD_AVG3,"5");
+	    //TODO read the /proc/cpuinfo file pull out values
+	    m = uptimeInfoPattern.matcher(uptimeInfoResource.scan());
+	    while(m.find()) {
+		//TODO
+		info.uptimeInfo.put(MonitorInfo.HOST_UPTIME, m.group(1));
+	    }	
+
+	    m = loadAvgInfoPattern.matcher(loadAvgInfoResource.scan());
+	    while(m.find()) {
+		//TODO
+		info.uptimeInfo.put(MonitorInfo.LOAD_AVG1,m.group(1));
+		info.uptimeInfo.put(MonitorInfo.LOAD_AVG2,m.group(2));
+		info.uptimeInfo.put(MonitorInfo.LOAD_AVG3,m.group(3));
+	    }	
+	    
+	    info.uptimeInfo.put(MonitorInfo.DNM_UPTIME,""+((System.currentTimeMillis()/1000) - startTime));
+
+	}catch(Exception e) {
+	    log.error(e);
+	}
     }
     private void setXferInfo(MonitorInfo info) { 
 	if(info.xferInfo == null) {
