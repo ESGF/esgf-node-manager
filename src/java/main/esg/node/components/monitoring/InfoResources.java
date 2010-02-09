@@ -98,21 +98,30 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.channels.FileChannel;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
+
 //Note: this class is package scope on purpose.
 class InfoResources {
+
+    private static final Log log = LogFactory.getLog(InfoResources.class);
+
     RandomAccessFile raf;
     FileChannel fc;
     ByteBuffer bb;
     CharBuffer cb;
     CharsetDecoder decoder;
     
+    int buffSize = -1;
     int guestimateSize = 1024;
     String filename = null;
     
     InfoResources(String filename) { this(filename,-1); }
 
-    InfoResources(String filename,int buffSize) {
+    InfoResources(String filename,int buffSize_) {
 	this.filename = filename;
+	this.buffSize = buffSize_;
 	System.out.println("InfoResource initializing for "+filename);
 	try{
 	    File procFile = new File(filename);
@@ -138,7 +147,7 @@ class InfoResources {
 	try {
 	    int totalBytesRead = 0;
 	    int bytesRead = 0;
-	    //int iteration = 0;
+	    int iteration = 0;
 	    raf.seek(0);
 	    while((bytesRead = fc.read(bb)) != -1) {
 		bb.flip();
@@ -148,11 +157,11 @@ class InfoResources {
 		cb.clear();
 		bb.clear();
 		totalBytesRead += bytesRead;
-		//System.out.println("Iteration: ["+(++iteration)+"]");
+		++iteration;
 	    }
-	    
-	    //System.out.println("Total number of bytes read: "+totalBytesRead);
-	    
+	    if(iteration == 2) log.info("Buffer size too small may want to tune bufferSize from "+buffSize+" to "+totalBytesRead+" for "+filename);
+	    bb.clear();
+	    cb.clear();
 	}catch(Exception e) {
 	    e.printStackTrace();
 	}

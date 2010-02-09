@@ -80,9 +80,10 @@ public class MonitorInfo implements Serializable {
     //Memory Info
     public static final String TOTAL_MEMORY = "TOTAL_MEMORY";
     public static final String FREE_MEMORY  = "FREE_MEMORY";
+    public static final String USED_MEMORY  = "USED_MEMORY";
     public static final String TOTAL_SWAP   = "TOTAL_SWAP";
     public static final String FREE_SWAP    = "FREE_SWAP";
-    public static final String USED_MEMORY  = "USED_MEMORY";
+    public static final String USED_SWAP    = "USED_SWAP";
     //CPU Info
     public static final String CORES       = "CORES";
     public static final String CLOCK_SPEED = "CLOCK_SPEED";
