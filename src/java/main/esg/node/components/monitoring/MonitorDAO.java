@@ -346,9 +346,13 @@ public class MonitorDAO implements Serializable {
 	    Matcher m_swapTotal = memInfoPattern_swapTotal.matcher(cb);
 	    Matcher m_swapFree  = memInfoPattern_swapFree.matcher(cb);
 	    if(m_memTotal.find())  { info.memInfo.put(MonitorInfo.TOTAL_MEMORY,""+(totalMem = Integer.parseInt(m_memTotal.group(1))) ); }
+	    else { info.memInfo.put(MonitorInfo.TOTAL_MEMORY, "-1"); }
 	    if(m_memFree.find())   { info.memInfo.put(MonitorInfo.FREE_MEMORY,""+(freeMem = Integer.parseInt(m_memFree.group(1))) ); }
+	    else { info.memInfo.put(MonitorInfo.FREE_MEMORY, "-1"); }
 	    if(m_swapTotal.find()) { info.memInfo.put(MonitorInfo.TOTAL_SWAP,""+(totalSwap = Integer.parseInt(m_swapTotal.group(1)))); }
+	    else { info.memInfo.put(MonitorInfo.TOTAL_SWAP, "-1"); }
 	    if(m_swapFree.find())  { info.memInfo.put(MonitorInfo.FREE_SWAP,""+(freeSwap = Integer.parseInt(m_swapFree.group(1)))); }
+	    else { info.memInfo.put(MonitorInfo.FREE_SWAP, "-1"); }
 	    
 	    //derived values...
 	    info.memInfo.put(MonitorInfo.USED_MEMORY,""+(totalMem-freeMem));
