@@ -153,7 +153,6 @@ public class MonitorDAO implements Serializable {
     */
     public MonitorDAO() { this(null,null,new Properties()); }
     
-    public void setProperties(Properties props) { this.props = props; }
 
     //Initialize result set handlers...
     public void init() {
@@ -166,6 +165,8 @@ public class MonitorDAO implements Serializable {
 	loadCPUInfoResource();
 	loadUptimeInfoResource();
     }
+
+    public void setProperties(Properties props) { this.props = props; }
 
     public void setDataSource(DataSource dataSource) {
 	log.trace("Setting Up Monitor DAO's Pooled Data Source");

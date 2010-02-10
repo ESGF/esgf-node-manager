@@ -71,6 +71,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Calendar;
+import java.util.Properties;
 import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -92,16 +93,20 @@ public class MetricsDAO implements Serializable {
     private static final String markTimeQuery      = "UPDATE metrics_run_log SET last_run_time = ? WHERE id = ?";
     private static final String regCheckEntryQuery = "SELECT COUNT(*) FROM metrics_run_log WHERE id = ?";
     private static final String regAddEntryQuery   = "INSERT INTO metrics_run_log (id, last_run_time) VALUES ( ? , ? )";
+    static final String SUBQ = "select fv.file_id, fv.size, fv.url from (select file_id, max(version) as mv from file_version group by file_id order by mv desc) as mver, file_version as fv where fv.file_id=mver.file_id and fv.version=mver.mv";
+
     
     private static final Log log = LogFactory.getLog(MetricsDAO.class);
 
+    private Properties props = null;
     private DataSource dataSource = null;
     private QueryRunner queryRunner = null;
     private String nodeID = null;
 
-    public MetricsDAO(DataSource dataSource,String nodeID) {
+    public MetricsDAO(DataSource dataSource,String nodeID, Properties props) {
 	this.setDataSource(dataSource);
 	this.setNodeID(nodeID);
+	this.setProperties(props);
 	init();
     }
 
@@ -109,20 +114,25 @@ public class MetricsDAO implements Serializable {
        Not preferred constructor.  Uses default node id value...
      */
     public MetricsDAO(DataSource dataSource) {
-	this(dataSource,Utils.getNodeID());
+	this(dataSource,Utils.getNodeID(), new Properties());
     }
 
     /**
        Not preferred constructor but here for serialization requirement.
     */
     public MetricsDAO() { 
-	this(null,null); 
+	this(null,null,new Properties()); 
     }
 
     //Initialize result set handlers...
     public void init() {
 	log.trace("Setting up result handlers");
 	registerWithMetricsRunLog();
+    }
+
+    public void setProperties(Properties props) {
+	log.trace("Setting Properties");
+	this.props = props;
     }
 
     public void setDataSource(DataSource dataSource) {

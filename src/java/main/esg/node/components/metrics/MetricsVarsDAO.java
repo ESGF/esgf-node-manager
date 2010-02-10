@@ -63,6 +63,7 @@
 **/
 package esg.node.components.metrics;
 
+import java.util.Properties;
 import java.util.List;
 import java.util.Vector;
 import java.io.Serializable;
@@ -83,34 +84,42 @@ import esg.node.core.*;
 public class MetricsVarsDAO extends ESGDAO {
     
     private static final Log log = LogFactory.getLog(MetricsVarsDAO.class);
+    private Properties props = null;
+    private StringBuilder str = null;
 
-    public MetricsVarsDAO(DataSource dataSource, String nodeID) {
+    public MetricsVarsDAO(DataSource dataSource, String nodeID, Properties props) {
 	super(dataSource,nodeID);
+	this.setProperties(props);
     }
-    public MetricsVarsDAO(DataSource dataSource) { super(dataSource); }
+    public MetricsVarsDAO(DataSource dataSource) { 
+	this(dataSource,null, new Properties()); 
+    }
     public MetricsVarsDAO() { super(); }
     
-    public void init() {
-	buildResultSetHandler();
-    }
-    
+    public void init() { buildResultSetHandler(); }
 
+    public void setProperties(Properties props) { this.props = props; }
     //------------------------------------
     //Query...
     //------------------------------------
-    //TODO What's the query?
-    private static final String query = "";
+    private static final String query = "select d.project, d.model, count(*), sum(lver.size) from ("+MetricsDAO.SUBQ+") as lver, file as f, dataset as d where lver.file_id=f.id and f.dataset_id=d.id group by project, model";
+
+    private static final String downloadQuery = "select d.project, d.model, count(*), sum(size) from ("+MetricsDAO.SUBQ+") as lver, access_logging as dl, file as f, dataset as d where dl.url=lver.url and lver.file_id=f.id and f.dataset_id=d.id group by project, model";
     
-    public List<MetricsVarsDAO.VarInfo> getMetricsInfo() {
+    public List<MetricsVarsDAO.VarInfo> getMetricsInfo() { return performQuery(query); }
+    public List<MetricsVarsDAO.VarInfo> getDownloadMetricsInfo() { return performQuery(downloadQuery); }
+
+    private List<MetricsVarsDAO.VarInfo> performQuery(String query) {
+
 	if(this.dataSource == null) {
 	    log.error("The datasource ["+dataSource+"] is not valid, Please call setDataSource(...) first!!!");
 	    return null;
 	}
-	log.trace("Getting Metrics: Var Infos... \n Query = "+query);
+	log.trace("Getting Metrics: Variable Information... \n Query = "+query);
 	
 	List<VarInfo> varInfos = null;
 	try{
-	    varInfos = getQueryRunner().query(query, metricsVarsHandler, getNodeID());
+	    varInfos = getQueryRunner().query(query, metricsVarsHandler);
 	}catch(SQLException ex) {
 	    log.error(ex);
 	}
@@ -129,7 +138,11 @@ public class MetricsVarsDAO extends ESGDAO {
 		VarInfo varInfo = new VarInfo();
 		if(!rs.next()) return varInfos;
 		do{
-		    //TODO pull out results...
+		    varInfo.project = rs.getString(1);
+		    varInfo.model = rs.getString(2);
+		    varInfo.count = rs.getInt(3);
+		    varInfo.sum = rs.getLong(4);
+		    varInfo = new VarInfo();
 		}while(rs.next());
 		return varInfos;
 	    }
@@ -140,11 +153,20 @@ public class MetricsVarsDAO extends ESGDAO {
     //Result Encapsulation...
     //------------------------------------
     public class VarInfo {
-	//TODO what the results look like...	
+	public String project = null;
+	public String model = null;
+	public int count = -1;
+	public long sum = -1L;
+
+	public String toString() { return "project: ["+project+"] model: ["+model+"] count: ["+count+"] sum: ["+sum+"]"; }
     }
 
     public String toString() {
-	return this.getClass().getName()+":(1)["+this.getClass().getName()+"] - [Q:"+query+"] "+((dataSource == null) ? "[OK]\n" : "[INVALID]\n");	
+	if(str == null) str = new StringBuilder();
+	if(str.length() != 0) return str.toString();;
+	str.append(this.getClass().getName()+":(1)["+this.getClass().getName()+"] - [Q:"+query+"] "+((dataSource == null) ? "[OK]\n" : "[INVALID]\n"));	
+	str.append(this.getClass().getName()+":(1)["+this.getClass().getName()+"] - [Q:"+downloadQuery+"] "+((dataSource == null) ? "[OK]\n" : "[INVALID]\n"));	
+	return str.toString();
     }
 
 }

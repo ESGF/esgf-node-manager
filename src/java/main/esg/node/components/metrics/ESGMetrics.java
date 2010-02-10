@@ -67,6 +67,7 @@ package esg.node.components.metrics;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -86,6 +87,13 @@ public class ESGMetrics extends AbstractDataNodeComponent {
     private MetricsVarsDAO metricsVarsDAO = null;
     private MetricsUsersDAO metricsUsersDAO = null;
 
+    //Local cache objects for results
+    private List<MetricsExpDAO.ExpInfo>    expInfos    = null;
+    private List<MetricsVarsDAO.VarInfo>   varInfos    = null;
+    private List<MetricsExpDAO.ExpInfo>    expInfosDL  = null; 
+    private List<MetricsVarsDAO.VarInfo>   varInfosDL  = null;
+    private List<MetricsUsersDAO.UserInfo> userInfosDL = null;
+
     public ESGMetrics(String name) {
 	super(name);
 	log.info("Instantiating ESGMetrics...");
@@ -94,22 +102,61 @@ public class ESGMetrics extends AbstractDataNodeComponent {
     public void init() {
 	log.info("Initializing ESGMetrics...");
 	props = getDataNodeManager().getMatchingProperties("^metrics.*");
-	metricsDAO = new MetricsDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
-	metricsExpDAO = new MetricsExpDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
-	metricsVarsDAO = new MetricsVarsDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
-	metricsUsersDAO = new MetricsUsersDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID());
+	metricsDAO = new MetricsDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID(),props);
+	metricsExpDAO = new MetricsExpDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID(),props);
+	metricsVarsDAO = new MetricsVarsDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID(),props);
+	metricsUsersDAO = new MetricsUsersDAO(DatabaseResource.getInstance().getDataSource(),Utils.getNodeID(),props);
 	startMetricsCollection();
     }
-    
-    public boolean fetchNodeStats() {
-	//log.trace("metrics' fetchNodeStats() called....");
+
+    //Note: The idea for the "open to the user" method calls is that
+    //they will lazily issue the initial query to be executed and then
+    //subsequently calls will get the cached values till the next time cycle.
+
+    //Methods for callers to use to get basic statistics...
+    public List<MetricsExpDAO.ExpInfo>   getExperimentStats() { 
+	return (expInfos == null) ? expInfos = metricsExpDAO.getMetricsInfo() : expInfos;
+    }
+    public List<MetricsVarsDAO.VarInfo> getVariableStats() { 
+	return (varInfos == null) ? varInfos = metricsVarsDAO.getMetricsInfo() : varInfos;	
+    }
+
+    //Methods for callers to use to get download statistics...
+    public List<MetricsExpDAO.ExpInfo>   getDownloadExperimentStats() { 
+	return (expInfosDL == null) ? expInfosDL = metricsExpDAO.getDownloadMetricsInfo() : expInfosDL;
+    }
+    public List<MetricsVarsDAO.VarInfo> getDownloadVariableStats() { 
+	return (varInfosDL == null) ? varInfosDL = metricsVarsDAO.getDownloadMetricsInfo() : varInfosDL;
+    }
+    public List<MetricsUsersDAO.UserInfo> getDownloadUserStats() {
+	return (userInfosDL == null) ? userInfosDL = metricsUsersDAO.getDownloadMetricsInfo() : userInfosDL;
+    }
+
+    //Note: This is where the cache is replenished based on the cycle
+    //of the timer not based on calling environment calls.  Except in
+    //the initial case.  We only want to replenish the cache of
+    //objects that have had interest shown in them... i.e. objects
+    //that have already been requested at least once.
+
+    //replenish cache objects...
+    private boolean fetchNodeStats() {
+	log.trace("metrics' fetchNodeStats() called....");
 	boolean ret = true;
-	//TODO
+
+	//General statistics...
+	if(expInfos  != null) expInfos  = metricsExpDAO.getMetricsInfo();
+	if(varInfos  != null) varInfos  = metricsVarsDAO.getMetricsInfo();
+
+	//Download statistics...
+	if(expInfosDL  != null)	expInfosDL  = metricsExpDAO.getDownloadMetricsInfo();
+	if(varInfosDL  != null)	varInfosDL  = metricsVarsDAO.getDownloadMetricsInfo();
+	if(userInfosDL != null)	userInfosDL = metricsUsersDAO.getDownloadMetricsInfo();
+
 	return ret;
     }
     
     private void startMetricsCollection() {
-	log.trace("launching node metrics timer");
+	log.trace("Launching Node Metrics Timer");
 	long delay  = Long.parseLong(props.getProperty("metrics.initialDelay"));
 	long period = Long.parseLong(props.getProperty("metrics.period"));
 	log.trace("metrics delay: "+delay+" sec");
@@ -129,6 +176,9 @@ public class ESGMetrics extends AbstractDataNodeComponent {
 		}
 	    },delay*1000,period*1000);
     }
+
+    //TODO:
+    //Put in code that will eventually timeout the cache objects and free the memory up via GC.
 
     public void handleESGEvent(ESGEvent event) {
 	super.handleESGEvent(event);

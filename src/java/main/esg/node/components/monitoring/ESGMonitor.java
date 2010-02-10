@@ -83,6 +83,8 @@ public class ESGMonitor extends AbstractDataNodeComponent {
     private Properties props = null;
     private boolean isBusy = false;
     private MonitorDAO monitorDAO = null;
+
+    //Local cache object for results
     private MonitorInfo monitorInfo = null;
 
     public ESGMonitor(String name) {
@@ -100,7 +102,7 @@ public class ESGMonitor extends AbstractDataNodeComponent {
 
     public MonitorInfo getMonitorInfo() { return monitorInfo; }
     
-    public boolean fetchNodeInfo() {
+    private boolean fetchNodeInfo() {
 	//log.trace("monitor's fetchNodeInfo() called....");
 	boolean ret = true;
 	monitorDAO.setMonitorInfo(monitorInfo);

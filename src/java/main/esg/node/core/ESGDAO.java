@@ -94,9 +94,12 @@ public abstract class ESGDAO implements Serializable {
 	init();
     }
 
+    //NOTE: I am purposely sort of avoiding using this constructor in subclasses
+    //because I want to force the explicit setting of the node id.
+    //This is a vestige here to support short cut testing. 
     public ESGDAO(DataSource dataSource) { this(dataSource,Utils.getNodeID()); }
     public ESGDAO() { this(null,null); }
-
+    
     public final void setDataSource(DataSource dataSource) {
 	this.dataSource = dataSource;
 	this.queryRunner = new QueryRunner(dataSource);

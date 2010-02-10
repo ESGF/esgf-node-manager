@@ -62,6 +62,7 @@
 **/
 package esg.node.components.metrics;
 
+import java.util.Properties;
 import java.util.List;
 import java.util.Vector;
 import java.io.Serializable;
@@ -82,23 +83,25 @@ import esg.node.core.*;
 public class MetricsUsersDAO extends ESGDAO {
     
     private static final Log log = LogFactory.getLog(MetricsUsersDAO.class);
+    private Properties props = null;
 
-    public MetricsUsersDAO(DataSource dataSource, String nodeID) {
+    public MetricsUsersDAO(DataSource dataSource, String nodeID, Properties props) {
 	super(dataSource,nodeID);
+	this.setProperties(props);
     }
-    public MetricsUsersDAO(DataSource dataSource) { super(dataSource); }
+    public MetricsUsersDAO(DataSource dataSource) { this(dataSource,null,new Properties()); }
     public MetricsUsersDAO() { super(); }
     
-    public void init() {
-	buildResultSetHandler();
-    }
+    public void init() { buildResultSetHandler(); }
+
+    public void setProperties(Properties props) { this.props = props; }
 
     //------------------------------------
     //Query...
     //------------------------------------
-    //TODO What's the query?
-    private static final String query = "";
-    public List<MetricsUsersDAO.UserInfo> getMetricsInfo() {
+    private static final String query = "select dl.userid, count(*), sum(size) from ("+MetricsDAO.SUBQ+") as lver, access_logging as dl where lver.url=dl.url group by userid";
+
+    public List<MetricsUsersDAO.UserInfo> getDownloadMetricsInfo() {
 	if(this.dataSource == null) {
 	    log.error("The datasource ["+dataSource+"] is not valid, Please call setDataSource(...) first!!!");
 	    return null;
@@ -126,7 +129,10 @@ public class MetricsUsersDAO extends ESGDAO {
 		UserInfo userInfo = new UserInfo();
 		if(!rs.next()) return userInfos;
 		do{
-		    //TODO pull out results...
+		    userInfo.userid = rs.getString(1);
+		    userInfo.count = rs.getInt(2);
+		    userInfo.sum = rs.getLong(3);
+		    userInfo = new UserInfo();
 		}while(rs.next());
 		return userInfos;
 	    }
@@ -137,7 +143,11 @@ public class MetricsUsersDAO extends ESGDAO {
     //Result Encapsulation...
     //------------------------------------
     public class UserInfo {
-	//TODO what the results look like...
+	public String userid = null;
+	public int count = -1;
+	public long sum = -1L;
+
+	public String toString() { return "userid: ["+userid+"] count: ["+count+"] sum: ["+sum+"]"; }
     }
 
     public String toString() {

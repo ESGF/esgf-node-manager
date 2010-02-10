@@ -63,6 +63,7 @@
 **/
 package esg.node.components.metrics;
 
+import java.util.Properties;
 import java.util.List;
 import java.util.Vector;
 import java.io.Serializable;
@@ -83,39 +84,46 @@ import esg.node.core.*;
 public class MetricsExpDAO extends ESGDAO {
     
     private static final Log log = LogFactory.getLog(MetricsExpDAO.class);
+    private Properties props = null;
+    private StringBuilder str = null;
 
-    public MetricsExpDAO(DataSource dataSource, String nodeID) {
+    public MetricsExpDAO(DataSource dataSource, String nodeID, Properties props) {
 	super(dataSource,nodeID);
+	this.setProperties(props);
     }
-    public MetricsExpDAO(DataSource dataSource) { super(dataSource); }
+    public MetricsExpDAO(DataSource dataSource) { this(dataSource, null, new Properties()); }
     public MetricsExpDAO() { super(); }
     
-    public void init() {
-	buildResultSetHandler();
-    }
+    public void init() { buildResultSetHandler(); }
     
-
+    public void setProperties(Properties props) { this.props = props; }
+    
     //------------------------------------
     //Query...
     //------------------------------------
-    //TODO What's the query?
-    private static final String query = "";
+    private static final String query = "select d.project, d.experiment, count(*), sum(lver.size) from ("+MetricsDAO.SUBQ+") as lver, file as f, dataset as d where lver.file_id=f.id and f.dataset_id=d.id group by project, experiment";
+
+    private static final String downloadQuery = "select d.project, d.experiment, count(*), sum(size) from ("+MetricsDAO.SUBQ+") as lver, access_logging as dl, file as f, dataset as d where dl.url=lver.url and lver.file_id=f.id and f.dataset_id=d.id group by project, experiment";
     
-    public List<MetricsExpDAO.ExpInfo> getMetricsInfo() {
+    public List<MetricsExpDAO.ExpInfo> getMetricsInfo() { return performQuery(query); }
+    public List<MetricsExpDAO.ExpInfo> getDownloadMetricsInfo() { return performQuery(downloadQuery); }
+    
+    private List<MetricsExpDAO.ExpInfo> performQuery(String query) {
 	if(this.dataSource == null) {
 	    log.error("The datasource ["+dataSource+"] is not valid, Please call setDataSource(...) first!!!");
 	    return null;
 	}
-	log.trace("Getting Metrics: Var Infos... \n Query = "+query);
+	log.trace("Getting Metrics: Experiment Information... \n Query = "+query);
 	
 	List<ExpInfo> expInfos = null;
 	try{
-	    expInfos = getQueryRunner().query(query, metricsExpHandler, getNodeID());
+	    expInfos = getQueryRunner().query(query, metricsExpHandler);
 	}catch(SQLException ex) {
 	    log.error(ex);
 	}
 	
 	return expInfos;
+	
     }
     
     //------------------------------------
@@ -129,7 +137,12 @@ public class MetricsExpDAO extends ESGDAO {
 		ExpInfo expInfo = new ExpInfo();
 		if(!rs.next()) return expInfos;
 		do{
-		    //TODO pull out results...
+		    expInfo.project = rs.getString(1);
+		    expInfo.experiment = rs.getString(2);
+		    expInfo.count = rs.getInt(3);
+		    expInfo.sum = rs.getLong(4);
+		    expInfos.add(expInfo);
+		    expInfo = new ExpInfo();
 		}while(rs.next());
 		return expInfos;
 	    }
@@ -140,11 +153,20 @@ public class MetricsExpDAO extends ESGDAO {
     //Result Encapsulation...
     //------------------------------------
     public class ExpInfo {
-	//TODO what the results look like...	
+	public String project = null;
+	public String experiment = null;
+	public int count = -1;
+	public long sum = -1L;
+
+	public String toString() { return "project: ["+project+"] experiment: ["+experiment+"] count: ["+count+"] sum: ["+sum+"]"; }
     }
 
     public String toString() {
-	return this.getClass().getName()+":(1)["+this.getClass().getName()+"] - [Q:"+query+"] "+((dataSource == null) ? "[OK]\n" : "[INVALID]\n");	
+	if(str == null) str = new StringBuilder();
+	if(str.length() != 0) return str.toString();;
+	str.append(this.getClass().getName()+":(1)["+this.getClass().getName()+"] - [Q:"+query+"] "+((dataSource == null) ? "[OK]\n" : "[INVALID]\n"));	
+	str.append(this.getClass().getName()+":(1)["+this.getClass().getName()+"] - [Q:"+downloadQuery+"] "+((dataSource == null) ? "[OK]\n" : "[INVALID]\n"));	
+	return str.toString();
     }
 
 }
