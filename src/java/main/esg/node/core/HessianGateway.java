@@ -58,64 +58,64 @@
 /**
    Description:
 
+   This is the result of my push to factor out RPC specific details
+   such that this framework as a whole can support multiple RPC
+   mechanisms and folks know where/how to integrate said new RPC
+   mechanisms. :-) I am positive that as new RPC mechanisms come on
+   line that further factoring etc will take place.  So this can be
+   considered as a first best guess factoring given that at the moment
+   (Feb, 2010) there is only one in place. -gavin :-)
+
+   :-| . o 0 ( I may want to use Generics here to make things
+   easier... Hmmm... Think about this summore later)
+ 
 **/
 package esg.node.core;
+
+import esg.common.ESGException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-public abstract class Gateway extends AbstractDataNodeComponent{
+import com.caucho.hessian.client.HessianProxyFactory;
 
-    private static final Log log = LogFactory.getLog(Gateway.class);
-    private String serviceURL = null;
-
-    protected boolean isValid = false;
-    protected boolean isAvailable = false;
+public abstract class HessianGateway extends Gateway {
     
-    public Gateway(String name, String serviceURL) { 
-	super(name); 
-	this.serviceURL = serviceURL;
+    private static final Log log = LogFactory.getLog(HessianGateway.class);    
+
+    private HessianProxyFactory factory;
+   
+    public HessianGateway(String name, String serviceURL) { 
+	super(name,serviceURL); 
+	this.factory = new HessianProxyFactory();
+    }
+    
+    //If you call this constructor make sure you make call to
+    //super.setServiceUrl(...) before you make any other subsequent
+    //method calls.
+    public HessianGateway(String name) { this(name,null); }
+    
+    protected HessianProxyFactory getFactory() { return factory; }
+
+    //Note: This is what makes this Hessian specific... the
+    //use of the hessian "factory.". Also Note, all RPC
+    //mechanisms follow the same basic mechanics 
+    protected Object factoryCreate(Class serviceClass) throws ESGException {
+	return this.factoryCreate(serviceClass,null);
     }
 
-    public Gateway(String name) { this(name,null); }
-
-    public abstract void init();
-    protected void setServiceURL(String serviceURL) { this.serviceURL = serviceURL; }
-    public String getServiceURL() { return serviceURL; }
-    public boolean isValid() { return isValid; }
-    public boolean isAvailable() { return isAvailable; }
-    
-    
-    //-----------------------------------------------------------------
-    //Delgating: remote method wrappers.
-    //-----------------------------------------------------------------
-    //override me (all services should have a "ping" remote method! according to me! :-)
-    public abstract boolean ping();
-
-    //Present the gateway with a token and callback address for 
-    //making calls back to the data node services.
-    public abstract boolean registerToGateway();
-    //-----------------------------------------------------------------
-    
-
-
-    //-----------------------------------------------------------------
-    //Overriding superclass to perform gateway object specific unregistration
-    //from the data node manager. (unrelated to RPC, internal management)
-    //-----------------------------------------------------------------
-    public void unregister() {
-	DataNodeManager dataNodeManager = getDataNodeManager();
-	if(dataNodeManager == null) return;
-	if(this instanceof Gateway) { dataNodeManager.removeGateway(this); }
-	//Note: don't have to null out mgr like in the super class
-	//because I am never holding on to a mgr handle directly ;-)
+    //TODO: make this a "generics" function...
+    protected Object factoryCreate(Class serviceClass,String serviceURL) throws ESGException { 
+	if (serviceURL == null) serviceURL = getServiceURL();
+	Object endpoint = null;
+	try{
+	    endpoint = factory.create(serviceClass, serviceURL); 
+	}catch(Exception e) {
+	    throw new ESGException(e);
+	}
+	return endpoint;
     }
-    //-----------------------------------------------------------------
-
-
-    public String toString() {
-	return "Gateway: ["+getName()+"] -> ["+(serviceURL == null ? "NULL" : serviceURL)+"] ("+isValid+")";
-    }
+    
     
 }

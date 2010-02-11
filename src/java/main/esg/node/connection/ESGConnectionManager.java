@@ -59,7 +59,8 @@
    Description:
 
       This class also MANAGES gateway proxy object(s)
-      (ex:BasicGateway) that communicate out to the gateway(s).
+      (ex:BasicGateway) that communicate OUT (egress) to the
+      gateway(s).
 
 **/
 package esg.node.connection;
@@ -90,7 +91,7 @@ import esg.node.core.Gateway;
 public class ESGConnectionManager extends AbstractDataNodeComponent implements ESGGatewayListener {
 
     private static final Log log = LogFactory.getLog(ESGConnectionManager.class);
-
+    
     private Map<String,Gateway> gateways = null;
     private Map<String,Gateway> unavailableGateways = null;
     

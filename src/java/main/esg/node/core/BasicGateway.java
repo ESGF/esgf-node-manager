@@ -74,8 +74,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-import com.caucho.hessian.client.HessianRuntimeException;
-
 import java.net.MalformedURLException;
 import java.net.InetAddress;
 import java.util.List;
@@ -86,11 +84,13 @@ import esg.gateway.service.ESGGatewayService;
 import esg.common.service.ESGRemoteEvent;
 import esg.common.Utils;
 
-public class BasicGateway extends Gateway {
+public class BasicGateway extends HessianGateway {
 
     private static final Log log = LogFactory.getLog(BasicGateway.class);
     private ESGGatewayService gatewayService = null;
     private List<ESGGatewayListener> gatewayEventListeners = null;
+    
+    private boolean pingState = false;
 
     public BasicGateway(String name, String serviceURL) { 
 	super(name,serviceURL); 
@@ -122,8 +122,9 @@ public class BasicGateway extends Gateway {
 	}
 
 	try {
-	    gatewayService = (ESGGatewayService)factory.create(ESGGatewayService.class, getServiceURL());
-	}catch(MalformedURLException ex) {
+	    //The call to our superclass to create the proper stub object to remote service.
+	    gatewayService = (ESGGatewayService)factoryCreate(ESGGatewayService.class, getServiceURL());
+	}catch(Exception ex) {
 	    log.warn("Could not connect to serviceURL ["+getServiceURL()+"]",ex);
 	    isAvailable = false;
 	}
@@ -162,20 +163,32 @@ public class BasicGateway extends Gateway {
 	try {
 	    //TODO see about changing the timeout so don't have to wait forever to fail!	    
 	    response = gatewayService.ping();
-	    System.out.println( (response ? "[OK]" : "[BUSY]") );
-	    if(response  && isValid) fireConnectionAvailable(); else fireConnectionBusy();
-	}catch (HessianRuntimeException ex) {
-	    System.out.println("[FAIL]");
+	    pingState = (response  && isValid);
+	    log.trace( (response ? "[OK]" : "[BUSY]") );
+	}catch (RuntimeException ex) {
+	    log.trace("[FAIL]");
 	    log.error("Problem calling \"ping\" on ["+getServiceURL()+"] "+ex.getMessage());
 	    response = false;
 	    fireConnectionFailed(ex);
 	}
-	isAvailable = (response && isValid);
+	
+	//This is basically saying that because of a ping there is a
+	//change in the availability state of the gateway in question.
+	//So only upon a change in state will there be events fired
+	//through the rest of the system and the new state recorded
+	//and dispatched to the rest of the system.  This saves us
+	//from sending out events that doesn't contain any *new*
+	//information.
+	if(isAvailable != pingState) {
+	    if(pingState) fireConnectionAvailable(); else fireConnectionBusy();
+	}
+	isAvailable = pingState;
+
 	log.trace("isValid = "+isValid);
 	log.trace("response = "+response);
 	log.trace("isAvailable = "+isAvailable);
 	return isAvailable;
-	//FYI: the isAvailable() method is defined in superclass)
+	//FYI: the isAvailable() method is defined in super-superclass)
     }
     
     //Present the gateway with this client's identity and thus
@@ -200,7 +213,7 @@ public class BasicGateway extends Gateway {
 	    log.trace("Making Remote Call to \"register\" method, sending: "+registrationEvent);
 	    gatewayService.register(registrationEvent);
 	    return true;
-	}catch (HessianRuntimeException ex) {
+	}catch (RuntimeException ex) {
 	    log.error("Problem calling \"register\" on ["+getServiceURL()+"] "+ex.getMessage());
 	    fireConnectionFailed(ex);
 	    return false;
@@ -209,12 +222,15 @@ public class BasicGateway extends Gateway {
 
 
     protected void fireConnectionAvailable() {
+	log.trace("Firing Connection Available to "+getServiceURL());
 	fireESGGatewayEvent(new ESGGatewayEvent(this,ESGGatewayEvent.CONNECTION_AVAILABLE));
     }
     protected void fireConnectionFailed(Throwable t) {
+	log.trace("Firing Connection Failed to "+getServiceURL());
 	fireESGGatewayEvent(new ESGGatewayEvent(this,t.getMessage(),ESGGatewayEvent.CONNECTION_FAILED));
     }
     protected void fireConnectionBusy() {
+	log.trace("Firing Connection Busy to "+getServiceURL());
 	fireESGGatewayEvent(new ESGGatewayEvent(this,ESGGatewayEvent.CONNECTION_BUSY));
     }
     //--------------------------------------------
