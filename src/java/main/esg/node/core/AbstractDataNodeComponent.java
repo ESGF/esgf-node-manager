@@ -74,14 +74,17 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
 
     private String myName=null;
     private DataNodeManager dataNodeManager = null;
+    private ESGQueue eventQueue = null;
 
     //Expose this list to available subclasses...
     //so that they too may be able to manage event listeners
     protected List<ESGListener> esgListeners = null;
+    protected List<ESGQueueListener> esgQueueListeners = null;
 
     public AbstractDataNodeComponent(String name) {
 	this.myName = name;
 	this.esgListeners = new ArrayList<ESGListener>();
+	this.eventQueue = new ESGQueue(this);
     }
     public AbstractDataNodeComponent() { this(DataNodeComponent.ANONYMOUS); }
 
@@ -106,6 +109,11 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
 	dataNodeManager = null;
     }
 
+
+    //*******************************************
+    //-------------------------------------------
+    //Subscribe/Unsubscribe ESGListeners ("system" events)
+    //-------------------------------------------
     public void addESGListener(ESGListener listener) {
 	if(listener == null) return;
 	log.trace("Adding Listener: "+listener);
@@ -127,21 +135,64 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
 	    listener.handleESGEvent(esgEvent);
 	}
     }
-
+    
     //-------------------------------------------
     //ESGListener Interface Implementation...
     //-------------------------------------------
-    public void handleESGEvents(List<ESGEvent> events) {
-	for(ESGEvent event : events) {
-	    handleESGEvent(event);
-	}
-    }
-    
     public void handleESGEvent(ESGEvent event) {
 	//TODO:
 	//Just stubbed for now...
 	log.trace("Got Action Performed: ["+myName+"]:["+this.getClass().getName()+"]: Got An Event!!!!: "+event);
     }
+    //*******************************************
+    
+
+
+    //*******************************************
+    //-------------------------------------------
+    //Subscribe/Unsubscribe ESGQueueListeners ("application" events)
+    //-------------------------------------------
+    public void addESGQueueListener(ESGQueueListener listener) {
+	if(listener == null) return;
+	log.trace("Adding Listener: "+listener);
+	esgQueueListeners.add(listener);
+    }
+    
+    public void removeESGQueueListener(ESGListener listener) {
+	log.trace("Removing Listener: "+listener);
+	esgQueueListeners.remove(listener);
+    }
+
+    //--------------------------------------------
+    //Event dispatching to all registered ESGQueuListeners
+    //calling their Queue's handleEvent method
+    //--------------------------------------------
+    protected void queueESGEvent(ESGEvent esgEvent) {
+	log.trace("Queuing Event: "+esgEvent);
+	for(ESGQueueListener listener: esgQueueListeners) {
+	    listener.getESGEventQueue().enqueueEvent(esgEvent);
+	}
+    }
+
+    //-------------------------------------------
+    //ESGQueueListener Interface Implementation... (Called by my ESGQueue)
+    //-------------------------------------------
+    public boolean handleESGQueuedEvents(List<ESGEvent> events) {
+	boolean ret = true;
+	log.trace("Got Action Performed: ["+myName+"]:["+this.getClass().getName()+"]: Got Batch of ["+events.size()+"] QueuedEvents!!!! ");
+	for(ESGEvent event : events) {
+	    ret &= handleESGQueuedEvent(event);
+	}
+	return ret;
+    }
+    public boolean handleESGQueuedEvent(ESGEvent event) {
+	//TODO
+	log.trace("Got Action Performed: ["+myName+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
+	return false;
+    }
+    
+    public ESGQueue getESGEventQueue() { return eventQueue; }
+    //*******************************************
 
     //We want to do what we can not to leave references laying around
     //in the data node manager.  Unregistering will explicitly take us

@@ -61,7 +61,7 @@
 **/
 package esg.node.core;
 
-public interface DataNodeComponent extends ESGListener{
+public interface DataNodeComponent extends ESGListener, ESGQueueListener{
 
     public static final String ANONYMOUS = "ANONYMOUS";
     
@@ -71,5 +71,5 @@ public interface DataNodeComponent extends ESGListener{
     public void unregister();
     public void addESGListener(ESGListener listner);
     public void removeESGListener(ESGListener listener);
-    
+
 }

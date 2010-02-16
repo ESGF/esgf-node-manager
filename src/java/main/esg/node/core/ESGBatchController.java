@@ -57,14 +57,15 @@
 
 /**
    Description:
-
+   
+   The controller is meant to be the conduit of communication from the
+   manager to the associated queue for a given component.  Through
+   this controller information can be sent to, and received by; the
+   manager.
+   
 **/
 package esg.node.core;
 
-import java.util.List;
-
-public interface ESGListener {
-
-    public void handleESGEvent(ESGEvent event);
-    
+public class ESGBatchController implements ESGListener {
+    public void handleESGEvent(ESGEvent event) { }    
 }

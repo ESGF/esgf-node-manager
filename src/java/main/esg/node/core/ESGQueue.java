@@ -61,10 +61,59 @@
 **/
 package esg.node.core;
 
-import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor;
 
-public interface ESGListener {
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
 
-    public void handleESGEvent(ESGEvent event);
+public class ESGQueue {
+
+    private static Log log = LogFactory.getLog(AbstractDataNodeComponent.class);
+    private DataNodeComponent handler = null;
+    private ThreadPoolExecutor pool = null;
+    private ESGQueueController qController = null;
+    private ESGBatchController bController = null;
+    private Runnable command = null;
+
+    public ESGQueue(DataNodeComponent handler) {
+	this.handler = handler;
+    }
+    public ESGQueue(DataNodeComponent handler,
+		    ThreadPoolExecutor pool, 
+		    ESGQueueController qController, 
+		    ESGBatchController bController) {
+	
+	this.handler = handler;
+	this.pool = pool;
+	this.qController = qController;
+	this.bController = bController;
+	
+    }
+    
+    public void init()  { }
+    public String getName() { return handler.getName()+"_QUEUE"; }
+    
+    public ESGQueueController getQueueController() { return qController; }
+    public ESGBatchController getBatchController() { return bController; }
+    
+    
+    //Events are put on the eventQueue (BlockingQueue)
+    public void enqueueEvent(final ESGEvent event) {
+	pool.execute(new Runnable() {
+		public void run() {
+		    //TODO: make this actually a call to the batch
+		    //controller that then will be able to rack up
+		    //(batch) and distribute the event.  So basically
+		    //this calls the batch controller and when the
+		    //batch controller has reached its batch threshold
+		    //then it will call
+		    //handler.handleESGQueuedEvent(List<ESGEvent>s)
+		    //For now... let's short that and call the single
+		    //event handling method directly.
+		    handler.handleESGQueuedEvent(event);
+		}
+	    });
+    }
     
 }

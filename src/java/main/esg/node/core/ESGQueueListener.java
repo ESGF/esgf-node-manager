@@ -58,13 +58,20 @@
 /**
    Description:
 
+   All handlers of queued events must implement this interface.  These
+   methods are called by the ESGQueue associated with a component.
+
 **/
 package esg.node.core;
 
 import java.util.List;
 
-public interface ESGListener {
+public interface ESGQueueListener {
 
-    public void handleESGEvent(ESGEvent event);
+    public boolean handleESGQueuedEvents(List<ESGEvent> events);
+    public boolean handleESGQueuedEvent(ESGEvent event);
     
+    //Must be able to get from you, the queue that is holding events
+    //you are listening for / handling.
+    public ESGQueue getESGEventQueue();
 }
