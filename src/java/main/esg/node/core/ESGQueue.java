@@ -62,6 +62,11 @@
 package esg.node.core;
 
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -77,7 +82,19 @@ public class ESGQueue {
     private Runnable command = null;
 
     public ESGQueue(DataNodeComponent handler) {
-	this.handler = handler;
+	this(handler,null,null);
+    }
+
+    public ESGQueue(DataNodeComponent handler, 
+		    ESGQueueController qController,
+		    ESGBatchController bController) {
+	this(handler,
+	     new ThreadPoolExecutor(2,20,10L,TimeUnit.MILLISECONDS,
+				    new LinkedBlockingQueue<Runnable>(100),
+				    new ESGGroupedThreadFactory(handler.getName()),
+				    new ESGRejectPolicy(handler.getName())),
+	     qController,
+	     bController);
     }
     public ESGQueue(DataNodeComponent handler,
 		    ThreadPoolExecutor pool, 
@@ -86,8 +103,18 @@ public class ESGQueue {
 	
 	this.handler = handler;
 	this.pool = pool;
-	this.qController = qController;
-	this.bController = bController;
+	if(qController == null) {
+	    //TODO create default controller
+	    this.qController = new ESGQueueController(handler.getName());
+	}else {
+	    this.qController = qController;
+	}
+	
+	if(bController == null) {
+	    this.bController = new ESGBatchController(handler.getName(), handler);
+	}else {
+	    this.bController = bController;
+	}
 	
     }
     
@@ -100,6 +127,7 @@ public class ESGQueue {
     
     //Events are put on the eventQueue (BlockingQueue)
     public void enqueueEvent(final ESGEvent event) {
+	log.trace(": Enqueuing event - "+event+" for component: "+handler.getName());
 	pool.execute(new Runnable() {
 		public void run() {
 		    //TODO: make this actually a call to the batch
@@ -111,9 +139,86 @@ public class ESGQueue {
 		    //handler.handleESGQueuedEvent(List<ESGEvent>s)
 		    //For now... let's short that and call the single
 		    //event handling method directly.
-		    handler.handleESGQueuedEvent(event);
+		    log.trace(ESGQueue.this.getName()+" - Dispatching event to component: "+handler.getName());
+		    bController.handleESGQueuedEvent(event);
 		}
 	    });
+    }
+
+
+    //----
+
+    /**
+     * A handler for rejected tasks that runs the rejected task
+     * directly in the calling thread of the <tt>execute</tt> method,
+     * unless the executor has been shut down, in which case the task
+     * is discarded.
+     */
+    static class ESGRejectPolicy implements RejectedExecutionHandler {
+	private static Log log = LogFactory.getLog(ESGRejectPolicy.class);
+	
+	private String myName = null;
+
+        /**
+         * Creates a <tt>ESGRejectPolicy</tt>.
+         */
+        public ESGRejectPolicy(String name) { this.myName = name; }
+		
+        /**
+         * Executes task r in the caller's thread, unless the executor
+         * has been shut down, in which case the task is discarded.
+         * @param r the runnable task requested to be executed
+         * @param e the executor attempting to execute this task
+         */
+        public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
+	    log.trace("Rejected Execution...");
+            if (!e.isShutdown()) {
+                r.run();
+            }
+        }
+
+	public String getName() { return myName; }
+	public String toString() { return myName+":"+this; }
+
+    }
+
+    //----
+
+    static class ESGGroupedThreadFactory implements ThreadFactory {
+	private static Log log = LogFactory.getLog(ESGGroupedThreadFactory.class);
+
+        static final AtomicInteger poolNumber = new AtomicInteger(1);
+        final ThreadGroup group;
+        final AtomicInteger threadNumber = new AtomicInteger(1);
+        final String namePrefix;
+	private String myName;
+
+        ESGGroupedThreadFactory(String name) {
+	    this.myName = name;
+            SecurityManager s = System.getSecurityManager();
+            group = (s != null)? s.getThreadGroup() :
+                                 Thread.currentThread().getThreadGroup();
+
+	    //TODO: May have to make my own explicity thread group with name "name"
+
+            namePrefix = "ESG-pool-["+myName+"]" +
+                          poolNumber.getAndIncrement() +
+                         "-thread-";
+        }
+
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(group, r,
+                                  namePrefix + threadNumber.getAndIncrement(),
+                                  0);
+            if (t.isDaemon())
+                t.setDaemon(false);
+            if (t.getPriority() != Thread.NORM_PRIORITY)
+                t.setPriority(Thread.NORM_PRIORITY);
+            return t;
+        }
+
+	public String getName() { return myName; }
+	public String toString() { return myName+":"+this; }
     }
     
 }

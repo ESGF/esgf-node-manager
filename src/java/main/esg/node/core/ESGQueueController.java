@@ -66,6 +66,22 @@
 **/
 package esg.node.core;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
+
 public class ESGQueueController implements ESGListener {
-    public void handleESGEvent(ESGEvent event) { }    
+    private static Log log = LogFactory.getLog(ESGQueueController.class);    
+    String myName = null;
+
+    public ESGQueueController(String name) { this.myName = name; }
+    
+    public void handleESGEvent(ESGEvent event) { 
+	log.trace("Queue Controller ["+myName+"] Handling ingress control event...");
+	//TODO: handle events pertaining to controlling the thread queue
+    } 
+    
+    public String getName() { return myName; }
+    public String toString() { return myName+":"+this; }
+   
 }

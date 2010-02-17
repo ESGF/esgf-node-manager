@@ -166,6 +166,7 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     //--------------------------------------------
     //Event dispatching to all registered ESGQueuListeners
     //calling their Queue's handleEvent method
+    //(The queued version of the "fire" method)
     //--------------------------------------------
     protected void queueESGEvent(ESGEvent esgEvent) {
 	log.trace("Queuing Event: "+esgEvent);
