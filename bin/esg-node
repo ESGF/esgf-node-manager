@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #####
+# esg-node: ESG Data Node Application Stack
 # chkconfig: 345 98 02
 # description: Installer for the ESG Data Node application stack
 #
@@ -99,6 +100,7 @@ init() {
     ant_install_dir=${ANT_HOME:-/usr/local/ant}
     tomcat_install_dir=${CATALINA_HOME:-/usr/local/tomcat}
     tomcat_user=${tomcat_user:-tomcat}
+    tomcat_group=${tomcat_group:-$tomcat_user}
     globus_location=${GLOBUS_LOCATION:-/usr/local/globus}
     backupdir=${backupdir:-"/esg/backups"}
     gateway_name=${ESG_GATEWAY_NAME}
@@ -146,6 +148,7 @@ init() {
     postgress_driver=org.postgresql.Driver
     postgress_protocol=jdbc:postgresql:
     pg_sys_acct=postgres
+    pg_sys_acct_group=${pg_sys_acct_group:-$pg_sys_acct}
     postgress_dist_url=http://ftp9.us.postgresql.org/pub/mirrors/postgresql/source/v8.4.2/postgresql-8.4.2.tar.gz
     repo=http://www-pcmdi.llnl.gov/svn/repository/cdat/tags
     esgcet_egg_file=esgcet-${esgcet_version}-py2.5.egg
@@ -373,7 +376,7 @@ setup_postgress() {
     if [ $? != 0 ]; then
 	echo " WARNING: There is no postgres system account user \"$pg_sys_acct\" present on system"
 	#NOTE: "useradd" is a RedHat/CentOS thing... to make this cross distro compatible clean this up.
-	/usr/sbin/useradd -r -u26 -c"PostgreSQL Service" -p $pg_sys_acct_passwd $pg_sys_acct
+	/usr/sbin/useradd -r -u26 -c"PostgreSQL Service" -g $pg_sys_acct_group -p $pg_sys_acct_passwd $pg_sys_acct
 	[ $? != 0 ] && echo "ERROR: Could not add postgres system account user" && popd && checked_done 1
     fi
     ########
@@ -384,7 +387,7 @@ setup_postgress() {
     [ $? != 0 ] && grep $pg_sys_acct /etc/passwd && echo " ERROR: Problem with $pg_sys_acct creation!!!" && checked_done 1
 
     chown -R $pg_sys_acct $postgress_install_dir
-    chgrp -R $pg_sys_acct $postgress_install_dir
+    chgrp -R $pg_sys_acct_group $postgress_install_dir
 
 
     #Create the database:
@@ -777,7 +780,7 @@ setup_tomcat() {
     if [ $? != 0 ]; then 
 	echo " WARNING: There is no tomcat user \"$tomcat_user\" present on system"
 	#NOTE: useradd is a RedHat/CentOS thing... to make this cross distro compatible clean this up.
-	/usr/sbin/useradd -r -u91 -c"Tomcat Server Identity" $tomcat_user
+	/usr/sbin/useradd -r -u91 -c"Tomcat Server Identity" -g $tomcat_group $tomcat_user
 	[ $? != 0 ] && echo "ERROR: Could not add tomcat system account user \"$tomcat_user\"" && popd && checked_done 1
     fi
         
@@ -833,18 +836,25 @@ setup_tomcat() {
 	echo "Using existing keystore \"keystore-tomcat\""
     fi
 
-    #Create (copy) trust store in $tomcat_install_dir/conf
-    if [ ! -e ./jssecacerts ]; then
-	cp -v ${java_home}/jre/lib/security/cacerts ./jssecacerts
+    #Fetch/Copy truststore to $tomcat_install_dir/conf
+    #(first try getting it from distribution server otherwise copy Java's)
+    if [ ! -e $tomcat_install_dir/conf/jssecacerts ]; then
+	fetch_file=jssecacerts
+	checked_get $tomcat_install_dir/conf/${fetch_file} ${esg_dist_url}/externals/${fetch_file}
+	if (( $? > 1 )); then
+	    echo " Warning: Could not download certificates ${fetch_file} for tomcat - will copy local java certificat file"
+	    cp -v ${java_home}/jre/lib/security/cacerts $tomcat_install_dir/conf/${fetch_file}
+	    [ $? != 0 ] && echo " ERROR: Could not fetch or copy ${fetch_file} for tomcat!!" && popd && checked_done 1
+	fi
     fi
-
+    
     #Edit the server.xml file to contain proper location of certificates
     eval "perl -p -i -e 's#\\@\\@tomcat_install_dir\\@\\@#$tomcat_install_dir#g' server.xml"
 
 
     chown -R $tomcat_user $(readlink -f ${tomcat_install_dir})
     [ $? != 0 ] && " ERROR: Could not change ownership of tomcat to \"$tomcat_user\" user" && popd && checked_done 1
-    chgrp -R $tomcat_user $(readlink -f ${tomcat_install_dir})
+    chgrp -R $tomcat_group $(readlink -f ${tomcat_install_dir})
     [ $? != 0 ] && " ERROR: Could not change group of tomcat to \"$tomcat_user\" user" && popd && checked_done 1
     
     start_tomcat
@@ -985,7 +995,7 @@ register() {
     
     chmod 600 ${certfile}
     chown $tomcat_user ${certfile}
-    chgrp $tomcat_user ${certfile}
+    chgrp $tomcat_group ${certfile}
     popd #>& /dev/null
     return $ret
 }
@@ -1060,8 +1070,8 @@ setup_tds() {
     fetch_file=tomcat-users.xml
     checked_get $tomcat_install_dir/conf/${fetch_file} ${esg_dist_url}/externals/bootstrap/${fetch_file}
     (( $? > 1 )) && popd && checked_done 1
-    chown tomcat $tomcat_install_dir/conf/${fetch_file}
-    chgrp tomcat $tomcat_install_dir/conf/${fetch_file}
+    chown ${tomcat_user}  $tomcat_install_dir/conf/${fetch_file}
+    chgrp ${tomcat_group} $tomcat_install_dir/conf/${fetch_file}
     
 
     #1: Generate password hash
@@ -1348,7 +1358,7 @@ setup_node() {
     echo " [OK]"
     #----------------------
     chown -R ${tomcat_user} ${node_app_home}
-    chgrp -R ${tomcat_user} ${node_app_home}
+    chgrp -R ${tomcat_group} ${node_app_home}
     unset fetch_file
     popd >& /dev/null
     #----------------------------
@@ -1485,7 +1495,7 @@ setup_filter() {
     popd #>& /dev/null
     #----------------------
     chown -R ${tomcat_user} ${dest_dir}/WEB-INF
-    chgrp -R ${tomcat_user} ${dest_dir}/WEB-INF
+    chgrp -R ${tomcat_group} ${dest_dir}/WEB-INF
 
     return 0
 }
