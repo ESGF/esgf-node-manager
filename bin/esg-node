@@ -1296,17 +1296,15 @@ setup_node() {
     checked_get ${node_dist_file} ${node_dist_url}
     no_new_update=$?
 
-    local archive
     if((upgrade)); then
 	((no_new_update == 1)) && echo "nothing more to do, you are up2date" && return 1
 	echo "Upgrading the ESG Node Manager..."
 	if [ -e ${node_dist_dir} ]; then
-	    archive=${node_dist_dir}.arch.$(date ${date_format}).tgz
+	    local archive=${node_dist_dir}.arch.$(date ${date_format}).tgz
 	    echo "...archiving... ${node_dist_dir} -> ${archive} ${node_dist_dir}"
 	    tar czf ${archive} ${node_dist_dir}
 	    echo "...removing... ${node_dist_dir}"
 	    rm -rf ${node_dist_dir}
-	    archive=$(readlink -f ${archive})
 	fi
     fi
     
@@ -1329,7 +1327,8 @@ setup_node() {
 
     fetch_file=node.properties
 
-    [ -e WEB-INF/classes/${fetch_file} ] && cp -v WEB-INF/classes/${fetch_file} ${workdir}/${fetch_file}.saved
+    #NOTE: The saving of the last config file must be done *BEFORE* we untar the new distro!
+    [ -e WEB-INF/classes/${fetch_file} ] && cp WEB-INF/classes/${fetch_file} WEB-INF/classes/${fetch_file}.saved
     echo "Expanding war ${node_war_file} in $(pwd)"
     $JAVA_HOME/bin/jar xf ${node_war_file}
     
@@ -1339,11 +1338,11 @@ setup_node() {
     #----------------------------
     pushd WEB-INF/classes >& /dev/null
 
-    if((upgrade)) && [ -e ${workdir}/${fetch_file}.saved ]; then
+    if((upgrade)) && [ -e ${fetch_file}.saved ]; then
 	#reuse the last node.properties file...
 	#pull it out of the tar archive we made a few lines up
 	mv ${fetch_file} ${fetch_file}.tmpl
-	cp -v ${workdir}/${fetch_file}.saved ${fetch_file}
+	cp ${workdir}/${fetch_file}.saved ${fetch_file}
     else
         #----------------------
 	pwd
