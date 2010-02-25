@@ -1296,14 +1296,17 @@ setup_node() {
     checked_get ${node_dist_file} ${node_dist_url}
     no_new_update=$?
 
+    local archive
     if((upgrade)); then
 	((no_new_update == 1)) && echo "nothing more to do, you are up2date" && return 1
 	echo "Upgrading the ESG Node Manager..."
 	if [ -e ${node_dist_dir} ]; then
-	    echo "...archiving... ${node_dist_dir} -> ${node_dist_dir}.arch.$(date ${date_format}).tgz ${node_dist_dir}"
-	    tar czf ${node_dist_dir}.arch.$(date ${date_format}).tgz ${node_dist_dir}
+	    archive=${node_dist_dir}.arch.$(date ${date_format}).tgz
+	    echo "...archiving... ${node_dist_dir} -> ${archive} ${node_dist_dir}"
+	    tar czf ${archive} ${node_dist_dir}
 	    echo "...removing... ${node_dist_dir}"
 	    rm -rf ${node_dist_dir}
+	    archive=$(readlink -f ${archive})
 	fi
     fi
     
@@ -1323,6 +1326,10 @@ setup_node() {
     mkdir -p ${node_app_home}
     cd ${node_app_home}
 
+
+    fetch_file=node.properties
+
+    [ -e WEB-INF/classes/${fetch_file} ] && cp -v WEB-INF/classes/${fetch_file} ${workdir}/${fetch_file}.saved
     echo "Expanding war ${node_war_file} in $(pwd)"
     $JAVA_HOME/bin/jar xf ${node_war_file}
     
@@ -1331,32 +1338,39 @@ setup_node() {
     #Property file fetching and token replacement...
     #----------------------------
     pushd WEB-INF/classes >& /dev/null
-    fetch_file=node.properties
-    #----------------------
-    pwd
-    echo -n "Replacing tokens... "
-    eval "perl -p -i -e 's/\\@db.driver\\@/${postgress_driver}/g' ${fetch_file}"    
-    echo -n "*"
-    eval "perl -p -i -e 's/\\@db.protocol\\@/${postgress_protocol}/g' ${fetch_file}"
-    echo -n "*"
 
-    eval "perl -p -i -e 's/\\@db.host\\@/${postgress_host}/g' ${fetch_file}"    
-    echo -n "*"
-    eval "perl -p -i -e 's/\\@db.port\\@/${postgress_port}/g' ${fetch_file}"
-    echo -n "*"
-    eval "perl -p -i -e 's/\\@db.database\\@/${node_db_name}/g' ${fetch_file}"
-    echo -n "*"
-    eval "perl -p -i -e 's/\\@db.user\\@/${postgress_user}/g' ${fetch_file}"
-    echo -n "*"
-    eval "perl -p -i -e 's/\\@db.password\\@/${pg_sys_acct_passwd}/g' ${fetch_file}"
-    echo -n "*"
-
-    eval "perl -p -i -e 's/\\@mail.smtp.host\\@/${mail_smtp_host}/g' ${fetch_file}"
-    echo -n "*"
-    eval "perl -p -i -e 's/\\@mail.admin.address\\@/${mail_admin_address}/g' ${fetch_file}"
-    echo -n "*"
-    echo " [OK]"
-    #----------------------
+    if((upgrade)) && [ -e ${workdir}/${fetch_file}.saved ]; then
+	#reuse the last node.properties file...
+	#pull it out of the tar archive we made a few lines up
+	mv ${fetch_file} ${fetch_file}.tmpl
+	cp -v ${workdir}/${fetch_file}.saved ${fetch_file}
+    else
+        #----------------------
+	pwd
+	echo -n "Replacing tokens... "
+	eval "perl -p -i -e 's/\\@db.driver\\@/${postgress_driver}/g' ${fetch_file}"    
+	echo -n "*"
+	eval "perl -p -i -e 's/\\@db.protocol\\@/${postgress_protocol}/g' ${fetch_file}"
+	echo -n "*"
+	
+	eval "perl -p -i -e 's/\\@db.host\\@/${postgress_host}/g' ${fetch_file}"    
+	echo -n "*"
+	eval "perl -p -i -e 's/\\@db.port\\@/${postgress_port}/g' ${fetch_file}"
+	echo -n "*"
+	eval "perl -p -i -e 's/\\@db.database\\@/${node_db_name}/g' ${fetch_file}"
+	echo -n "*"
+	eval "perl -p -i -e 's/\\@db.user\\@/${postgress_user}/g' ${fetch_file}"
+	echo -n "*"
+	eval "perl -p -i -e 's/\\@db.password\\@/${pg_sys_acct_passwd}/g' ${fetch_file}"
+	echo -n "*"
+	
+	eval "perl -p -i -e 's/\\@mail.smtp.host\\@/${mail_smtp_host}/g' ${fetch_file}"
+	echo -n "*"
+	eval "perl -p -i -e 's/\\@mail.admin.address\\@/${mail_admin_address}/g' ${fetch_file}"
+	echo -n "*"
+	echo " [OK]"
+        #----------------------
+    fi
     chown -R ${tomcat_user} ${node_app_home}
     chgrp -R ${tomcat_group} ${node_app_home}
     unset fetch_file
