@@ -59,7 +59,7 @@
    Description:
 
         This is essentially the wrapped stubs to the gateway.
-        They are the "client" side of the rpc call where calls
+        The data node side of the rpc call where calls
         ORIGINATE. (from DataNode -to-> Gateway).
 
         ----------------------------------------------------
@@ -92,13 +92,11 @@ public class BasicGateway extends HessianGateway {
     
     private boolean pingState = false;
 
-    public BasicGateway(String name, String serviceURL) { 
-	super(name,serviceURL); 
+    public BasicGateway(String serviceURL, int type) throws java.net.MalformedURLException { 
+	super(serviceURL,type); 
 	gatewayEventListeners = new ArrayList<ESGGatewayListener>();
     }
     
-    public BasicGateway(String name) { this(name,null); }
-
     //The idea here is to establish communication with the rpc
     //endpoint this class is a stub for. init() may be called multiple times until valid;
     public void init() {
@@ -124,6 +122,7 @@ public class BasicGateway extends HessianGateway {
 	try {
 	    //The call to our superclass to create the proper stub object to remote service.
 	    gatewayService = (ESGGatewayService)factoryCreate(ESGGatewayService.class, getServiceURL());
+	    log.trace("Gateway Service handle is ["+gatewayService+"]");
 	}catch(Exception ex) {
 	    log.warn("Could not connect to serviceURL ["+getServiceURL()+"]",ex);
 	    isAvailable = false;
@@ -168,6 +167,8 @@ public class BasicGateway extends HessianGateway {
 	}catch (RuntimeException ex) {
 	    log.trace("[FAIL]");
 	    log.error("Problem calling \"ping\" on ["+getServiceURL()+"] "+ex.getMessage());
+	    log.error(ex);
+	    ex.printStackTrace();
 	    response = false;
 	    fireConnectionFailed(ex);
 	}
@@ -220,6 +221,15 @@ public class BasicGateway extends HessianGateway {
 	}
     }
 
+    public void handleESGRemoteEvent(ESGRemoteEvent evt) {
+	try {
+	    log.trace("Making Remote Call to remote \"handleESGRemoteEvent\" method, sending: "+evt);
+	    gatewayService.handleESGRemoteEvent(evt);
+	}catch (RuntimeException ex) {
+	    log.error("Problem calling remote \"handleESGRemoteEvent\" on ["+getServiceURL()+"] "+ex.getMessage());
+	    fireConnectionFailed(ex);
+	}
+    }
 
     protected void fireConnectionAvailable() {
 	log.trace("Firing Connection Available to "+getServiceURL());

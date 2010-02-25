@@ -67,5 +67,6 @@ public interface ESGGatewayService {
     
     public boolean ping();
     public void register(ESGRemoteEvent evt);
+    public void handleESGRemoteEvent(ESGRemoteEvent evt);
 
 }

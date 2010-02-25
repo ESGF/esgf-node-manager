@@ -58,27 +58,54 @@
 /**
    Description:
 
+   This is basically an abstract class that is the STUB for the remote
+   Gateway (peer) for making/initiating calls on the peer.
+
 **/
 package esg.node.core;
+
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import esg.common.service.ESGRemoteEvent;
+
 public abstract class Gateway extends AbstractDataNodeComponent{
+
+    //TODO: Okay this should totally be an ENUM!!!!!
+    public static final int DEFAULT_GATEWAY = 1;
+    public static final int GATEWAY = 2;
+    public static final int DATA_NODE_PEER  = 4;
+    private int peerType = 0;
 
     private static final Log log = LogFactory.getLog(Gateway.class);
     private String serviceURL = null;
 
     protected boolean isValid = false;
     protected boolean isAvailable = false;
+
+    private static Pattern hostPattern = Pattern.compile("http://([^/ ]*)/.*[/]*/(datanode|gateway)");
     
-    public Gateway(String name, String serviceURL) { 
-	super(name); 
+    public Gateway(String serviceURL, int type) throws java.net.MalformedURLException { 
+	//TODO: regex out the IP and set as name
+	new java.net.URL(serviceURL);
+	String host = null;
+	String typeString = null;
+	Matcher hostMatcher = hostPattern.matcher(serviceURL);
+	if(hostMatcher.find()) {
+	    host = hostMatcher.group(1);
+	    typeString = hostMatcher.group(2);
+	}
+	setMyName(host);
+	this.peerType = type;
 	this.serviceURL = serviceURL;
     }
 
-    public Gateway(String name) { this(name,null); }
+    public Gateway(String name) throws java.net.MalformedURLException { this(name,GATEWAY); }
+    public int getPeerType() { return peerType; }
 
     public abstract void init();
     protected void setServiceURL(String serviceURL) { this.serviceURL = serviceURL; }
@@ -96,6 +123,9 @@ public abstract class Gateway extends AbstractDataNodeComponent{
     //Present the gateway with a token and callback address for 
     //making calls back to the data node services.
     public abstract boolean registerToGateway();
+
+    //Send the represented Gateway endpoint an event object
+    public abstract void handleESGRemoteEvent(ESGRemoteEvent evt);
     //-----------------------------------------------------------------
     
 
@@ -115,7 +145,7 @@ public abstract class Gateway extends AbstractDataNodeComponent{
 
 
     public String toString() {
-	return "Gateway: ["+getName()+"] -> ["+(serviceURL == null ? "NULL" : serviceURL)+"] ("+isValid+")";
+	return "Gateway: ["+getName()+"] -> ["+(serviceURL == null ? "NULL" : serviceURL)+"] ("+isValid+") [PT:"+peerType+"]";
     }
     
 }

@@ -241,6 +241,8 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 
 	log.trace("Registering Gateway: "+gateway.getName());
 	gateways.put(gateway.getName(), gateway);
+	log.trace("Initializing newly registered gateway component: "+gateway.getName());
+	gateway.init();
 	sendJoinNotification(gateway);
 	gateway.addESGListener(this);
 	return true;

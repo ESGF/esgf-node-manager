@@ -70,5 +70,6 @@ public interface ESGDataNodeService {
 
     public boolean ping();
     public boolean notify(ESGRemoteEvent evt);
+    public void handleESGRemoteEvent(ESGRemoteEvent evt);
 
 }

@@ -87,9 +87,11 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
 
 	connMgr = new ESGConnectionManager("CONN_MGR");
 	registerComponent(connMgr);
-
-	Gateway gateway = new BasicGateway("DEFAULT_GWAY","http://172.16.49.129/esg-node/gateway");
-	registerGateway(gateway);
+	
+	try{
+	    Gateway gateway = new BasicGateway("http://128.115.184.6/esg-node/gateway",Gateway.DEFAULT_GATEWAY);
+	    registerGateway(gateway);
+	}catch(java.net.MalformedURLException e) {log.error(e); }
 
 	ESGNotifier notifier = new ESGNotifier("NOTIFIER");
 	registerComponent(notifier);

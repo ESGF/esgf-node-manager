@@ -140,26 +140,48 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 
     //TODO: Think about the performance implications of having a synchronious return value
     //Remote (ingress) calls to method...
-    public boolean notify(ESGRemoteEvent evt) {
-	log.trace("DataNode service got \"notify\" call with event: ["+evt+"]");
+    public boolean notify(ESGRemoteEvent evt_) {
+	log.trace("DataNode service got \"notify\" call with event: ["+evt_+"]");
 	if(!amAvailable()) {
-	    log.warn("Dropping ingress notification event on the floor, I am NOT available. ["+evt+"]");
+	    log.warn("Dropping ingress notification event on the floor, I am NOT available. ["+evt_+"]");
 	    return false;
 	}
+
+	//Inspect the message type...
+	if(evt_.getMessageType() != ESGRemoteEvent.REGISTER) return false;
 	
+	//TODO: Do Event Inspection, etc...
+	
+	return true;
+    }
+
+    //Ingress event from remote 'client'
+    public void handleESGRemoteEvent(ESGRemoteEvent evt_) {
+	log.trace("DataNode service got \"handleESGRemoteEvent\" call with event: ["+evt_+"]");
+	if(!amAvailable()) {
+	    log.warn("Dropping ingress notification event on the floor, I am NOT available. ["+evt_+"]");
+	}
+	
+	//Being a nice guy and rerouting you to right method
+	//I may be being too nice... consider taking this out if abused.
+	if(evt_.getMessageType() == ESGRemoteEvent.REGISTER) { this.notify(evt_); };
+
+
 	//TODO: Grab this remote event, inspect the payload and stuff
 	//it into an esg event and fire it off to listeners to handle.
 	//Example... if the payload was the Catalog xml then JAXB it
 	//and send the object form as the payload for others to use
 	//(for example)
-
-	return true;
+	
+	//Zoiks... this is a hack for now... should be more elegant with event hierarchy.
+	ESGEvent evt = new ESGEvent(evt_,"Wrapped Remote Event");
+	enqueueESGEvent(evt);
     }
 
     //--------------------------------------------
     //Event handling... (for join events) needs connection manager!
     //--------------------------------------------
-    public void esgActionPerformed(ESGEvent esgEvent) {
+    public void handleESGEvent(ESGEvent esgEvent) {
 	//we only care about join events
 	if(!(esgEvent instanceof ESGJoinEvent)) return;
 
@@ -171,10 +193,13 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 	if(event.hasJoined()) {
 	    log.trace("Detected That The ESGConnectionManager Has Joined: "+event.getJoiner().getName());
 	    connMgr = (ESGConnectionManager)event.getJoiner();
+	    addESGQueueListener(connMgr);
 	}else {
 	    log.trace("Detected That The ESGConnectionManager Has Left: "+event.getJoiner().getName());
-	    connMgr = null;
+	    removeESGQueueListener(connMgr);
+	    connMgr = null;	    
 	}
+	log.trace("Listener Queue has ["+esgQueueListeners.size()+"] connection Managers present");
 	log.trace("connMgr = "+connMgr);
     }
 

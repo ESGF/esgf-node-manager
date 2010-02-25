@@ -87,11 +87,13 @@ public class ESGGatewayServiceImpl implements ESGGatewayService {
 	factory = new HessianProxyFactory();
     }
     
+    //ingress ping request...
     public boolean ping() {
 	log.trace("Gateway service got \"ping\"");
 	return true;
     }
-    
+
+    //ingress registration request... returns registration event to remote caller's notify method...
     public void register(ESGRemoteEvent evt) {
 	log.trace("Gateway service got \"register\" call from datanode with event: ["+evt+"]");
 	
@@ -121,13 +123,18 @@ public class ESGGatewayServiceImpl implements ESGGatewayService {
 	try {
 	    ESGRemoteEvent registrationResponseEvent = new ESGRemoteEvent(myLocation,ESGRemoteEvent.REGISTER,Utils.nextSeq());
 	    log.trace("Completing Registration By Making Remote Call to \"notify\" method, sending: "+registrationResponseEvent);
-	    datanodeService.notify(registrationResponseEvent);
-	    log.trace("Registration Request Successfully Sent...");
+	    if(datanodeService.notify(registrationResponseEvent))
+		log.trace("Registration Request Successfully Submitted...");
+	    else
+		log.trace("Registration Request Rejected");
 	}catch (HessianRuntimeException ex) {
 	    log.error("Problem calling \"register\" on ["+evt.getSource()+"] "+ex.getMessage());
 	}
+    }
 
-	
+    //ingress remote event to be handled....
+    public void handleESGRemoteEvent(ESGRemoteEvent evt) {
+	log.trace("Gateway service got \"handleESGRemoteEvent\" call with event: ["+evt+"]");	
     }
 
 }

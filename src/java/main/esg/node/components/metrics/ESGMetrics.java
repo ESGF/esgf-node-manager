@@ -180,6 +180,20 @@ public class ESGMetrics extends AbstractDataNodeComponent {
     //TODO:
     //Put in code that will eventually timeout the cache objects and free the memory up via GC.
 
+    public boolean handleESGQueuedEvent(ESGEvent event) {
+	//TODO
+	//Fill this event with data from calling:
+	//getExperimentalStats()
+	//getVariableStats()
+	//getDownloadExperimentStats()
+	//getDownloadVariableStats()
+	//getDownloadUserStats()
+	//based on what the event requests
+
+	log.trace("(noop impl) handling enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
+	return false;
+    }
+   
     public void handleESGEvent(ESGEvent event) {
 	super.handleESGEvent(event);
     }

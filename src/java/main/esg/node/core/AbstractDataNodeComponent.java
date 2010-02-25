@@ -84,6 +84,7 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     public AbstractDataNodeComponent(String name) {
 	this.myName = name;
 	this.esgListeners = new ArrayList<ESGListener>();
+	this.esgQueueListeners = new ArrayList<ESGQueueListener>();
 	this.eventQueue = new ESGQueue(this);
     }
     public AbstractDataNodeComponent() { this(DataNodeComponent.ANONYMOUS); }
@@ -142,7 +143,7 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     public void handleESGEvent(ESGEvent event) {
 	//TODO:
 	//Just stubbed for now...
-	log.trace("Got Action Performed: ["+myName+"]:["+this.getClass().getName()+"]: Got An Event!!!!: "+event);
+	log.trace("handling event -["+myName+"]:["+this.getClass().getName()+"]: Got An Event!!!!: "+event);
     }
     //*******************************************
     
@@ -158,7 +159,7 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
 	esgQueueListeners.add(listener);
     }
     
-    public void removeESGQueueListener(ESGListener listener) {
+    public void removeESGQueueListener(ESGQueueListener listener) {
 	log.trace("Removing Listener: "+listener);
 	esgQueueListeners.remove(listener);
     }
@@ -168,7 +169,7 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     //calling their Queue's handleEvent method
     //(The queued version of the "fire" method)
     //--------------------------------------------
-    protected void queueESGEvent(ESGEvent esgEvent) {
+    protected void enqueueESGEvent(ESGEvent esgEvent) {
 	log.trace("Queuing Event: "+esgEvent);
 	for(ESGQueueListener listener: esgQueueListeners) {
 	    listener.getESGEventQueue().enqueueEvent(esgEvent);
@@ -180,7 +181,7 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     //-------------------------------------------
     public boolean handleESGQueuedEvents(List<ESGEvent> events) {
 	boolean ret = true;
-	log.trace("Got Action Performed: ["+myName+"]:["+this.getClass().getName()+"]: Got Batch of ["+events.size()+"] QueuedEvents!!!! ");
+	log.trace("handling enqueued events ["+myName+"]:["+this.getClass().getName()+"]: Got Batch of ["+events.size()+"] QueuedEvents! ");
 	for(ESGEvent event : events) {
 	    ret &= handleESGQueuedEvent(event);
 	}
@@ -188,7 +189,7 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     }
     public boolean handleESGQueuedEvent(ESGEvent event) {
 	//TODO
-	log.trace("Got Action Performed: ["+myName+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
+	log.trace("(noop impl) handling enqueued event ["+myName+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
 	return false;
     }
     

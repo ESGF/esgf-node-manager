@@ -69,6 +69,7 @@ import com.caucho.hessian.client.HessianProxyFactory;
 import com.caucho.hessian.client.HessianRuntimeException;
 
 import esg.node.core.BasicGateway;
+import esg.node.core.Gateway;
 
 public class FauxGatewayRemoteClient {
     private static final Log log = LogFactory.getLog(FauxGatewayRemoteClient.class);
@@ -82,7 +83,7 @@ public class FauxGatewayRemoteClient {
 	}
 	serviceURL = args[0];
 
-	BasicGateway gway = new BasicGateway("TEST_GWAY_CLIENT",serviceURL);
+	BasicGateway gway = new BasicGateway(serviceURL,Gateway.GATEWAY);
 	gway.init();
 	System.out.println("Calling Ping: "+(gway.ping() ? "[OK]" : "[FAIL]") );
 	System.out.println("Calling RegisterToGateway: "+(gway.registerToGateway() ? "[OK]" : "[FAIL]") );

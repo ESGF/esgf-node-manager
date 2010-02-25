@@ -341,7 +341,7 @@ public class MonitorDAO implements Serializable {
 	    int totalSwap = -1;
 	    int freeSwap = -1;
 	    cb = memInfoResource.scan();
-	    log.warn("WHAT I AM LOOKING AT: (if first two lines are garbled this is a kernel mmap bug)\n["+cb+"]");
+	    //log.warn("WHAT I AM LOOKING AT: (if first two lines are garbled this is a kernel mmap bug)\n["+cb+"]");
 	    Matcher m_memTotal  = memInfoPattern_memTotal.matcher(cb);
 	    Matcher m_memFree   = memInfoPattern_memFree.matcher(cb);
 	    Matcher m_swapTotal = memInfoPattern_swapTotal.matcher(cb);

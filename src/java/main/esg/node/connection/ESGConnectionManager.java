@@ -202,7 +202,19 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     //--------------------------------------------
     //Event handling... (for join events)
     //--------------------------------------------
-    public void esgActionPerformed(ESGEvent esgEvent) {
+
+    public boolean handleESGQueuedEvent(ESGEvent event) {
+	log.trace("["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
+
+	//TODO: pick it up from here to launch egress / return calls...
+	//zoiks
+
+	return false;
+    }
+
+
+    //(for join events)
+    public void handleESGEvent(ESGEvent esgEvent) {
 	//we only care about join events
 	if(!(esgEvent instanceof ESGJoinEvent)) return;
 
@@ -215,7 +227,13 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 	//object is a participating managed component.
 	if(event.hasJoined()) {
 	    log.trace("Detected That A Gateway Component Has Joined: "+event.getJoiner().getName());
-	    gateways.put(event.getJoiner().getName(),(Gateway)event.getJoiner());
+	    Gateway gway = (Gateway)event.getJoiner();
+	    String gwayURL = gway.getServiceURL();
+	    if(gwayURL != null) {
+		gateways.put(gwayURL,gway);
+	    }else{
+		log.warn("Dropping "+gway+"... (no null service urls accepted)");
+	    }
 	}else {
 	    log.trace("Detected That A Gateway Component Has Left: "+event.getJoiner().getName());
 	    gateways.remove(event.getJoiner().getName());
@@ -225,7 +243,8 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     }
 
     //--------------------------------------------
-    //Event handling... (for gateway events)
+    //Special Event handling channel... 
+    //(for gateway events directly from managed gateway stub objects)
     //--------------------------------------------
     public void handleGatewayEvent(ESGGatewayEvent evt) {
 	log.trace("Got Gateway Event: "+evt);

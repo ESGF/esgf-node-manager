@@ -86,32 +86,30 @@ public abstract class HessianGateway extends Gateway {
 
     private HessianProxyFactory factory;
    
-    public HessianGateway(String name, String serviceURL) { 
-	super(name,serviceURL); 
+    public HessianGateway(String serviceURL, int type) throws java.net.MalformedURLException { 
+	super(serviceURL,type); 
 	this.factory = new HessianProxyFactory();
     }
-    
-    //If you call this constructor make sure you make call to
-    //super.setServiceUrl(...) before you make any other subsequent
-    //method calls.
-    public HessianGateway(String name) { this(name,null); }
     
     protected HessianProxyFactory getFactory() { return factory; }
 
     //Note: This is what makes this Hessian specific... the
     //use of the hessian "factory.". Also Note, all RPC
     //mechanisms follow the same basic mechanics 
-    protected Object factoryCreate(Class serviceClass) throws ESGException {
-	return this.factoryCreate(serviceClass,null);
-    }
+    //protected Object factoryCreate(Class serviceClass) throws ESGException {
+    //	return this.factoryCreate(serviceClass,null);
+    //}
 
     //TODO: make this a "generics" function...
     protected Object factoryCreate(Class serviceClass,String serviceURL) throws ESGException { 
+	log.trace("factoryCreate -> serviceClass: "+serviceClass+" , serviceURL: "+serviceURL);
 	if (serviceURL == null) serviceURL = getServiceURL();
 	Object endpoint = null;
 	try{
 	    endpoint = factory.create(serviceClass, serviceURL); 
 	}catch(Exception e) {
+	    log.error(e);
+	    e.printStackTrace();
 	    throw new ESGException(e);
 	}
 	return endpoint;
