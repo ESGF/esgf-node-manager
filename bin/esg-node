@@ -63,11 +63,12 @@
 #****************************************************************************
 #####
 
-#uses: perl, awk, ifconfig, tar, wget, curl, su, useradd, id, chmod,
-#      chown, chgrp, cut, svn, mkdir, killall, java, egrep, lsof
+#uses: perl, awk, ifconfig, tar, wget, curl, su, useradd, groupadd,
+#      id, chmod, chown, chgrp, cut, svn, mkdir, killall, java, egrep,
+#      lsof, unlink, ln
 
-#note: usage of readlink not macosx friendly :-(
-#      usage of useradd is RedHat/CentOS dependent :-(
+#note: usage of readlink not macosx friendly :-( usage of useradd /
+#      groupadd is RedHat/CentOS dependent :-(
 
 DEBUG=${DEBUG:-1}
 
@@ -142,7 +143,7 @@ init() {
     #--------------
     date_format="+%Y_%m_%d_%H%M%S"
     num_backups_to_keep=${num_backups_to_keep:-7}
-    ant_dist_url=http://mirror.cloudera.com/apache/ant/binaries/apache-ant-1.7.1-bin.tar.gz
+    ant_dist_url=http://www.trieuvan.com/apache/ant/binaries/apache-ant-1.8.0-bin.tar.gz
     postgress_workdir=${workdir}/../postgress
     postgress_jar=postgresql-8.3-603.jdbc3.jar
     postgress_driver=org.postgresql.Driver
@@ -277,7 +278,12 @@ setup_ant() {
 	[ $? != 0 ] && \
 	    echo " ERROR: Could not create sym link ${ant_install_dir%/*}/${ant_dist_dir} -> ${ant_install_dir}" && popd && checked_done 1
     else
-	printf "Using Ant installation found at ${ant_install_dir}:\n `stat ${ant_install_dir}`\n"
+	unlink ${ant_install_dir} 
+	[ $? != 0 ] && mv ${ant_install_dir} ${ant_install_dir}.$(date ${date_format}).bak
+
+	ln -s ${ant_install_dir%/*}/${ant_dist_dir} ${ant_install_dir}
+	[ $? != 0 ] && \
+	    echo " ERROR: Could not create sym link ${ant_install_dir%/*}/${ant_dist_dir} -> ${ant_install_dir}" && popd && checked_done 1
     fi
 
     ${ant_install_dir}/bin/ant -version
@@ -375,7 +381,9 @@ setup_postgress() {
     id $pg_sys_acct
     if [ $? != 0 ]; then
 	echo " WARNING: There is no postgres system account user \"$pg_sys_acct\" present on system"
-	#NOTE: "useradd" is a RedHat/CentOS thing... to make this cross distro compatible clean this up.
+	#NOTE: "useradd/groupadd" are a RedHat/CentOS thing... to make this cross distro compatible clean this up.
+	/usr/sbin/groupadd -r -f ${pg_sys_acct_group}
+	[ $? != 0 ] && echo "ERROR: Could not add postgres system group: ${pg_sys_acct_group}" && popd && checked_done 1
 	/usr/sbin/useradd -r -u26 -c"PostgreSQL Service" -g $pg_sys_acct_group -p $pg_sys_acct_passwd $pg_sys_acct
 	[ $? != 0 ] && echo "ERROR: Could not add postgres system account user" && popd && checked_done 1
     fi
@@ -772,14 +780,21 @@ setup_tomcat() {
 	[ $? != 0 ] && \
 	    echo " ERROR: Could not create sym link ${tomcat_install_dir%/*}/${tomcat_dist_dir} -> ${tomcat_install_dir}" && popd && checked_done 1
     else
-	printf "Using tomcat installation found at ${tomcat_install_dir}:\n `stat ${tomcat_install_dir}`"
+	unlink ${tomcat_install_dir}
+	[ $? != 0 ] && mv ${tomcat_install_dir} ${tomcat_install_dir}.$(date ${date_format}).bak
+
+	ln -s ${tomcat_install_dir%/*}/${tomcat_dist_dir} ${tomcat_install_dir}
+	[ $? != 0 ] && \
+	    echo " ERROR: Could not create sym link ${tomcat_install_dir%/*}/${tomcat_dist_dir} -> ${tomcat_install_dir}" && popd && checked_done 1
     fi
     
     #If there is no tomcat user on the system create one (double check that usradd does the right thing)
     id $tomcat_user
     if [ $? != 0 ]; then 
 	echo " WARNING: There is no tomcat user \"$tomcat_user\" present on system"
-	#NOTE: useradd is a RedHat/CentOS thing... to make this cross distro compatible clean this up.
+	#NOTE: "useradd/groupadd" are a RedHat/CentOS thing... to make this cross distro compatible clean this up.
+	/usr/sbin/groupadd -r -f ${tomcat_group}
+	[ $? != 0 ] && echo "ERROR: Could not add tomcat system group: ${tomcat_group}" && popd && checked_done 1
 	/usr/sbin/useradd -r -u91 -c"Tomcat Server Identity" -g $tomcat_group $tomcat_user
 	[ $? != 0 ] && echo "ERROR: Could not add tomcat system account user \"$tomcat_user\"" && popd && checked_done 1
     fi
@@ -1325,10 +1340,14 @@ setup_node() {
     cd ${node_app_home}
 
 
+    #----------------------------
     fetch_file=node.properties
 
     #NOTE: The saving of the last config file must be done *BEFORE* we untar the new distro!
-    [ -e WEB-INF/classes/${fetch_file} ] && cp WEB-INF/classes/${fetch_file} WEB-INF/classes/${fetch_file}.saved
+    if ((upgrade)) && [ -e WEB-INF/classes/${fetch_file} ]; then
+	cp WEB-INF/classes/${fetch_file} WEB-INF/classes/${fetch_file}.saved
+    fi
+
     echo "Expanding war ${node_war_file} in $(pwd)"
     $JAVA_HOME/bin/jar xf ${node_war_file}
     
@@ -2111,7 +2130,6 @@ main() {
 		    mv -v ${envfile} ${envfile}.bak 
 		    echo "Cleared envfile ${envfile}"
 		fi
-		exit
 		;;
 	    --test-pub)
 		init
