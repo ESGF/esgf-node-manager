@@ -143,7 +143,7 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     public void handleESGEvent(ESGEvent event) {
 	//TODO:
 	//Just stubbed for now...
-	log.trace("handling event -["+myName+"]:["+this.getClass().getName()+"]: Got An Event!!!!: "+event);
+	log.trace("(no-op) handling event -["+myName+"]:["+this.getClass().getName()+"]: Got An Event!!!!: "+event);
     }
     //*******************************************
     
@@ -181,7 +181,7 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     //-------------------------------------------
     public boolean handleESGQueuedEvents(List<ESGEvent> events) {
 	boolean ret = true;
-	log.trace("handling enqueued events ["+myName+"]:["+this.getClass().getName()+"]: Got Batch of ["+events.size()+"] QueuedEvents! ");
+	log.trace("(no-op) handling enqueued events ["+myName+"]:["+this.getClass().getName()+"]: Got Batch of ["+events.size()+"] QueuedEvents! ");
 	for(ESGEvent event : events) {
 	    ret &= handleESGQueuedEvent(event);
 	}
@@ -189,7 +189,7 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     }
     public boolean handleESGQueuedEvent(ESGEvent event) {
 	//TODO
-	log.trace("(noop impl) handling enqueued event ["+myName+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
+	log.trace("(no-op) handling enqueued event ["+myName+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
 	return false;
     }
     

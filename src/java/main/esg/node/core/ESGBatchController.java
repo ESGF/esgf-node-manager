@@ -102,6 +102,10 @@ public class ESGBatchController implements ESGListener {
     public void setBatchSize(int newBatchSize) { this.batchSize = newBatchSize; }
 
 
+    //--------------------------------------------------------
+    //****WHERE EVENT IS (Finally) SENT TO THE HANDLER!!!*****
+    //--------------------------------------------------------
+
     //continually called by ESGQueue... in it's enqueued runnable
     //delegating to handler...
     public void handleESGQueuedEvent(ESGEvent event) {
