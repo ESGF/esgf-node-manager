@@ -184,6 +184,7 @@ write_paths() {
     ((show_summary_latch++))
     echo "export PATH=$myPATH:\$PATH" >> ${envfile} >& /dev/null
     echo "export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:\$LD_LIBRARY_PATH" >> ${envfile} >& /dev/null
+    dedup ${envfile}
 }
 
 check_prerequisites() {
@@ -296,6 +297,7 @@ setup_ant() {
 write_ant_env() {
     ((show_summary_latch++))
     echo "export ANT_HOME=${ant_install_dir}" >> ${envfile}
+    dedup ${envfile}
     return 0
 }
 
@@ -466,6 +468,7 @@ write_postgress_env() {
     echo "export PGUSER=$PGUSER" >> ${envfile}
     echo "export PGHOST=$PGHOST" >> ${envfile}
     echo "export PGPORT=$PGPORT" >> ${envfile}
+    dedup ${envfile}
     return 0
 }
 
@@ -578,6 +581,7 @@ setup_cdms() {
 write_cdms_env() {
     ((show_summary_latch++))
     echo "export CDAT_HOME=$CDAT_HOME" >> ${envfile}
+    dedup ${envfile}
     return 0
 }
 
@@ -681,6 +685,7 @@ setup_esgcet() {
 
 write_esgcet_env() {
     echo "export ESG_ROOT_ID=$esg_root_id" >> ${envfile}
+    dedup ${envfile}
     return 0
 }
 
@@ -893,6 +898,7 @@ write_tomcat_env() {
     ((show_summary_latch++))
     echo "export JAVA_HOME=${java_home}" >> ${envfile}
     echo "export CATALINA_HOME=${CATALINA_HOME}" >> ${envfile}
+    dedup ${envfile}
     return 0
 }
 
@@ -1233,6 +1239,7 @@ write_tds_env() {
     ((show_summary_latch++))
     echo "export ESG_GATEWAY_NAME=${gateway_name}" >> ${envfile}
     echo "export ESG_GATEWAY_SVC_ROOT=${gateway_service_root}" >> ${envfile}
+    dedup ${envfile}
     return 0
 }
 
@@ -1567,6 +1574,7 @@ write_globus_env() {
     echo "export GLOBUS_LOCATION=$GLOBUS_LOCATION" >> ${envfile}
     echo "export X509_CERT_DIR=\$GLOBUS_LOCATION/share/certificates/" >>  ${envfile}
     echo "export gridftp_config_args=$gridftp_config_args" >> ${envfile}
+    dedup ${envfile}
     return 0
 }
 
@@ -1946,6 +1954,56 @@ insert_file_at_pattern() {
     ret=$?
     [ $ret != 0 ] && echo "Problem in function insert_file_at_pattern in $0"
     return ${ret}
+}
+
+# Environment variable files of the form
+# Ex: export FOOBAR=some_value
+# Will have duplcate keys removed such that the
+# last entry of that variable is the only one present
+# in the final output.
+# arg 1 - The environment file to dedup.
+dedup() {
+    local infile=${1:-${envfile}}
+    local outfile=${infile}
+
+    local key=""
+    local last_key=""
+    local value=""
+    local last_value=""
+    local output
+    local i
+    local dups
+    
+    let dups=0
+    let i=0
+    
+    #What is key here is that we make sure the sort is a "stable" sort! (-t)
+    for line in $(cat ${infile} | tr -s " " | cut -d " " -f2 | sort -s -t= -k1,1); do
+	key=${line%=*}
+	value=${line#*=}
+	#echo "key is: [${key}]  value is: [${value}]"
+	if [ "${key}" != "${last_key}" ]; then
+		output[((i++))]="export ${last_key}=${last_value}"
+	else
+	    ((dups++))
+	fi
+	[ -n $key ] && last_key=$key
+	last_value=$value
+    done
+    #boundary condition catch...
+    output[((i++))]="export ${last_key}=${last_value}"
+
+    ((dups == 0)) && unset output && return 0
+    echo "Elided [${dups}] duplcate entries"
+    
+    i=0
+    cat /dev/null > ${outfile}
+    for entry in "${output[@]}"; do
+	((i>0)) && echo $entry >> ${outfile}
+	((i++))
+    done
+    echo "Deduped $(readlink -f ${infile})"
+    return 0
 }
 
 show_svc_list() {
