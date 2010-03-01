@@ -25,7 +25,11 @@ get_latest() {
     local fetch_file=esg-${type}
 
     echo "Updating install script from PCMDI's ESG distribution site at LLNL"
-    checked_get ${esg_dist_url}/esg-node/${fetch_file} 
+    if [ "$type" = "node" ]; then
+	checked_get ${esg_dist_url}/esg-node/${fetch_file} 
+    else
+	checked_get ${esg_dist_url}/externals/bootstrap/${fetch_file} 
+    fi
     (( $? > 1 )) && popd >& /dev/null && return 1
     chmod 755 ${fetch_file}
     [ -e ${init_scripts_dir}/${fetch_file} ] && cp -v ${fetch_file} ${init_scripts_dir}/${fetch_file}
