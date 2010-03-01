@@ -128,7 +128,7 @@ init() {
     export CATALINA_HOME=$tomcat_install_dir
     export CATALINA_BASE=$CATALINA_HOME
     export GLOBUS_LOCATION=$globus_location
-    export X509_CERT_DIR=$globus_location/share/certificates/
+    export X509_CERT_DIR=/etc/grid-security/certificates/
     export ESG_ROOT_ID=$esg_root_id
     
     myPATH=.:$ANT_HOME/bin:$PGHOME/bin:$CDAT_HOME/bin:$CDAT_HOME/Externals/bin:$CATALINA_HOME/bin
@@ -1572,7 +1572,7 @@ setup_globus() {
 write_globus_env() {
     ((show_summary_latch++))
     echo "export GLOBUS_LOCATION=$GLOBUS_LOCATION" >> ${envfile}
-    echo "export X509_CERT_DIR=\$GLOBUS_LOCATION/share/certificates/" >>  ${envfile}
+    echo "export X509_CERT_DIR=$X509_CERT_DIR" >>  ${envfile}
     echo "export gridftp_config_args=$gridftp_config_args" >> ${envfile}
     dedup ${envfile}
     return 0
@@ -2292,7 +2292,7 @@ main() {
     [ $((sel & 1)) != 0 ] && echo "configure_postgress" && configure_postgress #(database on)
     [ $((sel & 1)) != 0 ] && echo "setup_tds" && setup_tds 
     [ $((sel & 2)) != 0 ] && echo "test_tds" && test_tds 
-    [ $((sel & 1)) != 0 ] && echo "setup_filter" && setup_filter ${tomcat_install_dir}/webapps/thredds
+    #[ $((sel & 1)) != 0 ] && echo "setup_filter" && setup_filter ${tomcat_install_dir}/webapps/thredds
     [ $((sel & 1)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus $gridftp_config_args
     [ $((sel & 2)) != 0 ] && (( ! no_globus )) && echo "test_globus" && source ${scripts_dir}/esg-globus >& /dev/null \
     	&& test_globus_services datanode
