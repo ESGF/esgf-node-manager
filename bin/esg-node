@@ -1283,7 +1283,6 @@ setup_node() {
     echo
 
     local upgrade=${1:-0}
-    action_performed=0
 
     local dosetup
     if [ -d ${node_app_home} ]; then 
@@ -1353,6 +1352,7 @@ setup_node() {
     #NOTE: The saving of the last config file must be done *BEFORE* we untar the new distro!
     if ((upgrade)) && [ -e WEB-INF/classes/${fetch_file} ]; then
 	cp WEB-INF/classes/${fetch_file} WEB-INF/classes/${fetch_file}.saved
+	chmod 600 WEB-INF/classes/${fetch_file}*
     fi
 
     echo "Expanding war ${node_war_file} in $(pwd)"
@@ -1364,11 +1364,11 @@ setup_node() {
     #----------------------------
     pushd WEB-INF/classes >& /dev/null
 
+    cp ${fetch_file} ${fetch_file}.tmpl
     if((upgrade)) && [ -e ${fetch_file}.saved ]; then
 	#reuse the last node.properties file...
 	#pull it out of the tar archive we made a few lines up
-	mv ${fetch_file} ${fetch_file}.tmpl
-	cp ${workdir}/${fetch_file}.saved ${fetch_file}
+	cp ${fetch_file}.saved ${fetch_file}
     else
         #----------------------
 	pwd
