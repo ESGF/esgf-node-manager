@@ -1428,7 +1428,7 @@ configure_postgress() {
     echo "Creating esg node database: ${node_db_name}"
     echo "${postgress_install_dir}/bin/createdb ${node_db_name}"
     ${postgress_install_dir}/bin/createdb ${node_db_name}
-    #[ $? != 0 ] && echo " ERROR: Could not create esg node database: ${node_db_name}" && return 0
+    (( $? > 1 )) && echo " ERROR: Could not create esg node database: ${node_db_name}" && return 0
         
     #TODO... Make the above call idempotent...
     #NOTE: (zoiks) Need to be able to tell the difference between a
