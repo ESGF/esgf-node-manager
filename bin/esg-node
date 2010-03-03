@@ -2190,6 +2190,7 @@ main() {
 		    mv -v ${envfile} ${envfile}.bak 
 		    echo "Cleared envfile ${envfile}"
 		fi
+		exit 0
 		;;
 	    --test-pub)
 		init
