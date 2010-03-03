@@ -1661,6 +1661,7 @@ show_summary() {
 }
 
 write_env() {
+    echo "Generating default ${envfile} file"
     cat /dev/null > ${envfile}
     write_postgress_env
     write_cdms_env
@@ -1668,7 +1669,9 @@ write_env() {
     write_tomcat_env
     write_tds_env
     write_globus_env
-    show_summary
+    echo "-------------------"
+    cat ${envfile}
+    echo "-------------------"
     return 0
 }
 
@@ -2302,7 +2305,7 @@ main() {
     [ $((sel & 2)) != 0 ] && echo "test_publication" && test_publication 
     #[ $((sel & 1)) != 0 ] && echo "setup_products" && setup_products
     [ $((sel & 1)) != 0 ] && echo "show_summary" && show_summary 
-    [ $((sel & 16)) != 0 ] && echo "write_env" && write_env 
+    [ $((sel & 16)) != 0 ] && echo "write_env" && write_env && exit 0
     
     (( ! no_globus )) && start_globus_services datanode
     start_postgress
