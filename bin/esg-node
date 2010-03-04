@@ -248,7 +248,7 @@ setup_ant() {
 
     mkdir -p $workdir
     [ $? != 0 ] && checked_done 1
-    pushd $workdir #>& /dev/null
+    pushd $workdir >& /dev/null
     
     ant_dist_file=${ant_dist_url##*/}
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
@@ -325,7 +325,7 @@ setup_postgress() {
     mkdir -p $postgress_workdir
     [ $? != 0 ] && checked_done 1
     chmod a+rw $postgress_workdir
-    pushd $postgress_workdir #>& /dev/null
+    pushd $postgress_workdir >& /dev/null
 
     postgress_dist_file=${postgress_dist_url##*/}
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
@@ -371,11 +371,11 @@ setup_postgress() {
 	echo "Successfully Configured and Built PostgresSQL in: ${postgress_install_dir}"
     else
 	echo" ERROR: Could NOT successfully build POSTGRESS!"
-	popd #>& /dev/null
+	popd >& /dev/null
 	checked_done 1
     fi
 
-    popd #>& /dev/null
+    popd >& /dev/null
     
     ########
     #Create the system account for postgress to run as.
@@ -455,7 +455,7 @@ setup_postgress() {
 
     chown -R postgres.postgres ${postgress_install_dir}
 
-    popd #>& /dev/null
+    popd >& /dev/null
     echo
     echo
     write_postgress_env
@@ -549,7 +549,7 @@ setup_cdms() {
     svn export ${repo}/$cdat_version $cdat_workdir
     [ $? != 0 ] && echo " WARNING: Problem pulling down ${cdat_workdir} from repository"
 
-    pushd $cdat_workdir #>& /dev/null
+    pushd $cdat_workdir >& /dev/null
     if [ $? == 0 ]; then 
 	echo "cleaning things out" 
 	./clean_script
@@ -570,8 +570,8 @@ setup_cdms() {
     make
     [ $? != 0 ] && echo " ERROR: Could not compile (make) cdat code" && popd && checked_done 1
 
-    popd #>& /dev/null    
-    popd #>& /dev/null
+    popd >& /dev/null    
+    popd >& /dev/null
     echo
     echo
     write_cdms_env
@@ -630,7 +630,7 @@ setup_esgcet() {
 
     mkdir -p $workdir
     [ $? != 0 ] && return 1
-    pushd $workdir #>& /dev/null
+    pushd $workdir >& /dev/null
     
     #Gives you 30 seconds to make a choice or will choose "I" by default
     local choice
@@ -676,7 +676,7 @@ setup_esgcet() {
     $cdat_home/bin/esgsetup --db
     [ $? != 0 ] && popd && checked_done 1
 
-    popd #>& /dev/null
+    popd >& /dev/null
     echo
     echo
     write_esgcet_env
@@ -691,7 +691,7 @@ write_esgcet_env() {
 
 test_esgcet() {
     echo -n "ESGCET Test... "
-    pushd $workdir #>& /dev/null
+    pushd $workdir >& /dev/null
 
     #esgcet_testdir=$(readlink -f ${thredds_root_dir})/test
     esgcet_testdir=${thredds_root_dir}/test
@@ -717,7 +717,7 @@ test_esgcet() {
     [ $? != 0 ] && echo " ERROR: ESG publish failed" && popd && checked_done 1
     
 
-    popd #>& /dev/null
+    popd >& /dev/null
     echo
     echo
     checked_done 0
@@ -746,7 +746,7 @@ setup_tomcat() {
 
     mkdir -p $workdir
     [ $? != 0 ] && checked_done 1
-    pushd $workdir #>& /dev/null
+    pushd $workdir >& /dev/null
     
     tomcat_dist_file=${tomcat_dist_url##*/}
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
@@ -887,7 +887,7 @@ setup_tomcat() {
     echo "--------------------page source end----------------------"
     echo
     
-    popd #>& /dev/null
+    popd >& /dev/null
     echo
     echo
     write_tomcat_env
@@ -997,7 +997,7 @@ register() {
     (( $? > 1 )) && echo " ERROR: Could not download utility class(2) for installing certificates" && popd && return 1
     popd # >& /dev/null
 
-    pushd $tomcat_install_dir/conf #>& /dev/null
+    pushd $tomcat_install_dir/conf >& /dev/null
 
     [ -e ${certfile} ] && cp -v ${certfile} ${certfile}.bak
     
@@ -1017,7 +1017,7 @@ register() {
     chmod 600 ${certfile}
     chown $tomcat_user ${certfile}
     chgrp $tomcat_group ${certfile}
-    popd #>& /dev/null
+    popd >& /dev/null
     return $ret
 }
 
@@ -1044,7 +1044,7 @@ setup_tds() {
 
     mkdir -p $workdir
     [ $? != 0 ] && return 1
-    pushd $workdir #>& /dev/null
+    pushd $workdir >& /dev/null
     local fetch_file
 
     ############################
@@ -1086,7 +1086,7 @@ setup_tds() {
     #Setup Digest authentication
     ############################
 
-    pushd $tomcat_install_dir/conf/ #>& /dev/null
+    pushd $tomcat_install_dir/conf/ >& /dev/null
 
     fetch_file=tomcat-users.xml
     checked_get $tomcat_install_dir/conf/${fetch_file} ${esg_dist_url}/externals/bootstrap/${fetch_file}
@@ -1133,7 +1133,7 @@ setup_tds() {
     done
     unset input
 
-    popd #>& /dev/null
+    popd >& /dev/null
 
     ############################
     #Enable SSL encryption
@@ -1209,12 +1209,12 @@ setup_tds() {
 
     #----------------------
     #Thredds configuration...
-    pushd $tomcat_install_dir/webapps/thredds/WEB-INF #>& /dev/null
+    pushd $tomcat_install_dir/webapps/thredds/WEB-INF >& /dev/null
     #Edit the web.xml file for Thredds to include these token replacement values
     eval "perl -p -i -e 's/\\@\\@node_host_ip_address\\@\\@/${node_host_ip_address}/g' web.xml"
     eval "perl -p -i -e 's/\\@\\@gateway_name\\@\\@/${gateway_name}/g' web.xml"
     eval "perl -p -i -e 's#\\@\\@gateway_service_root\\@\\@#${gateway_service_root}#g' web.xml"
-    popd #>& /dev/null
+    popd >& /dev/null
 
     #----------------------
     #Fetch and Insert the Certificate for parent gateway
@@ -1228,7 +1228,7 @@ setup_tds() {
     #set in cdms setup (prerequisite)
     $cdat_home/bin/esgsetup --thredds --publish
 
-    popd #>& /dev/null
+    popd >& /dev/null
     echo
     echo
     write_tds_env
@@ -1247,7 +1247,7 @@ test_tds() {
     echo -n "Thredds Data Server Test... "
     mkdir -p $workdir
     [ $? != 0 ] && checked_done 1
-    pushd $workdir #>& /dev/null
+    pushd $workdir >& /dev/null
 
     echo "$cdat_home/bin/esgpublish --use-existing pcmdi.${esg_root_id}.test.mytest --noscan --thredds"
     $cdat_home/bin/esgpublish --use-existing pcmdi.${esg_root_id}.test.mytest --noscan --thredds
@@ -1258,7 +1258,7 @@ test_tds() {
     [ $? != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to contact thredds page on this server" && popd && checked_done 1
     
     echo "[PASSED]"
-    popd #>& /dev/null
+    popd >& /dev/null
     echo
     echo
     checked_done 0
@@ -1454,7 +1454,7 @@ configure_postgress() {
         -Dsql.jdbc.driver.jar=${node_app_home}/WEB-INF/lib/${postgress_jar} make_node_db
     [ $? != 0 ] && echo "ERROR: Could not create esg node database tables in ${node_db_name}" && return 1
 
-    popd #>& /dev/null
+    popd >& /dev/null
     echo
     echo
     checked_done 0
@@ -1484,7 +1484,7 @@ setup_filter() {
 
     stop_tomcat
 
-    pushd ${dest_dir} #>& /dev/null
+    pushd ${dest_dir} >& /dev/null
     echo "Checking for / Installing required jars..."
     [ ! -e WEB-INF/lib/commons-dbcp-1.2.2.jar ]  && echo "no commons-dbcp" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/commons-dbcp-1.2.2.jar
     [ ! -e WEB-INF/lib/commons-dbutils-1.3.jar ] && echo "no commons-dbutils" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/commons-dbutils-1.3.jar
@@ -1492,7 +1492,7 @@ setup_filter() {
     [ ! -e WEB-INF/lib/${postgress_jar} ]  && echo "no jdbc driver" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/${postgress_jar}
     popd >& /dev/null
     
-    pushd ${workdir}/${node_dist_dir} #>& /dev/null
+    pushd ${workdir}/${node_dist_dir} >& /dev/null
 
     #Pull out the templated filter entry snippet file...
     jar xvf esg-node-filters.*.jar ${esg_filter_entry_file} #only need file name to pull out of jar
@@ -1502,11 +1502,11 @@ setup_filter() {
     echo "Installing ESG Filter jar..."
     cp -v esg-node-filters.*.jar ${dest_dir}/WEB-INF/lib
     
-    popd #>& /dev/null
+    popd >& /dev/null
     
     #----------------------
     #Thredds configuration...
-    pushd ${dest_dir}/WEB-INF #>& /dev/null
+    pushd ${dest_dir}/WEB-INF >& /dev/null
     [ $? != 0 ] && echo " ERROR: Could not find thredds web application (${tomcat_install_dir}/webapps/thredds/)" && return 0
     local target_file=web.xml
 
@@ -1531,7 +1531,7 @@ setup_filter() {
     eval "perl -p -i -e 's/\\@db.password\\@/${pg_sys_acct_passwd}/g' ${target_file}"
     echo -n "*"
     echo " [OK]"
-    popd #>& /dev/null
+    popd >& /dev/null
     #----------------------
     chown -R ${tomcat_user} ${dest_dir}/WEB-INF
     chgrp -R ${tomcat_group} ${dest_dir}/WEB-INF
@@ -1552,7 +1552,7 @@ setup_globus() {
     echo -n "Globus Setup for Data-Node... (GridFTP server)"
     mkdir -p $workdir
     [ $? != 0 ] && checked_done 1
-    pushd $workdir #>& /dev/null
+    pushd $workdir >& /dev/null
 
     pushd ${scripts_dir} # >& /dev/null
     local fetch_file=esg-globus
@@ -1627,7 +1627,7 @@ setup_products() {
     echo -n "Product Service Setup for Data-Node... "
     mkdir -p $workdir
     [ $? != 0 ] && checked_done 1
-    pushd $workdir #>& /dev/null
+    pushd $workdir >& /dev/null
 
     pushd ${scripts_dir} # >& /dev/null
     local fetch_file=esg-product-server
@@ -1934,7 +1934,7 @@ backup() {
 
 backup_db() {
     mkdir -p ${backupdir}
-    pushd ${backupdir} #>& /dev/null
+    pushd ${backupdir} >& /dev/null
     
     echo -n "Backing up database: ${node_db_name} to  ${node_db_name}_backup_$(date ${date_format}).sql"
     pg_dump -U ${postgress_user} ${node_db_name} > ${node_db_name}_backup_$(date ${date_format}).sql
@@ -1943,7 +1943,7 @@ backup_db() {
     pg_dump -U ${postgress_user} --schema security ${node_db_name} > ${node_db_name}_security_backup_$(date ${date_format}).sql
     [ $? == 0 ] && echo " [OK] " || echo " [FAIL] "
     
-    popd #>& /dev/null
+    popd >& /dev/null
     return 0
 }
 
@@ -2298,7 +2298,7 @@ main() {
     [ $((sel & 1)) != 0 ] && echo "configure_postgress" && configure_postgress #(database on)
     [ $((sel & 1)) != 0 ] && echo "setup_tds" && setup_tds 
     [ $((sel & 2)) != 0 ] && echo "test_tds" && test_tds 
-    #[ $((sel & 1)) != 0 ] && echo "setup_filter" && setup_filter ${tomcat_install_dir}/webapps/thredds
+    [ $((sel & 1)) != 0 ] && echo "setup_filter" && setup_filter ${tomcat_install_dir}/webapps/thredds
     [ $((sel & 1)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus $gridftp_config_args
     [ $((sel & 2)) != 0 ] && (( ! no_globus )) && echo "test_globus" && source ${scripts_dir}/esg-globus >& /dev/null \
     	&& test_globus_services datanode
