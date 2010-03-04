@@ -1075,9 +1075,10 @@ setup_tds() {
     
     #Check to see of tomcat is running, if it is not then start Tomcat
     #This will explode the thredds war file (necessary for subsequent library [jar] file installation
+    start_tomcat
     curl http://localhost:80 >& /dev/null
     if [ $? != 0 ]; then
-	echo " WARNING: Sorry Tomcat does not seem to be running or serving on http://localhost:80... attempting to start..."
+	echo " WARNING: Sorry Tomcat does not seem to be running or serving on http://localhost:80... attempting to re-start..."
 	start_tomcat
 	[ $? != 0 ] && popd && checked_done 1
     fi
