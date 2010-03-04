@@ -77,7 +77,7 @@ checked_get() {
         exit 1
     fi                      
     
-    if [ -e ${local_file} ];
+    if [ -e ${local_file} ]; then
 	cp -v ${local_file} ${local_file}.bak 
 	chmod 600 ${local_file}.bak
     fi
