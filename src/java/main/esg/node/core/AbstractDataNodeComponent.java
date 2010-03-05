@@ -81,13 +81,11 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     //Expose this list to available subclasses...
     //so that they too may be able to manage event listeners
     protected List<ESGListener> esgListeners = null;
-    protected List<ESGQueueListener> esgQueueListeners = null;
     protected Map<String,ESGQueueListener> esgQueueListenersMap = null;
 
     public AbstractDataNodeComponent(String name) {
 	this.myName = name;
 	this.esgListeners = new ArrayList<ESGListener>();
-	//this.esgQueueListeners = new ArrayList<ESGQueueListener>();
 	this.esgQueueListenersMap = new HashMap<String,ESGQueueListener>();
 	this.eventQueue = new ESGQueue(this);
     }
@@ -155,7 +153,7 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
 
     //*******************************************
     //-------------------------------------------
-    //Subscribe/Unsubscribe ESGQueueListeners ("application" events)
+    //Subscribe/Unsubscribe ESG Queue Listeners ("application" events)
     //-------------------------------------------
     public void addESGQueueListener(ESGQueueListener listener) {
 	if(listener == null) return;
