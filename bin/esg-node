@@ -254,6 +254,14 @@ setup_ant() {
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
     ant_dist_dir=$(echo ${ant_dist_file} | awk '{print substr($1,1,length($1)-11)}')
 
+    #There is this pesky case of having a zero sized dist file... WTF!?
+    if [ -e ${ant_dist_file} ]; then
+        ls -l ${ant_dist_file}
+	#NOTE: I know there must be a cleaner way to get this, maybe stat?
+        local size=$(ls -l | grep ${ant_dist_file} | tr -s " " | cut -d " " -f 5)
+        (( size == 0 )) && rm -v ${ant_dist_file}
+    fi
+
     #Check to see if we have an Ant distribution directory
     if [ ! -e ${ant_install_dir%/*}/${ant_dist_dir} ]; then
 	echo "Don't see ant distribution dir ${ant_install_dir%/*}/${ant_dist_dir}"
