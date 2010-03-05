@@ -1428,7 +1428,7 @@ configure_postgress() {
     #Create the database...
     echo "Creating esg node database: ${node_db_name}"
     echo "${postgress_install_dir}/bin/createdb ${node_db_name}"
-    ${postgress_install_dir}/bin/createdb ${node_db_name}
+    ${postgress_install_dir}/bin/createdb ${node_db_name} >& /dev/null
     (( $? > 1 )) && echo " ERROR: Could not create esg node database: ${node_db_name}" && return 0
         
     #TODO... Make the above call idempotent...
@@ -2161,16 +2161,17 @@ main() {
 		init
 		source ${scripts_dir}/esg-globus >& /dev/null && \
 		    start_globus_services datanode $gridftp_config_args
-		echo "start_postgress" && start_postgress
-		echo "start_tomcat" && start_tomcat
+		start_postgress
+		start_tomcat
+		show_svc_list
 		#let sel+=4
 		exit 0
 		;;
 	    stop)
 		#echo "STOP SERVICES"
 		init
-		echo "stop_tomcat" && stop_tomcat 
-		echo "stop_postgress" && stop_postgress 
+		stop_tomcat 
+		stop_postgress 
 		source ${scripts_dir}/esg-globus >& /dev/null && \
 		    stop_globus_services datanode
 		#let sel+=8
@@ -2299,7 +2300,7 @@ main() {
     [ $((sel & 1)) != 0 ] && echo "configure_postgress" && configure_postgress #(database on)
     [ $((sel & 1)) != 0 ] && echo "setup_tds" && setup_tds 
     [ $((sel & 2)) != 0 ] && echo "test_tds" && test_tds 
-    [ $((sel & 1)) != 0 ] && echo "setup_filter" && setup_filter ${tomcat_install_dir}/webapps/thredds
+    #[ $((sel & 1)) != 0 ] && echo "setup_filter" && setup_filter ${tomcat_install_dir}/webapps/thredds
     [ $((sel & 1)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus $gridftp_config_args
     [ $((sel & 2)) != 0 ] && (( ! no_globus )) && echo "test_globus" && source ${scripts_dir}/esg-globus >& /dev/null \
     	&& test_globus_services datanode
