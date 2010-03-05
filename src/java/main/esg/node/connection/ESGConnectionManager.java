@@ -83,6 +83,7 @@ import esg.node.core.ESGDataNodeManager;
 import esg.node.core.AbstractDataNodeComponent;
 import esg.node.core.AbstractDataNodeManager;
 import esg.node.core.ESGEvent;
+import esg.node.core.ESGEventHelper;
 import esg.node.core.ESGJoinEvent;
 import esg.node.core.ESGGatewayEvent;
 import esg.node.core.Gateway;
@@ -200,20 +201,39 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     }
 
     //--------------------------------------------
-    //Event handling... (for join events)
+    //Event handling...
     //--------------------------------------------
 
     public boolean handleESGQueuedEvent(ESGEvent event) {
 	log.trace("["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
 
+	ESGRemoteEvent rEvent=null;
+	String targetAddress = null;
+	Gateway targetGateway = null;
+	
 	//TODO: pick it up from here to launch egress / return calls...
-	//zoiks
+	if((rEvent = event.getRemoteEvent()) == null) {
+	    log.warn("The encountered event does not contain a remote event, which is needed for egress routing [event dropped]");
+	    event = null; //gc hint!
+	    return false;
+	}
+	
+	if((targetGateway = gateways.get(targetAddress=rEvent.getSource())) == null) {
+	    targetGateway = unavailableGateways.get(targetAddress);
+	    log.error("Specified gateway named by ["+targetAddress+"] is "+
+		      ((targetGateway == null) ? "unknown " : "unavailable ")+"[event dropped]");
+	    event = null; //gc hint!
+	    return false;
+	}
 
-	return false;
+	targetGateway.handleESGRemoteEvent(ESGEventHelper.createOutboundEvent(event));
+	event = null; //gc hint!
+	
+	return true;
     }
 
 
-    //(for join events)
+    //(for JOIN events that happens in the ESGDataNodeManager via it's superclass AbstractDataNodeManager)
     public void handleESGEvent(ESGEvent esgEvent) {
 	//we only care about join events
 	if(!(esgEvent instanceof ESGJoinEvent)) return;

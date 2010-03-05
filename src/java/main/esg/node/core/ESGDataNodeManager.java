@@ -102,10 +102,27 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
 	ESGMetrics metrics = new ESGMetrics("METRICS");
 	registerComponent(metrics);
 	
+	log.info("Connecting core components");
+
+	//Now build the "FSM" connections.
+	//Ingress messages from the network come in through the DNODE_SVC
+	//The DNODE_SVC then routes the message to the appropriate 
+	
+	connect("DNODE_SVC","NOTIFER");
+	connect("DNODE_SVC","MONITOR");
+	connect("DNODE_SVC","METRICS");
+
+	connect("NOTIFIER","CONN_MGR");
+	connect("MONITOR","CONN_MGR");
+	connect("METRICS","CONN_MGR");
     }
 
     public void init() {
 	log.info("Initializing ESG Data Node Manager...");
+	
+	//TODO
+	//Read in configuration file
+	
 	initCoreServices();
 	
 	//TODO

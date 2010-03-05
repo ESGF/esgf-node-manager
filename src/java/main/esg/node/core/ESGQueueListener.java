@@ -68,6 +68,8 @@ import java.util.List;
 
 public interface ESGQueueListener {
 
+    public String getName();
+
     public boolean handleESGQueuedEvents(List<ESGEvent> events);
     public boolean handleESGQueuedEvent(ESGEvent event);
     

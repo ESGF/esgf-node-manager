@@ -131,7 +131,10 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     //------------------------------------------------------------
 
 
-
+    
+    //------------------------------------------------------------
+    //Remote service interface implementation ping, notify & handleESGRemoteEvent
+    //------------------------------------------------------------
     //Remote (ingress) calls to method...
     public boolean ping() { 
 	log.trace("DataNode service got \"ping\"");
@@ -155,7 +158,7 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 	return true;
     }
 
-    //Ingress event from remote 'client'
+    //Ingress event handling from remote 'client'
     public void handleESGRemoteEvent(ESGRemoteEvent evt_) {
 	log.trace("DataNode service got \"handleESGRemoteEvent\" call with event: ["+evt_+"]");
 	if(!amAvailable()) {
@@ -164,22 +167,40 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 	
 	//Being a nice guy and rerouting you to right method
 	//I may be being too nice... consider taking this out if abused.
-	if(evt_.getMessageType() == ESGRemoteEvent.REGISTER) { this.notify(evt_); };
-
+	ESGEvent evt = null;
+	if(evt_.getMessageType() == ESGRemoteEvent.NOOP) { 
+	    log.trace("GOT NOOP REMOTE EVENT"); 
+	}else if(evt_.getMessageType() == ESGRemoteEvent.REGISTER) { 
+	    this.notify(evt_); 
+	}else if(evt_.getMessageType() == ESGRemoteEvent.UNREGISTER) { 
+	    log.trace("GOT UNREGISTER REMOTE EVENT"); 
+	}else if(evt_.getMessageType() == ESGRemoteEvent.NOTIFY) { 
+	    log.trace("GOT NOTIFY REMOTE EVENT"); 
+	}else if(evt_.getMessageType() == ESGRemoteEvent.HEALTH) { 
+	    log.trace("GOT HEALTH REMOTE EVENT"); 
+	    evt = new ESGEvent(this);
+	    evt.setRemoteEvent(evt_);
+	    enqueueESGEvent("MONITOR",new ESGEvent(evt_));
+	}else if(evt_.getMessageType() == ESGRemoteEvent.METRICS) { 
+	    log.trace("GOT METRICS REMOTE EVENT");
+	    evt = new ESGEvent(this);
+	    evt.setRemoteEvent(evt_);
+	    enqueueESGEvent("METRICS",evt);
+	}else {
+	    log.trace("DO NOT RECOGNIZE THIS MESSAGE TYPE: "+evt_);
+	}
+	
 
 	//TODO: Grab this remote event, inspect the payload and stuff
 	//it into an esg event and fire it off to listeners to handle.
 	//Example... if the payload was the Catalog xml then JAXB it
 	//and send the object form as the payload for others to use
 	//(for example)
-	
-	//Zoiks... this is a hack for now... should be more elegant with event hierarchy.
-	ESGEvent evt = new ESGEvent(evt_,"Wrapped Remote Event");
-	enqueueESGEvent(evt);
     }
 
+
     //--------------------------------------------
-    //Event handling... (for join events) needs connection manager!
+    //Internal 'Control' Event handling... (for join events) needs connection manager!
     //--------------------------------------------
     public void handleESGEvent(ESGEvent esgEvent) {
 	//we only care about join events
@@ -199,7 +220,6 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 	    removeESGQueueListener(connMgr);
 	    connMgr = null;	    
 	}
-	log.trace("Listener Queue has ["+esgQueueListeners.size()+"] connection Managers present");
 	log.trace("connMgr = "+connMgr);
     }
 

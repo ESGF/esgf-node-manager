@@ -76,7 +76,7 @@ public class ESGRemoteEvent implements java.io.Serializable {
     public static final int UNREGISTER = 4;
     public static final int NOTIFY     = 8;
     public static final int HEALTH     = 16;
-    public static final int STATUS     = 32;
+    public static final int METRICS    = 32;
 
     private String source  = null;
     private int    messageType = -1;
@@ -99,11 +99,11 @@ public class ESGRemoteEvent implements java.io.Serializable {
 
     public String getSource()  { return source;  }
     public int    getMessageType() { return messageType; }
-    public Object getSeqNum() { return seqNum; }
+    public long   getSeqNum() { return seqNum; }
     public Object getPayload() { return payload; }
     public void   setPayload(Object obj) { this.payload = obj; }
 
-    public String toString() { return "s:["+source+"] m:["+messageType+"] n:["+seqNum+"] p:["+payload+"]"; }
+    public String toString() { return "RE - s:["+source+"] m:["+messageType+"] n:["+seqNum+"] p:["+payload+"]"; }
     
 }
 

@@ -62,21 +62,39 @@
 package esg.node.core;
 
 import java.util.EventObject;
+import esg.common.service.ESGRemoteEvent;
 
 public class ESGEvent extends EventObject {
 
+    private Object data=null;
     private String message="";
+    private ESGRemoteEvent remoteEvent = null;
 
-    public ESGEvent(Object source) { super(source); }
-    public ESGEvent(Object source, String message) {
+    public ESGEvent(Object source) { this(source,null,null); }
+    public ESGEvent(Object source, String message) { this(source,null,message); }
+    public ESGEvent(Object source, Object data, String message) {
 	super(source);
+	this.data=data;
 	this.message = message;
     }
+    public void copy(ESGEvent otherEvent) {
+	this.source = otherEvent.source;
+	this.data = otherEvent.data;
+	this.message = otherEvent.message;
+    }
 
-    public String getMessage() { return message; }
+    public void setSource(Object source) { this.source = source; }
+    public void setData(Object data) { this.data = data; }
+    public void setMessage(String message) { this.message = message; }
+    public void setRemoteEvent(ESGRemoteEvent rEvent) { this.remoteEvent = rEvent; }
+    
+    public Object getSource() { return this.source; }
+    public Object getData() { return this.data; }
+    public String getMessage() { return this.message; }
+    public ESGRemoteEvent getRemoteEvent() { return this.remoteEvent; }
 
     public String toString() {
-        return "Event:["+this.getClass().getName()+"] s:["+source+"] msg:["+message+"]";
+        return "Event:["+this.getClass().getName()+"] s:["+source+"] d:["+data+"] msg:["+message+"] "+((remoteEvent == null) ? "" : remoteEvent.toString());
     }
 
     

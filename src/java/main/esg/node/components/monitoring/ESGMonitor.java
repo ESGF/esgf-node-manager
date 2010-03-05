@@ -102,7 +102,7 @@ public class ESGMonitor extends AbstractDataNodeComponent {
 
     public MonitorInfo getMonitorInfo() { return monitorInfo; }
     
-    private boolean fetchNodeInfo() {
+    private synchronized boolean fetchNodeInfo() {
 	//log.trace("monitor's fetchNodeInfo() called....");
 	boolean ret = true;
 	monitorDAO.setMonitorInfo(monitorInfo);
@@ -133,6 +133,14 @@ public class ESGMonitor extends AbstractDataNodeComponent {
 	    },delay*1000,period*1000);
     }
 
+    public boolean handleESGQueuedEvent(ESGEvent event) {
+	log.trace("handling enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
+	//TODO: grab the monitor information and push into event
+
+	event.setData(getMonitorInfo().toString());
+	enqueueESGEvent(event);
+	return true;
+    }
     public void handleESGEvent(ESGEvent event) {
 	super.handleESGEvent(event);
     }

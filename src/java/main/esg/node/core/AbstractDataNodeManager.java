@@ -90,8 +90,10 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     private Map<String,DataNodeComponent> components = null;
     private Map<String,Properties> propCache = null;
     private Properties props = null;
+    private String myName=null;
     
     public AbstractDataNodeManager() {
+	myName="DN_MGR";
 	gateways = new HashMap<String,Gateway>();
 	components = new HashMap<String,DataNodeComponent>();
 	propCache = new HashMap<String,Properties>();
@@ -100,9 +102,10 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	//Parcel out the database properties... and setup database connection pool.
 	DatabaseResource.init(props.getProperty("db.driver")).setupDataSource(getMatchingProperties("^db.*"));
     }
-
+    
     public abstract void init();
-
+    public String getName() { return myName; }
+    
     //-------------------------------------------
     //Property Loading and providing...
     //-------------------------------------------
@@ -277,6 +280,20 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     public int numOfGateways() { return gateways.size(); }
     public String[] getGatewayNames() { return gateways.keySet().toArray(new String[] {""}); }
 
+
+    //--------------------------------------------
+    //The code the sews together the path of events through the system.
+    //--------------------------------------------
+
+    public void connect(String parentName, String childName) {
+	log.warn("Connecting: "+parentName+" -to-> "+childName);
+	try{
+	    //For the moment there is a 1:1 with name and component.
+	    getComponent(parentName).addESGQueueListener(getComponent(childName));
+	}catch(Exception e) {
+	    log.warn("Could not establish connection: "+parentName+" -to-> "+childName);
+	}
+    }
 
 
     //--------------------------------------------

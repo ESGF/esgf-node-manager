@@ -58,14 +58,55 @@
 /**
    Description:
 
+   A simple helper/utility class to be a central location for common
+   Event related manipulations tasks.
+
 **/
 package esg.node.core;
 
-import java.util.List;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
 
-public interface ESGListener {
+import esg.common.Utils;
+import esg.common.service.ESGRemoteEvent;
 
-    public String getName();
-    public void handleESGEvent(ESGEvent event);
-    
+public class ESGEventHelper {
+
+    private static final Log log = LogFactory.getLog(ESGEventHelper.class);    
+
+    public ESGEventHelper() { }
+
+
+    public static ESGRemoteEvent createOutboundEvent(ESGEvent in) {
+	//Create the string for *our* callback address...
+	String myLocation = null;
+	try{
+	    myLocation = "http://"+java.net.InetAddress.getLocalHost().getCanonicalHostName()+"/esg-node/gateway";
+	}catch (java.net.UnknownHostException ex) {
+	    log.error("Could not build proper location string for myself",ex);
+	}
+	
+	ESGRemoteEvent rEvent = null;
+	if((rEvent = in.getRemoteEvent()) == null) {
+	    log.warn("The encountered event does not contain a remote event");
+	    return null;
+	}
+
+	return new ESGRemoteEvent(myLocation,rEvent.getMessageType(),in.getData(),rEvent.getSeqNum());
+	
+    }
+
+    public static ESGRemoteEvent createOutboundEvent(ESGRemoteEvent in) {
+	//Create the string for *our* callback address...
+	String myLocation = null;
+	try{
+	    myLocation = "http://"+java.net.InetAddress.getLocalHost().getCanonicalHostName()+"/esg-node/gateway";
+	}catch (java.net.UnknownHostException ex) {
+	    log.error("Could not build proper location string for myself",ex);
+	}
+	
+	return new ESGRemoteEvent(myLocation,in.getMessageType(),in.getPayload(),in.getSeqNum());	
+	
+    }
 }

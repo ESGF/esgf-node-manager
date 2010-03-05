@@ -67,6 +67,8 @@ import org.apache.commons.logging.impl.*;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     
@@ -80,11 +82,13 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     //so that they too may be able to manage event listeners
     protected List<ESGListener> esgListeners = null;
     protected List<ESGQueueListener> esgQueueListeners = null;
+    protected Map<String,ESGQueueListener> esgQueueListenersMap = null;
 
     public AbstractDataNodeComponent(String name) {
 	this.myName = name;
 	this.esgListeners = new ArrayList<ESGListener>();
-	this.esgQueueListeners = new ArrayList<ESGQueueListener>();
+	//this.esgQueueListeners = new ArrayList<ESGQueueListener>();
+	this.esgQueueListenersMap = new HashMap<String,ESGQueueListener>();
 	this.eventQueue = new ESGQueue(this);
     }
     public AbstractDataNodeComponent() { this(DataNodeComponent.ANONYMOUS); }
@@ -155,13 +159,18 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     //-------------------------------------------
     public void addESGQueueListener(ESGQueueListener listener) {
 	if(listener == null) return;
-	log.trace("Adding Listener: "+listener);
-	esgQueueListeners.add(listener);
+	log.trace("Adding Queue Listener: "+listener);
+	esgQueueListenersMap.put(listener.getName(),listener);
     }
     
     public void removeESGQueueListener(ESGQueueListener listener) {
 	log.trace("Removing Listener: "+listener);
-	esgQueueListeners.remove(listener);
+	esgQueueListenersMap.remove(listener.getName());
+    }
+
+    public void removeESGQueueListener(String listenerName) {
+	log.trace("Removing Queue Listener named: "+listenerName);
+	esgQueueListenersMap.remove(listenerName);
     }
 
     //--------------------------------------------
@@ -170,10 +179,14 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     //(The queued version of the "fire" method)
     //--------------------------------------------
     protected void enqueueESGEvent(ESGEvent esgEvent) {
-	log.trace("Queuing Event: "+esgEvent);
-	for(ESGQueueListener listener: esgQueueListeners) {
+	log.trace("Enqueuing Event (to all listeners): "+esgEvent);
+	for(ESGQueueListener listener: esgQueueListenersMap.values()) {
 	    listener.getESGEventQueue().enqueueEvent(esgEvent);
 	}
+    }
+    protected void enqueueESGEvent(String destinationListenerName, ESGEvent esgEvent) {
+	log.trace("Enqueuing Event: "+esgEvent+" --to--> "+destinationListenerName);
+	esgQueueListenersMap.get(destinationListenerName).getESGEventQueue().enqueueEvent(esgEvent);
     }
 
     //-------------------------------------------

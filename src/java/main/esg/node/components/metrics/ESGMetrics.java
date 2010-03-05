@@ -139,7 +139,7 @@ public class ESGMetrics extends AbstractDataNodeComponent {
     //that have already been requested at least once.
 
     //replenish cache objects...
-    private boolean fetchNodeStats() {
+    private synchronized boolean fetchNodeStats() {
 	log.trace("metrics' fetchNodeStats() called....");
 	boolean ret = true;
 
@@ -181,17 +181,22 @@ public class ESGMetrics extends AbstractDataNodeComponent {
     //Put in code that will eventually timeout the cache objects and free the memory up via GC.
 
     public boolean handleESGQueuedEvent(ESGEvent event) {
+	log.trace("handling enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
 	//TODO
 	//Fill this event with data from calling:
-	//getExperimentalStats()
-	//getVariableStats()
-	//getDownloadExperimentStats()
-	//getDownloadVariableStats()
-	//getDownloadUserStats()
-	//based on what the event requests
-
-	log.trace("(noop impl) handling enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
-	return false;
+	StringBuilder sb = new StringBuilder();
+	sb.append(getExperimentStats().toString()+"\n");
+	sb.append(getVariableStats().toString()+"\n");
+	sb.append(getDownloadExperimentStats().toString()+"\n");
+	sb.append(getDownloadVariableStats().toString()+"\n");
+	sb.append(getDownloadUserStats().toString()+"\n");
+	
+	event.setData(sb.toString());
+	
+	log.trace("Enqueuing event with Metrics info: "+event);
+	
+	enqueueESGEvent(event);
+	return true;
     }
    
     public void handleESGEvent(ESGEvent event) {
