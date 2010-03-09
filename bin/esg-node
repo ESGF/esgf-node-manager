@@ -86,7 +86,7 @@ init() {
     [ -e ${envfile} ] && source ${envfile} && printf "sourcing environment from: ${envfile} \n\n"
 
     cdat_version=${cdat_version:-"5.1.1"}
-    esgcet_version=${esgcet_version:-"2.1"}
+    esgcet_version=${esgcet_version:-"2.2.6"}
     node_version=${node_version:-".0.0.2"}
 
     workdir=${workdir:-~/workbench/esg}
