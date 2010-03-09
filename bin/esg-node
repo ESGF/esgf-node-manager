@@ -176,6 +176,9 @@ init() {
     node_host_ip_address=${my_ip_address}
     scripts_dir=/usr/local/bin
     no_globus=${no_globus:-0}
+    keystore_path=${tomcat_install_dir}/conf/keystore-tomcat
+    keystore_alias=tomcat
+    keystore_password=changeit
 
     write_paths
 }
@@ -648,14 +651,14 @@ setup_esgcet() {
 	    #echo "$cdat_home/bin/easy_install -f ${esg_dist_url}/externals esgcet"
 	    #$cdat_home/bin/easy_install -f ${esg_dist_url}/externals esgcet
 	    checked_get http://rainbow.llnl.gov/dist/externals/${esgcet_egg_file}
-	    (( $? == 1)) && return 0
+	    (( $? > 1 )) && return 0
 	    $cdat_home/bin/easy_install ${esgcet_egg_file}
 	    [ $? != 0 ] && checked_done 1
 	elif [ "${choice}" = "u" ] || [ "${choice}" = "U" ]; then
 	    #echo "$cdat_home/bin/easy_install --upgrade -f ${esg_dist_url}/externals esgcet"
 	    #$cdat_home/bin/easy_install --upgrade -f ${esg_dist_url}/externals esgcet
 	    checked_get http://rainbow.llnl.gov/dist/externals/${esgcet_egg_file}
-	    (( $? == 1)) && return 0
+	    (( $? > 1 )) && return 0
 	    $cdat_home/bin/easy_install --upgrade ${esgcet_egg_file}
 	    [ $? != 0 ] && checked_done 1
 	else
@@ -855,13 +858,13 @@ setup_tomcat() {
 
     #Create a keystore in $tomcat_install_dir/conf
     echo "Keystore setup: "
-    if [ ! -e ./keystore-tomcat ]; then
+    if [ ! -e ${keystore_path} ]; then
 	echo "Launching Java's keytool: we suggest using the default Tomcat password \"changeit\""
 	#$JAVA_HOME/bin/keytool -list -keystore keystore-tomcat
-	$java_home/bin/keytool -genkey -alias tomcat -keyalg RSA -keystore keystore-tomcat -validity 365
+	$java_home/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_path} -validity 365
 	[ $? != 0 ] && echo " ERROR: keytool command failed" && popd && checked_done 1
     else
-	echo "Using existing keystore \"keystore-tomcat\""
+	echo "Using existing keystore \"${keystore_path}\""
     fi
 
     #Fetch/Copy truststore to $tomcat_install_dir/conf
@@ -877,7 +880,8 @@ setup_tomcat() {
     fi
     
     #Edit the server.xml file to contain proper location of certificates
-    eval "perl -p -i -e 's#\\@\\@tomcat_install_dir\\@\\@#$tomcat_install_dir#g' server.xml"
+    eval "perl -p -i -e 's#\\@\\@tomcat_install_dir\\@\\@#${tomcat_install_dir}#g' server.xml"
+    eval "perl -p -i -e 's#\\@\\@keystore_file\\@\\@#${keystore_path}#g' server.xml"
 
 
     chown -R $tomcat_user $(readlink -f ${tomcat_install_dir})
