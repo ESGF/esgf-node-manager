@@ -176,7 +176,7 @@ init() {
     node_host_ip_address=${my_ip_address}
     scripts_dir=/usr/local/bin
     no_globus=${no_globus:-0}
-    keystore_path=${tomcat_install_dir}/conf/keystore-tomcat
+    keystore_file=${tomcat_install_dir}/conf/keystore-tomcat
     keystore_alias=tomcat
     keystore_password=changeit
 
@@ -858,13 +858,13 @@ setup_tomcat() {
 
     #Create a keystore in $tomcat_install_dir/conf
     echo "Keystore setup: "
-    if [ ! -e ${keystore_path} ]; then
+    if [ ! -e ${keystore_file} ]; then
 	echo "Launching Java's keytool: we suggest using the default Tomcat password \"changeit\""
 	#$JAVA_HOME/bin/keytool -list -keystore keystore-tomcat
-	$java_home/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_path} -validity 365
+	$java_home/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365
 	[ $? != 0 ] && echo " ERROR: keytool command failed" && popd && checked_done 1
     else
-	echo "Using existing keystore \"${keystore_path}\""
+	echo "Using existing keystore \"${keystore_file}\""
     fi
 
     #Fetch/Copy truststore to $tomcat_install_dir/conf
@@ -881,7 +881,7 @@ setup_tomcat() {
     
     #Edit the server.xml file to contain proper location of certificates
     eval "perl -p -i -e 's#\\@\\@tomcat_install_dir\\@\\@#${tomcat_install_dir}#g' server.xml"
-    eval "perl -p -i -e 's#\\@\\@keystore_file\\@\\@#${keystore_path}#g' server.xml"
+    eval "perl -p -i -e 's#\\@\\@keystore_file\\@\\@#${keystore_file}#g' server.xml"
 
 
     chown -R $tomcat_user $(readlink -f ${tomcat_install_dir})
