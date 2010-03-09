@@ -918,7 +918,7 @@ start_tomcat() {
     pushd $tomcat_install_dir >& /dev/null
     jsvc_launch_command="JAVA_HOME=$java_home ./bin/jsvc -Djava.endorsed.dirs=./endorsed -pidfile $tomcat_pid_file -cp $(find $(readlink -f `pwd`/bin/) | grep jar | xargs | perl -pe 's/ /:/g') -outfile ./logs/catalina.out -errfile ./logs/catalina.err -user $tomcat_user $java_opts org.apache.catalina.startup.Bootstrap"
     echo "$jsvc_launch_command"
-    JAVA_HOME=$java_home ./bin/jsvc -pidfile $tomcat_pid_file \
+    JAVA_HOME=$java_home ./bin/jsvc -Djava.endorsed.dirs=./endorsed -pidfile $tomcat_pid_file \
 	-cp $(find $(readlink -f `pwd`/bin/) | grep .jar | xargs | perl -pe 's/ /:/g') \
 	-outfile ./logs/catalina.out \
 	-errfile ./logs/catalina.err \
@@ -1632,9 +1632,9 @@ test_publication() {
 #arg (1) - name of installation script root. Ex esg-security = security
 #arg (2) - [optional] directory on the distribution site where script is fetched from
 setup_subsystem() {
-    local subsystem=${1:""}
-    [ -z ${subsystem} ] && echo "setup_subsystem [${subsystem}] requires argument!!" && checked_done 1
-    local server_dir=${2:"externals/boostrap"}
+    local subsystem=$1
+    [ -z "${subsystem}" ] && echo "setup_subsystem [${subsystem}] requires argument!!" && checked_done 1
+    local server_dir=${2:-"externals/bootstrap"}
     
     echo
     read -p "Would you like to set up ${subsystem} services? [y/N] " dosetup
@@ -2155,7 +2155,7 @@ done_remark() {
     echo "http://${my_ip_address}/${node_app_context_root}"
     echo "http://${my_ip_address}/thredds"
     echo 
-    echo "To see the published test, go your specified gateway: [${GATEWAY_NAME}]"
+    echo "To see the published test, go your specified gateway: [${ESG_GATEWAY_NAME}]"
     echo "http://${ESG_GATEWAY_SVC_ROOT}"
     echo "and browse to \"Test Project\" -> pcmdi.${esg_root_id}.test.mytest"
     echo ""
