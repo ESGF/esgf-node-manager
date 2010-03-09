@@ -916,7 +916,7 @@ start_tomcat() {
 
     echo "Starting Tomcat (jsvc)..."
     pushd $tomcat_install_dir >& /dev/null
-    jsvc_launch_command="JAVA_HOME=$java_home ./bin/jsvc -pidfile $tomcat_pid_file -cp $(find $(readlink -f `pwd`/bin/) | grep jar | xargs | perl -pe 's/ /:/g') -outfile ./logs/catalina.out -errfile ./logs/catalina.err -user $tomcat_user $java_opts org.apache.catalina.startup.Bootstrap"
+    jsvc_launch_command="JAVA_HOME=$java_home ./bin/jsvc -Djava.endorsed.dirs=./endorsed -pidfile $tomcat_pid_file -cp $(find $(readlink -f `pwd`/bin/) | grep jar | xargs | perl -pe 's/ /:/g') -outfile ./logs/catalina.out -errfile ./logs/catalina.err -user $tomcat_user $java_opts org.apache.catalina.startup.Bootstrap"
     echo "$jsvc_launch_command"
     JAVA_HOME=$java_home ./bin/jsvc -pidfile $tomcat_pid_file \
 	-cp $(find $(readlink -f `pwd`/bin/) | grep .jar | xargs | perl -pe 's/ /:/g') \
@@ -1218,7 +1218,7 @@ setup_tds() {
 
     #----------------------
     #Thredds configuration...
-    pushd $tomcat_install_dir/webapps/thredds/WEB-INF >& /dev/null
+    pushd ${tomcat_install_dir}/webapps/thredds/WEB-INF >& /dev/null
     #Edit the web.xml file for Thredds to include these token replacement values
     eval "perl -p -i -e 's/\\@\\@node_host_ip_address\\@\\@/${node_host_ip_address}/g' web.xml"
     eval "perl -p -i -e 's/\\@\\@gateway_name\\@\\@/${gateway_name}/g' web.xml"
@@ -1624,29 +1624,40 @@ test_publication() {
     return 0
 }
 
-setup_products() {
+#NOTE: Here we are enforcing a bit of a convention... The name of
+#subsystem files must be in the form of esg-xxx-xxx where the script
+#contains its "main" function named setup_xxx_xxx(). The string passed
+#to this function is "xxx-xxx"
+#
+#arg (1) - name of installation script root. Ex esg-security = security
+#arg (2) - [optional] directory on the distribution site where script is fetched from
+setup_subsystem() {
+    local subsystem=${1:""}
+    [ -z ${subsystem} ] && echo "setup_subsystem [${subsystem}] requires argument!!" && checked_done 1
+    local server_dir=${2:"externals/boostrap"}
+    
     echo
-    read -p "Would you like to set up a product services? [y/N] " dosetup
+    read -p "Would you like to set up ${subsystem} services? [y/N] " dosetup
     if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
-	echo "Skipping product services installation"
+	echo "Skipping ${subsysem} installation"
 	return 0
     fi
     echo
 
-    echo -n "Product Service Setup for Data-Node... "
+    echo -n "${subsystem} setup for Data-Node... "
     mkdir -p $workdir
     [ $? != 0 ] && checked_done 1
     pushd $workdir >& /dev/null
 
     pushd ${scripts_dir} # >& /dev/null
-    local fetch_file=esg-product-server
-    checked_get ./${fetch_file} ${esg_dist_url}/externals/bootstrap/${fetch_file}
+    local fetch_file=esg-${subsystem}
+    checked_get ./${fetch_file} ${esg_dist_url}/${server_dir}/${fetch_file}
     (( $? > 1 )) && popd && return 1
     chmod 755 ${fetch_file}
     popd # >& /dev/null
 
-    #source product server file and go.
-    source ${scripts_dir}/${fetch_file} && setup_product_services
+    #source subsystem file and go!
+    source ${scripts_dir}/${fetch_file} && setup_${subsystem//'-'/_}
     checked_done $?
 }
 
@@ -2025,7 +2036,7 @@ show_svc_list() {
     echo "---------------------------"
     echo "Running Node Services..."
     echo "---------------------------"
-    lsof -i |egrep  'postgres|jsvc|globus-gridftp*'
+    lsof -i |egrep  'postgres|jsvc|globus-gr'
     echo "---------------------------"
     echo
 }
@@ -2312,8 +2323,9 @@ main() {
     [ $((sel & 1)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus $gridftp_config_args
     [ $((sel & 2)) != 0 ] && (( ! no_globus )) && echo "test_globus" && source ${scripts_dir}/esg-globus >& /dev/null \
     	&& test_globus_services datanode
+    [ $((sel & 1)) != 0 ] && echo "security subsystem" && setup_subsystem security orp
     [ $((sel & 2)) != 0 ] && echo "test_publication" && test_publication 
-    #[ $((sel & 1)) != 0 ] && echo "setup_products" && setup_products
+    #[ $((sel & 1)) != 0 ] && echo "product server subsystem" && setup_subsystem product-server
     [ $((sel & 1)) != 0 ] && echo "show_summary" && show_summary 
     [ $((sel & 16)) != 0 ] && echo "write_env" && write_env && exit 0
     

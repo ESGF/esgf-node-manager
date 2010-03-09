@@ -544,8 +544,10 @@ Builds the project via ant (obviously).
       <bottom><![CDATA[<i>ESG / BSD OpenSource License</i>]]></bottom>
       <tag name="todo" scope="all" description="To do:"/>
       <group title="Core Packages" packages="esg.node.core*"/>
-      <group title="Common Packages" packages="esg.node.common*"/>
-      <group title="Serving Packages" packages="esg.node.service*"/>
+      <group title="Component Packages" packages="esg.node.components*"/>
+      <group title="Connection Packages" packages="esg.node.connection*"/>
+      <group title="Server Packages" packages="esg.node.service*"/>
+      <group title="Common Packages" packages="esg.common*"/>
       <group title="Database Packages" packages="esg.node.db*"/>
       <group title="Utility Packages" packages="esg.node.util*"/>
       <link offline="true" href="http://java.sun.com/javase/6/docs/api/" packagelistLoc="${java.io.tmpdir}"/>
