@@ -668,19 +668,16 @@ setup_esgcet() {
 	break
     done
 
-    if((upgrade)); then
-	#TODO: are there other upgrade things to be done?
-	return 0
+
+    if((!upgrade)); then
+	local input=""
+	read -p "What is your organization's id? [${esg_root_id}]: " input
+	[ ! -z "${input}" ] && esg_root_id=${input}
+	
+	echo "$cdat_home/bin/esgsetup --config --rootid ${esg_root_id}" 
+	$cdat_home/bin/esgsetup --config --rootid ${esg_root_id}
+	[ $? != 0 ] && popd && checked_done 1
     fi
-
-    local input=""
-    read -p "What is your organization's id? [${esg_root_id}]: " input
-    [ ! -z "${input}" ] && esg_root_id=${input}
-
-    echo "$cdat_home/bin/esgsetup --config --rootid ${esg_root_id}" 
-    $cdat_home/bin/esgsetup --config --rootid ${esg_root_id}
-    [ $? != 0 ] && popd && checked_done 1
-    
     start_postgress
 
     echo "$cdat_home/bin/esgsetup --db"
@@ -690,7 +687,9 @@ setup_esgcet() {
     popd >& /dev/null
     echo
     echo
-    write_esgcet_env
+    if((!upgrade)); then
+	write_esgcet_env
+    fi
     checked_done 0
 }
 
@@ -1239,7 +1238,7 @@ setup_tds() {
     start_tomcat
 
     #set in cdms setup (prerequisite)
-    $cdat_home/bin/esgsetup --thredds --publish
+    $cdat_home/bin/esgsetup --thredds --publish --gateway ${gateway_service_root}
 
     popd >& /dev/null
     echo
