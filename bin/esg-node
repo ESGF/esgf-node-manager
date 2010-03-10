@@ -1238,7 +1238,7 @@ setup_tds() {
     start_tomcat
 
     #set in cdms setup (prerequisite)
-    $cdat_home/bin/esgsetup --thredds --publish --gateway ${gateway_service_root}
+    $cdat_home/bin/esgsetup --thredds --publish --gateway ${myproxy_endpoint}
 
     popd >& /dev/null
     echo
@@ -2308,7 +2308,10 @@ main() {
     check_prerequisites
     [ $? != 0 ] && echo && exit 1
 
-    #only when one setup in the sequence is okay can we move to the next.
+    #---------------------------------------
+    #Installation of basic system components.
+    # (Only when one setup in the sequence is okay can we move to the next)
+    #---------------------------------------
     [ $((sel & 1)) != 0 ] && echo "setup_ant" && setup_ant
     [ $((sel & 1)) != 0 ] && echo "setup_postgress" && setup_postgress
     [ $((sel & 2)) != 0 ] && echo "test_postgress" && test_postgress 
@@ -2322,16 +2325,34 @@ main() {
     [ $((sel & 1)) != 0 ] && echo "configure_postgress" && configure_postgress #(database on)
     [ $((sel & 1)) != 0 ] && echo "setup_tds" && setup_tds 
     [ $((sel & 2)) != 0 ] && echo "test_tds" && test_tds 
-    #[ $((sel & 1)) != 0 ] && echo "setup_filter" && setup_filter ${tomcat_install_dir}/webapps/thredds
+    [ $((sel & 1)) != 0 ] && echo "setup_filter" && setup_filter ${tomcat_install_dir}/webapps/thredds
     [ $((sel & 1)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus $gridftp_config_args
     [ $((sel & 2)) != 0 ] && (( ! no_globus )) && echo "test_globus" && source ${scripts_dir}/esg-globus >& /dev/null \
     	&& test_globus_services datanode
-    [ $((sel & 1)) != 0 ] && echo "security subsystem" && setup_subsystem security orp
+
+    #---------------------------------------
+    #Installation of "plugin" subsystems...
+    #---------------------------------------
+    [ $((sel & 1)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp
+    [ $((sel & 1)) != 0 ] && echo "security filters subsystem" && setup_subsystem security-filters filters
+    [ $((sel & 1)) != 0 ] && echo "product server subsystem" && setup_subsystem product-server
+
+    #---------------------------------------
+    # Publishing Test...
+    #---------------------------------------
     [ $((sel & 2)) != 0 ] && echo "test_publication" && test_publication 
-    #[ $((sel & 1)) != 0 ] && echo "product server subsystem" && setup_subsystem product-server
+
+
+    #---------------------------------------
+    #Summary and Installation Housekeeping...
+    #---------------------------------------
     [ $((sel & 1)) != 0 ] && echo "show_summary" && show_summary 
     [ $((sel & 16)) != 0 ] && echo "write_env" && write_env && exit 0
     
+
+    #---------------------------------------
+    #System Launch...
+    #---------------------------------------
     (( ! no_globus )) && start_globus_services datanode
     start_postgress
     start_tomcat
