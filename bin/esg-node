@@ -726,7 +726,7 @@ test_esgcet() {
     $cdat_home/bin/esgscan_directory --dataset pcmdi.${esg_root_id}.test.mytest --project test ${esgcet_testdir} > mytest.txt
     [ $? != 0 ] && echo " ERROR: ESG directory scan failed" && popd && checked_done 1
     
-    echo "$cdat_home/bin/esgpublish --map mytest.txt --project test"
+    echo "$cdat_home/bin/esgpublish --map mytest.txt --project test --model test"
     $cdat_home/bin/esgpublish --map mytest.txt --project test
     [ $? != 0 ] && echo " ERROR: ESG publish failed" && popd && checked_done 1
     
