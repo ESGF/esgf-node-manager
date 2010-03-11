@@ -1512,10 +1512,10 @@ setup_filter() {
 
     pushd ${dest_dir} >& /dev/null
     echo "Checking for / Installing required jars..."
-    [ ! -e WEB-INF/lib/commons-dbcp-1.2.2.jar ]  && echo "no commons-dbcp" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/commons-dbcp-1.2.2.jar
-    [ ! -e WEB-INF/lib/commons-dbutils-1.3.jar ] && echo "no commons-dbutils" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/commons-dbutils-1.3.jar
-    [ ! -e WEB-INF/lib/commons-pool-1.5.4.jar ]  && echo "no commons-pool" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/commons-pool-1.5.4.jar
-    [ ! -e WEB-INF/lib/${postgress_jar} ]  && echo "no jdbc driver" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/${postgress_jar}
+    [ ! -e WEB-INF/lib/commons-dbcp-1.2.2.jar ]  && echo "no commons-dbcp found locally" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/commons-dbcp-1.2.2.jar
+    [ ! -e WEB-INF/lib/commons-dbutils-1.3.jar ] && echo "no commons-dbutils found locally" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/commons-dbutils-1.3.jar
+    [ ! -e WEB-INF/lib/commons-pool-1.5.4.jar ]  && echo "no commons-pool found locally" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/commons-pool-1.5.4.jar
+    [ ! -e WEB-INF/lib/${postgress_jar} ]  && echo "no jdbc driver found locally" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/${postgress_jar}
     popd >& /dev/null
     
     pushd ${workdir}/${node_dist_dir} >& /dev/null
