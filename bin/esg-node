@@ -81,6 +81,7 @@ version="0.3.0"
 envfile=${envfile:-"/etc/esg.env"}
 t=${0%.*}
 logfile=${logfile:-"/var/tmp/${t##*/}.out"}
+install_prefix=${install_prefix:-"/usr/local"}
 
 init() {
     [ -e ${envfile} ] && source ${envfile} && printf "sourcing environment from: ${envfile} \n\n"
@@ -90,19 +91,19 @@ init() {
     node_version=${node_version:-".0.0.2"}
 
     workdir=${workdir:-~/workbench/esg}
-    postgress_install_dir=${PGHOME:-/usr/local/pgsql}
+    postgress_install_dir=${PGHOME:-${install_prefix}/pgsql}
     postgress_user=${PGUSER:-dbsuper}
     pg_sys_acct_passwd=${pg_sys_acct_passwd:=changeme}
     postgress_host=${PGHOST:-localhost}
     postgress_port=${PGPORT:-5432}
-    cdat_home=${CDAT_HOME:-/usr/local/cdat}
+    cdat_home=${CDAT_HOME:-${install_prefix}/cdat}
     java_opts=${JAVA_OPTS:-"-Xmx2048m -Xms1024m"}
-    java_home=${JAVA_HOME:-/usr/local/java}
-    ant_install_dir=${ANT_HOME:-/usr/local/ant}
-    tomcat_install_dir=${CATALINA_HOME:-/usr/local/tomcat}
+    java_home=${JAVA_HOME:-${install_prefix}/java}
+    ant_install_dir=${ANT_HOME:-${install_prefix}/ant}
+    tomcat_install_dir=${CATALINA_HOME:-${install_prefix}/tomcat}
     tomcat_user=${tomcat_user:-tomcat}
     tomcat_group=${tomcat_group:-$tomcat_user}
-    globus_location=${GLOBUS_LOCATION:-/usr/local/globus}
+    globus_location=${GLOBUS_LOCATION:-${install_prefix}/globus}
     backupdir=${backupdir:-"/esg/backups"}
     gateway_name=${ESG_GATEWAY_NAME}
     gateway_service_root=${ESG_GATEWAY_SVC_ROOT}
@@ -174,11 +175,12 @@ init() {
     show_summary_latch=0
     source_latch=0
     node_host_ip_address=${my_ip_address}
-    scripts_dir=/usr/local/bin
+    scripts_dir=${install_prefix}/bin
     no_globus=${no_globus:-0}
     keystore_file=${tomcat_install_dir}/conf/keystore-tomcat
     keystore_alias=tomcat
     keystore_password=changeit
+    truststore_file=${tomcat_install_dir}/conf/jssecacerts
 
     write_paths
 }
@@ -870,18 +872,19 @@ setup_tomcat() {
 
     #Fetch/Copy truststore to $tomcat_install_dir/conf
     #(first try getting it from distribution server otherwise copy Java's)
-    if [ ! -e $tomcat_install_dir/conf/jssecacerts ]; then
+    if [ ! -e ${truststore_file} ]; then
 	fetch_file=jssecacerts
-	checked_get $tomcat_install_dir/conf/${fetch_file} ${esg_dist_url}/externals/${fetch_file}
+	checked_get ${truststore_file} ${esg_dist_url}/externals/${fetch_file}
 	if (( $? > 1 )); then
 	    echo " Warning: Could not download certificates ${fetch_file} for tomcat - will copy local java certificat file"
-	    cp -v ${java_home}/jre/lib/security/cacerts $tomcat_install_dir/conf/${fetch_file}
+	    echo "(note - the truststore password will probably not match!)"
+	    cp -v ${java_home}/jre/lib/security/cacerts ${truststore_file}
 	    [ $? != 0 ] && echo " ERROR: Could not fetch or copy ${fetch_file} for tomcat!!" && popd && checked_done 1
 	fi
     fi
     
     #Edit the server.xml file to contain proper location of certificates
-    eval "perl -p -i -e 's#\\@\\@tomcat_install_dir\\@\\@#${tomcat_install_dir}#g' server.xml"
+    eval "perl -p -i -e 's#\\@\\@truststore_file\\@\\@#${truststore_file}#g' server.xml"
     eval "perl -p -i -e 's#\\@\\@keystore_file\\@\\@#${keystore_file}#g' server.xml"
 
 
@@ -1164,19 +1167,24 @@ setup_tds() {
     ############################
 
     fetch_file=eske.jar
-    checked_get $tomcat_install_dir/webapps/thredds/WEB-INF/lib/${fetch_file} ${esg_dist_url}/externals/${fetch_file}
+    checked_get ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file} ${esg_dist_url}/externals/${fetch_file}
     (( $? > 1 )) && popd && checked_done 1
-    chown tomcat.tomcat $tomcat_install_dir/webapps/thredds/WEB-INF/lib/${fetch_file}
+    chown -R ${tomcat_user}  ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file}
+    chgrp -R ${tomcat_group} ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file}
     
     fetch_file=hessian-3.0.20.jar
-    checked_get $tomcat_install_dir/webapps/thredds/WEB-INF/lib/${fetch_file} ${esg_dist_url}/externals/${fetch_file}
+    checked_get ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file} ${esg_dist_url}/externals/${fetch_file}
     (( $? > 1 )) && popd && checked_done 1
-    chown tomcat.tomcat $tomcat_install_dir/webapps/thredds/WEB-INF/lib/${fetch_file}
+    chown -R ${tomcat_user}  ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file}
+    chgrp -R ${tomcat_group} ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file} 
 
-    fetch_file=web.xml
-    checked_get $tomcat_install_dir/webapps/thredds/WEB-INF/${fetch_file} ${esg_dist_url}/externals/bootstrap/thredds/thredds.${fetch_file}
+    #Get the templated web.xml file... (comment place holders for filters)
+    fetch_file=web.xml 
+    checked_get ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file} ${esg_dist_url}/externals/bootstrap/thredds/thredds.${fetch_file}
     (( $? > 1 )) && popd && checked_done 1
-    chown tomcat.tomcat $tomcat_install_dir/webapps/thredds/WEB-INF/${fetch_file}
+    chown -R ${tomcat_user}  ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file} 
+    chgrp -R ${tomcat_group} ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file} 
+
 
     #(Making this assignment for the sake of readability for the code below)
     #@@node_host_ip_address@@ #Token in file
@@ -1221,14 +1229,14 @@ setup_tds() {
     echo
     echo "Selection: [${choice}] source: ${node_host_ip_address}   dest: ${gateway_name}:${gateway_service_root}"
 
-    #----------------------
-    #Thredds configuration...
-    pushd ${tomcat_install_dir}/webapps/thredds/WEB-INF >& /dev/null
-    #Edit the web.xml file for Thredds to include these token replacement values
-    eval "perl -p -i -e 's/\\@\\@node_host_ip_address\\@\\@/${node_host_ip_address}/g' web.xml"
-    eval "perl -p -i -e 's/\\@\\@gateway_name\\@\\@/${gateway_name}/g' web.xml"
-    eval "perl -p -i -e 's#\\@\\@gateway_service_root\\@\\@#${gateway_service_root}#g' web.xml"
-    popd >& /dev/null
+    ##----------------------
+    ##Thredds configuration...
+    #pushd ${tomcat_install_dir}/webapps/thredds/WEB-INF >& /dev/null
+    ##Edit the web.xml file for Thredds to include these token replacement values for AuthorizationTokenValidationFilter
+    #eval "perl -p -i -e 's/\\@\\@node_host_ip_address\\@\\@/${node_host_ip_address}/g' web.xml"
+    #eval "perl -p -i -e 's/\\@\\@gateway_name\\@\\@/${gateway_name}/g' web.xml"
+    #eval "perl -p -i -e 's#\\@\\@gateway_service_root\\@\\@#${gateway_service_root}#g' web.xml"
+    #popd >& /dev/null
 
     #----------------------
     #Fetch and Insert the Certificate for parent gateway
@@ -1530,24 +1538,17 @@ setup_filter() {
 
     #Replace the filter's place holder token in thredds' web.xml file with the filter entry.
     #Use utility function...
-    insert_file_at_pattern $(readlink -f ${target_file}) ${esg_filter_entry_file} "<!--@@esg_filter_entry@@-->"
+    insert_file_at_pattern $(readlink -f ${target_file}) ${esg_filter_entry_file} "<!--@@esg_node_filter_entry@@-->"
 
     #Edit the web.xml file for Thredds to include these token replacement values
     echo -n "Replacing tokens... "
-    eval "perl -p -i -e 's/\\@db.driver\\@/${postgress_driver}/g' ${target_file}"    
-    echo -n "*"
-    eval "perl -p -i -e 's/\\@db.protocol\\@/${postgress_protocol}/g' ${target_file}"
-    echo -n "*"
-    eval "perl -p -i -e 's/\\@db.host\\@/${postgress_host}/g' ${target_file}"    
-    echo -n "*"
-    eval "perl -p -i -e 's/\\@db.port\\@/${postgress_port}/g' ${target_file}"
-    echo -n "*"
-    eval "perl -p -i -e 's/\\@db.database\\@/${node_db_name}/g' ${target_file}"
-    echo -n "*"
-    eval "perl -p -i -e 's/\\@db.user\\@/${postgress_user}/g' ${target_file}"
-    echo -n "*"
-    eval "perl -p -i -e 's/\\@db.password\\@/${pg_sys_acct_passwd}/g' ${target_file}"
-    echo -n "*"
+    eval "perl -p -i -e 's/\\@db.driver\\@/${postgress_driver}/g' ${target_file}"; echo -n "*"
+    eval "perl -p -i -e 's/\\@db.protocol\\@/${postgress_protocol}/g' ${target_file}"; echo -n "*"
+    eval "perl -p -i -e 's/\\@db.host\\@/${postgress_host}/g' ${target_file}"; echo -n "*"
+    eval "perl -p -i -e 's/\\@db.port\\@/${postgress_port}/g' ${target_file}"; echo -n "*"
+    eval "perl -p -i -e 's/\\@db.database\\@/${node_db_name}/g' ${target_file}"; echo -n "*"
+    eval "perl -p -i -e 's/\\@db.user\\@/${postgress_user}/g' ${target_file}"; echo -n "*"
+    eval "perl -p -i -e 's/\\@db.password\\@/${pg_sys_acct_passwd}/g' ${target_file}"; echo -n "*"
     echo " [OK]"
     popd >& /dev/null
     #----------------------
@@ -1638,8 +1639,9 @@ test_publication() {
 #contains its "main" function named setup_xxx_xxx(). The string passed
 #to this function is "xxx-xxx"
 #
-#arg (1) - name of installation script root. Ex esg-security = security
-#arg (2) - [optional] directory on the distribution site where script is fetched from
+#arg (1) - name of installation script root name. Ex:security which resolves to script file esg-security
+#arg (2) - [optional] directory on the distribution site where script is fetched from Ex: orp
+#usage: setup_subsystem security orp - looks for the script esg-security in the distriubtion dir orp
 setup_subsystem() {
     local subsystem=$1
     [ -z "${subsystem}" ] && echo "setup_subsystem [${subsystem}] requires argument!!" && checked_done 1
@@ -1666,7 +1668,9 @@ setup_subsystem() {
     popd # >& /dev/null
 
     #source subsystem file and go!
-    source ${scripts_dir}/${fetch_file} && setup_${subsystem//'-'/_}
+    shift
+    shift
+    source ${scripts_dir}/${fetch_file} && setup_${subsystem//'-'/_} $@
     checked_done $?
 }
 
@@ -2339,9 +2343,9 @@ main() {
     #---------------------------------------
     #Installation of "plugin" subsystems...
     #---------------------------------------
-    [ $((sel & 1)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp
-    [ $((sel & 1)) != 0 ] && echo "security filters subsystem" && setup_subsystem security-filters filters
-    [ $((sel & 1)) != 0 ] && echo "product server subsystem" && setup_subsystem product-server
+    [ $((sel & 1)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
+    [ $((sel & 1)) != 0 ] && echo "security filters subsystem" && setup_subsystem security-filters filters $@
+    [ $((sel & 1)) != 0 ] && echo "product server subsystem" && setup_subsystem product-server $@
 
     #---------------------------------------
     # Publishing Test...
