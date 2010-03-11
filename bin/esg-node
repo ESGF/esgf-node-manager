@@ -1180,7 +1180,7 @@ setup_tds() {
 
     #Get the templated web.xml file... (comment place holders for filters)
     fetch_file=web.xml 
-    checked_get ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file} ${esg_dist_url}/externals/bootstrap/thredds/thredds.${fetch_file}
+    checked_get ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file} ${esg_dist_url}/thredds/thredds.${fetch_file}
     (( $? > 1 )) && popd && checked_done 1
     chown -R ${tomcat_user}  ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file} 
     chgrp -R ${tomcat_group} ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file} 
