@@ -2345,7 +2345,7 @@ main() {
     #---------------------------------------
     [ $((sel & 1)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
     [ $((sel & 1)) != 0 ] && echo "security filters subsystem" && setup_subsystem security-filters filters $@
-    [ $((sel & 1)) != 0 ] && echo "product server subsystem" && setup_subsystem product-server $@
+    #[ $((sel & 1)) != 0 ] && echo "product server subsystem" && setup_subsystem product-server $@
 
     #---------------------------------------
     # Publishing Test...
