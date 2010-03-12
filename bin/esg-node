@@ -1510,7 +1510,7 @@ setup_filter() {
     [ ! -e ${dest_dir}/WEB-INF/web.xml ] && echo " ERROR no web.xml file found!!" && checked_done 1
     [ ! -e ${workdir}/${node_dist_dir} ] && echo " ERROR: Could not locate node distribution dir ${workdir}/${node_dist_dir}" && return 1
 
-    ! egrep ${esg_filter_entry_pattern} ${desg_dir}/WEB-INF/web.xml && echo "No Pattern In File - exiting this filter setup" && return 1
+    ! egrep ${esg_filter_entry_pattern} ${dest_dir}/WEB-INF/web.xml && echo "No Pattern In File - exiting this filter setup" && return 1
 
     stop_tomcat
 
