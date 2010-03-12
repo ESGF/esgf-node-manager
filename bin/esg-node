@@ -87,7 +87,7 @@ init() {
     [ -e ${envfile} ] && source ${envfile} && printf "sourcing environment from: ${envfile} \n\n"
 
     cdat_version=${cdat_version:-"5.1.1"}
-    esgcet_version=${esgcet_version:-"2.2.6"}
+    esgcet_version=${esgcet_version:-"2.2.7"}
     node_version=${node_version:-".0.0.2"}
 
     workdir=${workdir:-~/workbench/esg}
@@ -1494,7 +1494,8 @@ setup_filter() {
     local dest_dir=$1
     echo "Filter installation destination dir = ${dest_dir}"
     local esg_filter_entry_file=${2:-esg-filter-web.xml}
-    
+    local esg_filter_entry_pattern="<!--@@esg_node_filter_entry@@-->"
+
     #Installs esg filter into Thredds' web.xml file, directly after
     #the AuthorizationTokenValidationFilter's mapping, by replacing a
     #place holder token with the contents of the filter snippet file
@@ -1505,8 +1506,11 @@ setup_filter() {
     
     #pre-checking... make sure the files we need in thredds are there....
     [ ! -e ${dest_dir}/WEB-INF ] && echo " ERROR: Could not find THREDDS installation dir" && checked_done 1
+    [ ! -e ${dest_dir}/WEB-INF/lib ] && echo " ERROR: Could not find WEB-INF/lib installation dir!!" && return 1
     [ ! -e ${dest_dir}/WEB-INF/web.xml ] && echo " ERROR no web.xml file found!!" && checked_done 1
     [ ! -e ${workdir}/${node_dist_dir} ] && echo " ERROR: Could not locate node distribution dir ${workdir}/${node_dist_dir}" && return 1
+
+    ! egrep ${esg_filter_entry_pattern} ${desg_dir}/WEB-INF/web.xml && echo "No Pattern In File - exiting this filter setup" && return 1
 
     stop_tomcat
 
@@ -1538,7 +1542,7 @@ setup_filter() {
 
     #Replace the filter's place holder token in thredds' web.xml file with the filter entry.
     #Use utility function...
-    insert_file_at_pattern $(readlink -f ${target_file}) ${esg_filter_entry_file} "<!--@@esg_node_filter_entry@@-->"
+    insert_file_at_pattern $(readlink -f ${target_file}) ${esg_filter_entry_file} "${esg_filter_entry_pattern}"
 
     #Edit the web.xml file for Thredds to include these token replacement values
     echo -n "Replacing tokens... "
@@ -1668,9 +1672,9 @@ setup_subsystem() {
     popd # >& /dev/null
 
     #source subsystem file and go!
-    shift
-    shift
-    source ${scripts_dir}/${fetch_file} && setup_${subsystem//'-'/_} $@
+    shift && echo "-->>> "
+    shift && echo "-->>> "
+    source ${scripts_dir}/${fetch_file} && echo ":-) " && setup_${subsystem//'-'/_} $@
     checked_done $?
 }
 
@@ -2336,7 +2340,7 @@ main() {
     [ $((sel & 1)) != 0 ] && echo "setup_tds" && setup_tds 
     [ $((sel & 2)) != 0 ] && echo "test_tds" && test_tds 
     [ $((sel & 1)) != 0 ] && echo "setup_filter" && setup_filter ${tomcat_install_dir}/webapps/thredds
-    [ $((sel & 1)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus $gridftp_config_args
+    [ $((sel & 1)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${gridftp_config_args}
     [ $((sel & 2)) != 0 ] && (( ! no_globus )) && echo "test_globus" && source ${scripts_dir}/esg-globus >& /dev/null \
     	&& test_globus_services datanode
 
