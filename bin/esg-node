@@ -358,7 +358,6 @@ setup_postgress() {
 	if [ ! -e ${postgress_dist_file} ]; then
 	    echo "Don't see postgress distribution file ${postgress_dist_file} either"
 	    echo "Downloading Postgress from ${postgress_dist_url}"
-	    #curl ${postgress_dist_url} -o ${postgress_dist_file} 
 	    wget -O ${postgress_dist_file} ${postgress_dist_url}
 	    [ $? != 0 ] && echo " ERROR: Could not download Postgress:${postgress_dist_file}" && popd && checked_done 1
 	    tar xvzf ${postgress_dist_file}
@@ -943,7 +942,8 @@ start_tomcat() {
     local wait_time=5
     echo -n "Giving tomcat time to startup... $wait_time seconds " 
     sleep $wait_time
-    echo "[OK]"
+    curl http://localhost:80 >& /dev/null
+    [ $? != 0 ] && echo " WARNING: Could not verify tomcat is running..." || echo "[OK]"
     ps -elf | grep jsvc  | grep -v grep
     date
     popd >& /dev/null
@@ -992,306 +992,6 @@ test_tomcat() {
 
     checked_done $?
 }
-
-#####
-# This function is for pulling in keys from hosts we wish to
-# communicate with over an encrypted ssl connection.  This function
-# must be run after tomcat is set up since it references server.xml.
-#####
-
-#arg1 - hostname of the machine with the cert you want to get
-register() {
-    echo "Installing Certificate From Gateway...( -> MyProxy endpoint)"
-    
-    local certfile=jssecacerts
-
-    mkdir -p ${workdir} # >& /dev/null
-    pushd ${workdir} # >& /dev/null
-    #Download the Java code used for certificate installation (into $workdir)
-    checked_get ${utils_url}/InstallCert.class
-    (( $? > 1 )) && echo " ERROR: Could not download utility class(1) for installing certificates" && popd && return 1
-    checked_get ${utils_url}/'InstallCert$SavingTrustManager.class'
-    (( $? > 1 )) && echo " ERROR: Could not download utility class(2) for installing certificates" && popd && return 1
-    popd # >& /dev/null
-
-    pushd $tomcat_install_dir/conf >& /dev/null
-
-    [ -e ${certfile} ] && cp -v ${certfile} ${certfile}.bak
-    
-    input=${1:-pcmdi3.llnl.gov}
-    local ssl_endpoint=${input%%/*} #just need the hostname
-    local ssl_port=${ssl_port:-443}
-    local ssl_endpoint_passwd=${2:-changeit}
-    
-    local CP=".:${workdir}"
-
-    echo "${JAVA_HOME}/bin/java -classpath ${CP} InstallCert \
-	${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd}"
-    ${JAVA_HOME}/bin/java -classpath ${CP} InstallCert \
-	${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd}
-    local ret=$?
-    
-    chmod 600 ${certfile}
-    chown $tomcat_user ${certfile}
-    chgrp $tomcat_group ${certfile}
-    popd >& /dev/null
-    return $ret
-}
-
-#####
-# THREDDS Data Server
-#####
-setup_tds() {
-    echo
-    echo "*******************************"
-    echo "Setting up Thredds Data Server..."
-    echo "*******************************"
-    echo
-
-    local dosetup
-    if [ -d ${tomcat_install_dir}/webapps/thredds ]; then 
-	echo "Detected an existing thredds installation..."
-	read -p "Do you want to continue with thredds installation and setup? [y/N] " dosetup
-	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
-	    echo "Skipping thredds installation and setup - will assume thredds is setup properly"
-	    return 0
-	fi
-	echo
-    fi
-
-    mkdir -p $workdir
-    [ $? != 0 ] && return 1
-    pushd $workdir >& /dev/null
-    local fetch_file
-
-    ############################
-    #Download the thredds.war file home site (or use value of thredds_dist_file if already set)
-    ############################
-
-    thredds_dist_file=${thredds_dist_file:-${thredds_dist_url##*/}}
-    
-    #There is this pesky case of having a zero sized dist file... WTF!?                                                                            
-    if [ -e ${thredds_dist_file} ]; then
-        ls -l ${thredds_dist_file}
-	#NOTE: I know there must be a cleaner way to get this, maybe stat?
-        local size=$(ls -l | grep ${thredds_dist_file} | tr -s " " | cut -d " " -f 5)
-        (( size == 0 )) && rm -v ${thredds_dist_file}
-    fi
-
-    #Check to see if we have this war file already in the workbench...
-    if [ ! -e ${thredds_dist_file} ]; then
-	wget -O ${thredds_dist_file} ${thredds_dist_url}
-	if [ $? != 0 ]; then
-	    echo " ERROR: Could not download ${thredds_dist_url}, fetching the copy at PCMDI (LLNL)..."
-	    checked_get ${thredds_dist_file} ${thredds_esg_dist_url}
-	    (( $? > 1 )) && echo " ERROR: Could not download ${thredds_esg_dist_url} either" && popd && checked_done 1
-	fi
-    fi
-    
-    cp ${thredds_dist_file} $tomcat_install_dir/webapps
-    
-    #Check to see of tomcat is running, if it is not then start Tomcat
-    #This will explode the thredds war file (necessary for subsequent library [jar] file installation
-    start_tomcat
-    curl http://localhost:80 >& /dev/null
-    if [ $? != 0 ]; then
-	echo " WARNING: Sorry Tomcat does not seem to be running or serving on http://localhost:80... attempting to re-start..."
-	start_tomcat
-	[ $? != 0 ] && popd && checked_done 1
-    fi
-    
-    ############################
-    #Setup Digest authentication
-    ############################
-
-    pushd $tomcat_install_dir/conf/ >& /dev/null
-
-    fetch_file=tomcat-users.xml
-    checked_get $tomcat_install_dir/conf/${fetch_file} ${esg_dist_url}/externals/bootstrap/${fetch_file}
-    (( $? > 1 )) && popd && checked_done 1
-    chown ${tomcat_user}  $tomcat_install_dir/conf/${fetch_file}
-    chgrp ${tomcat_group} $tomcat_install_dir/conf/${fetch_file}
-    
-
-    #1: Generate password hash
-    printf "Create user credentials\n"
-    local input
-
-    while [ 1 ]; do 
-	#default credential values...
-	local username="dnode_user"
-	local password="changeme"
-	unset input
-	unset addanother
-	read -p "Please enter username for tomcat [${username}]:  " input
-	[ ! -z "${input}" ] && username=${input}    
-	echo ${username}
-	unset input
-	read -s -t60 -p "Please enter password for user, \"${username}\" [********]:   " input
-	[ ! -z "${input}" ] && password=${input}    
-	password_hash=$($tomcat_install_dir/bin/digest.sh -a SHA ${password} | cut -d ":" -f 2)
-	echo ${password_hash}
-	
-	#Create user entry in tomcat-users.xml for thredds user
-	user_entry="<user username=\"${username}\" password=\"${password_hash}\" roles=\"tdrAdmin,tdsConfig\"\/>"
-	#Note: Have to escape the last "/" in "/>"
-	
-    	#Insert the entry in the right place in tomcat-users.xml
-    	#Replace <!--@@user_entry@@--> with ${user_entry}\n<!--@@user_entry@@-->
-	#Command Line:% perl -p -i -e 's/<!--\@\@user_entry\@\@-->/<test>\n  <!--\@\@user_entry\@\@-->/g' tomcat-users.xml
-	eval "perl -p -i -e 's/<!--\\@\\@user_entry\\@\\@-->/${user_entry}\n  <!--\\@\\@user_entry\\@\\@-->/g' tomcat-users.xml"
-	
-	read -p "Would you like to add another user? [y/N]: " addanother
-	if [ "${addanother}" = "y" ] || [ "${addanother}" = "Y" ]; then
-	    echo 
-	    continue
-	fi
-	echo
-	break
-    done
-    unset input
-
-    popd >& /dev/null
-
-    ############################
-    #Enable SSL encryption
-    ############################
-
-    mkdir -p $tomcat_install_dir/conf/Catalina/localhost
-    fetch_file=thredds.xml
-    checked_get $tomcat_install_dir/conf/Catalina/localhost/${fetch_file} ${esg_dist_url}/externals/bootstrap/tomcat-${fetch_file}
-    (( $? > 1 )) && echo " ERROR: Problem pulling down ${fetch_file} from esg distribution" && popd && checked_done 1
-
-    
-    ############################
-    #ESG token validation filter
-    ############################
-
-    fetch_file=eske.jar
-    checked_get ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file} ${esg_dist_url}/externals/${fetch_file}
-    (( $? > 1 )) && popd && checked_done 1
-    chown -R ${tomcat_user}  ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file}
-    chgrp -R ${tomcat_group} ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file}
-    
-    fetch_file=hessian-3.0.20.jar
-    checked_get ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file} ${esg_dist_url}/externals/${fetch_file}
-    (( $? > 1 )) && popd && checked_done 1
-    chown -R ${tomcat_user}  ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file}
-    chgrp -R ${tomcat_group} ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file} 
-
-    #Get the templated web.xml file... (comment place holders for filters)
-    fetch_file=web.xml 
-    checked_get ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file} ${esg_dist_url}/thredds/thredds.${fetch_file}
-    (( $? > 1 )) && popd && checked_done 1
-    chown -R ${tomcat_user}  ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file} 
-    chgrp -R ${tomcat_group} ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file} 
-
-
-    #(Making this assignment for the sake of readability for the code below)
-    #@@node_host_ip_address@@ #Token in file
-    node_host_ip_address=${my_ip_address}    
-
-    unset input #just to be sure it's clear (though it should be)
-    read -p "Please Enter the IP address of this host [${node_host_ip_address}]:> " input
-    [ ! -z "${input}" ] && node_host_ip_address=${input}
-    printf "\nUsing IP: ${node_host_ip_address}\n"
-    unset input
-
-    #@@gateway_name@@ -> @@gateway_service_root@@  #Tokens in file
-    #ESG-PCMDI -> pcmdi3.llnl.gov/esgcet
-    #ESC-NCAR  -> esg.prototype.ucar.edu
-    
-    local choice
-    while [ 1 ]; do
-	unset choice
-	echo "Please select the gateway for this node: "
-	echo " 	-------------------------------------------"
-	echo " 	 *[1] : ESG-PCMDI -> pcmdi3.llnl.gov/esgcet"
-	echo " 	  [2] : ESG-NCAR  -> esg.prototype.ucar.edu"
-	echo " 	-------------------------------------------"
-	read -p "select> [1] " choice
-	
-	[ -z "${choice}" ] && choice=1 #default
-	case ${choice} in
-	    2)  gateway_name="ESG-NCAR"
-		gateway_service_root="esg.prototype.ucar.edu"
-		break
-		;;
-	    1)  gateway_name="ESG-PCMDI"
-		gateway_service_root="pcmdi3.llnl.gov/esgcet"
-		break
-		;;
-	    *)  echo "Invalid selection [${choice}]"
-	esac
-    done
-    
-    myproxy_endpoint=${gateway_service_root%%/*}
-
-    echo
-    echo "Selection: [${choice}] source: ${node_host_ip_address}   dest: ${gateway_name}:${gateway_service_root}"
-
-    ##----------------------
-    ##Thredds configuration...
-    #pushd ${tomcat_install_dir}/webapps/thredds/WEB-INF >& /dev/null
-    ##Edit the web.xml file for Thredds to include these token replacement values for AuthorizationTokenValidationFilter
-    #eval "perl -p -i -e 's/\\@\\@node_host_ip_address\\@\\@/${node_host_ip_address}/g' web.xml"
-    #eval "perl -p -i -e 's/\\@\\@gateway_name\\@\\@/${gateway_name}/g' web.xml"
-    #eval "perl -p -i -e 's#\\@\\@gateway_service_root\\@\\@#${gateway_service_root}#g' web.xml"
-    #popd >& /dev/null
-
-    #----------------------
-    #Fetch and Insert the Certificate for parent gateway
-    register ${myproxy_endpoint}
-    #----------------------
-
-    #restart tomcat to put modifications in effect.
-    stop_tomcat 
-    start_tomcat
-
-    #set in cdms setup (prerequisite)
-    $cdat_home/bin/esgsetup --thredds --publish --gateway ${myproxy_endpoint}
-
-    popd >& /dev/null
-    echo
-    mkdir -p ${thredds_root_dir}
-    [ $? != 0 ] && echo " Error: could not create ${thredds_root_dir}" && checked_done 1
-    mkdir -p ${thredds_replica_dir}
-    [ $? != 0 ] && echo " Error: could not create ${thredds_replica_dir}" && checked_done 1
-    echo
-    write_tds_env
-    checked_done 0
-}
-
-write_tds_env() {
-    ((show_summary_latch++))
-    echo "export ESG_GATEWAY_NAME=${gateway_name}" >> ${envfile}
-    echo "export ESG_GATEWAY_SVC_ROOT=${gateway_service_root}" >> ${envfile}
-    dedup ${envfile}
-    return 0
-}
-
-test_tds() {
-    echo -n "Thredds Data Server Test... "
-    mkdir -p $workdir
-    [ $? != 0 ] && checked_done 1
-    pushd $workdir >& /dev/null
-
-    echo "$cdat_home/bin/esgpublish --use-existing pcmdi.${esg_root_id}.test.mytest --noscan --thredds"
-    $cdat_home/bin/esgpublish --use-existing pcmdi.${esg_root_id}.test.mytest --noscan --thredds
-    [ $? != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to run esgpublish command" && popd && checked_done 1
-    sleep 2
-    echo "curl http://${node_host_ip_address}/thredds"
-    curl http://${node_host_ip_address}/thredds
-    [ $? != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to contact thredds page on this server" && popd && checked_done 1
-    
-    echo "[PASSED]"
-    popd >& /dev/null
-    echo
-    echo
-    checked_done 0
-}
-
-
 
 #####
 # Install The Data Node Manager
@@ -1430,8 +1130,7 @@ setup_node() {
     #----------------------------
 
     popd >& /dev/null
-    echo
-    echo
+    (( ! upgrade )) && configure_postgress
     checked_done 0
 
 }
@@ -1444,12 +1143,11 @@ configure_postgress() {
     
     echo
     echo "*******************************"
-    echo "Configuring Postgres... (for Data Node Manager [and filters])"
+    echo "Configuring Postgres... (for Data Node Manager)"
     echo "*******************************"
     echo
 
     start_postgress
-
 
     #Create the database...
     echo "Creating esg node database: ${node_db_name}"
@@ -1478,92 +1176,287 @@ configure_postgress() {
         -Dsql.jdbc.database.name=${node_db_name} \
         -Dsql.jdbc.database.user=${postgress_user} \
         -Dsql.jdbc.database.password=${pg_sys_acct_passwd} \
-        -Dsql.jdbc.driver.jar=${node_app_home}/WEB-INF/lib/${postgress_jar} make_node_db
-    [ $? != 0 ] && echo "ERROR: Could not create esg node database tables in ${node_db_name}" && return 1
-
+        -Dsql.jdbc.driver.jar=${node_app_home}/WEB-INF/lib/${postgress_jar} make_node_db >& /dev/null
+    (( $? > 1 )) && echo "ERROR: Could not create esg node database tables in ${node_db_name}" && return 1
+    
     popd >& /dev/null
     echo
     echo
     checked_done 0
 }
 
-#Takes 2 arguments: 
-# First  - The top level directory of the webapp where filter is to be installed.
-# Second - The file containing the filter entry xml snippet (optional: defaulted)
-setup_filter() {
+#####
+# THREDDS Data Server
+#####
+setup_tds() {
+    echo
+    echo "*******************************"
+    echo "Setting up Thredds Data Server..."
+    echo "*******************************"
+    echo
 
-    local dest_dir=$1
-    echo "Filter installation destination dir = ${dest_dir}"
-    local esg_filter_entry_file=${2:-esg-filter-web.xml}
-    local esg_filter_entry_pattern="<!--@@esg_node_filter_entry@@-->"
+    local dosetup
+    if [ -d ${tomcat_install_dir}/webapps/thredds ]; then 
+	echo "Detected an existing thredds installation..."
+	read -p "Do you want to continue with thredds installation and setup? [y/N] " dosetup
+	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
+	    echo "Skipping thredds installation and setup - will assume thredds is setup properly"
+	    return 0
+	fi
+	echo
+    fi
 
-    #Installs esg filter into Thredds' web.xml file, directly after
-    #the AuthorizationTokenValidationFilter's mapping, by replacing a
-    #place holder token with the contents of the filter snippet file
-    #"esg-filter-web.xml".  Copies the filter jar file to the thredds'
-    #lib dir
+    mkdir -p $workdir
+    [ $? != 0 ] && return 1
+    pushd $workdir >& /dev/null
+    local fetch_file
 
-    local node_dist_dir=${node_dist_dir:-esg-node${node_version}}
+    ############################
+    #Download the thredds.war file home site (or use value of thredds_dist_file if already set)
+    ############################
+
+    thredds_dist_file=${thredds_dist_file:-${thredds_dist_url##*/}}
     
-    #pre-checking... make sure the files we need in thredds are there....
-    [ ! -e ${dest_dir}/WEB-INF ] && echo " ERROR: Could not find THREDDS installation dir" && checked_done 1
-    [ ! -e ${dest_dir}/WEB-INF/lib ] && echo " ERROR: Could not find WEB-INF/lib installation dir!!" && return 1
-    [ ! -e ${dest_dir}/WEB-INF/web.xml ] && echo " ERROR no web.xml file found!!" && checked_done 1
-    [ ! -e ${workdir}/${node_dist_dir} ] && echo " ERROR: Could not locate node distribution dir ${workdir}/${node_dist_dir}" && return 1
+    #There is this pesky case of having a zero sized dist file... WTF!?                                                                            
+    if [ -e ${thredds_dist_file} ]; then
+        ls -l ${thredds_dist_file}
+	#NOTE: I know there must be a cleaner way to get this, maybe stat?
+        local size=$(ls -l | grep ${thredds_dist_file} | tr -s " " | cut -d " " -f 5)
+        (( size == 0 )) && rm -v ${thredds_dist_file}
+    fi
 
-    ! egrep ${esg_filter_entry_pattern} ${dest_dir}/WEB-INF/web.xml && echo "No Pattern In File - exiting this filter setup" && return 1
-
+    #Check to see if we have this war file already in the workbench...
+    if [ ! -e ${thredds_dist_file} ]; then
+	wget -O ${thredds_dist_file} ${thredds_dist_url}
+	if [ $? != 0 ]; then
+	    echo " ERROR: Could not download ${thredds_dist_url}, fetching the copy at PCMDI (LLNL)..."
+	    checked_get ${thredds_dist_file} ${thredds_esg_dist_url}
+	    (( $? > 1 )) && echo " ERROR: Could not download ${thredds_esg_dist_url} either" && popd && checked_done 1
+	fi
+    fi
+    
     stop_tomcat
+    
+    #-------------------------------------------
+    #installing the thredds web app ("manually")
+    cp ${thredds_dist_file} ${tomcat_install_dir}/webapps
+    pushd ${tomcat_install_dir}/webapps
+    mkdir thredds
+    cd thredds
+    jar xvf ../${thredds_dist_file}
+    cd ..
+    chown -R ${tomcat_user}  thredds*
+    chgrp -R ${tomcat_group} thredds*
+    popd
+    #-------------------------------------------
 
-    pushd ${dest_dir} >& /dev/null
-    echo "Checking for / Installing required jars..."
-    [ ! -e WEB-INF/lib/commons-dbcp-1.2.2.jar ]  && echo "no commons-dbcp found locally" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/commons-dbcp-1.2.2.jar
-    [ ! -e WEB-INF/lib/commons-dbutils-1.3.jar ] && echo "no commons-dbutils found locally" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/commons-dbutils-1.3.jar
-    [ ! -e WEB-INF/lib/commons-pool-1.5.4.jar ]  && echo "no commons-pool found locally" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/commons-pool-1.5.4.jar
-    [ ! -e WEB-INF/lib/${postgress_jar} ]  && echo "no jdbc driver found locally" && jar xvf ${workdir}/${node_dist_dir}/esg-node.war WEB-INF/lib/${postgress_jar}
+
+    ############################
+    #Setup Digest authentication
+    ############################
+
+    pushd $tomcat_install_dir/conf/ >& /dev/null
+
+    fetch_file=tomcat-users.xml
+    checked_get $tomcat_install_dir/conf/${fetch_file} ${esg_dist_url}/externals/bootstrap/${fetch_file}
+    (( $? > 1 )) && popd && checked_done 1
+    chown ${tomcat_user}  $tomcat_install_dir/conf/${fetch_file}
+    chgrp ${tomcat_group} $tomcat_install_dir/conf/${fetch_file}
+    
+
+    #1: Generate password hash
+    printf "Create user credentials\n"
+    local input
+
+    while [ 1 ]; do 
+	#default credential values...
+	local username="dnode_user"
+	local password="changeme"
+	unset input
+	unset addanother
+	read -p "Please enter username for tomcat [${username}]:  " input
+	[ ! -z "${input}" ] && username=${input}    
+	echo ${username}
+	unset input
+	read -s -t60 -p "Please enter password for user, \"${username}\" [********]:   " input
+	[ ! -z "${input}" ] && password=${input}    
+	password_hash=$($tomcat_install_dir/bin/digest.sh -a SHA ${password} | cut -d ":" -f 2)
+	echo ${password_hash}
+	
+	#Create user entry in tomcat-users.xml for thredds user
+	user_entry="<user username=\"${username}\" password=\"${password_hash}\" roles=\"tdrAdmin,tdsConfig\"\/>"
+	#Note: Have to escape the last "/" in "/>"
+	
+    	#Insert the entry in the right place in tomcat-users.xml
+    	#Replace <!--@@user_entry@@--> with ${user_entry}\n<!--@@user_entry@@-->
+	#Command Line:% perl -p -i -e 's/<!--\@\@user_entry\@\@-->/<test>\n  <!--\@\@user_entry\@\@-->/g' tomcat-users.xml
+	eval "perl -p -i -e 's/<!--\\@\\@user_entry\\@\\@-->/${user_entry}\n  <!--\\@\\@user_entry\\@\\@-->/g' tomcat-users.xml"
+	
+	read -p "Would you like to add another user? [y/N]: " addanother
+	if [ "${addanother}" = "y" ] || [ "${addanother}" = "Y" ]; then
+	    echo 
+	    continue
+	fi
+	echo
+	break
+    done
+    unset input
+
     popd >& /dev/null
-    
-    pushd ${workdir}/${node_dist_dir} >& /dev/null
 
-    #Pull out the templated filter entry snippet file...
-    jar xvf esg-node-filters.*.jar ${esg_filter_entry_file} #only need file name to pull out of jar
-    esg_filter_entry_file=`pwd`/${esg_filter_entry_file} #going to need full path for pattern replacement below
+    ############################
+    #Enable SSL encryption
+    ############################
 
-    #Place (copy) the filter jar in the WEB-INF/lib
-    echo "Installing ESG Filter jar..."
-    cp -v esg-node-filters.*.jar ${dest_dir}/WEB-INF/lib
+    mkdir -p $tomcat_install_dir/conf/Catalina/localhost
+    fetch_file=thredds.xml
+    checked_get $tomcat_install_dir/conf/Catalina/localhost/${fetch_file} ${esg_dist_url}/externals/bootstrap/tomcat-${fetch_file}
+    (( $? > 1 )) && echo " ERROR: Problem pulling down ${fetch_file} from esg distribution" && popd && checked_done 1
+
     
-    popd >& /dev/null
+    ############################
+    #ESG token validation filter
+    ############################
+
+    fetch_file=eske.jar
+    checked_get ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file} ${esg_dist_url}/externals/${fetch_file}
+    (( $? > 1 )) && popd && checked_done 1
+    chown -R ${tomcat_user}  ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file}
+    chgrp -R ${tomcat_group} ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file}
     
+    fetch_file=hessian-3.0.20.jar
+    checked_get ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file} ${esg_dist_url}/externals/${fetch_file}
+    (( $? > 1 )) && popd && checked_done 1
+    chown -R ${tomcat_user}  ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file}
+    chgrp -R ${tomcat_group} ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file} 
+
+    #Get the templated web.xml file... (comment place holders for filters)
+    fetch_file=web.xml 
+    checked_get ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file} ${esg_dist_url}/thredds/thredds.${fetch_file}
+    (( $? > 1 )) && popd && checked_done 1
+    chown -R ${tomcat_user}  ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file} 
+    chgrp -R ${tomcat_group} ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file} 
+
+    #DEBUGGING
+    (($DEBUG)) && cat ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_fil}
+
+
+    #(Making this assignment for the sake of readability for the code below)
+    #@@node_host_ip_address@@ #Token in file
+    node_host_ip_address=${my_ip_address}    
+
+    unset input #just to be sure it's clear (though it should be)
+    read -p "Please Enter the IP address of this host [${node_host_ip_address}]:> " input
+    [ ! -z "${input}" ] && node_host_ip_address=${input}
+    printf "\nUsing IP: ${node_host_ip_address}\n"
+    unset input
+
+    #@@gateway_name@@ -> @@gateway_service_root@@  #Tokens in file
+    #ESG-PCMDI -> pcmdi3.llnl.gov/esgcet
+    #ESC-NCAR  -> esg.prototype.ucar.edu
+    
+    local choice
+    while [ 1 ]; do
+	unset choice
+	printf "Please select the gateway for this node: \n"
+	printf "\t-------------------------------------------\n"
+	printf "\t*[1] : ESG-PCMDI -> pcmdi3.llnl.gov/esgcet\n"
+	printf "\t [2] : ESG-NCAR  -> esg.ucar.edu\n"
+	printf "\t-------------------------------------------\n"
+	printf "\t [C] : (Manual Entry)\n"
+	printf "\t-------------------------------------------\n"
+	read -p "select [1] > " choice
+	
+	[ -z "${choice}" ] && choice=1 #default
+	case ${choice} in
+	    2)  gateway_name="ESG-NCAR"
+		gateway_service_root="esg.ucar.edu"
+		;;
+	    1)  gateway_name="ESG-PCMDI"
+		gateway_service_root="pcmdi3.llnl.gov/esgcet"
+		;;
+	    c | C)
+		gateway_name="${ESG_GATEWAY_NAME}"
+		gateway_service_root="${ESG_GATEWAY_SVC_ROOT}"
+		read -p "Please enter the Gateway name [${ESG_GATEWAY_NAME}] " gateway_name
+		read -p "Please enter the Gateway Service Root [${ESG_GATEWAY_SVC_ROOT}] " gateway_service_root
+		gateway_name=$(echo ${gateway_name} | tr 'a-z' 'A-Z')
+		choice="(Manual Entry)"
+		;;
+	    *)  echo "Invalid selection [${choice}]"
+	esac
+	echo
+	echo "You have selected: ${choice}"
+	echo "${gateway_name} -> ${gateway_service_root}"
+	echo 
+	local is_correct
+	read -p "Is this correct? [Y/n] " is_correct
+	is_correct=$(echo ${is_correct} | tr 'A-Z' 'a-z')
+	if [ "${is_correct}" = "n" ]; then
+	    continue
+	else
+	    break
+	fi
+    done
+    
+    myproxy_endpoint=${gateway_service_root%%/*}
+
+    echo
+    echo "Selection: [${choice}] source: ${node_host_ip_address}   dest: ${gateway_name}:${gateway_service_root}"
+
     #----------------------
-    #Thredds configuration...
-    pushd ${dest_dir}/WEB-INF >& /dev/null
-    [ $? != 0 ] && echo " ERROR: Could not find thredds web application (${tomcat_install_dir}/webapps/thredds/)" && return 0
-    local target_file=web.xml
-
-    #Replace the filter's place holder token in thredds' web.xml file with the filter entry.
-    #Use utility function...
-    insert_file_at_pattern $(readlink -f ${target_file}) ${esg_filter_entry_file} "${esg_filter_entry_pattern}"
-
-    #Edit the web.xml file for Thredds to include these token replacement values
-    echo -n "Replacing tokens... "
-    eval "perl -p -i -e 's/\\@db.driver\\@/${postgress_driver}/g' ${target_file}"; echo -n "*"
-    eval "perl -p -i -e 's/\\@db.protocol\\@/${postgress_protocol}/g' ${target_file}"; echo -n "*"
-    eval "perl -p -i -e 's/\\@db.host\\@/${postgress_host}/g' ${target_file}"; echo -n "*"
-    eval "perl -p -i -e 's/\\@db.port\\@/${postgress_port}/g' ${target_file}"; echo -n "*"
-    eval "perl -p -i -e 's/\\@db.database\\@/${node_db_name}/g' ${target_file}"; echo -n "*"
-    eval "perl -p -i -e 's/\\@db.user\\@/${postgress_user}/g' ${target_file}"; echo -n "*"
-    eval "perl -p -i -e 's/\\@db.password\\@/${pg_sys_acct_passwd}/g' ${target_file}"; echo -n "*"
-    echo " [OK]"
-    popd >& /dev/null
+    #Fetch and Insert the Certificate for parent gateway
+    register ${myproxy_endpoint}
     #----------------------
-    chown -R ${tomcat_user} ${dest_dir}/WEB-INF
-    chgrp -R ${tomcat_group} ${dest_dir}/WEB-INF
 
+    #restart tomcat to put modifications in effect.
+    stop_tomcat 
+    start_tomcat
+
+    #set in cdms setup (prerequisite)
+    $cdat_home/bin/esgsetup --thredds --publish --gateway ${myproxy_endpoint}
+
+    popd >& /dev/null
+    echo
+    mkdir -p ${thredds_root_dir}
+    [ $? != 0 ] && echo " Error: could not create ${thredds_root_dir}" && checked_done 1
+    mkdir -p ${thredds_replica_dir}
+    [ $? != 0 ] && echo " Error: could not create ${thredds_replica_dir}" && checked_done 1
+    echo
+    write_tds_env
+    checked_done 0
+}
+
+write_tds_env() {
+    ((show_summary_latch++))
+    echo "export ESG_GATEWAY_NAME=${gateway_name}" >> ${envfile}
+    echo "export ESG_GATEWAY_SVC_ROOT=${gateway_service_root}" >> ${envfile}
+    dedup ${envfile}
     return 0
 }
 
-#####
+test_tds() {
+    echo -n "Thredds Data Server Test... "
+    mkdir -p $workdir
+    [ $? != 0 ] && checked_done 1
+    pushd $workdir >& /dev/null
+
+    echo "$cdat_home/bin/esgpublish --use-existing pcmdi.${esg_root_id}.test.mytest --noscan --thredds"
+    $cdat_home/bin/esgpublish --use-existing pcmdi.${esg_root_id}.test.mytest --noscan --thredds
+    [ $? != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to run esgpublish command" && popd && checked_done 1
+    sleep 2
+    echo "curl http://${node_host_ip_address}/thredds"
+    curl http://${node_host_ip_address}/thredds
+    [ $? != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to contact thredds page on this server" && popd && checked_done 1
+    
+    echo "[PASSED]"
+    popd >& /dev/null
+    echo
+    echo
+    checked_done 0
+}
+
+
 
 
 
@@ -1578,16 +1471,16 @@ setup_globus() {
     [ $? != 0 ] && checked_done 1
     pushd $workdir >& /dev/null
 
-    pushd ${scripts_dir} # >& /dev/null
+    pushd ${scripts_dir} >& /dev/null
     local fetch_file=esg-globus
     checked_get ./${fetch_file} ${esg_dist_url}/externals/bootstrap/${fetch_file}
     (( $? > 1 )) && popd && return 1
     chmod 755 ${fetch_file}
-    popd # >& /dev/null
+    popd >& /dev/null
 
     source ${scripts_dir}/${fetch_file} && setup_globus_services datanode $@
     local ret=$?
-    popd # >& /dev/null
+    popd >& /dev/null
     [ ${ret} = 0 ] && write_globus_env || checked_done 1
     touch ${globus_location}/esg_${progname}_installed
     checked_done 0
@@ -1717,6 +1610,51 @@ write_env() {
 ############################################
 # Utility Functions
 ############################################
+
+#####
+# This function is for pulling in keys from hosts we wish to
+# communicate with over an encrypted ssl connection.  This function
+# must be run after tomcat is set up since it references server.xml.
+#####
+#(called by setup_tds)
+#arg1 - hostname of the machine with the cert you want to get
+register() {
+    echo "Installing Certificate From Gateway...( -> MyProxy endpoint)"
+    
+    local certfile=jssecacerts
+
+    mkdir -p ${workdir} # >& /dev/null
+    pushd ${workdir} # >& /dev/null
+    #Download the Java code used for certificate installation (into $workdir)
+    checked_get ${utils_url}/InstallCert.class
+    (( $? > 1 )) && echo " ERROR: Could not download utility class(1) for installing certificates" && popd && return 1
+    checked_get ${utils_url}/'InstallCert$SavingTrustManager.class'
+    (( $? > 1 )) && echo " ERROR: Could not download utility class(2) for installing certificates" && popd && return 1
+    popd # >& /dev/null
+
+    pushd $tomcat_install_dir/conf >& /dev/null
+
+    [ -e ${certfile} ] && cp -v ${certfile} ${certfile}.bak
+    
+    input=${1:-pcmdi3.llnl.gov}
+    local ssl_endpoint=${input%%/*} #just need the hostname
+    local ssl_port=${ssl_port:-443}
+    local ssl_endpoint_passwd=${2:-changeit}
+    
+    local CP=".:${workdir}"
+
+    echo "${JAVA_HOME}/bin/java -classpath ${CP} InstallCert \
+	${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd}"
+    ${JAVA_HOME}/bin/java -classpath ${CP} InstallCert \
+	${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd}
+    local ret=$?
+    
+    chmod 600 ${certfile}
+    chown $tomcat_user ${certfile}
+    chgrp $tomcat_group ${certfile}
+    popd >& /dev/null
+    return $ret
+}
 
 ##-----
 ## The idea here is to have an idempotent way to set environment vars
@@ -2045,7 +1983,7 @@ dedup() {
 	((i>0)) && echo $entry >> ${outfile}
 	((i++))
     done
-    echo "Deduped $(readlink -f ${infile})"
+    (($DEBUG)) && echo "Deduped $(readlink -f ${infile})"
     return 0
 }
 
@@ -2070,7 +2008,7 @@ info() {
     possible regarding the installation of the software stack that is
     the Data Node.  A software stack is a collection of tools that
     work in concert to perform a particular task or set of tasks that
-    are sematically united.  Essentially, the gestalt is the ESG
+    are semantically united.  Essentially, the gestalt is the ESG
     DataNode. The software stack is comprised of; Tomcat, Thredds,
     CDAT & CDMS, PostgreSQL, MyProxy and RedHat/CentOS. Through the
     installation process there are different accounts that are created
@@ -2172,6 +2110,7 @@ done_remark() {
     echo "In order to see if this data node has been installed properly you may direct your browser to:"
     echo "http://${my_ip_address}/${node_app_context_root}"
     echo "http://${my_ip_address}/thredds"
+    echo "http://${my_ip_address}/OpenRelyingParty"
     echo 
     echo "To see the published test, go your specified gateway: [${ESG_GATEWAY_NAME}]"
     echo "http://${ESG_GATEWAY_SVC_ROOT}"
@@ -2337,19 +2276,19 @@ main() {
     [ $((sel & 1)) != 0 ] && echo "setup_tomcat" && setup_tomcat 
     [ $((sel & 2)) != 0 ] && echo "test_tomcat" && sleep 5 && test_tomcat
     [ $((sel & 1)) != 0 ] && echo "setup_node" && setup_node #(tomcat off)
-    [ $((sel & 1)) != 0 ] && echo "configure_postgress" && configure_postgress #(database on)
     [ $((sel & 1)) != 0 ] && echo "setup_tds" && setup_tds 
     [ $((sel & 2)) != 0 ] && echo "test_tds" && test_tds 
-    [ $((sel & 1)) != 0 ] && echo "setup_filter" && setup_filter ${tomcat_install_dir}/webapps/thredds
     [ $((sel & 1)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${gridftp_config_args}
     [ $((sel & 2)) != 0 ] && (( ! no_globus )) && echo "test_globus" && source ${scripts_dir}/esg-globus >& /dev/null \
     	&& test_globus_services datanode
 
     #---------------------------------------
-    #Installation of "plugin" subsystems...
+    #Installation of "plugin" subsystems... & filters
     #---------------------------------------
     [ $((sel & 1)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
-    [ $((sel & 1)) != 0 ] && echo "security filters subsystem" && setup_subsystem security-filters filters $@
+    #--- filters---
+    [ $((sel & 1)) != 0 ] && echo "security filters subsystem (SAML)"  && setup_subsystem security-saml-filters filters $@
+    [ $((sel & 1)) != 0 ] && echo "security filters subsystem (TOKEN)" && setup_subsystem security-token-filters filters $@
     #[ $((sel & 1)) != 0 ] && echo "product server subsystem" && setup_subsystem product-server $@
 
     #---------------------------------------
