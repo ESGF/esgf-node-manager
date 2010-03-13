@@ -1314,23 +1314,7 @@ setup_tds() {
     (( $? > 1 )) && echo " ERROR: Problem pulling down ${fetch_file} from esg distribution" && popd && checked_done 1
 
     
-    ############################
-    #ESG token validation filter
-    ############################
-
-    fetch_file=eske.jar
-    checked_get ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file} ${esg_dist_url}/externals/${fetch_file}
-    (( $? > 1 )) && popd && checked_done 1
-    chown -R ${tomcat_user}  ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file}
-    chgrp -R ${tomcat_group} ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file}
-    
-    fetch_file=hessian-3.0.20.jar
-    checked_get ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file} ${esg_dist_url}/externals/${fetch_file}
-    (( $? > 1 )) && popd && checked_done 1
-    chown -R ${tomcat_user}  ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file}
-    chgrp -R ${tomcat_group} ${tomcat_install_dir}/webapps/thredds/WEB-INF/lib/${fetch_file} 
-
-    #Get the templated web.xml file... (comment place holders for filters)
+    #Get the templated web.xml file... (with tokens for subsequent filter entries: see [esg-]security-[saml|token]-filters[.xml] files)
     fetch_file=web.xml 
     checked_get ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file} ${esg_dist_url}/thredds/thredds.${fetch_file}
     (( $? > 1 )) && popd && checked_done 1
@@ -1376,8 +1360,8 @@ setup_tds() {
 		gateway_service_root="pcmdi3.llnl.gov/esgcet"
 		;;
 	    c | C)
-		gateway_name="${ESG_GATEWAY_NAME}"
-		gateway_service_root="${ESG_GATEWAY_SVC_ROOT}"
+		gateway_name=${ESG_GATEWAY_NAME:-"ESG-PCMDI"}
+		gateway_service_root=${ESG_GATEWAY_SVC_ROOT:-"pcmdi3.llnl.gov/esgcet"}
 		read -p "Please enter the Gateway name [${ESG_GATEWAY_NAME}] " gateway_name
 		read -p "Please enter the Gateway Service Root [${ESG_GATEWAY_SVC_ROOT}] " gateway_service_root
 		gateway_name=$(echo ${gateway_name} | tr 'a-z' 'A-Z')
