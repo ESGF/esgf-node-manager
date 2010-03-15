@@ -70,7 +70,7 @@
 #note: usage of readlink not macosx friendly :-( usage of useradd /
 #      groupadd is RedHat/CentOS dependent :-(
 
-DEBUG=${DEBUG:-1}
+DEBUG=${DEBUG:-0}
 
 #--------------
 #User Defined / Settable (public)
@@ -1322,7 +1322,7 @@ setup_tds() {
     chgrp -R ${tomcat_group} ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file} 
 
     #DEBUGGING
-    (($DEBUG)) && cat ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_fil}
+    (($DEBUG)) && cat ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file}
 
 
     #(Making this assignment for the sake of readability for the code below)
@@ -1959,7 +1959,7 @@ dedup() {
     output[((i++))]="export ${last_key}=${last_value}"
 
     ((dups == 0)) && unset output && return 0
-    echo "Elided [${dups}] duplcate entries"
+    (($DEBUG)) && echo "Elided [${dups}] duplcate entries"
     
     i=0
     cat /dev/null > ${outfile}
@@ -2015,7 +2015,9 @@ info() {
     Data Node:
 		   --------- 
 		  |Tomcat   |
+		  |-Node Mgr|
 		  |-Thredds |
+		  |-ORP     |
 		  |---------|
 		  |CDAT/CDMS|
 		  |---------|
