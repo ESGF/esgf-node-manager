@@ -1260,6 +1260,7 @@ setup_tds() {
     cd ..
     chown -R ${tomcat_user}  thredds*
     chgrp -R ${tomcat_group} thredds*
+    rm ${thredds_dist_file}
     popd
     #-------------------------------------------
 
