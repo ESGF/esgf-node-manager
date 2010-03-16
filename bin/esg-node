@@ -449,13 +449,22 @@ setup_postgress() {
     (( $? > 1 )) && popd && checked_done 1
     chmod 600 ${fetch_file}
 
+    #-----
+    #NOTE: This database is an internal database to this esg
+    #application stack... I don't think it would even be prudent to
+    #offer then opportunity for someone to bind to the public
+    #interface.  If they choose to do so after the fact, then they are
+    #making that conscious decision, but I won't make it a part of
+    #this process.
+
     #@@postgress_host@@ #Token in file...
 
-    local input
-    read -p "Please Enter the IP address or name of this host [${postgress_host}]:> " input
-    [ ! -z "${input}" ] && postgress_host=${input}
-    printf "\nUsing IP: ${postgress_host}\n"
-    eval "perl -p -i -e 's/\\@\\@postgress_host\\@\\@/${postgress_host}/g' ${fetch_file}"    
+    #local input
+    #read -p "Please Enter the IP address or name of this host [${postgress_host}]:> " input
+    #[ ! -z "${input}" ] && postgress_host=${input}
+    #printf "\nUsing IP: ${postgress_host}\n"
+    #eval "perl -p -i -e 's/\\@\\@postgress_host\\@\\@/${postgress_host}/g' ${fetch_file}"    
+    #-----
 
     #@@postgress_port@@ #Token in file...
 
@@ -465,10 +474,14 @@ setup_postgress() {
     printf "\nSetting Postgress Port: ${postgress_port}\n"
     eval "perl -p -i -e 's/\\@\\@postgress_port\\@\\@/${postgress_port}/g' ${fetch_file}"    
 
+    printf "\Setting Postgress Log Dir...\n"
+    eval "perl -p -i -e 's/\\@\\@postgress_install_dir\\@\\@/${postgress_install_dir}/g' ${fetch_file}"    
+
     chown -R postgres.postgres ${postgress_install_dir}
 
     popd >& /dev/null
     echo
+    check_shmmax
     echo
     write_postgress_env
     checked_done 0
@@ -1640,20 +1653,20 @@ register() {
     return $ret
 }
 
-##-----
-## The idea here is to have an idempotent way to set environment vars
-## (Work in progress...)
-##-----
-#checked_export() {
-#    ##TODO##
-#    #Replace all calls to export env var with this call
-#    #The idea here is to check the key to see if that value
-#    #is already present. Basically a conditional add.
-#    #Also will be single place to push env vars to file
-#    
-#    export $1=$2:$1
-#    return 0
-#}
+#NOTE: This is another **RedHat/CentOS** specialty thing (sort of)
+#arg1 - min value of shmmax in MB (see: /etc/sysctl.conf)
+check_shmmax() {
+    set_value_mb=${1:-40} #default is 32MB + headroom = 40MB
+    let set_value_bytes=$((set_value_mb*1024*1024))
+    cur_value_bytes=$(sysctl -q kernel.shmmax | tr -s "=" | cut -d= -f2)
+    let cur_value_bytes=${cur_value_bytes## }
+    
+    if ((cur_value_bytes < set_value_bytes)); then
+	echo "Current system shared mem value too low [$cur_value_bytes bytes] changing to [$set_value_bytes bytes]"
+	sysctl -w kernel.shmmax=${set_value_bytes}
+	echo "kernel.shmmax = ${set_value_bytes}" >> /etc/sysctl.conf
+    fi
+}
 
 uninstall() {
     local doit="N"
