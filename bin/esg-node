@@ -245,7 +245,7 @@ setup_ant() {
 	echo "Detected an existing ant installation..."
 	read -p "Do you want to continue with Ant installation and setup? [y/N] " dosetup
 	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
-	    echo "Skipping Ant installation and setup - will assume postgres is setup properly"
+	    echo "Skipping Ant installation and setup - will assume ant is setup properly"
 	    return 0
 	fi
 	echo
@@ -2273,8 +2273,8 @@ main() {
     #---------------------------------------
     [ $((sel & 1)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
     #--- filters---
-    [ $((sel & 1)) != 0 ] && echo "security filters subsystem (SAML)"  && setup_subsystem security-saml-filters filters $@
     [ $((sel & 1)) != 0 ] && echo "security filters subsystem (TOKEN)" && setup_subsystem security-token-filters filters $@
+    [ $((sel & 1)) != 0 ] && echo "security filters subsystem (SAML)"  && setup_subsystem security-saml-filters filters $@
     #[ $((sel & 1)) != 0 ] && echo "product server subsystem" && setup_subsystem product-server $@
 
     #---------------------------------------
