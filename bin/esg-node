@@ -1239,14 +1239,14 @@ setup_tds() {
     fi
 
     #Check to see if we have this war file already in the workbench...
-    if [ ! -e ${thredds_dist_file} ]; then
-	wget -O ${thredds_dist_file} ${thredds_dist_url}
-	if [ $? != 0 ]; then
-	    echo " ERROR: Could not download ${thredds_dist_url}, fetching the copy at PCMDI (LLNL)..."
-	    checked_get ${thredds_dist_file} ${thredds_esg_dist_url}
-	    (( $? > 1 )) && echo " ERROR: Could not download ${thredds_esg_dist_url} either" && popd && checked_done 1
-	fi
-    fi
+    #if [ ! -e ${thredds_dist_file} ]; then
+    #	wget -O ${thredds_dist_file} ${thredds_dist_url}
+    #	if [ $? != 0 ]; then
+    #	    echo " ERROR: Could not download ${thredds_dist_url}, fetching the copy at PCMDI (LLNL)..."
+    	    checked_get ${thredds_dist_file} ${thredds_esg_dist_url}
+    	    (( $? > 1 )) && echo " ERROR: Could not download ${thredds_esg_dist_url} either" && popd && checked_done 1
+    #	fi
+    #fi
     
     stop_tomcat
     
@@ -2182,7 +2182,7 @@ main() {
 		info
 		exit
 		;;
-	    --upgrade)
+	    --upgrade | --update)
 		init
 		check_prerequisites
 		[ $? != 0 ] && echo && exit 1
