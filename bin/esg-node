@@ -1113,6 +1113,9 @@ setup_node() {
         #----------------------
 	pwd
 	echo -n "Replacing tokens... "
+	eval "perl -p -i -e 's#\\@default.gateway.service.root\\@#${gateway_service_root}#g' ${fetch_file}"
+	echo -n "*"
+
 	eval "perl -p -i -e 's/\\@db.driver\\@/${postgress_driver}/g' ${fetch_file}"    
 	echo -n "*"
 	eval "perl -p -i -e 's/\\@db.protocol\\@/${postgress_protocol}/g' ${fetch_file}"
@@ -2278,9 +2281,9 @@ main() {
     [ $((sel & 2)) != 0 ] && echo "test_esgcet" && test_esgcet 
     [ $((sel & 1)) != 0 ] && echo "setup_tomcat" && setup_tomcat 
     [ $((sel & 2)) != 0 ] && echo "test_tomcat" && sleep 5 && test_tomcat
-    [ $((sel & 1)) != 0 ] && echo "setup_node" && setup_node #(tomcat off)
     [ $((sel & 1)) != 0 ] && echo "setup_tds" && setup_tds 
     [ $((sel & 2)) != 0 ] && echo "test_tds" && test_tds 
+    [ $((sel & 1)) != 0 ] && echo "setup_node" && setup_node #(tomcat off)
 
     #---------------------------------------
     #Installation of "plugin" subsystems... & filters
