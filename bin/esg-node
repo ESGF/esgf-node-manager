@@ -1439,6 +1439,8 @@ test_tds() {
     [ $? != 0 ] && checked_done 1
     pushd $workdir >& /dev/null
 
+    start_postgress
+
     echo "$cdat_home/bin/esgpublish --use-existing pcmdi.${esg_root_id}.test.mytest --noscan --thredds"
     $cdat_home/bin/esgpublish --use-existing pcmdi.${esg_root_id}.test.mytest --noscan --thredds
     [ $? != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to run esgpublish command" && popd && checked_done 1
