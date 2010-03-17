@@ -475,7 +475,7 @@ setup_postgress() {
     eval "perl -p -i -e 's/\\@\\@postgress_port\\@\\@/${postgress_port}/g' ${fetch_file}"    
 
     printf "\Setting Postgress Log Dir...\n"
-    eval "perl -p -i -e 's/\\@\\@postgress_install_dir\\@\\@/${postgress_install_dir}/g' ${fetch_file}"    
+    eval "perl -p -i -e 's#\\@\\@postgress_install_dir\\@\\@#${postgress_install_dir}#g' ${fetch_file}"    
 
     chown -R postgres.postgres ${postgress_install_dir}
 
