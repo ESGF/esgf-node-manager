@@ -1410,6 +1410,7 @@ setup_tds() {
     #restart tomcat to put modifications in effect.
     stop_tomcat 
     start_tomcat
+    start_postgress
 
     #set in cdms setup (prerequisite)
     $cdat_home/bin/esgsetup --thredds --publish --gateway ${myproxy_endpoint}
