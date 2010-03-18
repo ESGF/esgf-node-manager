@@ -1991,6 +1991,14 @@ dedup() {
     return 0
 }
 
+self_verify() {
+    echo "diff <(md5sum ${0} | tr -s " " | cut -d " " -f 1) <(curl ${esg_dist_url}/esg-node/${0##*/}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null "
+    diff <(md5sum ${0} | tr -s " " | cut -d " " -f 1) <(curl ${1}/esg-node/${0##*/}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
+    [ $? != 0 ] && echo " WARNING: Could not verify myself!" && return 3
+    echo "[VERIFIED]"
+    return 0
+}
+
 show_svc_list() {
     echo
     echo "---------------------------"
@@ -2138,7 +2146,7 @@ main() {
 		#echo "VERIFY SERVICES"
 		let sel+=2
 		;;
-	    start)
+	    start | --start)
 		#echo "START SERVICES"
 		init
 		source ${scripts_dir}/esg-globus >& /dev/null && \
@@ -2149,7 +2157,7 @@ main() {
 		#let sel+=4
 		exit 0
 		;;
-	    stop)
+	    stop | --stop)
 		#echo "STOP SERVICES"
 		init
 		stop_tomcat 
@@ -2195,6 +2203,7 @@ main() {
 		#The arg "1" indicates an upgrade (see functions)
 		setup_esgcet 1
 		setup_node 1
+		start_postgress
 		start_tomcat
 		exit 0
 		;;
@@ -2230,7 +2239,7 @@ main() {
 		gridftp_config_args=${tmpargs[@]}
 		unset tmpargs
 		;;
-	    status)
+	    status | --status)
 		#TODO conditionally reflect the status of globus (gridftp) process
 		if check_postgress_process && check_tomcat_process; then
 		    echo "Node Running..."
@@ -2336,6 +2345,9 @@ main() {
 #trap stop_postgress INT TERM
 #trap stop_tomcat INT TERM
 #trap - INT TERM
+
+self_verify 'http://rainbow.llnl.gov/dist' >& /dev/null 
+(( $? > 0 )) && printf "WARNING: $0 could not be verified!! \n(This file, ${0}, has been tampered with)\n\n" && exit 1
 
 echo "start time: `date`" >> ${logfile}
 main $@

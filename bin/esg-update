@@ -9,6 +9,7 @@
 #uses: wget
 
 install_prefix=${prefix:-"/usr/local"}
+esg_dist_url=http://rainbow.llnl.gov/dist
 
 id_check() {
     id | grep root >& /dev/null
@@ -18,9 +19,13 @@ id_check() {
 
 get_latest() {
     local type="${1:-node}"
+    
+    if [ "${type}" != "node" ] && [ "${type}" != "gway" ]; then 
+	usage
+    fi
+	    
     script_install_dir=${install_prefix}/bin
     mkdir -p ${script_install_dir}
-    local esg_dist_url=http://rainbow.llnl.gov/dist
     #NOTE: boot script location is a RedHat/CentOS thing... to make this cross distro compatible clean this up.
     local init_scripts_dir=/etc/rc.d/init.d
     pushd $script_install_dir >& /dev/null
@@ -91,6 +96,15 @@ checked_get() {
     echo "[VERIFIED]"
     return 0
 }
+
+self_verify() {
+    #echo "diff <(md5sum ${0} | tr -s " " | cut -d " " -f 1) <(curl ${esg_dist_url}/esg-node/${0##*/}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null "
+    diff <(md5sum ${0} | tr -s " " | cut -d " " -f 1) <(curl ${esg_dist_url}/esg-node/${0##*/}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
+    [ $? != 0 ] && echo " WARNING: Could not verify myself!" && return 3
+    echo "[VERIFIED]"
+    return 0
+}
+
 ############################################
 
 usage() {
@@ -98,7 +112,7 @@ usage() {
     usage:
         esg-update [ node ] [ gway ]
 
-    "
+    \n"
     exit 1
 }
 
@@ -108,6 +122,8 @@ usage() {
 
 if id_check 
 then
+    self_verify >& /dev/null
+    (( $? > 0 )) && printf "WARNING: $0 could not be verified!! \n(This file, ${0}, has been tampered with)\n\n" && exit 1
     echo "checking on updates for $@"
     if (( ($# < 3) && ($# > 0) )); then
 	for type in "$@"
