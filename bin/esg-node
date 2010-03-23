@@ -1495,7 +1495,7 @@ write_globus_env() {
     ((show_summary_latch++))
     echo "export GLOBUS_LOCATION=$GLOBUS_LOCATION" >> ${envfile}
     echo "export X509_CERT_DIR=$X509_CERT_DIR" >>  ${envfile}
-    echo "export gridftp_config_args=$gridftp_config_args" >> ${envfile}
+    #echo "export gridftp_config_args=$gridftp_config_args" >> ${envfile}
     dedup ${envfile}
     return 0
 }
@@ -2150,8 +2150,9 @@ main() {
 	    start | --start)
 		#echo "START SERVICES"
 		init
+		echo "starting services with globus using config: ${gridftp_config_args}"
 		source ${scripts_dir}/esg-globus >& /dev/null && \
-		    start_globus_services datanode $gridftp_config_args
+		    start_globus_services datanode ${gridftp_config_args}
 		start_postgress
 		start_tomcat
 		show_svc_list
@@ -2164,7 +2165,7 @@ main() {
 		stop_tomcat 
 		stop_postgress 
 		source ${scripts_dir}/esg-globus >& /dev/null && \
-		    stop_globus_services datanode
+		    stop_globus_services datanode ${gridftp_config_args}
 		#let sel+=8
 		exit 0
 		;;
@@ -2231,13 +2232,13 @@ main() {
 		local tmpargs #array to store args for this switch.
 		local let index=0
 		shift
-		until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ]; do
+		until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ]; do
 		    tmpargs[((index++))]=$1
 		    echo "added $1 to args list: ${tmpargs[@]}"
 		    shift
 		done
 		unshift=1
-		[ "${#tmpargs}" = 0 ] && prinf "\n\n must follow --gridftp-config with proper flag! \n\n" && usage
+		[ "${#tmpargs}" = 0 ] && printf "\n\n must follow --gridftp-config with proper flag! \n\n" && usage
 		gridftp_config_args=${tmpargs[@]}
 		unset tmpargs
 		;;
@@ -2331,7 +2332,7 @@ main() {
     #---------------------------------------
     #System Launch...
     #---------------------------------------
-    (( ! no_globus )) && start_globus_services datanode
+    (( ! no_globus )) && start_globus_services datanode ${gridftp_config_args}
     start_postgress
     start_tomcat
     
