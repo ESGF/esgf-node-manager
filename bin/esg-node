@@ -170,7 +170,7 @@ init() {
     node_app_home=${tomcat_install_dir}/webapps/${node_app_context_root}
     #NOTE: This is another RedHat/CentOS specific portion!!! it will break on another OS!
     my_ip_address=$(/sbin/ifconfig | \
-	perl -ple 'print $_ if /inet addr/ and $_ =~ s/.*inet addr:((?:\d+\.){3}\d+).*/$1/g  ;$_=""'\
+	perl -ple 'print $_ if /inet addr/ and $_ =~ s/.*inet [^:]*:((?:\d+\.){3}\d+).*/$1/g  ;$_=""'\
     | grep -v ^\s*$ | grep -v 127.0.0.1)
     show_summary_latch=0
     source_latch=0
