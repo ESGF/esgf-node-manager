@@ -2231,12 +2231,13 @@ main() {
 		local tmpargs #array to store args for this switch.
 		local let index=0
 		shift
-		until [ $(echo $1 | egrep '^\s*--') ]; do
+		until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ]; do
 		    tmpargs[((index++))]=$1
 		    echo "added $1 to args list: ${tmpargs[@]}"
 		    shift
 		done
 		unshift=1
+		[ "${#tmpargs}" = 0 ] && prinf "\n\n must follow --gridftp-config with proper flag! \n\n" && usage
 		gridftp_config_args=${tmpargs[@]}
 		unset tmpargs
 		;;
