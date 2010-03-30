@@ -77,6 +77,7 @@
   <servlet-mapping>
     <url-pattern>/datanode</url-pattern>
     <servlet-name>datanode</servlet-name>
+    <load-on-startup>1</load-on-startup>
   </servlet-mapping>
   <!-- ******************************************************** -->
 
