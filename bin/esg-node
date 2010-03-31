@@ -1377,6 +1377,7 @@ setup_tds() {
 		;;
 	    1)  gateway_name="ESG-PCMDI"
 		gateway_service_root="pcmdi3.llnl.gov/esgcet"
+		myproxy_port=2119 #hack till we open the right port
 		;;
 	    c | C)
 		gateway_name=${ESG_GATEWAY_NAME:-"ESG-PCMDI"}
@@ -1435,6 +1436,7 @@ write_tds_env() {
     ((show_summary_latch++))
     echo "export ESG_GATEWAY_NAME=${gateway_name}" >> ${envfile}
     echo "export ESG_GATEWAY_SVC_ROOT=${gateway_service_root}" >> ${envfile}
+    echo "export myproxy_port=${myproxy_port}" >> ${envfile}
     dedup ${envfile}
     return 0
 }
