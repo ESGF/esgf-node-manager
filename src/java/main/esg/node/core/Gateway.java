@@ -99,9 +99,10 @@ public abstract class Gateway extends AbstractDataNodeComponent{
 	    host = hostMatcher.group(1);
 	    typeString = hostMatcher.group(2);
 	}
-	setMyName(host);
+	setMyName(serviceURL);
 	this.peerType = type;
 	this.serviceURL = serviceURL;
+	System.out.println("===> Setting up connection to: "+serviceURL);
     }
 
     public Gateway(String name) throws java.net.MalformedURLException { this(name,GATEWAY); }
