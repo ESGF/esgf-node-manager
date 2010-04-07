@@ -131,7 +131,10 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     }
     
     public String getNodeProperty(String key) {
-	return props.getProperty(key);
+	return getNodeProperty(key,null);
+    }
+    public String getNodeProperty(String key, String defaultValue) {
+	return props.getProperty(key,defaultValue);
     }
     
     
