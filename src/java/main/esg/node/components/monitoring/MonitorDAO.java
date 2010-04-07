@@ -301,6 +301,7 @@ public class MonitorDAO implements Serializable {
 		    datasetRoots.put(m2.group(1),new File(m2.group(2)));
 		}
 	    }
+	    disk_info_byte_buffer.flip();
 	    
 	    Map<String,String> statsMap = null;
 	    for (String rootLabel : datasetRoots.keySet()) {
