@@ -1997,7 +1997,7 @@ dedup() {
 
 #"private" function
 _verify() {
-    echo "diff <(md5sum ${0} | tr -s " " | cut -d " " -f 1) <(curl ${esg_dist_url}/esg-node/${0##*/}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null "
+    echo "diff <(md5sum ${0} | tr -s " " | cut -d " " -f 1) <(curl ${1}/esg-node/${0##*/}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null "
     diff <(md5sum ${0} | tr -s " " | cut -d " " -f 1) <(curl ${1}/esg-node/${0##*/}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
     [ $? != 0 ] && return 3
     echo "[VERIFIED]"
