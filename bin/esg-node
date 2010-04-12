@@ -2007,12 +2007,18 @@ _verify() {
 self_verify() {
     _verify 'http://rainbow.llnl.gov/dist' >& /dev/null 
     if (( $? == 3 )); then 
-	printf "WARNING: $0 could not be verified!! \n(This file, ${0}, may have been tampered with or there is a newer version posted at the distribution server.\nPlease re-fetch [esg-update] this script.)\n\n"
-	local do_anyway
-	read -t $((3*60)) -p "Do you wish to continue anyway? [y/N]: " do_anyway
+	printf "WARNING: $0 could not be verified!! \n(This file, ${0}, may have been tampered with or there is a newer version posted at the distribution server.\nPlease update this script.)\n\n"
+	local choice="u"
+	read -t $((3*60)) -p "Do you wish to Update and exit [u], continue anyway [y] or simply exit [N]? [u/y/N]: " choice
 	if [ "$do_anyway" = "Y" ] || [ "$do_anyway" = "y" ]; then
 	    echo 
 	    return 0
+	elif [ "$choice" = "U" ] || [ "$choice" = "u" ]; then
+	    echo "Updating local script with script from distribution server..."
+	    /usr/local/bin/esg-update node
+	    echo "Please re-run this updated script $0"
+	    echo
+	    exit 1
 	else
 	    echo
 	    exit 1
