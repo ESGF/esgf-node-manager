@@ -2010,7 +2010,7 @@ self_verify() {
 	printf "WARNING: $0 could not be verified!! \n(This file, ${0}, may have been tampered with or there is a newer version posted at the distribution server.\nPlease update this script.)\n\n"
 	local choice="u"
 	read -t $((3*60)) -p "Do you wish to Update and exit [u], continue anyway [y] or simply exit [N]? [u/y/N]: " choice
-	if [ "$do_anyway" = "Y" ] || [ "$do_anyway" = "y" ]; then
+	if [ "$choice" = "Y" ] || [ "$choice" = "y" ]; then
 	    echo 
 	    return 0
 	elif [ "$choice" = "U" ] || [ "$choice" = "u" ]; then
