@@ -472,11 +472,13 @@ setup_postgress() {
     unset input
     read -p "Please Enter PostgreSQL port number [${postgress_port}]:> " input
     [ ! -z "${input}" ] && postgress_port=${input}
-    printf "\nSetting Postgress Port: ${postgress_port}\n"
+    printf "\nSetting Postgress Port: ${postgress_port} "
     eval "perl -p -i -e 's/\\@\\@postgress_port\\@\\@/${postgress_port}/g' ${fetch_file}"    
+    [ $? == 0 ] && printf "[OK]\n" || printf "[FAIL]\n"
 
-    printf "\Setting Postgress Log Dir...\n"
+    printf "\Setting Postgress Log Dir: ${postgress_install_dir} "
     eval "perl -p -i -e 's#\\@\\@postgress_install_dir\\@\\@#${postgress_install_dir}#g' ${fetch_file}"    
+    [ $? == 0 ] && printf "[OK]\n" || printf "[FAIL]\n"
 
     chown -R postgres.postgres ${postgress_install_dir}
 
