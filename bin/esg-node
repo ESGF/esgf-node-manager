@@ -2236,6 +2236,10 @@ main() {
 		#The arg "1" indicates an upgrade (see functions)
 		setup_esgcet 1
 		setup_node 1
+
+		echo "starting services with globus using config: ${gridftp_config_args}"
+		source ${scripts_dir}/esg-globus >& /dev/null && \
+		    start_globus_services datanode ${gridftp_config_args}
 		start_postgress
 		start_tomcat
 		exit 0
