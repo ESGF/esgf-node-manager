@@ -247,7 +247,7 @@ public class MonitorDAO implements Serializable {
 	disk_info_dsroot_pat  = Pattern.compile("thredds_dataset_roots\\s*=\\s*(.*?)\\s*\\w+\\s*?=");
 	disk_info_dsroot_keyval_pat = Pattern.compile("\\s*(\\w+)\\s*\\|\\s*(\\S+)\\s*");
 
-	String filename = props.getProperty("monitor.esg.ini",System.getProperty("user.home")+"/.esgcet/esg.ini");
+	String filename = props.getProperty("monitor.esg.ini",System.getenv().get("ESG_USER_HOME")+"/.esgcet/esg.ini");
 	File iniFile = new File(filename);
 	if(!iniFile.exists()) {
 	    log.warn("ESG publisher config file ["+filename+"] not found! Cannot provide disk info!");
