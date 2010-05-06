@@ -213,6 +213,11 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	}
 	component.removeESGListener(this);
 	sendUnjoinNotification(component);
+	
+	//TODO: add a call for the component to shut itself down
+	//      accordingly.  Either here or in the component itself
+	//      (see TODO comment in
+	//      AbstractDataNodeComponent.unregister()).
     }
     
     //overloaded delegation of above

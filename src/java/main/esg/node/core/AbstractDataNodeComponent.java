@@ -110,6 +110,10 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
 	if(dataNodeManager == null) return;
 	dataNodeManager.removeComponent(this);
 	dataNodeManager = null;
+
+	//TODO: Add an abstract method or make one of the two that we
+	//have abstract so that the component subclass can be called
+	//to stop it's life cycle appropriately.
     }
 
 
@@ -172,13 +176,14 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     }
 
     //--------------------------------------------
-    //Event dispatching to all registered ESGQueuListeners
+    //Event dispatching to all registered ESGQueueListeners
     //calling their Queue's handleEvent method
     //(The queued version of the "fire" method)
     //--------------------------------------------
     protected void enqueueESGEvent(ESGEvent esgEvent) {
 	log.trace("Enqueuing Event (to all listeners): "+esgEvent);
 	for(ESGQueueListener listener: esgQueueListenersMap.values()) {
+	    log.trace("--to--> "+listener.getName());
 	    listener.getESGEventQueue().enqueueEvent(esgEvent);
 	}
     }
@@ -199,8 +204,10 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
 	return ret;
     }
     public boolean handleESGQueuedEvent(ESGEvent event) {
-	//TODO
 	log.trace("(no-op) handling enqueued event ["+myName+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
+	//TODO: Upon handling of this event pass it on to the next event in the chain.
+	//Call enqueueESGEvent(<name_of_next_component>, event);
+	enqueueESGEvent(event);
 	return false;
     }
     
