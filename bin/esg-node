@@ -1117,8 +1117,6 @@ setup_node() {
         #----------------------
 	pwd
 	echo -n "Replacing tokens... "
-	eval "perl -p -i -e 's#\\@default.gateway.service.root\\@#${gateway_service_root}#g' ${fetch_file}"
-	echo -n "*"
 
 	eval "perl -p -i -e 's/\\@db.driver\\@/${postgress_driver}/g' ${fetch_file}"    
 	echo -n "*"
@@ -1646,7 +1644,7 @@ register() {
 
     [ -e ${certfile} ] && cp -v ${certfile} ${certfile}.bak
     
-    input=${1:-pcmdi3.llnl.gov}
+    input=${1:-${ESG_GATEWAY_SVC_ROOT%%/*}}
     local ssl_endpoint=${input%%/*} #just need the hostname
     local ssl_port=${ssl_port:-443}
     local ssl_endpoint_passwd=${2:-changeit}
