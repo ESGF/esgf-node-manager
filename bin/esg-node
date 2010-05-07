@@ -149,7 +149,7 @@ init() {
     postgress_jar=postgresql-8.3-603.jdbc3.jar
     postgress_driver=org.postgresql.Driver
     postgress_protocol=jdbc:postgresql:
-    pg_sys_acct=postgres
+    pg_sys_acct=${pg_sys_acct:-postgres}
     pg_sys_acct_group=${pg_sys_acct_group:-$pg_sys_acct}
     postgress_dist_url=http://ftp9.us.postgresql.org/pub/mirrors/postgresql/source/v8.4.2/postgresql-8.4.2.tar.gz
     repo=http://www-pcmdi.llnl.gov/svn/repository/cdat/tags
@@ -542,7 +542,7 @@ test_postgress() {
     check_postgress_process 
     [ $? != 0 ] && echo "[FAILED] process not running..." && checked_done 1
     echo "(hit CTRL D to continue... if terminal is holding)"
-    $postgress_install_dir/bin/psql -U $postgress_user postgres
+    $postgress_install_dir/bin/psql -U $postgress_user ${pg_sys_acct}
     [ $? != 0 ] && printf "[FAILED]\n ERROR: $postgress_install_dir/bin/psql command failed" && checked_done 1
     checked_done 0
 }
