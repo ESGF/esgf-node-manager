@@ -1601,6 +1601,7 @@ show_summary() {
 
 write_env() {
     echo "Generating default ${envfile} file"
+    [ -e ${envfile} ] && cp ${envfile} ${envfile}.bak 
     cat /dev/null > ${envfile}
     write_postgress_env
     write_cdms_env
