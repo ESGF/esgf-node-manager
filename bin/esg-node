@@ -188,8 +188,8 @@ init() {
 
 write_paths() {
     ((show_summary_latch++))
-    echo "export PATH=$myPATH:\$PATH" >> ${envfile} >& /dev/null
-    echo "export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:\$LD_LIBRARY_PATH" >> ${envfile} >& /dev/null
+    echo "export PATH=$myPATH:\$PATH" >> ${envfile}
+    echo "export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:\$LD_LIBRARY_PATH" >> ${envfile}
     dedup ${envfile}
 }
 
