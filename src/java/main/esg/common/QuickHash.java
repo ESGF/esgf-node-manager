@@ -58,84 +58,36 @@
 /**
    Description:
 
+   Needed to write a quick hash thingy for quick generation of
+   'unique' keys etc.
+
 **/
-package esg.gateway.service;
+package esg.common;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-import java.net.MalformedURLException;
-import java.net.InetAddress;
-
-import com.caucho.hessian.client.HessianProxyFactory;
-import com.caucho.hessian.client.HessianRuntimeException;
-
-import esg.common.Utils;
-import esg.common.service.ESGRemoteEvent;
-import esg.node.service.ESGDataNodeService;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.math.BigInteger;
 
 
-
-public class ESGGatewayServiceImpl implements ESGGatewayService {
-
-    private static final Log log = LogFactory.getLog(ESGGatewayServiceImpl.class);
-    private HessianProxyFactory factory = null;
-    private ESGDataNodeService datanodeService = null;
-
-    public ESGGatewayServiceImpl() {
-	log.info("ESGGatewayServiceImpl instantiated...");
-	factory = new HessianProxyFactory();
+public class QuickHash {
+    public static String sum(String plaintext) throws NoSuchAlgorithmException {
+	return sum("SHA1",plaintext);
+    }
+    public static String sum(String algo,String plaintext) throws NoSuchAlgorithmException {
+	MessageDigest m = MessageDigest.getInstance(algo);
+	byte[] data = plaintext.getBytes(); 
+	m.update(data,0,data.length);
+	BigInteger i = new BigInteger(1,m.digest());
+	return String.format("%1$032X", i);
     }
     
-    //ingress ping request...
-    public boolean ping() {
-	log.trace("Gateway service got \"ping\"");
-	return true;
+    public static void main(String[] args) {
+	long start = System.currentTimeMillis();
+	try { System.out.println(args[0]+" -> "+QuickHash.sum(args[1],args[0])); } catch(Throwable t) { System.out.println(t.getMessage()); }
+	System.out.println(System.currentTimeMillis() - start);
     }
-
-    //ingress registration request... returns registration event to remote caller's notify method...
-    public void register(ESGRemoteEvent evt) {
-	log.trace("Gateway service got \"register\" call from datanode with event: ["+evt+"]");
-	
-	//Triage incoming revent...
-	if(evt.getMessageType() != ESGRemoteEvent.REGISTER) {
-	    log.trace("Registration called with wrong event type... dropping on floor...");
-	    return;
-	}
-
-	//Create the string for *our* callback address...
-	String myLocation = null;
-	try{
-	    myLocation = "http://"+InetAddress.getLocalHost().getCanonicalHostName()+"/esg-node/gateway";
-	}catch (java.net.UnknownHostException ex) {
-	    log.error("Could not build proper location string for myself",ex);
-	}
-
-
-	//Create proxy endpoint for data node service that sent us this event.
-	try {
-	    datanodeService = (ESGDataNodeService)factory.create(ESGDataNodeService.class, evt.getSource());
-	}catch(MalformedURLException ex) {
-	    log.warn("Could not connect to serviceURL ["+evt.getSource()+"]",ex);
-	}
-	
-	//Assemble info to create an event and send it to data node in response to this 'register' call.
-	try {
-	    ESGRemoteEvent registrationResponseEvent = new ESGRemoteEvent(myLocation,ESGRemoteEvent.REGISTER,Utils.nextSeq());
-	    log.trace("Completing Registration By Making Remote Call to \"notify\" method, sending: "+registrationResponseEvent);
-	    if(datanodeService.notify(registrationResponseEvent))
-		log.trace("Registration Request Successfully Submitted...");
-	    else
-		log.trace("Registration Request Rejected");
-	}catch (HessianRuntimeException ex) {
-	    log.error("Problem calling \"register\" on ["+evt.getSource()+"] "+ex.getMessage());
-	}
-    }
-
-    //ingress remote event to be handled....
-    public void handleESGRemoteEvent(ESGRemoteEvent evt) {
-	log.trace("Gateway service got \"handleESGRemoteEvent\" call with event: ["+evt+"]");	
-    }
-
 }
