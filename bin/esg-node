@@ -1554,11 +1554,15 @@ setup_subsystem() {
     local server_dir=${2:-"externals/bootstrap"}
     
     echo
-    read -p "Would you like to set up ${subsystem} services? [y/N] " dosetup
-    if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
-	echo "Skipping ${subsysem} installation"
+    read -p "Would you like to set up ${subsystem} services? [Y/n] " dosetup
+    if [ "${dosetup}" = "N" ] || [ "${dosetup}" = "n" ] || [ "${dosetup}" = "no" ]; then
 	return 0
-    fi
+    fi    
+
+    #if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
+    #	echo "Skipping ${subsysem} installation"
+    #	return 0
+    #fi
     echo
 
     echo -n "${subsystem} setup for Data-Node... "
