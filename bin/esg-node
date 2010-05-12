@@ -922,14 +922,14 @@ setup_tomcat() {
     else
 	echo "[BAD]"
 	[ ! -x ./bin/jsvc ] &&  rm -v ./bin/jsvc >& /dev/null
-	echo "Building jsvc... (JAVA_HOME=$java_home)"
+	echo "Building jsvc... (JAVA_HOME=$java_install_dir)"
 	cd bin
 	[ -e ./jsvc-src ] && echo "removing source tree for jsvc" && rm -v -rf ./jsvc-src
 	tar xvzf jsvc.tar.gz
 	cd jsvc-src
 	autoconf
 	chmod 755 ./configure
-	./configure --with-java=$java_home
+	./configure --with-java=$java_install_dir
 	make
 	cp jsvc ..
 	cd ../.. #(back up to tomcat_install_dir)
@@ -1004,7 +1004,6 @@ setup_tomcat() {
 
 write_tomcat_env() {
     ((show_summary_latch++))
-    echo "export JAVA_HOME=${java_home}" >> ${envfile}
     echo "export CATALINA_HOME=${CATALINA_HOME}" >> ${envfile}
     dedup ${envfile}
     return 0
@@ -1016,9 +1015,9 @@ start_tomcat() {
 
     echo "Starting Tomcat (jsvc)..."
     pushd $tomcat_install_dir >& /dev/null
-    jsvc_launch_command="JAVA_HOME=$java_home ./bin/jsvc -Djava.endorsed.dirs=./endorsed -pidfile $tomcat_pid_file -cp $(find $(readlink -f `pwd`/bin/) | grep jar | xargs | perl -pe 's/ /:/g') -outfile ./logs/catalina.out -errfile ./logs/catalina.err -user $tomcat_user $java_opts -Dsun.security.ssl.allowUnsafeRenegotiation=true org.apache.catalina.startup.Bootstrap"
+    jsvc_launch_command="JAVA_HOME=$java_install_dir ./bin/jsvc -Djava.endorsed.dirs=./endorsed -pidfile $tomcat_pid_file -cp $(find $(readlink -f `pwd`/bin/) | grep jar | xargs | perl -pe 's/ /:/g') -outfile ./logs/catalina.out -errfile ./logs/catalina.err -user $tomcat_user $java_opts -Dsun.security.ssl.allowUnsafeRenegotiation=true org.apache.catalina.startup.Bootstrap"
     echo "$jsvc_launch_command"
-    JAVA_HOME=$java_home ./bin/jsvc -Djava.endorsed.dirs=./endorsed -pidfile $tomcat_pid_file \
+    JAVA_HOME=$java_install_dir ./bin/jsvc -Djava.endorsed.dirs=./endorsed -pidfile $tomcat_pid_file \
 	-cp $(find $(readlink -f `pwd`/bin/) | grep .jar | xargs | perl -pe 's/ /:/g') \
 	-outfile ./logs/catalina.out \
 	-errfile ./logs/catalina.err \
@@ -1687,6 +1686,7 @@ write_env() {
     echo "Generating default ${envfile} file"
     [ -e ${envfile} ] && cp ${envfile} ${envfile}.bak 
     cat /dev/null > ${envfile}
+    write_java_env
     write_postgress_env
     write_cdms_env
     write_esgcet_env
