@@ -98,7 +98,7 @@ init() {
     postgress_port=${PGPORT:-5432}
     cdat_home=${CDAT_HOME:-${install_prefix}/cdat}
     java_opts=${JAVA_OPTS:-"-Xmx2048m -Xms1024m"}
-    java_home=${JAVA_HOME:-${install_prefix}/java}
+    java_install_dir=${JAVA_HOME:-${install_prefix}/java}
     ant_install_dir=${ANT_HOME:-${install_prefix}/ant}
     tomcat_install_dir=${CATALINA_HOME:-${install_prefix}/tomcat}
     tomcat_user=${tomcat_user:-tomcat}
@@ -123,7 +123,7 @@ init() {
     export PGHOST=$postgress_host
     export PGPORT=$postgress_port
     export CDAT_HOME=$cdat_home
-    export JAVA_HOME=$java_home
+    export JAVA_HOME=$java_install_dir
     export JAVA_OPTS=$java_opts
     export ANT_HOME=$ant_install_dir
     export CATALINA_HOME=$tomcat_install_dir
@@ -142,8 +142,10 @@ init() {
     #--------------
     #Script vars (internal)
     #--------------
+    esg_dist_url=http://rainbow.llnl.gov/dist
     date_format="+%Y_%m_%d_%H%M%S"
     num_backups_to_keep=${num_backups_to_keep:-7}
+    java_dist_url=${esg_dist_url}/java/1.6.0_20/jdk1.6.0_20.tar.gz
     ant_dist_url=http://www.trieuvan.com/apache/ant/binaries/apache-ant-1.8.0-bin.tar.gz
     postgress_workdir=${workdir}/../postgress
     postgress_jar=postgresql-8.3-603.jdbc3.jar
@@ -154,17 +156,16 @@ init() {
     postgress_dist_url=http://ftp9.us.postgresql.org/pub/mirrors/postgresql/source/v8.4.2/postgresql-8.4.2.tar.gz
     repo=http://www-pcmdi.llnl.gov/svn/repository/cdat/tags
     esgcet_egg_file=esgcet-${esgcet_version}-py2.5.egg
-    esg_dist_url=http://rainbow.llnl.gov/dist
     esg_testdir=${workdir}/../esg_test
     tomcat_dist_url=http://download.filehat.com/apache/tomcat/tomcat-6/v6.0.26/bin/apache-tomcat-6.0.26.tar.gz
     tomcat_pid_file=/var/run/tomcat-jsvc.pid
-    utils_url=http://rainbow.llnl.gov/dist/utils
+    utils_url=${esg_dist_url}/utils
     thredds_dist_url=ftp://ftp.unidata.ucar.edu/pub/thredds/4.1/thredds.war
-    thredds_esg_dist_url=http://rainbow.llnl.gov/dist/thredds/4.1/thredds.war
+    thredds_esg_dist_url=${esg_dist_url}/thredds/4.1/thredds.war
     #NOTE: This root dir should match a root set in the thredds setup 
     thredds_root_dir=/esg/data
     thredds_replica_dir=/esg/data.replica
-    node_dist_url=http://rainbow.llnl.gov/dist/esg-node/esg-node${node_version}.tar.gz
+    node_dist_url=${esg_dist_url}/esg-node/esg-node${node_version}.tar.gz
     node_db_name=esgcet
     node_app_context_root=esg-node
     node_app_home=${tomcat_install_dir}/webapps/${node_app_context_root}
@@ -213,7 +214,7 @@ check_prerequisites() {
     echo "[OK]"
 
     echo -n "Checking for java 1.6+ and valid JAVA_HOME... "
-    check_version java 16 && [ -e ${java_home} ]
+    check_version java 16 && [ -e ${java_install_dir} ]
     [ $? != 0 ] && echo "[FAIL]" && return 1
     echo "[OK]"
 
@@ -230,6 +231,82 @@ check_prerequisites() {
     return 0
 }
 
+
+#####
+# Java
+#####
+setup_java() {
+    echo
+    echo "*******************************"
+    echo "Setting up Java..."
+    echo "*******************************"
+    echo
+
+    local dosetup
+    if [ -x ${java_install_dir}/bin/java ]; then 
+	echo "Detected an existing java installation..."
+	read -p "Do you want to continue with Java installation and setup? [y/N] " dosetup
+	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
+	    echo "Skipping Java installation and setup - will assume Java is setup properly"
+	    return 0
+	fi
+	echo
+    fi
+
+    mkdir -p $workdir
+    [ $? != 0 ] && checked_done 1
+    pushd $workdir #>& /dev/null
+    
+    local java_dist_file=${java_dist_url##*/}
+    #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
+    java_dist_dir=$(echo ${java_dist_file} | awk '{print substr($1,1,length($1)-7)}')
+
+    #Check to see if we have an Java distribution directory
+    if [ ! -e ${java_install_dir%/*}/${java_dist_dir} ]; then
+	echo "Don't see java distribution dir ${java_install_dir%/*}/${java_dist_dir}"
+	if [ ! -e ${java_dist_file} ]; then
+	    echo "Don't see java distribution file $(pwd)/${java_dist_file} either"
+	    echo "Downloading Java from ${java_dist_url}"
+	    checked_get ${java_dist_file} ${java_dist_url}
+	    [ $? != 0 ] && echo " ERROR: Could not download Java" && popd && checked_done 1
+    	    tar xvzf ${java_dist_file} -C ${java_install_dir%/*} # i.e. /usr/local
+	    [ $? != 0 ] && echo " ERROR: Could not extract Java" && popd && checked_done 1
+	fi
+    fi
+
+    #If you don't see the directory but see the tar.gz distribution
+    #then expand it
+    if [ -e ${java_dist_file} ] && [ ! -e ${java_install_dir%/*}/${java_dist_dir} ]; then
+	tar xvzf ${java_dist_file} -C ${java_install_dir%/*} # i.e. /usr/local
+	[ $? != 0 ] && echo " ERROR: Could not extract Java..." && popd && checked_done 1
+    fi
+
+    if [ ! -e ${java_install_dir} ]; then
+	ln -s ${java_install_dir%/*}/${java_dist_dir} ${java_install_dir}
+	[ $? != 0 ] && \
+	    echo " ERROR: Could not create sym link ${java_install_dir%/*}/${java_dist_dir} -> ${java_install_dir}" && popd && checked_done 1
+    else
+	unlink ${java_install_dir} 
+	[ $? != 0 ] && mv ${java_install_dir} ${java_install_dir}.$(date ${date_format}).bak
+	
+	ln -s ${java_install_dir%/*}/${java_dist_dir} ${java_install_dir}
+	[ $? != 0 ] && \
+	    echo " ERROR*: Could not create sym link ${java_install_dir%/*}/${java_dist_dir} -> ${java_install_dir}" && popd && checked_done 1
+    fi
+
+    ${java_install_dir}/bin/java -version
+    [ $? != 0 ] && echo "ERROR cannot run ${java_install_dir}/bin/java" && checked_done 1
+    write_java_env
+    checked_done 0
+
+}
+
+write_java_env() {
+    ((show_summary_latch++))
+    echo "export JAVA_HOME=${java_install_dir}" >> ${envfile}
+    dedup ${envfile}
+    return 0
+}
 
 #####
 # Ant
@@ -256,8 +333,8 @@ setup_ant() {
     [ $? != 0 ] && checked_done 1
     pushd $workdir >& /dev/null
     
-    ant_dist_file=${ant_dist_url##*/}
-    #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
+    local ant_dist_file=${ant_dist_url##*/}
+    #strip off -bin.tar.gz at the end, i.e. last 11 chars, to get untarred dir name
     ant_dist_dir=$(echo ${ant_dist_file} | awk '{print substr($1,1,length($1)-11)}')
 
     #There is this pesky case of having a zero sized dist file... WTF!?
@@ -341,7 +418,7 @@ setup_postgress() {
     chmod a+rw $postgress_workdir
     pushd $postgress_workdir >& /dev/null
 
-    postgress_dist_file=${postgress_dist_url##*/}
+    local postgress_dist_file=${postgress_dist_url##*/}
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
     postgress_dist_dir=$(echo ${postgress_dist_file} | awk '{print substr($1,1,length($1)-7)}')
         
@@ -667,14 +744,14 @@ setup_esgcet() {
 	if [ "${choice}" = "i" ] || [ "${choice}" = "I" ] || [ -z "${choice}" ]; then
 	    #echo "$cdat_home/bin/easy_install -f ${esg_dist_url}/externals esgcet"
 	    #$cdat_home/bin/easy_install -f ${esg_dist_url}/externals esgcet
-	    checked_get http://rainbow.llnl.gov/dist/externals/${esgcet_egg_file}
+	    checked_get ${esg_dist_url}/externals/${esgcet_egg_file}
 	    (( $? > 1 )) && return 0
 	    $cdat_home/bin/easy_install ${esgcet_egg_file}
 	    [ $? != 0 ] && checked_done 1
 	elif [ "${choice}" = "u" ] || [ "${choice}" = "U" ]; then
 	    #echo "$cdat_home/bin/easy_install --upgrade -f ${esg_dist_url}/externals esgcet"
 	    #$cdat_home/bin/easy_install --upgrade -f ${esg_dist_url}/externals esgcet
-	    checked_get http://rainbow.llnl.gov/dist/externals/${esgcet_egg_file}
+	    checked_get ${esg_dist_url}/externals/${esgcet_egg_file}
 	    (( $? > 1 )) && return 0
 	    $cdat_home/bin/easy_install --upgrade ${esgcet_egg_file}
 	    [ $? != 0 ] && checked_done 1
@@ -777,7 +854,7 @@ setup_tomcat() {
     [ $? != 0 ] && checked_done 1
     pushd $workdir >& /dev/null
     
-    tomcat_dist_file=${tomcat_dist_url##*/}
+    local tomcat_dist_file=${tomcat_dist_url##*/}
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
     tomcat_dist_dir=$(echo ${tomcat_dist_file} | awk '{print substr($1,1,length($1)-7)}')
 
@@ -1053,7 +1130,7 @@ setup_node() {
     local fetch_file
 
 
-    node_dist_file=${node_dist_url##*/}
+    local node_dist_file=${node_dist_url##*/}
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name 
     #(Ex: esg-node.0.0.1.tar.gz -> esg-node.0.0.1)
     node_dist_dir=$(echo ${node_dist_file} | awk '{print substr($1,1,length($1)-7)}')
@@ -1233,7 +1310,7 @@ setup_tds() {
     #Download the thredds.war file home site (or use value of thredds_dist_file if already set)
     ############################
 
-    thredds_dist_file=${thredds_dist_file:-${thredds_dist_url##*/}}
+    local thredds_dist_file=${thredds_dist_file:-${thredds_dist_url##*/}}
     
     #There is this pesky case of having a zero sized dist file... WTF!?                                                                            
     if [ -e ${thredds_dist_file} ]; then
@@ -2324,6 +2401,7 @@ main() {
     #Installation of basic system components.
     # (Only when one setup in the sequence is okay can we move to the next)
     #---------------------------------------
+    [ $((sel & 1)) != 0 ] && echo "setup_java" && setup_java
     [ $((sel & 1)) != 0 ] && echo "setup_ant" && setup_ant
     [ $((sel & 1)) != 0 ] && echo "setup_postgress" && setup_postgress
     [ $((sel & 2)) != 0 ] && echo "test_postgress" && test_postgress 
