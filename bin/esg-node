@@ -89,6 +89,7 @@ init() {
     cdat_version=${cdat_version:-"5.1.1"}
     esgcet_version=${esgcet_version:-"2.3"}
     node_version=${node_version:-".0.0.2"}
+    java_version=${java_version:-"1.6.0._20"}
 
     workdir=${workdir:-~/workbench/esg}
     postgress_install_dir=${PGHOME:-${install_prefix}/pgsql}
@@ -145,7 +146,7 @@ init() {
     esg_dist_url=http://rainbow.llnl.gov/dist
     date_format="+%Y_%m_%d_%H%M%S"
     num_backups_to_keep=${num_backups_to_keep:-7}
-    java_dist_url=${esg_dist_url}/java/1.6.0_20/jdk1.6.0_20.tar.gz
+    java_dist_url=${esg_dist_url}/java/${java_version}/jdk${java_version}.tar.gz
     ant_dist_url=http://www.trieuvan.com/apache/ant/binaries/apache-ant-1.8.0-bin.tar.gz
     postgress_workdir=${workdir}/../postgress
     postgress_jar=postgresql-8.3-603.jdbc3.jar
@@ -213,8 +214,8 @@ check_prerequisites() {
     [ $? != 0 ] && echo "[FAIL]" && return 1
     echo "[OK]"
 
-    echo -n "Checking for java 1.6+ and valid JAVA_HOME... "
-    check_version java 16 && [ -e ${java_install_dir} ]
+    echo -n "Checking for java ${java_version} and valid JAVA_HOME... "
+    check_version java ${java_version} && [ -e ${java_install_dir} ]
     [ $? != 0 ] && echo "[FAIL]" && return 1
     echo "[OK]"
 
@@ -1874,10 +1875,32 @@ check_tomcat_process() {
 #(A quick and dirty function for checking version [of java])
 #-----
 check_version() {
+    ((DEBUG)) && echo $2
+    local target_version=$(echo $2 | perl -ne '/(\d+.\d+.*\d*_*\d*).*/, print "$1 "' | tr -d "." | tr -d "_" | tr -d " ")
+    ((DEBUG)) && echo "target_version = [$target_version]"
     $1 -version >& /dev/null
     [ $? != 0 ] && echo " ERROR: Problem with $1 command, please check command" && return 2
-    line=($($1 -version 2>&1 | perl -ne '/(\d+.\d+).\d+_*/, print "$1 "' | tr -d "."))
-    [ $((line >= $2)) == 1 ] && return 0
+    line=($($1 -version 2>&1 | perl -ne '/(\d+.\d+.\d+_\d*).*/, print "$1 "' | tr -d "." | tr -d "_"))
+
+    #-----
+    #If you are reading this... I know this looks a bit hokey...
+    #But I could not find an easy way (in bash) to post-pend 0's to a string.
+    #(no printf doesn't do that, sadly)
+    #This will take care of the case where you want to make sure that someone with 
+    #java version 1.6.0_20 is not considered higher than someone with 1.7
+    #since 16020 is indeed "greater than" 17 vs
+    #16020 being properly compared to 17000 :-)
+    #I could have sub-shelled out to perl or python to do this in a call but where possible, 
+    #I like to stay in bash.  If you know of a better/cleaner solution feel free to make it happen.
+    #(yes... I know you could just pass in 17000) but then that doesn't parse against the regex
+    #so to keep version number formats consistent... this is cleanest.)
+    while (( ${#target_version} < ${#line} )); do
+	target_version=$((target_version*10))
+    done
+    #-----
+
+    ((DEBUG)) && echo "$line >= $target_version ?"
+    [ $((line >= $target_version)) == 1 ] && return 0
     return 1
 }
 
