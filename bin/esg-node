@@ -89,8 +89,12 @@ init() {
     cdat_version=${cdat_version:-"5.1.1"}
     esgcet_version=${esgcet_version:-"2.3"}
     node_version=${node_version:-".0.0.2"}
-    java_version=${java_version:-"1.6.0._20"}
+    
+    #external programs' versions
     git_version=${git_version:="1.7.1"}
+    java_version=${java_version:-"1.6.0_20"}
+    ant_version=${ant_version:-"1.8.0"}
+    postgress_version=${postgress_version:-"8.4.3"}
 
     workdir=${workdir:-~/workbench/esg}
     git_install_dir=${GIT_HOME:-${install_prefix}/git}
@@ -149,16 +153,16 @@ init() {
     date_format="+%Y_%m_%d_%H%M%S"
     num_backups_to_keep=${num_backups_to_keep:-7}
     java_dist_url=${esg_dist_url}/java/${java_version}/jdk${java_version}.tar.gz
-    ant_dist_url=http://www.trieuvan.com/apache/ant/binaries/apache-ant-1.8.0-bin.tar.gz
+    ant_dist_url=http://www.trieuvan.com/apache/ant/binaries/apache-ant-${ant_version}-bin.tar.gz
     git_workdir=${workdir}../git
-    git_dist_url=http://kernel.org/pub/software/scm/git/git-1.7.1.tar.gz
+    git_dist_url=http://kernel.org/pub/software/scm/git/git-${git_version}.tar.gz
     postgress_workdir=${workdir}/../postgress
     postgress_jar=postgresql-8.3-603.jdbc3.jar
     postgress_driver=org.postgresql.Driver
     postgress_protocol=jdbc:postgresql:
     pg_sys_acct=${pg_sys_acct:-postgres}
     pg_sys_acct_group=${pg_sys_acct_group:-$pg_sys_acct}
-    postgress_dist_url=http://ftp9.us.postgresql.org/pub/mirrors/postgresql/source/v8.4.3/postgresql-8.4.3.tar.gz
+    postgress_dist_url=http://ftp9.us.postgresql.org/pub/mirrors/postgresql/source/v${postgress_version}/postgresql-${postgress_version}.tar.gz
     repo=http://www-pcmdi.llnl.gov/svn/repository/cdat/tags
     esgcet_egg_file=esgcet-${esgcet_version}-py2.5.egg
     esg_testdir=${workdir}/../esg_test
@@ -199,6 +203,8 @@ write_paths() {
     dedup ${envfile}
 }
 
+#checking for what we expect to be on the system a-priori
+#that we are not going to install or be responsible for
 check_prerequisites() {
     printf "Checking that you are root@${my_ip_address}... " 
     id | grep root >& /dev/null
@@ -210,16 +216,6 @@ check_prerequisites() {
 
     echo -n "Checking for gmake... "
     gmake --version >& /dev/null
-    [ $? != 0 ] && echo "[FAIL]" && return 1
-    echo "[OK]"
-
-    echo -n "Checking for GIT... "
-    check_version git ${git_version}
-    [ $? != 0 ] && echo "[FAIL]" && return 1
-    echo "[OK]"
-
-    echo -n "Checking for java ${java_version} and valid JAVA_HOME... "
-    check_version java ${java_version} && [ -e ${java_install_dir} ]
     [ $? != 0 ] && echo "[FAIL]" && return 1
     echo "[OK]"
 
@@ -240,6 +236,11 @@ check_prerequisites() {
 # GIT
 #####
 setup_git() {
+    
+    echo -n "Checking for git ${git_version}"
+    check_version git ${git_version}
+    [ $? == 0 ] && echo "[OK]" && return 0
+    
     echo
     echo "*******************************"
     echo "Setting up GIT (dvcs)..."
@@ -248,7 +249,7 @@ setup_git() {
 
     local dosetup
     if [ -x ${git_install_dir}/bin/git ]; then 
-	echo "Detected an existing GIT installation..."
+	echo "Detected an existing (older) GIT installation..."
 	read -p "Do you want to continue with GIT installation and setup? [y/N] " dosetup
 	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
 	    echo "Skipping GIT installation and setup - will assume GIT is setup properly"
@@ -327,6 +328,11 @@ write_git_env() {
 # Java
 #####
 setup_java() {
+
+    echo -n "Checking for java ${java_version} and valid JAVA_HOME... "
+    check_version java ${java_version} && [ -e ${java_install_dir} ]
+    [ $? == 0 ] && echo "[OK]" && return 0
+
     echo
     echo "*******************************"
     echo "Setting up Java..."
@@ -335,7 +341,7 @@ setup_java() {
 
     local dosetup
     if [ -x ${java_install_dir}/bin/java ]; then 
-	echo "Detected an existing java installation..."
+	echo "Detected an existing (older) java installation..."
 	read -p "Do you want to continue with Java installation and setup? [y/N] " dosetup
 	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
 	    echo "Skipping Java installation and setup - will assume Java is setup properly"
@@ -391,7 +397,6 @@ setup_java() {
     [ $? != 0 ] && echo "ERROR cannot run ${java_install_dir}/bin/java" && checked_done 1
     write_java_env
     checked_done 0
-
 }
 
 write_java_env() {
@@ -405,6 +410,11 @@ write_java_env() {
 # Ant
 #####
 setup_ant() {
+
+    echo -n "Checking for ant ${ant_version}"
+    check_version ant ${ant_version}
+    [ $? == 0 ] && echo "[OK]" && return 0
+
     echo
     echo "*******************************"
     echo "Setting up Ant..."
@@ -413,7 +423,7 @@ setup_ant() {
 
     local dosetup
     if [ -x ${ant_install_dir}/bin/ant ]; then 
-	echo "Detected an existing ant installation..."
+	echo "Detected an existing (older) ant installation..."
 	read -p "Do you want to continue with Ant installation and setup? [y/N] " dosetup
 	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
 	    echo "Skipping Ant installation and setup - will assume ant is setup properly"
@@ -489,6 +499,11 @@ write_ant_env() {
 # PostgreSQL
 #####
 setup_postgress() {
+
+    echo -n "Checking for postgresql ${postgress_version}"
+    check_version psql ${postgress_version}
+    [ $? == 0 ] && echo "[OK]" && return 0
+
     echo
     echo "*******************************"
     echo "Setting up PostgreSQL..."
@@ -497,7 +512,7 @@ setup_postgress() {
 
     local dosetup
     if [ -x ${postgress_install_dir}/bin/psql ]; then 
-	echo "Detected an existing postgress installation..."
+	echo "Detected an existing (older) postgress installation..."
 	read -p "Do you want to continue with postgress installation and setup? [y/N] " dosetup
 	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
 	    echo "Skipping postgres installation and setup - will assume postgres is setup properly"
@@ -1965,18 +1980,17 @@ check_tomcat_process() {
 
 #-----
 #(A quick and dirty function for checking version)
+#returns okay (0) if the current version is newer than specified target version
 #-----
 check_version() {
     [ -z $2 ] && return 0
     ((DEBUG)) && echo $2
-    local target_version=$(echo $2 | perl -ne '/(\d+.*\d*.*\d*[_.]*\d*).*/, print "$1 "' | tr -d "." | tr -d "_" | tr -d " ")
+    local target_version=$(echo $2 | perl -ne '/(\d+.*\d*.*\d*[_.]*\d*).*/, print "$1 "' | tr -d "." | tr -d "_" | tr -d "\"" | cut -d " " -f1,1)
     ((DEBUG)) && echo "target_version = [$target_version]"
-    $1 -version >& /tmp/f || $1 --version >& /tmp/f
+    $1 --version >& /tmp/f || $1 -version >& /tmp/f
     [ $? != 0 ] && echo " ERROR: Problem with $1 command, please check command" && return 2
-    line=($(cat /tmp/f 2>&1 | perl -ne '/(\d+.*\d*.*\d*[_.]*\d*).*/, print "$1 "' | tr -d "." | tr -d "_" | tr -d " "))
-
-    rm /tmp/f >& /dev/null
-
+    line=($(cat /tmp/f 2>&1 | perl -ne '/(\d+.*\d*.*\d*[_.]*\d*).*/, print "$1 "' | tr -d "." | tr -d "_" | tr -d "\"" | cut -d " " -f1,1))
+    
     #-----
     #If you are reading this... I know this looks a bit hokey...
     #But I could not find an easy way (in bash) to post-pend 0's to a string.
@@ -1989,13 +2003,20 @@ check_version() {
     #I like to stay in bash.  If you know of a better/cleaner solution feel free to make it happen.
     #(yes... I know you could just pass in 17000) but then that doesn't parse against the regex
     #so to keep version number formats consistent... this is cleanest.)
+    let i=0
+
     while (( ${#target_version} < ${#line} )); do
 	target_version=$((target_version*10))
+	((i == 6)) && exit
+	((i++))
     done
     #-----
 
-    ((DEBUG)) && echo "$line >= $target_version ?"
+    ((DEBUG)) && echo "[$line] >= [$target_version] ?"
     [ $((line >= $target_version)) == 1 ] && return 0
+    echo "Minimum Target version: $2 is newer than..."
+    cat /tmp/f
+    rm /tmp/f >& /dev/null
     return 1
 }
 
@@ -2520,6 +2541,7 @@ main() {
     #Installation of basic system components.
     # (Only when one setup in the sequence is okay can we move to the next)
     #---------------------------------------
+    [ $((sel & 1)) != 0 ] && echo "setup_git" && setup_git
     [ $((sel & 1)) != 0 ] && echo "setup_java" && setup_java
     [ $((sel & 1)) != 0 ] && echo "setup_ant" && setup_ant
     [ $((sel & 1)) != 0 ] && echo "setup_postgress" && setup_postgress
