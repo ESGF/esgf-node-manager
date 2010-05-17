@@ -15,7 +15,9 @@ CREATE TABLE  access_logging (
     remote_addr character varying NOT NULL,
     file_id character varying,
     date_fetched double precision NOT NULL,
-    success boolean DEFAULT true
+    success boolean DEFAULT true,
+    user_agent character varying,
+    duration double precision
 );
 
 CREATE INDEX idx_access_logging_url ON access_logging USING btree (url);

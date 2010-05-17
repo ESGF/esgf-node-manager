@@ -171,8 +171,9 @@ public class AccessLoggingFilter implements Filter {
 		    String url = req.getRequestURL().toString();
 		    String remoteAddress = req.getRemoteAddr();
 		    String file_id = "";
+		    String userAgent = (String)req.getAttribute("userAgent");
 		    
-		    accessLoggingDAO.log(userid,email,url,remoteAddress,file_id);
+		    accessLoggingDAO.log(userid,email,url,remoteAddress,file_id,userAgent);
 		    
 		    //Want to make sure that any snooping filters
 		    //behind this one does not have access to this
@@ -198,8 +199,17 @@ public class AccessLoggingFilter implements Filter {
 	    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
 	}
 	
-	chain.doFilter(request, response);
+	long startTime = System.currentTimeMillis();
+        chain.doFilter(request, response);
+        long duration = System.currentTimeMillis() - startTime;
 	
+	//try{
+	//    accessLoggingDAO.logEgressInfo(userid,url,remoteAddress,duration);
+	//}catch(Throwable t) {
+	//    log.error(t);
+	//    HttpServletResponse resp = (HttpServletResponse)response;
+	//    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
+	//}
     }
     
 }
