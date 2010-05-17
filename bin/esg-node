@@ -86,14 +86,14 @@ install_prefix=${install_prefix:-"/usr/local"}
 init() {
     [ -e ${envfile} ] && source ${envfile} && printf "sourcing environment from: ${envfile} \n\n"
 
-    cdat_version=${cdat_version:-"5.1.1"}
+    cdat_version=${cdat_version:-"d2ac44799d9a2"}
     esgcet_version=${esgcet_version:-"2.3"}
     node_version=${node_version:-".0.0.2"}
     
     #external programs' versions
     git_version=${git_version:="1.7.1"}
     java_version=${java_version:-"1.6.0_20"}
-    ant_version=${ant_version:-"1.8.0"}
+    ant_version=${ant_version:-"1.8.1"}
     postgress_version=${postgress_version:-"8.4.3"}
 
     workdir=${workdir:-~/workbench/esg}
@@ -139,7 +139,7 @@ init() {
     export X509_CERT_DIR=$HOME/.globus/certificates-esg
     export ESG_ROOT_ID=$esg_root_id
     
-    myPATH=.:$ANT_HOME/bin:$PGHOME/bin:$CDAT_HOME/bin:$CDAT_HOME/Externals/bin:$CATALINA_HOME/bin
+    myPATH=.:$ANT_HOME/bin:$PGHOME/bin:$CDAT_HOME/bin:$CDAT_HOME/Externals/bin:$CATALINA_HOME/bin:$GIT_HOME/bin
     myLD_LIBRARY_PATH=$PGHOME/lib:$CDAT_HOME/Externals/lib:$GLOBUS_LOCATION/lib
     export PATH=$myPATH:$PATH
     export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:$LD_LIBRARY_PATH
@@ -154,7 +154,7 @@ init() {
     num_backups_to_keep=${num_backups_to_keep:-7}
     java_dist_url=${esg_dist_url}/java/${java_version}/jdk${java_version}.tar.gz
     ant_dist_url=http://www.trieuvan.com/apache/ant/binaries/apache-ant-${ant_version}-bin.tar.gz
-    git_workdir=${workdir}../git
+    git_workdir=${workdir}/../git
     git_dist_url=http://kernel.org/pub/software/scm/git/git-${git_version}.tar.gz
     postgress_workdir=${workdir}/../postgress
     postgress_jar=postgresql-8.3-603.jdbc3.jar
@@ -163,7 +163,7 @@ init() {
     pg_sys_acct=${pg_sys_acct:-postgres}
     pg_sys_acct_group=${pg_sys_acct_group:-$pg_sys_acct}
     postgress_dist_url=http://ftp9.us.postgresql.org/pub/mirrors/postgresql/source/v${postgress_version}/postgresql-${postgress_version}.tar.gz
-    repo=http://www-pcmdi.llnl.gov/svn/repository/cdat/tags
+    cdat_repo=http://esg-repo.llnl.gov/git/cdat.git
     esgcet_egg_file=esgcet-${esgcet_version}-py2.5.egg
     esg_testdir=${workdir}/../esg_test
     tomcat_dist_url=http://download.filehat.com/apache/tomcat/tomcat-6/v6.0.26/bin/apache-tomcat-6.0.26.tar.gz
@@ -228,7 +228,6 @@ check_prerequisites() {
     fi
     #----------------------------------------
     echo
-    echo
     return 0
 }
 
@@ -236,10 +235,10 @@ check_prerequisites() {
 # GIT
 #####
 setup_git() {
-    
+
     echo -n "Checking for git ${git_version}"
     check_version git ${git_version}
-    [ $? == 0 ] && echo "[OK]" && return 0
+    [ $? == 0 ] && echo " [OK]" && return 0
     
     echo
     echo "*******************************"
@@ -283,7 +282,7 @@ setup_git() {
 	    echo "Downloading GIT from ${git_dist_url}"
 	    wget -O ${git_dist_file} ${git_dist_url}
 	    [ $? != 0 ] && echo " ERROR: Could not download GIT:${git_dist_file}" && popd && checked_done 1
-	    tar xvzf ${postgress_dist_file}
+	    tar xvzf ${git_dist_file}
 	    [ $? != 0 ] && echo " ERROR: Could not extract GIT: ${git_dist_file}" && popd && checked_done 1
 	fi
     fi
@@ -331,7 +330,7 @@ setup_java() {
 
     echo -n "Checking for java ${java_version} and valid JAVA_HOME... "
     check_version java ${java_version} && [ -e ${java_install_dir} ]
-    [ $? == 0 ] && echo "[OK]" && return 0
+    [ $? == 0 ] && echo " [OK]" && return 0
 
     echo
     echo "*******************************"
@@ -413,7 +412,7 @@ setup_ant() {
 
     echo -n "Checking for ant ${ant_version}"
     check_version ant ${ant_version}
-    [ $? == 0 ] && echo "[OK]" && return 0
+    [ $? == 0 ] && echo " [OK]" && return 0
 
     echo
     echo "*******************************"
@@ -502,7 +501,7 @@ setup_postgress() {
 
     echo -n "Checking for postgresql ${postgress_version}"
     check_version psql ${postgress_version}
-    [ $? == 0 ] && echo "[OK]" && return 0
+    [ $? == 0 ] && echo " [OK]" && return 0
 
     echo
     echo "*******************************"
@@ -753,24 +752,20 @@ setup_cdms() {
 	echo
     fi
 
-    svn list --verbose ${repo}
     mkdir -p $workdir
     [ $? != 0 ] && checked_done 1
-    pushd $workdir
-    
-    local cdat_workdir=cdat-$cdat_version
-    svn export ${repo}/$cdat_version $cdat_workdir
-    [ $? != 0 ] && echo " WARNING: Problem pulling down ${cdat_workdir} from repository"
+    pushd $workdir >& /dev/null
+    echo "This may take a few minutes... GIT over http is slooooow :-)"
+    git clone ${cdat_repo}
+    cd cdat >& /dev/null
+    git checkout $cdat_version && \
+	echo "pulling in cmor submodule" && \
+	git submodule init && \
+	git submodule update
+    [ $? != 0 ] && echo " WARNING: Problem with cdat repository"
 
-    pushd $cdat_workdir >& /dev/null
-    if [ $? == 0 ]; then 
-	echo "cleaning things out" 
-	./clean_script
-    else
-	echo "Cannot locate $cdat_workdir directory... cannot continue with CDMS install!"
-	checked_done 1
-    fi
-
+    echo "cleaning things out" 
+    ./clean_script
 
     #NOTE: 
     #cdms configuration with --enable-esg flag looks for pg_config in
@@ -778,14 +773,12 @@ setup_cdms() {
     #to the executable PATH by the 'setup_postgress' function.
     
     echo "./configure --prefix=$cdat_home --enable-esg"
-    ./configure --prefix=$cdat_home --enable-esg   
+    ./configure --prefix=${cdat_home} --enable-esg   
     [ $? != 0 ] && echo " ERROR: Configure did not complete successfully" && popd && checked_done 1
     make
     [ $? != 0 ] && echo " ERROR: Could not compile (make) cdat code" && popd && checked_done 1
 
     popd >& /dev/null    
-    popd >& /dev/null
-    echo
     echo
     write_cdms_env
     checked_done 0
@@ -1988,7 +1981,7 @@ check_version() {
     local target_version=$(echo $2 | perl -ne '/(\d+.*\d*.*\d*[_.]*\d*).*/, print "$1 "' | tr -d "." | tr -d "_" | tr -d "\"" | cut -d " " -f1,1)
     ((DEBUG)) && echo "target_version = [$target_version]"
     $1 --version >& /tmp/f || $1 -version >& /tmp/f
-    [ $? != 0 ] && echo " ERROR: Problem with $1 command, please check command" && return 2
+    [ $? != 0 ] && echo && echo "Oops, $1 command not found" && return 2
     line=($(cat /tmp/f 2>&1 | perl -ne '/(\d+.*\d*.*\d*[_.]*\d*).*/, print "$1 "' | tr -d "." | tr -d "_" | tr -d "\"" | cut -d " " -f1,1))
     
     #-----
@@ -2455,6 +2448,15 @@ main() {
 		init
 		check_prerequisites
 		[ $? != 0 ] && echo && exit 1
+		
+		#---------------
+		#version checking...
+		#---------------
+		setup_git
+		setup_java
+		setup_ant
+		setup_postgress
+
 		#The arg "1" indicates an upgrade (see functions)
 		setup_esgcet 1
 		setup_node 1
@@ -2541,20 +2543,20 @@ main() {
     #Installation of basic system components.
     # (Only when one setup in the sequence is okay can we move to the next)
     #---------------------------------------
-    [ $((sel & 1)) != 0 ] && echo "setup_git" && setup_git
-    [ $((sel & 1)) != 0 ] && echo "setup_java" && setup_java
-    [ $((sel & 1)) != 0 ] && echo "setup_ant" && setup_ant
-    [ $((sel & 1)) != 0 ] && echo "setup_postgress" && setup_postgress
-    [ $((sel & 2)) != 0 ] && echo "test_postgress" && test_postgress 
-    [ $((sel & 1)) != 0 ] && echo "setup_cdms" && setup_cdms 
-    [ $((sel & 2)) != 0 ] && echo "test_cdms" && test_cdms 
-    [ $((sel & 1)) != 0 ] && echo "setup_esgcet" && setup_esgcet 
-    [ $((sel & 2)) != 0 ] && echo "test_esgcet" && test_esgcet 
-    [ $((sel & 1)) != 0 ] && echo "setup_tomcat" && setup_tomcat 
-    [ $((sel & 2)) != 0 ] && echo "test_tomcat" && sleep 5 && test_tomcat
-    [ $((sel & 1)) != 0 ] && echo "setup_tds" && setup_tds 
-    [ $((sel & 2)) != 0 ] && echo "test_tds" && test_tds 
-    [ $((sel & 1)) != 0 ] && echo "setup_node" && setup_node #(tomcat off)
+    [ $((sel & 1)) != 0 ] && setup_git
+    [ $((sel & 1)) != 0 ] && setup_java
+    [ $((sel & 1)) != 0 ] && setup_ant
+    [ $((sel & 1)) != 0 ] && setup_postgress
+    [ $((sel & 2)) != 0 ] && test_postgress 
+    [ $((sel & 1)) != 0 ] && setup_cdms 
+    [ $((sel & 2)) != 0 ] && test_cdms 
+    [ $((sel & 1)) != 0 ] && setup_esgcet 
+    [ $((sel & 2)) != 0 ] && test_esgcet 
+    [ $((sel & 1)) != 0 ] && setup_tomcat 
+    [ $((sel & 2)) != 0 ] && sleep 5 && test_tomcat
+    [ $((sel & 1)) != 0 ] && setup_tds 
+    [ $((sel & 2)) != 0 ] && test_tds 
+    [ $((sel & 1)) != 0 ] && setup_node #(tomcat off)
 
     #---------------------------------------
     #Installation of "plugin" subsystems... & filters
