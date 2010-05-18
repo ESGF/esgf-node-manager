@@ -1788,7 +1788,9 @@ write_env() {
     [ -e ${envfile} ] && cp ${envfile} ${envfile}.bak 
     cat /dev/null > ${envfile}
     write_paths
+    write_git_env
     write_java_env
+    write_ant_env
     write_postgress_env
     write_cdms_env
     write_esgcet_env
