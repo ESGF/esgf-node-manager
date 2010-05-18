@@ -2318,17 +2318,18 @@ usage() {
     usage:
      (as root)
      ${progname} ([--<directive>] | [start] | [stop] | [status]
-        --install - goes through the installation process
-                    will automatically start up data node services
-        --verify  - runs the test code to verify installation
-        --write-env - writes the necessary env vars to file ${envfile}
-        --version   - indicates the version of this script
-        --clear     - removes the file holding the enironment state of last install
-        --test-pub  - performs the publication test directly (same publication called in last step of install)
-        --info      - provides a brief explaination of the DataNode
-        --register  - connects to desired gateway, fetches and stores their certificate to enable SSL connection
-        --upgrade   - upgrades the node manager
-        --no-globus - will not install any globus tools (for those with existing globus setups)
+        --install     - goes through the installation process
+                         will automatically start up data node services
+        --verify      - runs the test code to verify installation
+        --write-env   - writes the necessary env vars to file ${envfile}
+        --version     - indicates the version of this script
+        --clear       - removes the file holding the enironment state of last install
+        --clear-certs - removes the prescribed certificate directory used with myproxy
+        --test-pub    - performs the publication test directly (same publication called in last step of install)
+        --info        - provides a brief explaination of the DataNode
+        --register    - connects to desired gateway, fetches and stores their certificate to enable SSL connection
+        --upgrade     - upgrades the node manager
+        --no-globus   - will not install any globus tools (for those with existing globus setups)
         --griftp-config - [ with-bdm-config | bdm-config-only ] without this arg uses default end-user config
 
         start   - start the data node services
@@ -2439,7 +2440,8 @@ main() {
 	    --clear-certs)
 		init
 		echo "Clearing out certs..."
-		rm -rf $HOME/.globus/certificates-esg
+		local cert_dir=${HOME}/.globus/certificates-esg
+		[ -e ${cert_dir} ] && rm -rf ${cert_dir}
 		exit 0
 		;;
 	    --test-pub)
