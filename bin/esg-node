@@ -1693,7 +1693,8 @@ test_publication() {
     local personal_credential_repo="$HOME/.globus"
 
     mkdir -p ${personal_credential_repo}
-    mkdir -p ${X509_CERT_DIR}
+
+    [ "$(ls -A ${X509_CERT_DIR})" ] && echo "Detected existing content in \$X509_CERT_DIR" || rmdir ${X509_CERT_DIR}
     
     echo "X509_CERT_DIR = ${X509_CERT_DIR}"
     echo "$globus_location/bin/myproxy-logon -s $myproxy_endpoint -l $myproxy_user -p $myproxy_port -o ${personal_credential_repo}/certificate-file -T"
@@ -2433,6 +2434,12 @@ main() {
 		    mv -v ${envfile} ${envfile}.bak 
 		    echo "Cleared envfile ${envfile}"
 		fi
+		exit 0
+		;;
+	    --clear-certs)
+		init
+		echo "Clearing out certs..."
+		rm -rf $HOME/.globus/certificates-esg
 		exit 0
 		;;
 	    --test-pub)
