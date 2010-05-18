@@ -2364,10 +2364,10 @@ usage() {
         --no-globus   - will not install any globus tools (for those with existing globus setups)
         --griftp-config - [ with-bdm-config | bdm-config-only ] without this arg uses default end-user config
 
-        start   - start the data node services
-        stop    - stops the data node services
-        status  - status on data node services
-        restart - restarts the data node services (calls stop then start :-/)
+        start   - start the data node's services
+        stop    - stops the data node's services
+        status  - status on data node's services
+        restart - restarts the data node's services (calls stop then start :-/)
             (notice, no \"--\" to make rc friendly also chkconfig-able ;-)
 
     
