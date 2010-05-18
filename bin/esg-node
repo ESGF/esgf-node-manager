@@ -1831,7 +1831,7 @@ register() {
 
     pushd $tomcat_install_dir/conf >& /dev/null
 
-    [ -e ${certfile} ] && cp -v ${certfile} ${certfile}.bak
+    [ -e ${certfile} ] && cp ${certfile} ${certfile}.bak
     
     input=${1:-${ESG_GATEWAY_SVC_ROOT%%/*}}
     local ssl_endpoint=${input%%/*} #just need the hostname
@@ -1846,10 +1846,14 @@ register() {
 	${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd}
     local ret=$?
 
-    //------
-    cp ${certfile} ${JAVA_HOME}/jre/lib/security/
-    chmod 644 ${certfile} ${JAVA_HOME}/jre/lib/security/
-    //------
+    #------
+    local there=$(pwd)
+    pushd ${JAVA_HOME}/jre/lib/security >& /dev/null
+    [ -e ${certfile} ] && cp ${certfile} ${certfile}.bak
+    cp ${there}/${certfile} ${certfile}
+    chmod 644 ${certfile}
+    popd >& /dev/null
+    #------
 
     chmod 644 ${certfile}
     chown $tomcat_user ${certfile}
@@ -2264,6 +2268,27 @@ show_svc_list() {
     echo
 }
 
+#Starts the esg node
+start() {
+    init
+    echo "starting services with globus using config: ${gridftp_config_args}"
+    source ${scripts_dir}/esg-globus >& /dev/null && \
+	start_globus_services datanode ${gridftp_config_args}
+    start_postgress
+    start_tomcat
+    show_svc_list
+}
+
+#Stops the esg node
+stop() {
+    init
+    stop_tomcat 
+    stop_postgress 
+    source ${scripts_dir}/esg-globus >& /dev/null && \
+	stop_globus_services datanode ${gridftp_config_args}
+    show_svc_list
+}
+
 ############################################
 # Main
 ############################################
@@ -2324,7 +2349,7 @@ usage() {
     printf "
     usage:
      (as root)
-     ${progname} ([--<directive>] | [start] | [stop] | [status]
+     ${progname} ([--<directive>] | [start] | [stop] | [status] [restar]
         --install     - goes through the installation process
                          will automatically start up data node services
         --verify      - runs the test code to verify installation
@@ -2342,6 +2367,7 @@ usage() {
         start   - start the data node services
         stop    - stops the data node services
         status  - status on data node services
+        restart - restarts the data node services (calls stop then start :-/)
             (notice, no \"--\" to make rc friendly also chkconfig-able ;-)
 
     
@@ -2403,26 +2429,19 @@ main() {
 		let sel+=2
 		;;
 	    start | --start)
-		#echo "START SERVICES"
-		init
-		echo "starting services with globus using config: ${gridftp_config_args}"
-		source ${scripts_dir}/esg-globus >& /dev/null && \
-		    start_globus_services datanode ${gridftp_config_args}
-		start_postgress
-		start_tomcat
-		show_svc_list
-		#let sel+=4
+		(($DEBUG)) && echo "START SERVICES"
+		start
 		exit 0
 		;;
 	    stop | --stop)
-		#echo "STOP SERVICES"
-		init
-		stop_tomcat 
-		stop_postgress 
-		source ${scripts_dir}/esg-globus >& /dev/null && \
-		    stop_globus_services datanode ${gridftp_config_args}
-		show_svc_list
-		#let sel+=8
+		(($DEBUG)) && echo "STOP SERVICES"
+		stop
+		exit 0
+		;;
+	    restart)
+		stop
+		sleep 2
+		start
 		exit 0
 		;;
 	    --write-env)
@@ -2580,10 +2599,10 @@ main() {
     #---------------------------------------
     #---filters------
     [ $((sel & 1)) != 0 ] && echo "security filters subsystem (TOKEN)" && setup_subsystem security-token-filters filters $@
-    [ $((sel & 1)) != 0 ] && echo "security filters subsystem (SAML)"  && setup_subsystem security-saml-filters filters $@
+    #[ $((sel & 1)) != 0 ] && echo "security filters subsystem (SAML)"  && setup_subsystem security-saml-filters filters $@
     #---subsystems--- 
-    [ $((sel & 1)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
-   #[ $((sel & 1)) != 0 ] && echo "product server subsystem" && setup_subsystem product-server $@
+    #[ $((sel & 1)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
+    #[ $((sel & 1)) != 0 ] && echo "product server subsystem" && setup_subsystem product-server $@
 
 
     #---------------------------------------
