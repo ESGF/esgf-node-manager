@@ -139,9 +139,9 @@ init() {
     export X509_CERT_DIR=$HOME/.globus/certificates-esg
     export ESG_ROOT_ID=$esg_root_id
     
-    myPATH=.:$ANT_HOME/bin:$PGHOME/bin:$CDAT_HOME/bin:$CDAT_HOME/Externals/bin:$CATALINA_HOME/bin:$GIT_HOME/bin:$GLOBUS_LOCATION/bin
+    myPATH=$ANT_HOME/bin:$PGHOME/bin:$CDAT_HOME/bin:$CDAT_HOME/Externals/bin:$CATALINA_HOME/bin:$GIT_HOME/bin:$GLOBUS_LOCATION/bin
     myLD_LIBRARY_PATH=$PGHOME/lib:$CDAT_HOME/Externals/lib:$GLOBUS_LOCATION/lib
-    export PATH=$myPATH:$PATH
+    export PATH=$myPATH:/sbin:/usr/bin:/bin:$PATH
     export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:$LD_LIBRARY_PATH
     
     
@@ -149,10 +149,11 @@ init() {
     #--------------
     #Script vars (internal)
     #--------------
+    word_size=${word_size:-$(file /bin/bash | perl -ple 's/^.*ELF\s*(32|64)-bit.*$/$1/g')}
     esg_dist_url=http://rainbow.llnl.gov/dist
     date_format="+%Y_%m_%d_%H%M%S"
     num_backups_to_keep=${num_backups_to_keep:-7}
-    java_dist_url=${esg_dist_url}/java/${java_version}/jdk${java_version}.tar.gz
+    java_dist_url=${esg_dist_url}/java/${java_version}/jdk${java_version}-${word_size}.tar.gz
     ant_dist_url=http://www.trieuvan.com/apache/ant/binaries/apache-ant-${ant_version}-bin.tar.gz
     git_workdir=${workdir}/../git
     git_dist_url=http://kernel.org/pub/software/scm/git/git-${git_version}.tar.gz
@@ -198,7 +199,7 @@ init() {
 
 write_paths() {
     ((show_summary_latch++))
-    echo "export PATH=$myPATH:\$PATH" >> ${envfile}
+    echo "export PATH=$myPATH" >> ${envfile}
     echo "export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:\$LD_LIBRARY_PATH" >> ${envfile}
     dedup ${envfile}
 }
@@ -329,7 +330,7 @@ write_git_env() {
 setup_java() {
 
     echo -n "Checking for java ${java_version} and valid JAVA_HOME... "
-    check_version java ${java_version} && [ -e ${java_install_dir} ]
+    [ -e ${java_install_dir} ] && check_version $java_install_dir/bin/java ${java_version}
     [ $? == 0 ] && echo " [OK]" && return 0
 
     echo
@@ -411,7 +412,7 @@ write_java_env() {
 setup_ant() {
 
     echo -n "Checking for ant ${ant_version}"
-    check_version ant ${ant_version}
+    [ -e ${ant_install_dir} ] &&  check_version ${ant_install_dir}/biin/ant ${ant_version}
     [ $? == 0 ] && echo " [OK]" && return 0
 
     echo
@@ -2238,7 +2239,7 @@ self_verify() {
     if (( $? == 3 )); then 
 	printf "WARNING: $0 could not be verified!! \n(This file, ${0}, may have been tampered with or there is a newer version posted at the distribution server.\nPlease update this script.)\n\n"
 	local choice="u"
-	read -t $((3*60)) -p "Do you wish to Update and exit [u], continue anyway [y] or simply exit [N]? [u/y/N]: " choice
+	read -t $((1*60)) -p "Do you wish to Update and exit [u], continue anyway [y] or simply exit [N]? [u/y/N]: " choice
 	if [ "$choice" = "Y" ] || [ "$choice" = "y" ]; then
 	    echo 
 	    return 0
@@ -2450,10 +2451,10 @@ main() {
 		;;
 	    --version)
 		echo ""
+		echo "Version: $version"
 		echo "Earth Systems Grid"
 		echo "Data Node Installation Script"
 		echo "Lawrence Livermore National Laboratory"
-		echo "Version: $version"
 		echo ""
 		exit 0
 		;;
@@ -2481,6 +2482,7 @@ main() {
 		exit
 		;;
 	    --upgrade | --update)
+		self_verify
 		init
 		check_prerequisites
 		[ $? != 0 ] && echo && exit 1
@@ -2553,6 +2555,8 @@ main() {
 	esac
 	((!unshift)) && shift
     done
+
+    self_verify
 
     #echo "SEL = $sel"
     [ $((sel)) == 0 ] && usage
@@ -2645,8 +2649,6 @@ main() {
 #trap stop_postgress INT TERM
 #trap stop_tomcat INT TERM
 #trap - INT TERM
-
-self_verify
 
 echo "start time: `date`" >> ${logfile}
 main $@
