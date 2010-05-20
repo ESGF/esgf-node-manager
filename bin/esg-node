@@ -412,7 +412,7 @@ write_java_env() {
 setup_ant() {
 
     echo -n "Checking for ant ${ant_version}"
-    [ -e ${ant_install_dir} ] &&  check_version ${ant_install_dir}/biin/ant ${ant_version}
+    [ -e ${ant_install_dir} ] &&  check_version ${ant_install_dir}/bin/ant ${ant_version}
     [ $? == 0 ] && echo " [OK]" && return 0
 
     echo
@@ -1058,7 +1058,7 @@ setup_tomcat() {
     if [ ! -e ${keystore_file} ]; then
 	echo "Launching Java's keytool: we suggest using the default Tomcat password \"changeit\""
 	#$JAVA_HOME/bin/keytool -list -keystore keystore-tomcat
-	$java_home/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365
+	$java_install_dir/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365
 	[ $? != 0 ] && echo " ERROR: keytool command failed" && popd && checked_done 1
     else
 	echo "Using existing keystore \"${keystore_file}\""
@@ -1527,7 +1527,8 @@ setup_tds() {
     #@@node_host_ip_address@@ #Token in file
     node_host_ip_address=${my_ip_address}    
 
-    unset input #just to be sure it's clear (though it should be)
+    #just to be sure it's clear (though it should be)
+    unset input 
     read -p "Please Enter the IP address of this host [${node_host_ip_address}]:> " input
     [ ! -z "${input}" ] && node_host_ip_address=${input}
     printf "\nUsing IP: ${node_host_ip_address}\n"
