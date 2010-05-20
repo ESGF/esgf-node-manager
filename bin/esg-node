@@ -82,6 +82,7 @@ envfile=${envfile:-"/etc/esg.env"}
 t=${0%.*}
 logfile=${logfile:-"/var/tmp/${t##*/}.out"}
 install_prefix=${install_prefix:-"/usr/local"}
+workdir=${workdir:-"~/workbench/esg"}
 
 init() {
     [ -e ${envfile} ] && source ${envfile} && printf "sourcing environment from: ${envfile} \n\n"
@@ -96,7 +97,6 @@ init() {
     ant_version=${ant_version:-"1.8.1"}
     postgress_version=${postgress_version:-"8.4.3"}
 
-    workdir=${workdir:-~/workbench/esg}
     git_install_dir=${GIT_HOME:-${install_prefix}/git}
     postgress_install_dir=${PGHOME:-${install_prefix}/pgsql}
     postgress_user=${PGUSER:-dbsuper}
@@ -2353,6 +2353,9 @@ usage() {
      (as root)
      ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         --prefix      - specify the top level directory for this entire installation
+                        (default:/usr/local - currently:$install_prefix)
+        --workdir     - specify the directory used by the installation to download and build esg artifacts for installation
+                        (default:~/workbench/esg - currently:$workdir)
         --install     - goes through the installation process
                          will automatically start up data node services
         --verify      - runs the test code to verify installation
@@ -2537,6 +2540,18 @@ main() {
 		unshift=1
 		install_prefix=${pvalue}
 		[ -z "${pvalue}" ] && printf "\nERROR: Did not properly set --prefix value!!!\n\n" && exit 1
+		;;
+	    --workdir)
+		local wvalue
+		shift
+		until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
+		    wvalue="$1"
+		    (($DEBUG)) && echo "workdir value is: $1"
+		    shift
+		done
+		unshift=1
+		workdir=${wvalue}
+		[ -z "${wvalue}" ] && printf "\nERROR: Did not properly set --workdir value!!!\n\n" && exit 1
 		;;
 	    --no-globus)
 		no_globus=1
