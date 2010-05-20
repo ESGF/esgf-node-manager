@@ -2239,8 +2239,8 @@ self_verify() {
     if (( $? == 3 )); then 
 	printf "WARNING: $0 could not be verified!! \n(This file, ${0}, may have been tampered with or there is a newer version posted at the distribution server.\nPlease update this script.)\n\n"
 	local choice="u"
-	read -t $((1*60)) -p "Do you wish to Update and exit [u], continue anyway [y] or simply exit [N]? [u/y/N]: " choice
-	if [ "$choice" = "Y" ] || [ "$choice" = "y" ]; then
+	read -t $((1*60)) -p "Do you wish to Update and exit [u], continue anyway [c] or simply exit [N]? [u/c/N]: " choice
+	if [ "$choice" = "C" ] || [ "$choice" = "c" ]; then
 	    echo 
 	    return 0
 	elif [ "$choice" = "U" ] || [ "$choice" = "u" ]; then
@@ -2350,7 +2350,8 @@ usage() {
     printf "
     usage:
      (as root)
-     ${progname} ([--<directive>] | [start] | [stop] | [status] [restar]
+     ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
+        --prefix      - specify the top level directory for this entire installation
         --install     - goes through the installation process
                          will automatically start up data node services
         --verify      - runs the test code to verify installation
@@ -2423,7 +2424,7 @@ main() {
 	local unshift=0
 	case $1 in
 	    --install | -i)
-		#echo "INSTALL SERVICES"
+		(($DEBUG)) && echo "INSTALL SERVICES"
 		let sel+=1
 		;;
 	    --verify | --test)
@@ -2524,6 +2525,18 @@ main() {
 		register $1 $2
 		exit
 		;;
+	    --prefix)
+		local pvalue
+		shift
+		until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
+		    pvalue="$1"
+		    (($DEBUG)) && echo "prefix value is: $1"
+		    shift
+		done
+		unshift=1
+		install_prefix=${pvalue}
+		[ -z "${pvalue}" ] && printf "\nERROR: Did not properly set --prefix value!!!\n\n" && exit 1
+		;;
 	    --no-globus)
 		no_globus=1
 		;;
@@ -2534,9 +2547,9 @@ main() {
 		local tmpargs #array to store args for this switch.
 		local let index=0
 		shift
-		until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ]; do
+		until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
 		    tmpargs[((index++))]=$1
-		    echo "added $1 to args list: ${tmpargs[@]}"
+		    (($DEBUG)) && echo "added $1 to args list: ${tmpargs[@]}"
 		    shift
 		done
 		unshift=1
@@ -2554,16 +2567,19 @@ main() {
 		show_svc_list
 		exit 0
 		;;
+	    -h | --help)
+		usage
+		;;
 	    *)
-		echo " WARNING: unknown switch $1"
-		break;;
+		printf "\n ERROR: unknown switch $1 \n\n" && exit 1
+		;;
 	esac
 	((!unshift)) && shift
     done
 
     self_verify
 
-    #echo "SEL = $sel"
+    (($DEBUG)) && echo "SEL = $sel"
     [ $((sel)) == 0 ] && usage
 
     echo
