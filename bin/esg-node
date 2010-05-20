@@ -2356,6 +2356,7 @@ usage() {
         --verify      - runs the test code to verify installation
         --write-env   - writes the necessary env vars to file ${envfile}
         --version     - indicates the version of this script
+        --check       - checks if this script is the most up-to-date posted
         --clear       - removes the file holding the enironment state of last install
         --clear-certs - removes the prescribed certificate directory used with myproxy
         --test-pub    - performs the publication test directly (same publication called in last step of install)
@@ -2505,6 +2506,10 @@ main() {
 		start_postgress
 		start_tomcat
 		exit 0
+		;;
+	    --check)
+		self_verify && echo "$0 is up-to-date"
+		exit $?
 		;;
 	    --uninstall)
 		init
