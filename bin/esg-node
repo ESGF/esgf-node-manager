@@ -140,8 +140,8 @@ init() {
     export ESG_ROOT_ID=$esg_root_id
     
     myPATH=$ANT_HOME/bin:$PGHOME/bin:$CDAT_HOME/bin:$CDAT_HOME/Externals/bin:$CATALINA_HOME/bin:$GIT_HOME/bin:$GLOBUS_LOCATION/bin
-    myLD_LIBRARY_PATH=$PGHOME/lib:$CDAT_HOME/Externals/lib:$GLOBUS_LOCATION/lib
-    export PATH=$myPATH:/sbin:/usr/bin:/bin:$PATH
+    myLD_LIBRARY_PATH=$PGHOME/lib:$CDAT_HOME/Externals/lib:$GLOBUS_LOCATION/lib:/sbin:/usr/bin:/bin
+    export PATH=$myPATH:$PATH
     export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:$LD_LIBRARY_PATH
     
     
@@ -199,7 +199,7 @@ init() {
 
 write_paths() {
     ((show_summary_latch++))
-    echo "export PATH=$myPATH" >> ${envfile}
+    echo "export PATH=$myPATH:\$PATH" >> ${envfile}
     echo "export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:\$LD_LIBRARY_PATH" >> ${envfile}
     dedup ${envfile}
 }
