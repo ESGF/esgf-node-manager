@@ -76,7 +76,7 @@ DEBUG=${DEBUG:-0}
 #User Defined / Settable (public)
 #--------------
 progname=esg-node
-version="0.3.0"
+version="0.3.1"
 
 envfile=${envfile:-"/etc/esg.env"}
 t=${0%.*}
@@ -86,7 +86,7 @@ install_prefix=${install_prefix:-"/usr/local"}
 init() {
     [ -e ${envfile} ] && source ${envfile} && printf "sourcing environment from: ${envfile} \n\n"
 
-    cdat_version=${cdat_version:-"d2ac44799d9a2"}
+    cdat_version=${cdat_version:-"095acf5"}
     esgcet_version=${esgcet_version:-"2.3"}
     node_version=${node_version:-".0.0.2"}
     
