@@ -159,11 +159,11 @@ init() {
     num_backups_to_keep=${num_backups_to_keep:-7}
     java_dist_url=${esg_dist_url}/java/${java_version}/jdk${java_version}-${word_size}.tar.gz
     ant_dist_url=http://www.trieuvan.com/apache/ant/binaries/apache-ant-${ant_version}-bin.tar.gz
-    curl_workdir=${workdir}/../curl
+    curl_workdir=${workdir}/curl
     curl_dist_url=http://curl.haxx.se/download/curl-${curl_version}.tar.gz
-    git_workdir=${workdir}/../git
+    git_workdir=${workdir}/git
     git_dist_url=http://kernel.org/pub/software/scm/git/git-${git_version}.tar.gz
-    postgress_workdir=${workdir}/../postgress
+    postgress_workdir=${workdir}/postgress
     postgress_jar=postgresql-8.3-603.jdbc3.jar
     postgress_driver=org.postgresql.Driver
     postgress_protocol=jdbc:postgresql:
@@ -240,7 +240,7 @@ check_prerequisites() {
 #####
 setup_curl() {
 
-    echo -n "Checking for curl ${curl_version}"
+    echo -n "Checking for curl ${curl_version} "
     check_version curl ${curl_version}
     [ $? == 0 ] && echo " [OK]" && return 0
     
