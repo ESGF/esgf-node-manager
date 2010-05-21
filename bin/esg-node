@@ -181,9 +181,6 @@ init() {
     node_app_home=${tomcat_install_dir}/webapps/${node_app_context_root}
     #NOTE: This is another RedHat/CentOS specific portion!!! it will break on another OS!
     my_ip_address=$(ifconfig | grep "inet[^6]" | awk '$0 !~ /127.0.0.1/ { gsub (" *inet [^:]*:",""); print $1}')
-    #my_ip_address=$(/sbin/ifconfig | \
-    #	perl -ple 'print $_ if /inet [^:]*:/ and $_ =~ s/.*inet [^:]*:((?:\d+\.){3}\d+).*/$1/g  ;$_=""'\
-    #| grep -v ^\s*$ | grep -v 127.0.0.1)
     show_summary_latch=0
     source_latch=0
     node_host_ip_address=${my_ip_address}
@@ -355,8 +352,8 @@ setup_java() {
     pushd $workdir #>& /dev/null
     
     local java_dist_file=${java_dist_url##*/}
-    #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
-    java_dist_dir=$(echo ${java_dist_file} | awk '{print substr($1,1,length($1)-7)}')
+    #strip off -32.tar.gz at the end, i.e. last 10 chars, to get untarred dir name
+    java_dist_dir=$(echo ${java_dist_file} | awk '{print substr($1,1,length($1)-10)}')
 
     #Check to see if we have an Java distribution directory
     if [ ! -e ${java_install_dir%/*}/${java_dist_dir} ]; then
