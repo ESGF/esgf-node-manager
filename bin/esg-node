@@ -82,7 +82,7 @@ envfile=${envfile:-"/etc/esg.env"}
 t=${0%.*}
 logfile=${logfile:-"/var/tmp/${t##*/}.out"}
 install_prefix=${install_prefix:-"/usr/local"}
-workdir=${workdir:-"~/workbench/esg"}
+workdir=${workdir:-~/workbench/esg}
 
 init() {
     [ -e ${envfile} ] && source ${envfile} && printf "sourcing environment from: ${envfile} \n\n"
@@ -92,11 +92,13 @@ init() {
     node_version=${node_version:-".0.0.2"}
     
     #external programs' versions
+    curl_version=${curl_version:="7.20.1"}
     git_version=${git_version:="1.7.1"}
     java_version=${java_version:-"1.6.0_20"}
     ant_version=${ant_version:-"1.8.1"}
     postgress_version=${postgress_version:-"8.4.3"}
 
+    curl_install_dir=${CURL_HOME:-${install_prefix}/curl}
     git_install_dir=${GIT_HOME:-${install_prefix}/git}
     postgress_install_dir=${PGHOME:-${install_prefix}/pgsql}
     postgress_user=${PGUSER:-dbsuper}
@@ -125,22 +127,24 @@ init() {
     ####  DO NOT EDIT BELOW THIS POINT!!!!! ####
     ############################################
     
-    export PGHOME=$postgress_install_dir
-    export PGUSER=$postgress_user
-    export PGHOST=$postgress_host
-    export PGPORT=$postgress_port
-    export CDAT_HOME=$cdat_home
-    export JAVA_HOME=$java_install_dir
-    export JAVA_OPTS=$java_opts
-    export ANT_HOME=$ant_install_dir
-    export CATALINA_HOME=$tomcat_install_dir
-    export CATALINA_BASE=$CATALINA_HOME
-    export GLOBUS_LOCATION=$globus_location
-    export X509_CERT_DIR=$HOME/.globus/certificates-esg
-    export ESG_ROOT_ID=$esg_root_id
+    export CURL_HOME=${curl_install_dir}
+    export GIT_HOME=${git_install_dir}
+    export PGHOME=${postgress_install_dir}
+    export PGUSER=${postgress_user}
+    export PGHOST=${postgress_host}
+    export PGPORT=${postgress_port}
+    export CDAT_HOME=${cdat_home}
+    export JAVA_HOME=${java_install_dir}
+    export JAVA_OPTS=${java_opts}
+    export ANT_HOME=${ant_install_dir}
+    export CATALINA_HOME=${tomcat_install_dir}
+    export CATALINA_BASE=${CATALINA_HOME}
+    export GLOBUS_LOCATION=${globus_location}
+    export X509_CERT_DIR=${HOME}/.globus/certificates-esg
+    export ESG_ROOT_ID=${esg_root_id}
     
-    myPATH=$ANT_HOME/bin:$PGHOME/bin:$CDAT_HOME/bin:$CDAT_HOME/Externals/bin:$CATALINA_HOME/bin:$GIT_HOME/bin:$GLOBUS_LOCATION/bin:/bin:/sbin:/usr/bin
-    myLD_LIBRARY_PATH=$PGHOME/lib:$CDAT_HOME/Externals/lib:$GLOBUS_LOCATION/lib
+    myPATH=$ANT_HOME/bin:$JAVA_HOME/bin:$PGHOME/bin:$CDAT_HOME/bin:$CDAT_HOME/Externals/bin:$CATALINA_HOME/bin:$CURL_HOME/bin:$GIT_HOME/bin:$GLOBUS_LOCATION/bin:/bin:/sbin:/usr/bin
+    myLD_LIBRARY_PATH=$PGHOME/lib:$CDAT_HOME/Externals/lib:$GLOBUS_LOCATION/lib:$CURL_HOME/lib
     export PATH=$myPATH:$PATH
     export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:$LD_LIBRARY_PATH
     
@@ -155,6 +159,8 @@ init() {
     num_backups_to_keep=${num_backups_to_keep:-7}
     java_dist_url=${esg_dist_url}/java/${java_version}/jdk${java_version}-${word_size}.tar.gz
     ant_dist_url=http://www.trieuvan.com/apache/ant/binaries/apache-ant-${ant_version}-bin.tar.gz
+    curl_workdir=${workdir}/../curl
+    curl_dist_url=http://curl.haxx.se/download/curl-${curl_version}.tar.gz
     git_workdir=${workdir}/../git
     git_dist_url=http://kernel.org/pub/software/scm/git/git-${git_version}.tar.gz
     postgress_workdir=${workdir}/../postgress
@@ -230,6 +236,98 @@ check_prerequisites() {
 }
 
 #####
+# Curl/libcurl (support library - needed to support HTTP protocol in GIT)
+#####
+setup_curl() {
+
+    echo -n "Checking for curl ${curl_version}"
+    check_version curl ${curl_version}
+    [ $? == 0 ] && echo " [OK]" && return 0
+    
+    echo
+    echo "*******************************"
+    echo "Setting up Curl/Libcurl ${curl_version}"
+    echo "*******************************"
+    echo
+
+    local dosetup
+    if [ -x ${curl_install_dir}/bin/curl ]; then 
+	echo "Detected an existing (older) CURL installation..."
+	read -p "Do you want to continue with CURL installation and setup? [y/N] " dosetup
+	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
+	    echo "Skipping CURL installation and setup - will assume CURL is setup properly"
+	    return 0
+	fi
+	echo
+    fi
+
+    mkdir -p ${curl_workdir}
+    [ $? != 0 ] && checked_done 1
+    chmod a+rw ${curl_workdir}
+    pushd ${curl_workdir} >& /dev/null
+    
+    local curl_dist_file=${curl_dist_url##*/}
+    #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
+    local curl_dist_dir=$(echo ${curl_dist_file} | awk '{print substr($1,1,length($1)-7)}')
+        
+    #There is this pesky case of having a zero sized dist file... WTF!?
+    if [ -e ${curl_dist_file} ]; then
+        ls -l ${curl_dist_file}
+	#NOTE: I know there must be a cleaner way to get this, maybe stat?
+        local size=$(ls -l | grep ${curl_dist_file} | tr -s " " | cut -d " " -f 5)
+        (( size == 0 )) && rm -v ${curl_dist_file}
+    fi
+
+    #Check to see if we have postgres distribution directory
+    if [ ! -e ${curl_dist_dir} ]; then
+	echo "Don't see CURL distribution dir ${curl_dist_dir}"
+	if [ ! -e ${curl_dist_file} ]; then
+	    echo "Don't see CURL distribution file ${curl_dist_file} either"
+	    echo "Downloading CURL from ${curl_dist_url}"
+	    wget -O ${curl_dist_file} ${curl_dist_url}
+	    [ $? != 0 ] && echo " ERROR: Could not download CURL:${curl_dist_file}" && popd && checked_done 1
+	    tar xvzf ${curl_dist_file}
+	    [ $? != 0 ] && echo " ERROR: Could not extract CURL: ${curl_dist_file}" && popd && checked_done 1
+	fi
+    fi
+
+    #If you don't see the directory but see the tar.gz distribution
+    #then expand it and go from there....
+    if [ -e ${curl_dist_file} ] && [ ! -e ${curl_dist_dir} ]; then
+	tar xvzf ${curl_dist_file}
+    fi
+
+    pushd ${curl_dist_dir}
+    echo "./configure --prefix=${curl_install_dir}"
+    if ./configure --prefix=${curl_install_dir} \
+	&& gmake all \
+	&& gmake install 
+	then
+	echo "Successfully Configured and Built CURL in: ${curl_install_dir}"
+	#this is the "test"
+	${curl_install_dir}/bin/curl --version
+	[ $? != 0 ] && 	echo" ERROR: Could NOT successfully build CURL!!" && popd >& /dev/null && checked_done 1
+    else
+	echo" ERROR: Could NOT successfully build CURL!!"
+	popd >& /dev/null
+	checked_done 1
+    fi
+
+    popd >& /dev/null
+    popd >& /dev/null
+
+    write_curl_env
+    checked_done 0
+}
+
+write_curl_env() {
+    ((show_summary_latch++))
+    echo "export CURL_HOME=${curl_install_dir}" >> ${envfile}
+    dedup ${envfile}
+    return 0
+}
+
+#####
 # GIT
 #####
 setup_git() {
@@ -240,7 +338,7 @@ setup_git() {
     
     echo
     echo "*******************************"
-    echo "Setting up GIT (dvcs)..."
+    echo "Setting up GIT (dvcs) ${git_version}"
     echo "*******************************"
     echo
 
@@ -255,10 +353,10 @@ setup_git() {
 	echo
     fi
 
-    mkdir -p $git_workdir
+    mkdir -p ${git_workdir}
     [ $? != 0 ] && checked_done 1
-    chmod a+rw $git_workdir
-    pushd $git_workdir >& /dev/null
+    chmod a+rw ${git_workdir}
+    pushd ${git_workdir} >& /dev/null
 
     local git_dist_file=${git_dist_url##*/}
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
@@ -332,7 +430,7 @@ setup_java() {
 
     echo
     echo "*******************************"
-    echo "Setting up Java..."
+    echo "Setting up Java... ${java_version}"
     echo "*******************************"
     echo
 
@@ -347,9 +445,9 @@ setup_java() {
 	echo
     fi
 
-    mkdir -p $workdir
+    mkdir -p ${workdir}
     [ $? != 0 ] && checked_done 1
-    pushd $workdir #>& /dev/null
+    pushd ${workdir} #>& /dev/null
     
     local java_dist_file=${java_dist_url##*/}
     #strip off -32.tar.gz at the end, i.e. last 10 chars, to get untarred dir name
@@ -414,7 +512,7 @@ setup_ant() {
 
     echo
     echo "*******************************"
-    echo "Setting up Ant..."
+    echo "Setting up Ant... ${ant_version}"
     echo "*******************************"
     echo
 
@@ -429,9 +527,9 @@ setup_ant() {
 	echo
     fi
 
-    mkdir -p $workdir
+    mkdir -p ${workdir}
     [ $? != 0 ] && checked_done 1
-    pushd $workdir >& /dev/null
+    pushd ${workdir} >& /dev/null
     
     local ant_dist_file=${ant_dist_url##*/}
     #strip off -bin.tar.gz at the end, i.e. last 11 chars, to get untarred dir name
@@ -503,7 +601,7 @@ setup_postgress() {
 
     echo
     echo "*******************************"
-    echo "Setting up PostgreSQL..."
+    echo "Setting up PostgreSQL... ${postgress_version}"
     echo "*******************************"
     echo
 
@@ -518,10 +616,10 @@ setup_postgress() {
 	echo
     fi
 
-    mkdir -p $postgress_workdir
+    mkdir -p ${postgress_workdir}
     [ $? != 0 ] && checked_done 1
-    chmod a+rw $postgress_workdir
-    pushd $postgress_workdir >& /dev/null
+    chmod a+rw ${postgress_workdir}
+    pushd ${postgress_workdir} >& /dev/null
 
     local postgress_dist_file=${postgress_dist_url##*/}
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
@@ -596,8 +694,8 @@ setup_postgress() {
 
 
     #Create the database:
-    mkdir -p $postgress_install_dir/data
-    chown -R $pg_sys_acct $postgress_install_dir/data
+    mkdir -p ${postgress_install_dir}/data
+    chown -R ${pg_sys_acct} ${postgress_install_dir}/data
     [ $? != 0 ] && " ERROR: Could not change ownership of postgres' data to \"$pg_sys_acct\" user" && popd && checked_done 1
 
     chmod 700 $postgress_install_dir/data
@@ -735,7 +833,7 @@ test_postgress() {
 setup_cdms() {
     echo
     echo "*******************************"
-    echo "Setting up Python/CDMS..."
+    echo "Setting up Python/CDMS... ${cdat_version}"
     echo "*******************************"
     echo
 
@@ -750,13 +848,13 @@ setup_cdms() {
 	echo
     fi
 
-    mkdir -p $workdir
+    mkdir -p ${workdir}
     [ $? != 0 ] && checked_done 1
-    pushd $workdir >& /dev/null
+    pushd ${workdir} >& /dev/null
     echo "This may take a few minutes... GIT over http is slooooow :-)"
     git clone ${cdat_repo}
     cd cdat >& /dev/null
-    git checkout $cdat_version && \
+    git checkout ${cdat_version} && \
 	echo "pulling in cmor submodule" && \
 	git submodule init && \
 	git submodule update
@@ -832,9 +930,9 @@ setup_esgcet() {
 	echo
     fi
 
-    mkdir -p $workdir
+    mkdir -p ${workdir}
     [ $? != 0 ] && return 1
-    pushd $workdir >& /dev/null
+    pushd ${workdir} >& /dev/null
     
     #Gives you 30 seconds to make a choice or will choose "I" by default
     local choice
@@ -949,9 +1047,9 @@ setup_tomcat() {
 	echo
     fi
 
-    mkdir -p $workdir
+    mkdir -p ${workdir}
     [ $? != 0 ] && checked_done 1
-    pushd $workdir >& /dev/null
+    pushd ${workdir} >& /dev/null
     
     local tomcat_dist_file=${tomcat_dist_url##*/}
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
@@ -1223,9 +1321,9 @@ setup_node() {
 	echo
     fi
 
-    mkdir -p $workdir
+    mkdir -p ${workdir}
     [ $? != 0 ] && return 1
-    pushd $workdir >& /dev/null
+    pushd ${workdir} >& /dev/null
     local fetch_file
 
 
@@ -1400,9 +1498,9 @@ setup_tds() {
 	echo
     fi
 
-    mkdir -p $workdir
+    mkdir -p ${workdir}
     [ $? != 0 ] && return 1
-    pushd $workdir >& /dev/null
+    pushd ${workdir} >& /dev/null
     local fetch_file
 
     ############################
@@ -1503,7 +1601,7 @@ setup_tds() {
     #Enable SSL encryption
     ############################
 
-    mkdir -p $tomcat_install_dir/conf/Catalina/localhost
+    mkdir -p ${tomcat_install_dir}/conf/Catalina/localhost
     fetch_file=thredds.xml
     checked_get $tomcat_install_dir/conf/Catalina/localhost/${fetch_file} ${esg_dist_url}/externals/bootstrap/tomcat-${fetch_file}
     (( $? > 1 )) && echo " ERROR: Problem pulling down ${fetch_file} from esg distribution" && popd && checked_done 1
@@ -1620,9 +1718,9 @@ write_tds_env() {
 
 test_tds() {
     echo -n "Thredds Data Server Test... "
-    mkdir -p $workdir
+    mkdir -p ${workdir}
     [ $? != 0 ] && checked_done 1
-    pushd $workdir >& /dev/null
+    pushd ${workdir} >& /dev/null
 
     start_postgress
 
@@ -1652,9 +1750,9 @@ test_tds() {
 # Takes arg ["with-bdm-config"|"bdm-config-only"] see esg-globus script
 setup_globus() {
     echo -n "Globus Setup for Data-Node... (GridFTP server)"
-    mkdir -p $workdir
+    mkdir -p ${workdir}
     [ $? != 0 ] && checked_done 1
-    pushd $workdir >& /dev/null
+    pushd ${workdir} >& /dev/null
 
     pushd ${scripts_dir} >& /dev/null
     local fetch_file=esg-globus
@@ -1745,9 +1843,9 @@ setup_subsystem() {
     echo
 
     echo -n "${subsystem} setup for Data-Node... "
-    mkdir -p $workdir
+    mkdir -p ${workdir}
     [ $? != 0 ] && checked_done 1
-    pushd $workdir >& /dev/null
+    pushd ${workdir} >& /dev/null
 
     pushd ${scripts_dir} # >& /dev/null
     local fetch_file=esg-${subsystem}
@@ -2493,6 +2591,7 @@ main() {
 		#---------------
 		#version checking...
 		#---------------
+		setup_curl
 		setup_git
 		setup_java
 		setup_ant
@@ -2617,6 +2716,7 @@ main() {
     #Installation of basic system components.
     # (Only when one setup in the sequence is okay can we move to the next)
     #---------------------------------------
+    [ $((sel & 1)) != 0 ] && setup_curl
     [ $((sel & 1)) != 0 ] && setup_git
     [ $((sel & 1)) != 0 ] && setup_java
     [ $((sel & 1)) != 0 ] && setup_ant
