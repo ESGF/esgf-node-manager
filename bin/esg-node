@@ -776,7 +776,7 @@ setup_cdms() {
     make
     [ $? != 0 ] && echo " ERROR: Could not compile (make) cdat code" && popd && checked_done 1
 
-    /usr/local/cdat/bin/python -c "import cdms2" 2>/dev/null
+    ${cdat_home}/bin/python -c "import cdms2" 2>/dev/null
     [ $? != 0 ] && echo " ERROR: Could not load CDMS (cdms2) module" && popd && checked_done 1
 
     popd >& /dev/null    
