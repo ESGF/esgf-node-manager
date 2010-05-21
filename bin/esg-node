@@ -87,6 +87,7 @@ workdir=${workdir:-~/workbench/esg}
 init() {
     [ -e ${envfile} ] && source ${envfile} && printf "sourcing environment from: ${envfile} \n\n"
 
+    #internal data-node code versions
     cdat_version=${cdat_version:-"095acf5"}
     esgcet_version=${esgcet_version:-"2.3"}
     node_version=${node_version:-".0.0.2"}
@@ -97,6 +98,7 @@ init() {
     java_version=${java_version:-"1.6.0_20"}
     ant_version=${ant_version:-"1.8.1"}
     postgress_version=${postgress_version:-"8.4.3"}
+    tomcat_version=${tomcat_version:-"6.0.26"}
 
     curl_install_dir=${CURL_HOME:-${install_prefix}/curl}
     git_install_dir=${GIT_HOME:-${install_prefix}/git}
@@ -173,7 +175,7 @@ init() {
     cdat_repo=http://esg-repo.llnl.gov/git/cdat.git
     esgcet_egg_file=esgcet-${esgcet_version}-py2.5.egg
     esg_testdir=${workdir}/../esg_test
-    tomcat_dist_url=http://download.filehat.com/apache/tomcat/tomcat-6/v6.0.26/bin/apache-tomcat-6.0.26.tar.gz
+    tomcat_dist_url=http://download.filehat.com/apache/tomcat/tomcat-6/v${tomcat_version}/bin/apache-tomcat-${tomcat_version}.tar.gz
     tomcat_pid_file=/var/run/tomcat-jsvc.pid
     utils_url=${esg_dist_url}/utils
     thredds_dist_url=ftp://ftp.unidata.ucar.edu/pub/thredds/4.1/thredds.war
