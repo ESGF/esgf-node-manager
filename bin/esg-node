@@ -776,6 +776,9 @@ setup_cdms() {
     make
     [ $? != 0 ] && echo " ERROR: Could not compile (make) cdat code" && popd && checked_done 1
 
+    /usr/local/cdat/bin/python -c "import cdms2" 2>/dev/null
+    [ $? != 0 ] && echo " ERROR: Could not load CDMS (cdms2) module" && popd && checked_done 1
+
     popd >& /dev/null    
     echo
     write_cdms_env
@@ -789,25 +792,6 @@ write_cdms_env() {
     return 0
 }
 
-
-test_cdms() {
-    echo -n "CMDS Test... "
-    printf "Type the following at the python prompt \n> python \n>>> import cdms2 \n>>> <ctrl-D>\n"
-    printf "\nIf you cannot import the module, that indicates a problem with the cdms2 installation!"
-    printf "\nStop... and redo the cdms installation!\n\n"
-    if [ ! -x "${cdat_home}/bin/python" ]; then
-	checked_done 1
-    fi
-    type python
-    python
-    local ret=1
-    local worked=N
-    read -p "Were you able to import it? [y/N]: " worked
-    if [ "${worked}" = "Y" ] || [ "${worked}" = "y" ]; then
-	ret=0
-    fi
-    checked_done $ret
-}
 
 #####
 # ESGCET Package
@@ -2623,7 +2607,6 @@ main() {
     [ $((sel & 1)) != 0 ] && setup_postgress
     [ $((sel & 2)) != 0 ] && test_postgress 
     [ $((sel & 1)) != 0 ] && setup_cdms 
-    [ $((sel & 2)) != 0 ] && test_cdms 
     [ $((sel & 1)) != 0 ] && setup_esgcet 
     [ $((sel & 2)) != 0 ] && test_esgcet 
     [ $((sel & 1)) != 0 ] && setup_tomcat 
