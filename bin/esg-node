@@ -1916,7 +1916,7 @@ register() {
 
     [ -e ${certfile} ] && cp ${certfile} ${certfile}.bak
     
-    input=${1:-${ESG_GATEWAY_SVC_ROOT%%/*}}
+    local input=${1:-${ESG_GATEWAY_SVC_ROOT%%/*}}
     local ssl_endpoint=${input%%/*} #just need the hostname
     local ssl_port=${ssl_port:-443}
     local ssl_endpoint_passwd=${2:-changeit}
