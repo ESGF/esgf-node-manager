@@ -99,7 +99,9 @@ init() {
     ant_version=${ant_version:-"1.8.1"}
     postgress_version=${postgress_version:-"8.4.3"}
     tomcat_version=${tomcat_version:-"6.0.26"}
+    tds_version=${tds_version:-"4.1"}
 
+    install_logfile=${ESG_INSTALL_LOGFILE:-"/etc/esg.install_log"}
     curl_install_dir=${CURL_HOME:-${install_prefix}/curl}
     git_install_dir=${GIT_HOME:-${install_prefix}/git}
     postgress_install_dir=${PGHOME:-${install_prefix}/pgsql}
@@ -178,8 +180,8 @@ init() {
     tomcat_dist_url=http://download.filehat.com/apache/tomcat/tomcat-6/v${tomcat_version}/bin/apache-tomcat-${tomcat_version}.tar.gz
     tomcat_pid_file=/var/run/tomcat-jsvc.pid
     utils_url=${esg_dist_url}/utils
-    thredds_dist_url=ftp://ftp.unidata.ucar.edu/pub/thredds/4.1/thredds.war
-    thredds_esg_dist_url=${esg_dist_url}/thredds/4.1/thredds.war
+    thredds_dist_url=ftp://ftp.unidata.ucar.edu/pub/thredds/${tds_version}/thredds.war
+    thredds_esg_dist_url=${esg_dist_url}/thredds/${tds_version}/thredds.war
     #NOTE: This root dir should match a root set in the thredds setup 
     thredds_root_dir=/esg/data
     thredds_replica_dir=/esg/data.replica
@@ -206,6 +208,7 @@ write_paths() {
     ((show_summary_latch++))
     echo "export PATH=$myPATH:\$PATH" >> ${envfile}
     echo "export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:\$LD_LIBRARY_PATH" >> ${envfile}
+    echo "export ESG_INSTALL_LOGFILE=${install_logfile}" >> ${envfile}
     dedup ${envfile}
 }
 
@@ -319,6 +322,7 @@ setup_curl() {
     popd >& /dev/null
 
     write_curl_env
+    write_curl_install_log
     checked_done 0
 }
 
@@ -326,6 +330,12 @@ write_curl_env() {
     ((show_summary_latch++))
     echo "export CURL_HOME=${curl_install_dir}" >> ${envfile}
     dedup ${envfile}
+    return 0
+}
+
+write_curl_install_log() {
+    echo "$(date ${date_format}) curl=${curl_version} ${curl_install_dir}" >> ${install_logfile}
+    dedup ${install_logfile}
     return 0
 }
 
@@ -411,6 +421,7 @@ setup_git() {
     popd >& /dev/null
 
     write_git_env
+    write_git_install_log
     checked_done 0
 }
 
@@ -418,6 +429,12 @@ write_git_env() {
     ((show_summary_latch++))
     echo "export GIT_HOME=${git_install_dir}" >> ${envfile}
     dedup ${envfile}
+    return 0
+}
+
+write_git_install_log() {
+    echo "$(date ${date_format}) git=${git_version} ${git_install_dir}" >> ${install_logfile}
+    dedup ${install_logfile}
     return 0
 }
 
@@ -493,6 +510,7 @@ setup_java() {
     ${java_install_dir}/bin/java -version
     [ $? != 0 ] && echo "ERROR cannot run ${java_install_dir}/bin/java" && checked_done 1
     write_java_env
+    write_java_install_log
     checked_done 0
 }
 
@@ -502,6 +520,13 @@ write_java_env() {
     dedup ${envfile}
     return 0
 }
+
+write_java_install_log() {
+    echo "$(date ${date_format}) java=${java_version} ${java_install_dir%/*}/${java_dist_dir}" >> ${install_logfile}
+    dedup ${install_logfile}
+    return 0
+}
+
 
 #####
 # Ant
@@ -581,6 +606,7 @@ setup_ant() {
     ${ant_install_dir}/bin/ant -version
     [ $? != 0 ] && echo "ERROR cannot run ${ant_install_dir}/bin/ant" && checked_done 1
     write_ant_env
+    write_ant_install_log
     checked_done 0
 
 }
@@ -589,6 +615,12 @@ write_ant_env() {
     ((show_summary_latch++))
     echo "export ANT_HOME=${ant_install_dir}" >> ${envfile}
     dedup ${envfile}
+    return 0
+}
+
+write_ant_install_log() {
+    echo "$(date ${date_format}) ant=${ant_version} $(readlink -f ${ant_install_dir})" >> ${install_logfile}
+    dedup ${install_logfile}
     return 0
 }
 
@@ -769,6 +801,7 @@ setup_postgress() {
     check_shmmax
     echo
     write_postgress_env
+    write_postgress_install_log
     checked_done 0
 }
 
@@ -779,6 +812,12 @@ write_postgress_env() {
     echo "export PGHOST=$PGHOST" >> ${envfile}
     echo "export PGPORT=$PGPORT" >> ${envfile}
     dedup ${envfile}
+    return 0
+}
+
+write_postgress_install_log() {
+    echo "$(date ${date_format}) postgres=${postgress_version} ${postgress_install_dir}" >> ${install_logfile}
+    dedup ${install_logfile}
     return 0
 }
 
@@ -832,10 +871,10 @@ test_postgress() {
 #####
 # Python/CDMS
 #####
-setup_cdms() {
+setup_cdat() {
     echo
     echo "*******************************"
-    echo "Setting up Python/CDMS... ${cdat_version}"
+    echo "Setting up CDAT - (Python + CDMS)... ${cdat_version}"
     echo "*******************************"
     echo
 
@@ -881,14 +920,22 @@ setup_cdms() {
 
     popd >& /dev/null    
     echo
-    write_cdms_env
+    write_cdat_env
+    write_cdat_install_log
     checked_done 0
 }
 
-write_cdms_env() {
+write_cdat_env() {
     ((show_summary_latch++))
-    echo "export CDAT_HOME=$CDAT_HOME" >> ${envfile}
+    echo "export CDAT_HOME=${cdat_home}" >> ${envfile}
     dedup ${envfile}
+    return 0
+}
+
+write_cdat_install_log() {
+    #TODO: Parse the config.log and pull out all the values to fill this in...
+    echo "$(date ${date_format}) cdat=${cdat_version} ${cdat_home}" >> ${install_logfile}
+    dedup ${install_logfile}
     return 0
 }
 
@@ -975,6 +1022,13 @@ write_esgcet_env() {
     dedup ${envfile}
     return 0
 }
+
+write_esgcet_install_log() {
+    echo "$(date ${date_format}) python:esgcet=${esgcet_version}" >> ${install_logfile}
+    dedup ${install_logfile}
+    return 0
+}
+
 
 test_esgcet() {
     echo -n "ESGCET Test... "
@@ -1182,6 +1236,7 @@ setup_tomcat() {
     echo
     echo
     write_tomcat_env
+    write_tomcat_install_log
     return 0
 }
 
@@ -1189,6 +1244,12 @@ write_tomcat_env() {
     ((show_summary_latch++))
     echo "export CATALINA_HOME=${CATALINA_HOME}" >> ${envfile}
     dedup ${envfile}
+    return 0
+}
+
+write_tomcat_install_log() {
+    echo "$(date ${date_format}) tomcat=${tomcat_version} $(readlink -f ${tomcat_install_dir})" >> ${install_logfile}
+    dedup ${install_logfile}
     return 0
 }
 
@@ -1409,9 +1470,17 @@ setup_node() {
 
     popd >& /dev/null
     (( ! upgrade )) && configure_postgress
+    write_node_install_log
     checked_done 0
 
 }
+
+write_node_install_log() {
+    echo "$(date ${date_format}) webapp:node_mgr=${node_version} ${node_app_home}" >> ${install_logfile}
+    dedup ${install_logfile}
+    return 0
+}
+
 
 #--------------------------------------------------
 #NOTE: This must be run AFTER the esg node web app
@@ -1493,7 +1562,7 @@ setup_tds() {
     #Download the thredds.war file home site (or use value of thredds_dist_file if already set)
     ############################
 
-    local thredds_dist_file=${thredds_dist_file:-${thredds_dist_url##*/}}
+    thredds_dist_file=${thredds_dist_file:-${thredds_dist_url##*/}}
     
     #There is this pesky case of having a zero sized dist file... WTF!?                                                                            
     if [ -e ${thredds_dist_file} ]; then
@@ -1690,6 +1759,7 @@ setup_tds() {
     [ $? != 0 ] && echo " Error: could not create ${thredds_replica_dir}" && checked_done 1
     echo
     write_tds_env
+    write_tds_install_log
     checked_done 0
 }
 
@@ -1699,6 +1769,12 @@ write_tds_env() {
     echo "export ESG_GATEWAY_SVC_ROOT=${gateway_service_root}" >> ${envfile}
     echo "export myproxy_port=${myproxy_port}" >> ${envfile}
     dedup ${envfile}
+    return 0
+}
+
+write_tds_install_log() {
+    echo "$(date ${date_format}) webapp:tds=${tds_version} ${tomcat_install_dir}/webapps/${thredds_dist_file}" >> ${install_logfile}
+    dedup ${install_logfile}
     return 0
 }
 
@@ -1861,6 +1937,10 @@ show_summary() {
     echo "Please source this file when using these tools"
     echo 
     cat ${envfile}
+    echo "-------------------"
+    echo "Installation Log:"
+    echo 
+    cat ${install_logfile}
     echo "-------------------"
     echo 
     return 0
@@ -2708,7 +2788,7 @@ main() {
     [ $((sel & 1)) != 0 ] && setup_ant
     [ $((sel & 1)) != 0 ] && setup_postgress
     [ $((sel & 2)) != 0 ] && test_postgress 
-    [ $((sel & 1)) != 0 ] && setup_cdms 
+    [ $((sel & 1)) != 0 ] && setup_cdat 
     [ $((sel & 1)) != 0 ] && setup_esgcet 
     [ $((sel & 2)) != 0 ] && test_esgcet 
     [ $((sel & 1)) != 0 ] && setup_tomcat 
