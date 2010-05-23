@@ -209,7 +209,7 @@ write_paths() {
     echo "export PATH=$myPATH:\$PATH" >> ${envfile}
     echo "export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:\$LD_LIBRARY_PATH" >> ${envfile}
     echo "export ESG_INSTALL_LOGFILE=${install_logfile}" >> ${envfile}
-    dedup ${envfile}
+    dedup ${envfile} && source ${envfile}
 }
 
 #checking for what we expect to be on the system a-priori
@@ -329,7 +329,7 @@ setup_curl() {
 write_curl_env() {
     ((show_summary_latch++))
     echo "export CURL_HOME=${curl_install_dir}" >> ${envfile}
-    dedup ${envfile}
+    dedup ${envfile} && source ${envfile}
     return 0
 }
 
@@ -428,7 +428,7 @@ setup_git() {
 write_git_env() {
     ((show_summary_latch++))
     echo "export GIT_HOME=${git_install_dir}" >> ${envfile}
-    dedup ${envfile}
+    dedup ${envfile} && source ${envfile}
     return 0
 }
 
@@ -517,7 +517,7 @@ setup_java() {
 write_java_env() {
     ((show_summary_latch++))
     echo "export JAVA_HOME=${java_install_dir}" >> ${envfile}
-    dedup ${envfile}
+    dedup ${envfile} && source ${envfile}
     return 0
 }
 
@@ -614,7 +614,7 @@ setup_ant() {
 write_ant_env() {
     ((show_summary_latch++))
     echo "export ANT_HOME=${ant_install_dir}" >> ${envfile}
-    dedup ${envfile}
+    dedup ${envfile} && source ${envfile}
     return 0
 }
 
@@ -811,7 +811,7 @@ write_postgress_env() {
     echo "export PGUSER=$PGUSER" >> ${envfile}
     echo "export PGHOST=$PGHOST" >> ${envfile}
     echo "export PGPORT=$PGPORT" >> ${envfile}
-    dedup ${envfile}
+    dedup ${envfile} && source ${envfile}
     return 0
 }
 
@@ -928,7 +928,7 @@ setup_cdat() {
 write_cdat_env() {
     ((show_summary_latch++))
     echo "export CDAT_HOME=${cdat_home}" >> ${envfile}
-    dedup ${envfile}
+    dedup ${envfile} && source ${envfile}
     return 0
 }
 
@@ -1026,7 +1026,7 @@ setup_esgcet() {
 
 write_esgcet_env() {
     echo "export ESG_ROOT_ID=$esg_root_id" >> ${envfile}
-    dedup ${envfile}
+    dedup ${envfile} && source ${envfile}
     return 0
 }
 
@@ -1250,7 +1250,7 @@ setup_tomcat() {
 write_tomcat_env() {
     ((show_summary_latch++))
     echo "export CATALINA_HOME=${CATALINA_HOME}" >> ${envfile}
-    dedup ${envfile}
+    dedup ${envfile} && source ${envfile}
     return 0
 }
 
@@ -1781,7 +1781,7 @@ write_tds_env() {
     echo "export ESG_GATEWAY_NAME=${gateway_name}" >> ${envfile}
     echo "export ESG_GATEWAY_SVC_ROOT=${gateway_service_root}" >> ${envfile}
     echo "export myproxy_port=${myproxy_port}" >> ${envfile}
-    dedup ${envfile}
+    dedup ${envfile} && source ${envfile}
     return 0
 }
 
@@ -1850,7 +1850,7 @@ write_globus_env() {
     echo "export GLOBUS_LOCATION=$GLOBUS_LOCATION" >> ${envfile}
     echo "export X509_CERT_DIR=$X509_CERT_DIR" >>  ${envfile}
     #echo "export gridftp_config_args=$gridftp_config_args" >> ${envfile}
-    dedup ${envfile}
+    dedup ${envfile} && source ${envfile}
     return 0
 }
 
