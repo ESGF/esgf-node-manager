@@ -151,6 +151,7 @@ init() {
     myLD_LIBRARY_PATH=$CURL_HOME/lib:$PGHOME/lib:$CDAT_HOME/Externals/lib:$GLOBUS_LOCATION/lib
     export PATH=$myPATH:$PATH
     export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:$LD_LIBRARY_PATH
+    export CFLAGS="-I$CURL_HOME/include $CFLAGS"
     
     
     
