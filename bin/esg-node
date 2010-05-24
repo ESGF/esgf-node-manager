@@ -453,6 +453,8 @@ setup_java() {
     echo "*******************************"
     echo
 
+    local last_java_truststore_file
+
     local dosetup
     if [ -x ${java_install_dir}/bin/java ]; then 
 	echo "Detected an existing (older) java installation..."
@@ -461,6 +463,7 @@ setup_java() {
 	    echo "Skipping Java installation and setup - will assume Java is setup properly"
 	    return 0
 	fi
+	last_java_truststore_file=${truststore_file}
 	echo
     fi
 
@@ -511,6 +514,20 @@ setup_java() {
     [ $? != 0 ] && echo "ERROR cannot run ${java_install_dir}/bin/java" && checked_done 1
     write_java_env
     write_java_install_log
+
+    #-----------------------------
+    #In the situation where this function is called under update
+    #semantics i.e. there is already a previous installation of java
+    #an installation of tomcat with tomcat setup with a properly
+    #generated/configured jssecacerts file and there is a valid
+    #ESG_GATEWAY_SVC_ROOT being pointed to.  We should copy over that
+    #jssecacerts into this newly installed VM to satisfy SSL.
+    if [ -e "${last_java_truststore_file}" ]; then00000
+	cp -v "${last_java_truststore_file" "${java_install_dir}/conf"
+	chmod 644 ${java_install_dir}/con/${last_java_truststore_file##*/}
+    fi
+    #-----------------------------
+
     checked_done 0
 }
 
@@ -2011,6 +2028,8 @@ register() {
     [ -e ${certfile} ] && cp ${certfile} ${certfile}.bak
     
     local input=${1:-${ESG_GATEWAY_SVC_ROOT%%/*}}
+    [ -z "${input}" ] && popd && echo "Could not register: No endpoint specified" && return 1
+
     local ssl_endpoint=${input%%/*} #just need the hostname
     local ssl_port=${ssl_port:-443}
     local ssl_endpoint_passwd=${2:-changeit}
