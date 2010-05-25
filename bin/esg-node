@@ -730,9 +730,9 @@ setup_postgress() {
 	echo " WARNING: There is no postgres system account user \"$pg_sys_acct\" present on system"
 	#NOTE: "useradd/groupadd" are a RedHat/CentOS thing... to make this cross distro compatible clean this up.
 	/usr/sbin/groupadd -r -f ${pg_sys_acct_group}
-	[ $? != 0 ] && echo "ERROR: Could not add postgres system group: ${pg_sys_acct_group}" && popd && checked_done 1
+	[ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add postgres system group: ${pg_sys_acct_group}" && popd && checked_done 1
 	/usr/sbin/useradd -r -u26 -c"PostgreSQL Service" -g $pg_sys_acct_group -p $pg_sys_acct_passwd $pg_sys_acct
-	[ $? != 0 ] && echo "ERROR: Could not add postgres system account user" && popd && checked_done 1
+	[ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add postgres system account user" && popd && checked_done 1
     fi
     ########
     sleep 3
@@ -1167,9 +1167,9 @@ setup_tomcat() {
 	echo " WARNING: There is no tomcat user \"$tomcat_user\" present on system"
 	#NOTE: "useradd/groupadd" are a RedHat/CentOS thing... to make this cross distro compatible clean this up.
 	/usr/sbin/groupadd -r -f ${tomcat_group}
-	[ $? != 0 ] && echo "ERROR: Could not add tomcat system group: ${tomcat_group}" && popd && checked_done 1
+	[ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add tomcat system group: ${tomcat_group}" && popd && checked_done 1
 	/usr/sbin/useradd -r -u91 -c"Tomcat Server Identity" -g $tomcat_group $tomcat_user
-	[ $? != 0 ] && echo "ERROR: Could not add tomcat system account user \"$tomcat_user\"" && popd && checked_done 1
+	[ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add tomcat system account user \"$tomcat_user\"" && popd && checked_done 1
     fi
         
 
