@@ -523,9 +523,9 @@ setup_java() {
     #generated/configured jssecacerts file and there is a valid
     #ESG_GATEWAY_SVC_ROOT being pointed to.  We should copy over that
     #jssecacerts into this newly installed VM to satisfy SSL.
-    if [ -e "${last_java_truststore_file}" ]; then00000
-	cp -v "${last_java_truststore_file" "${java_install_dir}/conf"
-	chmod 644 ${java_install_dir}/con/${last_java_truststore_file##*/}
+    if [ -e "${last_java_truststore_file}" ]; then
+	cp -v ${last_java_truststore_file} ${java_install_dir}/conf
+	chmod 644 ${java_install_dir}/conf/${last_java_truststore_file##*/}
     fi
     #-----------------------------
 
