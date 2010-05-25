@@ -955,7 +955,7 @@ write_cdat_install_log() {
     
     #Parse the cdat installation config.log file and entries to the install log
     if [ -e ${workdir}/cdat/config.log ]; then
-	awk '/building/ {print "'"$(date ${date_format})"' cdat:"$2"="$NF" '"${cdat_home}"'"}' ${workdir}/cdat/config.log >> ${install_logfile}
+	awk '/building/ {print "'"$(date ${date_format})"' cdat->"$(NF-1)":"$2"="$NF" '"${cdat_home}"'"}' ${workdir}/cdat/config.log >> ${install_logfile}
     else
 	echo " WARNING: Could not find cdat config.log file [${workdir}/cdat/config.log] installation log entries could not be generated!"
     fi
