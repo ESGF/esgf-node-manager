@@ -88,7 +88,7 @@ init() {
     [ -e ${envfile} ] && source ${envfile} && printf "sourcing environment from: ${envfile} \n\n"
 
     #internal data-node code versions
-    cdat_version=${cdat_version:-"43cc2fc"}
+    cdat_version=${cdat_version:-"83856de"}
     esgcet_version=${esgcet_version:-"2.4"}
     esgcet_python_version=${esgcet_python_version:-"2.6"}
     node_version=${node_version:-".0.0.2"}
