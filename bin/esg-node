@@ -89,7 +89,8 @@ init() {
 
     #internal data-node code versions
     cdat_version=${cdat_version:-"43cc2fc"}
-    esgcet_version=${esgcet_version:-"2.3"}
+    esgcet_version=${esgcet_version:-"2.4"}
+    esgcet_python_version=${esgcet_python_version:-"2.6"}
     node_version=${node_version:-".0.0.2"}
     
     #external programs' versions
@@ -176,7 +177,7 @@ init() {
     pg_sys_acct_group=${pg_sys_acct_group:-$pg_sys_acct}
     postgress_dist_url=http://ftp9.us.postgresql.org/pub/mirrors/postgresql/source/v${postgress_version}/postgresql-${postgress_version}.tar.gz
     cdat_repo=http://esg-repo.llnl.gov/git/cdat.git
-    esgcet_egg_file=esgcet-${esgcet_version}-py2.5.egg
+    esgcet_egg_file=esgcet-${esgcet_version}-py${esgcet_python_version}.egg
     esg_testdir=${workdir}/../esg_test
     tomcat_dist_url=http://download.filehat.com/apache/tomcat/tomcat-6/v${tomcat_version}/bin/apache-tomcat-${tomcat_version}.tar.gz
     tomcat_pid_file=/var/run/tomcat-jsvc.pid
@@ -971,7 +972,7 @@ write_cdat_install_log() {
 setup_esgcet() {
     echo
     echo "*******************************"
-    echo "Setting up ESGCET Package..."
+    echo "Setting up ESGCET Package...(${esg_egg_file})"
     echo "*******************************"
     echo
 
