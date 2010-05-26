@@ -972,7 +972,7 @@ write_cdat_install_log() {
 setup_esgcet() {
     echo
     echo "*******************************"
-    echo "Setting up ESGCET Package...(${esg_egg_file})"
+    echo "Setting up ESGCET Package...(${esgcet_egg_file})"
     echo "*******************************"
     echo
 
