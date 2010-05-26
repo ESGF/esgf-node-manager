@@ -2632,16 +2632,22 @@ main() {
 		let sel+=2
 		;;
 	    start | --start)
+		check_prerequisites
+		[ $? != 0 ] && echo && exit 1
 		(($DEBUG)) && echo "START SERVICES"
 		start
 		exit 0
 		;;
 	    stop | --stop)
+		check_prerequisites
+		[ $? != 0 ] && echo && exit 1
 		(($DEBUG)) && echo "STOP SERVICES"
 		stop
 		exit 0
 		;;
 	    restart)
+		check_prerequisites
+		[ $? != 0 ] && echo && exit 1
 		stop
 		sleep 2
 		start
@@ -2661,6 +2667,9 @@ main() {
 		exit 0
 		;;
 	    --clear)
+		self_verify
+		check_prerequisites
+		[ $? != 0 ] && echo && exit 1
 		if [ -e ${envfile} ]; then 
 		    mv -v ${envfile} ${envfile}.bak 
 		    echo "Cleared envfile ${envfile}"
@@ -2668,6 +2677,9 @@ main() {
 		exit 0
 		;;
 	    --clear-certs)
+		self_verify
+		check_prerequisites
+		[ $? != 0 ] && echo && exit 1
 		init
 		echo "Clearing out certs..."
 		local cert_dir=${HOME}/.globus/certificates-esg
@@ -2714,6 +2726,8 @@ main() {
 		exit $?
 		;;
 	    --uninstall)
+		check_prerequisites
+		[ $? != 0 ] && echo && exit 1
 		init
 		uninstall
 		exit
@@ -2790,6 +2804,9 @@ main() {
 	((!unshift)) && shift
     done
 
+    check_prerequisites
+    [ $? != 0 ] && echo && exit 1
+
     self_verify
 
     (($DEBUG)) && echo "SEL = $sel"
@@ -2810,8 +2827,6 @@ main() {
     fi    
 
     init
-    check_prerequisites
-    [ $? != 0 ] && echo && exit 1
 
     #---------------------------------------
     #Installation of basic system components.
@@ -2884,7 +2899,7 @@ main() {
 #trap stop_tomcat INT TERM
 #trap - INT TERM
 
-echo "start time: `date`" >> ${logfile}
+#echo "start time: `date`" >> ${logfile}
 main $@
-echo "end time: `date`" >> ${logfile}
+#echo "end time: `date`" >> ${logfile}
 exit 0
