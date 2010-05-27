@@ -91,7 +91,7 @@ init() {
     cdat_version=${cdat_version:-"83856de"}
     esgcet_version=${esgcet_version:-"2.4"}
     esgcet_python_version=${esgcet_python_version:-"2.6"}
-    node_version=${node_version:-".0.0.2"}
+    node_version=${node_version:-"0.0.2"}
     
     #external programs' versions
     curl_version=${curl_version:="7.20.1"}
@@ -187,7 +187,7 @@ init() {
     #NOTE: This root dir should match a root set in the thredds setup 
     thredds_root_dir=/esg/data
     thredds_replica_dir=/esg/data.replica
-    node_dist_url=${esg_dist_url}/esg-node/esg-node${node_version}.tar.gz
+    node_dist_url=${esg_dist_url}/esg-node/esg-node.${node_version}.tar.gz
     node_db_name=esgcet
     node_app_context_root=esg-node
     node_app_home=${tomcat_install_dir}/webapps/${node_app_context_root}
@@ -1532,7 +1532,7 @@ configure_postgress() {
     #NOTE: (zoiks) Need to be able to tell the difference between a
     #database already there vs another error
 
-    pushd ${workdir}/${node_dist_dir:-esg-node${node_version}}/db
+    pushd ${workdir}/${node_dist_dir:-esg-node.${node_version}}/db
     [ $? != 0 ] && echo " ERROR: Could not find node distribution dir ${workdir}/${node_dist_dir}" && checked_done 1
 
     echo "${ANT_HOME}/bin/ant -buildfile database-tasks.ant.xml \
@@ -1789,7 +1789,7 @@ setup_tds() {
     echo "curl http://${node_host_ip_address}/thredds"
     curl http://${node_host_ip_address}/thredds
     [ $? != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to contact thredds page on this server" && checked_done 1
-    
+    echo "[PASSED]"    
     write_tds_env
     write_tds_install_log
     checked_done 0
