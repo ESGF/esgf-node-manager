@@ -1,0 +1,34 @@
+#*****************************************************************
+# Copyright (c) 2009  Larence Livermore National Security (LLNS)
+# Produced at the Lawrence Livermore National Laboratory
+# All rights reserved.
+#*****************************************************************
+#
+#   Description: 
+    A running list of items of work that need to be done
+#
+#*****************************************************************
+
+TODO:
+
+overall:
+-Put in JUnit testing.
+-Install BDM client and simple sanity check call(s)
+-Clean up InstallCert Blurting out exception stack trace simply because
+ you don't have the key.  (that's the point - you're trying to get it :-)
+-Build Shell
+
+esg-node:
+-Inspect the "dedup" function to work with install_log as well
+-Put in better software version string checking in check_version()
+-GIT - put in fix to update an existing git fetching for cdat upgraded versions
+
+core:
+Metrics & Monitoring
+ ->Put in Query "LIMIT" clause at the end of each query to a configurable value
+ ->For Monitoring put in time series results in fixed size LRU cache
+-Remove faux 'gateway' from codebase.
+-Put in XML Parsing of Payload message data (the catalog)
+ -> Have to get or make catalog specific XSD to JAXB on.
+
+---
