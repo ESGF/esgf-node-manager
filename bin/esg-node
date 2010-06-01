@@ -465,7 +465,7 @@ setup_java() {
 	    echo "Skipping Java installation and setup - will assume Java is setup properly"
 	    return 0
 	fi
-	last_java_truststore_file=${truststore_file}
+	last_java_truststore_file=$(readlink -f ${truststore_file}) 
 	echo
     fi
 
@@ -840,6 +840,7 @@ write_postgress_install_log() {
     return 0
 }
 
+#returns 1 if it is already running (if check_postgress_process returns 0 - true)
 start_postgress() {
     check_postgress_process && return 1
     
@@ -879,11 +880,13 @@ stop_postgress() {
 
 test_postgress() {
     echo -n "Postgress Test...  "
-    check_postgress_process 
-    [ $? != 0 ] && echo "[FAILED] process not running..." && checked_done 1
-    echo "(hit CTRL D to continue... if terminal is holding)"
-    $postgress_install_dir/bin/psql -U $postgress_user ${pg_sys_acct}
-    [ $? != 0 ] && printf "[FAILED]\n ERROR: $postgress_install_dir/bin/psql command failed" && checked_done 1
+    start_postgress
+
+    ${postgress_install_dir}/bin/psql --version
+    [ $? != 0 ] && echo" ERROR: Could NOT successfully locate postgres installation!!" && popd >& /dev/null && checked_done 1
+
+    PGPASSWORD=${PGPASSWORD:-${pg_sys_acct_passwd}} psql -qt -c "select table_name from information_schema.tables where table_schema='public';" ${node_db_name} ${postgress_user} | grep -v ^$ | sort
+    [ $? != 0 ] && echo " ERROR: Could not verify ESG database installation! (perhaps \"pg_sys_acct_passwd\"  was not set correctly?)" && checked_done 1
     checked_done 0
 }
 
@@ -1056,6 +1059,8 @@ write_esgcet_install_log() {
 test_esgcet() {
     echo -n "ESGCET Test... "
     pushd $workdir >& /dev/null
+
+    start_postgress
 
     #esgcet_testdir=$(readlink -f ${thredds_root_dir})/test
     esgcet_testdir=${thredds_root_dir}/test
@@ -1341,7 +1346,6 @@ test_tomcat() {
 
     echo -n "Tomcat Test...  "
     start_tomcat
-
     echo "---------------------------------------------------------"
     echo "Should see the page source below: means server works :-)"
     echo "--------------------page source start--------------------"
@@ -2839,7 +2843,7 @@ main() {
     [ $((sel & 1)) != 0 ] && setup_esgcet 
     [ $((sel & 2)) != 0 ] && test_esgcet 
     [ $((sel & 1)) != 0 ] && setup_tomcat 
-    [ $((sel & 2)) != 0 ] && sleep 5 && test_tomcat
+    [ $((sel & 2)) != 0 ] && test_tomcat
     [ $((sel & 1)) != 0 ] && setup_tds 
     [ $((sel & 2)) != 0 ] && test_tds 
     [ $((sel & 1)) != 0 ] && setup_node #(tomcat off)
