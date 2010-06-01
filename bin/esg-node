@@ -2458,6 +2458,8 @@ self_verify() {
 }
 
 show_svc_list() {
+    id | grep root >& /dev/null
+    [ $? != 0 ] && echo "(display of node process list limited to root)" && return 0
     echo
     echo "---------------------------"
     echo "Running Node Services..."
@@ -2465,6 +2467,7 @@ show_svc_list() {
     lsof -i |egrep  'postgres|jsvc|globus-gr'
     echo "---------------------------"
     echo
+    return 0
 }
 
 #Starts the esg node
