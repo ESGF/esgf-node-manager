@@ -2457,6 +2457,22 @@ self_verify() {
     return 0
 }
 
+#Displays the status of the node...
+status() {
+    #TODO conditionally reflect the status of globus (gridftp) process
+    local ret=1
+    if check_postgress_process && check_tomcat_process; then
+	echo "Node Running..."
+	ret=0
+    else
+	echo "Stopped: No running processes detected"
+	ret=1
+    fi
+    #This is here for sanity checking...
+    show_svc_list
+    return ${ret}
+}
+
 show_svc_list() {
     id | grep root >& /dev/null
     [ $? != 0 ] && echo "(display of node process list limited to root)" && return 0
@@ -2789,14 +2805,8 @@ main() {
 		unset tmpargs
 		;;
 	    status | --status)
-		#TODO conditionally reflect the status of globus (gridftp) process
-		if check_postgress_process && check_tomcat_process; then
-		    echo "Node Running..."
-		else
-		    echo "Stopped: No running processes detected"
-		fi
-		show_svc_list
-		exit 0
+		status
+		exit $?
 		;;
 	    -h | --help)
 		usage
