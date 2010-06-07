@@ -131,6 +131,7 @@ public class MetricsExpDAO extends ESGDAO {
     //------------------------------------
     private ResultSetHandler<List <MetricsExpDAO.ExpInfo>> metricsExpHandler = null;
     protected void buildResultSetHandler() {
+	log.trace("Setting up result handler");
 	metricsExpHandler = new ResultSetHandler<List<MetricsExpDAO.ExpInfo>> () {
 	    public List<MetricsExpDAO.ExpInfo> handle(ResultSet rs) throws SQLException {
 		List<MetricsExpDAO.ExpInfo> expInfos = new Vector<ExpInfo>();

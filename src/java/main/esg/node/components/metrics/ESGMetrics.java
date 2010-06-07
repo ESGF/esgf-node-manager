@@ -156,7 +156,7 @@ public class ESGMetrics extends AbstractDataNodeComponent {
     }
     
     private void startMetricsCollection() {
-	log.trace("Launching Node Metrics Timer");
+	log.trace("launching node metrics timer");
 	long delay  = Long.parseLong(props.getProperty("metrics.initialDelay"));
 	long period = Long.parseLong(props.getProperty("metrics.period"));
 	log.trace("metrics delay: "+delay+" sec");

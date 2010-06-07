@@ -161,17 +161,17 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     //-------------------------------------------
     public void addESGQueueListener(ESGQueueListener listener) {
 	if(listener == null) return;
-	log.trace("Adding Queue Listener: "+listener);
+	log.trace("Adding Queue Listener: "+listener+" to "+this.getName());
 	esgQueueListenersMap.put(listener.getName(),listener);
     }
     
     public void removeESGQueueListener(ESGQueueListener listener) {
-	log.trace("Removing Listener: "+listener);
+	log.trace("Removing Listener: "+listener+" from "+this.getName());
 	esgQueueListenersMap.remove(listener.getName());
     }
 
     public void removeESGQueueListener(String listenerName) {
-	log.trace("Removing Queue Listener named: "+listenerName);
+	log.trace("Removing Queue Listener named: "+listenerName+" from "+this.getName());
 	esgQueueListenersMap.remove(listenerName);
     }
 

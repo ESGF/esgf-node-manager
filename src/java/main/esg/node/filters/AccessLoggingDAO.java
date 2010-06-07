@@ -78,9 +78,12 @@ import org.apache.commons.logging.impl.*;
 public class AccessLoggingDAO implements Serializable {
 
     //TODO figure out what these queries should be!
-    private static final String accessLoggingQuery = 
-	"insert into access_logging (id, userid, email, url, remote_addr, file_id, user_agent, date_fetched, success) "+
+    private static final String accessLoggingIngressQuery = 
+	"insert into access_logging (id, user_id, email, url, file_id, remote_addr, user_agent, date_fetched, success) "+
 	"values ( nextval('seq_access_logging'), ?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String accessLoggingEgressQuery = 
+	"update access_logging set success = ?, date_fetched = ? "+
+	"where user_id = ?, url = ?, file_id = ?, remote_addr = ?, date_fetched = ?";
 
     private static final Log log = LogFactory.getLog(AccessLoggingDAO.class);
 
@@ -103,14 +106,33 @@ public class AccessLoggingDAO implements Serializable {
     }
     
     //TODO: put in args and setup query!!!
-    public int log(String userid,  String email, String url, String remoteAddress, String fileID, String userAgent) {
+    public int logIngressInfo(String userID,  String email, String url, String fileID, String remoteAddress, String userAgent, long dateFetched) {
 	int ret = -1;
 	try{
 	    //TODO: Perhaps the url can be used to resolve the dataset???
 	    //That is the bit of information we really want to also have.
 	    //What we really need is an absolute id for a file!!!
-	    ret = queryRunner.update(accessLoggingQuery,
-				     userid,email,url,remoteAddress,fileID,userAgent,System.currentTimeMillis()/1000,true);
+	    ret = queryRunner.update(accessLoggingIngressQuery,
+				     userID,email,url,fileID,remoteAddress,userAgent,dateFetched,false);
+	}catch(SQLException ex) {
+	    log.error(ex);
+	}
+	return ret;
+    }
+    
+    //Upon egress update the ingress record with additional
+    //information that can only be obtained on egress of the filter
+    //this information is duration (though I am skeptical that it
+    //means what Nate things it means) and success.  the identifying
+    //tuple of information is the same as the ingress log fields.
+    //Once the record is uniquely identified then the egress
+    //information (the last pair) can be updated.
+    public int logEgressInfo(String userID, String url, String fileID, String remoteAddress, long dateFetched, boolean success, long duration) {
+	int ret = -1;
+	try {
+	    ret = queryRunner.update(accessLoggingEgressQuery,
+				     success,duration,
+				     userID,url,remoteAddress,fileID,dateFetched);
 	}catch(SQLException ex) {
 	    log.error(ex);
 	}
@@ -118,7 +140,8 @@ public class AccessLoggingDAO implements Serializable {
     }
     
     public String toString() {
-	return "DAO:(1)["+this.getClass().getName()+"] - [Q:"+accessLoggingQuery+"] "+((dataSource == null) ? "[OK]" : "[INVALID]\n");
+	return "DAO:(1)["+this.getClass().getName()+"] - [Q:"+accessLoggingIngressQuery+"] "+((dataSource == null) ? "[OK]\n" : "[INVALID]\n")+
+	       "DAO:(2)["+this.getClass().getName()+"] - [Q:"+accessLoggingEgressQuery+"]  "+((dataSource == null) ? "[OK]\n" : "[INVALID]\n");
     }
 
 }

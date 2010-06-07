@@ -157,7 +157,16 @@ public class AccessLoggingFilter implements Filter {
 			 FilterChain chain) throws IOException, ServletException {
 	
 	if(filterConfig == null) return;
-	
+
+	boolean success = false;
+
+	//Record identifying tuple
+	String userID = null;
+	String url = null;
+	String fileID = null;
+	String remoteAddress = null;
+	long   dateFetched = 0L;
+
 	//firewall off any errors so that nothing stops the show...
 	try {
 	    if(accessLoggingDAO != null) {
@@ -166,14 +175,16 @@ public class AccessLoggingFilter implements Filter {
 		Map<String,String> validationMap = (Map<String,String>)req.getAttribute("validationMap");
 		if(validationMap != null) {
 		    
-		    String userid = validationMap.get("user");
+		    userID = validationMap.get("user");
 		    String email = validationMap.get("email");
-		    String url = req.getRequestURL().toString();
-		    String remoteAddress = req.getRemoteAddr();
-		    String file_id = "";
+		    url = req.getRequestURL().toString();
+		    fileID = "0A";
+		    remoteAddress = req.getRemoteAddr();
 		    String userAgent = (String)req.getAttribute("userAgent");
+		    dateFetched = System.currentTimeMillis()/1000;
 		    
-		    accessLoggingDAO.log(userid,email,url,remoteAddress,file_id,userAgent);
+		    success = (accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,dateFetched) > 0);
+		    
 		    
 		    //Want to make sure that any snooping filters
 		    //behind this one does not have access to this
@@ -202,14 +213,17 @@ public class AccessLoggingFilter implements Filter {
 	long startTime = System.currentTimeMillis();
         chain.doFilter(request, response);
         long duration = System.currentTimeMillis() - startTime;
-	
-	//try{
-	//    accessLoggingDAO.logEgressInfo(userid,url,remoteAddress,duration);
-	//}catch(Throwable t) {
-	//    log.error(t);
-	//    HttpServletResponse resp = (HttpServletResponse)response;
-	//    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
-	//}
+	//NOTE: I Don't think duration means what Nate thinks it means...
+
+	try{
+	    if((accessLoggingDAO != null) && success) {
+		accessLoggingDAO.logEgressInfo(userID,url,fileID,remoteAddress, dateFetched, success, duration);
+	    }
+	}catch(Throwable t) {
+	    log.error(t);
+	    HttpServletResponse resp = (HttpServletResponse)response;
+	    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
+	}
     }
     
 }

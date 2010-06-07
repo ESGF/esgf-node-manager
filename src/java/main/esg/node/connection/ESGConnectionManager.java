@@ -114,8 +114,8 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 	if(gateways == null) gateways = Collections.synchronizedMap(new HashMap<String,Gateway>());
 	if(unavailableGateways == null) unavailableGateways = Collections.synchronizedMap(new HashMap<String,Gateway>());
 	
-	periodicallyPingToGateways();
-	periodicallyRegisterToGateways(); //zoiks: test method (not permanent)
+	//periodicallyPingToGateways();
+	//periodicallyRegisterToGateways(); //zoiks: test method (not permanent)
     }
 
     //--------------------------------------------

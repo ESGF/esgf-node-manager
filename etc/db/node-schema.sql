@@ -9,15 +9,15 @@ SET escape_string_warning = off;
 
 CREATE TABLE  access_logging (
     id int NOT NULL,
-    userid character varying NOT NULL,
+    user_id character varying NOT NULL,
     email character varying NOT NULL,
     url character varying NOT NULL,
-    remote_addr character varying NOT NULL,
     file_id character varying,
-    date_fetched double precision NOT NULL,
-    success boolean DEFAULT true,
+    remote_addr character varying NOT NULL,
     user_agent character varying,
-    duration double precision
+    date_fetched double precision NOT NULL,
+    success boolean DEFAULT false,
+    duration double precision DEFAULT 0
 );
 
 CREATE INDEX idx_access_logging_url ON access_logging USING btree (url);

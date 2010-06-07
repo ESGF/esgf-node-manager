@@ -99,7 +99,7 @@ public class MetricsUsersDAO extends ESGDAO {
     //------------------------------------
     //Query...
     //------------------------------------
-    private static final String query = "select dl.userid, count(*), sum(size) from ("+MetricsDAO.SUBQ+") as lver, access_logging as dl where lver.url=dl.url group by userid";
+    private static final String query = "select dl.user_id, count(*), sum(size) from ("+MetricsDAO.SUBQ+") as lver, access_logging as dl where lver.url=dl.url group by user_id";
 
     public List<MetricsUsersDAO.UserInfo> getDownloadMetricsInfo() {
 	if(this.dataSource == null) {
@@ -123,6 +123,7 @@ public class MetricsUsersDAO extends ESGDAO {
     //------------------------------------
     private ResultSetHandler<List <MetricsUsersDAO.UserInfo>> metricsUsersHandler = null;
     protected void buildResultSetHandler() {
+	log.trace("Setting up result handler");
 	metricsUsersHandler = new ResultSetHandler<List<MetricsUsersDAO.UserInfo>> () {
 	    public List<MetricsUsersDAO.UserInfo> handle(ResultSet rs) throws SQLException {
 		List<MetricsUsersDAO.UserInfo> userInfos = new Vector<UserInfo>();

@@ -91,7 +91,7 @@ init() {
     cdat_version=${cdat_version:-"eb8b668"}
     esgcet_version=${esgcet_version:-"2.4"}
     esgcet_python_version=${esgcet_python_version:-"2.6"}
-    node_version=${node_version:-"0.0.2"}
+    node_version=${node_version:-"0.0.3"}
     
     #external programs' versions
     curl_version=${curl_version:="7.20.1"}
@@ -2594,7 +2594,7 @@ usage() {
             (notice, no \"--\" to make rc friendly also chkconfig-able ;-)
 
     
-      \"stop\" | \"start\" | \"status\"are meant to be run independent of other flags
+      \"stop\" | \"start\" | \"status\" are meant to be run independent of other flags (and put last if other flags are used)
       \"--install\" may be used with \"--verify\" but niether are not intended for use
       with stop or start or status
       Ex:
@@ -2608,8 +2608,9 @@ usage() {
          ${progname} --info OR
          ${progname} --register [gateway.host.address] ([truststore passwd])
          ${progname} --gridftp-config [ with-bdm-config | bdm-config-only ]
-         ${progname} stop  OR
          ${progname} start OR
+         ${progname} --gridftp-config [ with-bdm-config | bdm-config-only ] start OR
+         ${progname} stop  OR
          ${progname} status OR
     
       NOTE:
@@ -2743,6 +2744,15 @@ main() {
 		;;
 	    --check)
 		self_verify && echo "$0 is up-to-date"
+		exit $?
+		;;
+	    --config-db)
+		self_verify
+		init
+		check_prerequisites
+		[ $? != 0 ] && echo && exit 1
+		
+		conifgure_postgress 
 		exit $?
 		;;
 	    --uninstall)

@@ -91,9 +91,7 @@ public class MetricsVarsDAO extends ESGDAO {
 	super(dataSource,nodeID);
 	this.setProperties(props);
     }
-    public MetricsVarsDAO(DataSource dataSource) { 
-	this(dataSource,null, new Properties()); 
-    }
+    public MetricsVarsDAO(DataSource dataSource) { this(dataSource,null, new Properties()); }
     public MetricsVarsDAO() { super(); }
     
     public void init() { buildResultSetHandler(); }
@@ -132,6 +130,7 @@ public class MetricsVarsDAO extends ESGDAO {
     //------------------------------------
     private ResultSetHandler<List <MetricsVarsDAO.VarInfo>> metricsVarsHandler = null;
     protected void buildResultSetHandler() {
+	log.trace("Setting up result handler");
 	metricsVarsHandler = new ResultSetHandler<List<MetricsVarsDAO.VarInfo>> () {
 	    public List<MetricsVarsDAO.VarInfo> handle(ResultSet rs) throws SQLException {
 		List<MetricsVarsDAO.VarInfo> varInfos = new Vector<VarInfo>();
