@@ -8,6 +8,10 @@
 
 [esg-node]
 
+../HOWTO
+../INSTALL
+../TODO
+
 ../dist/esg-node.0.0.3.tar.gz
 ./esg-node
 ./esg-update
