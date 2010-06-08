@@ -76,7 +76,7 @@ DEBUG=${DEBUG:-0}
 #User Defined / Settable (public)
 #--------------
 progname=esg-node
-version="0.3.1"
+version="0.3.3"
 
 envfile=${envfile:-"/etc/esg.env"}
 t=${0%.*}
