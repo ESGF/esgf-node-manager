@@ -1250,6 +1250,12 @@ setup_tomcat() {
     chgrp -R $tomcat_group $(readlink -f ${tomcat_install_dir})
     [ $? != 0 ] && " ERROR: Could not change group of tomcat to \"$tomcat_user\" user" && popd && checked_done 1
     
+    #-------------------------------
+    # For Security Reasons...
+    #-------------------------------
+
+    [ -d ${tomcat_install_dir}/webapps/examples ] && rm ${tomcat_install_dir}/webapps/examples && echo "removed examples webapp..."
+    
     start_tomcat
 
     echo "---------------------------------------------------------"
