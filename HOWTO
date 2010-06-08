@@ -22,7 +22,7 @@ regarding your installation experience.
 
 
 The update script can be fetched from our website at:
-http://rainbow.llnl.gov/dist/externals/bootstrap/esg-update
+http://rainbow.llnl.gov/dist/esg-node/esg-update
 
 Follow the instructions below describing how to run the update script.
        
@@ -52,7 +52,7 @@ both  hostname -s and hostname --domain.
 
 1) download the update script to /usr/local/bin on the target machine
    % cd /usr/local/bin
-   % wget http://rainbow.llnl.gov/dist/externals/bootstrap/esg-update
+   % wget http://rainbow.llnl.gov/dist/esg-node/esg-update
 
 2) % chmod 755 esg-update
 
@@ -66,7 +66,7 @@ then subsequently to get the latest revisions of install scripts.
 4) Make sure you manually check the md5 checksum... 
    (We don't want to run just any ol' script as root!!! :-)
 
-   % diff <(md5sum esg-update | tr -s " " | cut -d " " -f 1) <(curl http://rainbow.llnl.gov/dist/externals/bootstrap/esg-update.md5 | tr -s " " | cut -d " " -f 1)
+   % diff <(md5sum esg-update | tr -s " " | cut -d " " -f 1) <(curl http://rainbow.llnl.gov/dist/esg-node/esg-update.md5 | tr -s " " | cut -d " " -f 1)
    
    (there should be NO difference!)
 
