@@ -11,6 +11,7 @@
 ../HOWTO
 ../INSTALL
 ../TODO
+../LICENSE
 
 ../dist/esg-node.0.0.3.tar.gz
 ./esg-node
