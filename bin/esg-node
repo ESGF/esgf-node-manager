@@ -153,7 +153,7 @@ init() {
     export PATH=$myPATH:$PATH
     export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:$LD_LIBRARY_PATH
     export CFLAGS="-I$CURL_HOME/include $CFLAGS"
-    
+    export LDFLAGS="-L$CURL_HOME/lib"
     
     
     #--------------
