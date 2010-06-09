@@ -310,8 +310,8 @@ public class MonitorDAO implements Serializable {
 		log.trace("rootLabel: "+rootLabel);
 		File f = datasetRoots.get(rootLabel);
 		log.trace("value : "+f);
-		statsMap.put(MonitorInfo.TOTAL_SPACE, ""+(total=(datasetRoots.get(rootLabel).getTotalSpace())/1024));
-		statsMap.put(MonitorInfo.FREE_SPACE,  ""+(free=(datasetRoots.get(rootLabel).getFreeSpace())/1024));
+		statsMap.put(MonitorInfo.TOTAL_SPACE, ""+(total=(datasetRoots.get(rootLabel).getTotalSpace())/1024L));
+		statsMap.put(MonitorInfo.FREE_SPACE,  ""+(free=(datasetRoots.get(rootLabel).getFreeSpace())/1024L));
 		statsMap.put(MonitorInfo.USED_SPACE,  ""+(total-free));
 		info.diskInfo.put(rootLabel,statsMap);
 	    }

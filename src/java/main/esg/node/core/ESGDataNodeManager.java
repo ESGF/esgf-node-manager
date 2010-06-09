@@ -63,8 +63,8 @@ package esg.node.core;
 
 import esg.node.connection.ESGConnectionManager;
 import esg.node.components.notification.ESGNotifier;
-import esg.node.components.monitoring.ESGMonitor;;
-import esg.node.components.metrics.ESGMetrics;;
+import esg.node.components.monitoring.ESGMonitor;
+import esg.node.components.metrics.ESGMetrics;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
