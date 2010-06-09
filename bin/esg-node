@@ -2450,8 +2450,15 @@ self_verify() {
     _verify 'http://rainbow.llnl.gov/dist' >& /dev/null 
     if (( $? == 3 )); then 
 	printf "WARNING: $0 could not be verified!! \n(This file, ${0}, may have been tampered with or there is a newer version posted at the distribution server.\nPlease update this script.)\n\n"
+	
 	local choice="u"
-	read -t $((1*60)) -p "Do you wish to Update and exit [u], continue anyway [c] or simply exit [N]? [u/c/N]: " choice
+	if [ "$#" == 1 ]; then
+	    (($DEBUG)) && echo "Operation $1 was chosen"
+	    choice=$1
+	else
+	    read -t $((1*60)) -p "Do you wish to Update and exit [u], continue anyway [c] or simply exit [N]? [u/c/N]: " choice
+	fi
+	
 	if [ "$choice" = "C" ] || [ "$choice" = "c" ]; then
 	    echo 
 	    return 0
@@ -2591,7 +2598,7 @@ usage() {
         --verify      - runs the test code to verify installation
         --write-env   - writes the necessary env vars to file ${envfile}
         --version     - indicates the version of this script
-        --check       - checks if this script is the most up-to-date posted
+        --check       - checks if this script is the most up-to-date posted <u|c|N> (update|continue|nothing)
         --clear       - removes the file holding the enironment state of last install
         --clear-certs - removes the prescribed certificate directory used with myproxy
         --test-pub    - performs the publication test directly (same publication called in last step of install)
@@ -2757,7 +2764,8 @@ main() {
 		exit 0
 		;;
 	    --check)
-		self_verify && echo "$0 is up-to-date"
+		shift
+		self_verify $1 && echo "$0 is up-to-date"
 		exit $?
 		;;
 	    --config-db)
