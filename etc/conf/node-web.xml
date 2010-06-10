@@ -84,6 +84,30 @@
 
 
   <!-- ******************************************************** -->
+  <!-- ACCESS LOG DATA FETCHING SERVICE                         -->
+  <!-- ******************************************************** -->
+  <servlet>
+   <servlet-name>accesslog</servlet-name>
+   <servlet-class>com.caucho.hessian.server.HessianServlet</servlet-class>
+    <init-param>
+      <param-name>home-class</param-name>
+      <param-value>esg.gateway.service.ESGAccessLogServiceImpl</param-value>
+    </init-param>
+    <init-param>
+      <param-name>home-api</param-name>
+      <param-value>esg.gateway.service.ESGAccessLogService</param-value>
+    </init-param>
+  </servlet>
+
+  <servlet-mapping>
+    <url-pattern>/accesslog</url-pattern>
+    <servlet-name>accesslog</servlet-name>
+  </servlet-mapping>
+  <!-- ******************************************************** -->
+
+
+
+  <!-- ******************************************************** -->
   <!-- TEST FAUX GATEWAY TO TEST DATANODE - GATEWAY INTERACTION -->
   <!-- ******************************************************** -->
   <servlet>
