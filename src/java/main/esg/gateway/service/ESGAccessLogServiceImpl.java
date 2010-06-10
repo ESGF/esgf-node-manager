@@ -80,7 +80,7 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
     private QueryRunner = null;
     private ResultSetHandler<List<String[]>> resultSetHandler = null;
 
-    private static final String accessLogQuery = "Select * from accessLogging";
+    private static final String accessLogQuery = "SELECT * FROM access_logging WHERE date_fetched >= ? AND date_fetched < ? ORDER BY date_fetched ASC";
     
     public ESGAccessLogServiceImpl() {
 	log.trace("Instantiating ESGAccessLogService implementation");
@@ -131,8 +131,8 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
        revisit this if it is determined a distinction should be made
        and reflected to the caller)
 
-       @param startTime the earliest date record to return
-       @param endTime latest date record to return
+       @param startTime the earliest date record to return (inclusive)
+       @param endTime latest date record to return (exclusive)
      */
     public List<String[]> fetchAccessLogData(long startTime, long endTime) {
 	try{
