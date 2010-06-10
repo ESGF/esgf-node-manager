@@ -57,13 +57,65 @@
 package esg.gateway.service;
 
 import java.util.List;
+import java.net.MalformedURLException;
+import java.net.InetAddress;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
+
+import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.ResultSetHandler;
+
+import esg.common.db.DatabaseResource;
 
 /**
    Description:
-   A simple interface for RPC (hessian) call definition.
-*/
-public interface ESGMetricsService {
 
-    public List<String[]> fetchMetricsData(long startTime, long endTime);
+   The implementation class providing the substance behind the
+   interface being exposed to the world via RPC (hessian)
+*/
+public class ESGAccessLogServiceImpl implements ESGAccessLogService {
+    private static final Log log = LogFactory.getLog(ESGAccessLogService.class);
+    private QueryRunner = null;
+    private ResultSetHandler<List<String[]>> resultSetHandler = null;
+
+    private static final String accessLogQuery = "Select * from accessLogging";
+    
+    public ESGAccessLogServiceImpl() {
+	log.trace("Instantiating ESGAccessLogService implementation");
+	init();
+    }
+
+    private void init() {
+	Properties props = new Properties();
+	props.setProperty("db.protocol","jdbc:postgresql:");
+	props.setProperty("db.host","localhost");
+	props.setProperty("db.port","5432");
+	props.setProperty("db.database","esg-datanode");
+	props.setProperty("db.user","dbsuper");
+	props.setProperty("db.password","changeme");
+	queryRunner = new QueryRunner(DatabaseResource.init("org.postgresql.Driver").setupDataSource(props).getDataSource());
+	
+	resultSetHandler = new ResultSetHandler<List<String[]>>() {
+	    public List<String[]>> handle(ResultSet rs) throws SQLException {
+		if(!rs.next()) { return -1; }
+		return rs.getInt(1);
+	    }
+	};
+	log.trace("initialization complete")
+    }
+    
+    public List<String[]> fetchAccessLogData(long startTime, long endTime) {
+	try{
+	    log.trace("Pulling raw access log data from active database table");
+	    List<String[]>> results = queryRunner.query(accessLogQuery, resultSetHandler,NotificationDAO.this.getNodeID());
+	    if(results != null) { log.info("Retrieved "+results.size()+" records"); }
+	    return results;
+	}catch(SQLException ex) {
+	    log.error(ex);	    
+	}
+	return ret;
+    }
 
 }

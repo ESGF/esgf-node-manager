@@ -57,36 +57,13 @@
 package esg.gateway.service;
 
 import java.util.List;
-import java.net.MalformedURLException;
-import java.net.InetAddress;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.commons.logging.impl.*;
-
-import esg.common.Utils;
-import esg.common.db.DatabaseResource;
 
 /**
    Description:
-
-   The implementation class providing the substance behind the
-   interface being exposed to the world via RPC (hessian)
+   A simple interface for RPC (hessian) call definition.
 */
-public class ESGMetricsServiceImpl implements ESGMetricsService {
-    private static final Log log = LogFactory.getLog(ESGMetricsService.class);
-    
-    public ESGMetricsServiceImpl() {
-	log.trace("Instantiating ESGMetricsService implementation");
-	init();
-    }
+public interface ESGAccessLogService {
 
-    private void init() {
-	
-    }
-    
-    public List<String[]> fetchMetricsData(long startTime, long endTime) {
-	return null;
-    }
+    public List<String[]> fetchAccessLogData(long startTime, long endTime);
 
 }
