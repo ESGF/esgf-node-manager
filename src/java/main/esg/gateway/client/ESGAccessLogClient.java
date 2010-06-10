@@ -62,6 +62,8 @@ import org.apache.commons.logging.impl.*;
 
 import com.caucho.hessian.client.HessianProxyFactory;
 
+import esg.gateway.service.ESGAccessLogService;
+
 /**
    Description:
    This is the client side the the AccessLogService.
@@ -90,10 +92,29 @@ public class ESGAccessLogClient {
     }
     
     /**
+       Overloading method... Takes no args - fetches all access log data from test data node
+     */
+    public List<String[]> fetchAccessLogData() {
+	return this.fetchAccessLogData("http://test-dnode.llnl.gov/esg-node/accesslog",Long.MIN_VALUE,Long.MAX_VALUE);
+    }
+    
+    /**
+       Overloading method... takes the service url - uses min and max long value for time span.
+       @param serviceURL The url for the RPC target
+     */
+    public List<String[]> fetchAccessLogData(String serviceURL) {
+	return this.fetchAccessLogData(serviceURL,Long.MIN_VALUE,Long.MAX_VALUE);
+    }
+    
+    /**
        Providing a simple delgating wrapper, for making the remote call
+       @param serviceURL The url for the RPC target
+       @param startTime  The <code>Long</code> time stamp value for the earliest record (inclusive)
+       @param endTime    The <code>Long</code> time stamp value for the latest record (not inclusive)
      */
     public List<String[]> fetchAccessLogData(String serviceURL, long startTime, long endTime) {
 	ESGAccessLogService endpoint = null;
+	log.info("Query for: "+serviceURL+" -> from: "+startTime+" to: "+endTime);
 	try{
 	    endpoint = (ESGAccessLogService)factory.create(ESGAccessLogService.class,serviceURL);
 	}catch(Exception e) {
@@ -106,7 +127,9 @@ public class ESGAccessLogClient {
     public static void main(String[] args) {
 	try {
 	    ESGAccessLogClient client = new ESGAccessLogClient();
-	    List<String[]> results = client.fetchAccessLogData(args[0],args[1],args[2]);
+	    List<String[]> results = null;
+	    if(args[0] != null) client.fetchAccessLogData(args[0]);
+	    client.fetchAccessLogData();
 	    System.out.println("---results:["+results.size()+"]---");
 	    for(String[] record : results) {
 		StringBuilder sb = new StringBuilder();
