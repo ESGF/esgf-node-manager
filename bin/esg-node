@@ -914,8 +914,10 @@ setup_cdat() {
     mkdir -p ${workdir}
     [ $? != 0 ] && checked_done 1
     pushd ${workdir} >& /dev/null
-    echo "This may take a few minutes... GIT over http is slooooow :-)"
-    git clone ${cdat_repo}
+    if [ ! -d ${workdir}/cdat ]; then
+	echo "This may take a few minutes... GIT over http is slooooow :-)"
+	git clone ${cdat_repo}
+    fi
     cd cdat >& /dev/null
     git checkout ${cdat_version}
     [ $? != 0 ] && echo " WARNING: Problem with cdat repository"
