@@ -27,7 +27,7 @@ overall:
 esg-node:
 -Inspect the "dedup" function to work with install_log as well
 -Put in better software version string checking in check_version()
--GIT - put in fix to update an existing git fetching for cdat upgraded versions
+xGIT - put in fix to update an existing git fetching for cdat upgraded versions
 
 core:
 Metrics & Monitoring
