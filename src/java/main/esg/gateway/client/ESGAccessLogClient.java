@@ -138,7 +138,7 @@ public class ESGAccessLogClient {
 	    for(String[] record : results) {
 		StringBuilder sb = new StringBuilder();
 		for(String column : record) {
-		    sb.append(column+" ");
+		    sb.append("["+column+"] ");
 		}
 		System.out.println(sb.toString());
 	    }

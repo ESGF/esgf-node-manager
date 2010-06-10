@@ -109,11 +109,12 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
 	    public List<String[]> handle(ResultSet rs) throws SQLException {
 		if(!rs.next()) { return null; }
 
-		ResultSetMetaData meta = rs.getMetaData();
-		int cols = meta.getColumnCount();
-
 		ArrayList<String[]> results = new ArrayList<String[]>();
 		String[] record = null;
+
+		ResultSetMetaData meta = rs.getMetaData();
+		int cols = meta.getColumnCount();
+		
 		while(rs.next()) {
 		    record = new String[cols];
 		    for (int i = 0; i < cols; i++) {
