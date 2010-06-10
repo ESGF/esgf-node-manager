@@ -57,8 +57,13 @@
 package esg.gateway.service;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Properties;
 import java.net.MalformedURLException;
 import java.net.InetAddress;
+import java.sql.SQLException;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -77,7 +82,7 @@ import esg.common.db.DatabaseResource;
 */
 public class ESGAccessLogServiceImpl implements ESGAccessLogService {
     private static final Log log = LogFactory.getLog(ESGAccessLogService.class);
-    private QueryRunner = null;
+    private QueryRunner queryRunner = null;
     private ResultSetHandler<List<String[]>> resultSetHandler = null;
 
     private static final String accessLogQuery = "SELECT * FROM access_logging WHERE date_fetched >= ? AND date_fetched < ? ORDER BY date_fetched ASC";
@@ -101,22 +106,23 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
 	queryRunner = new QueryRunner(DatabaseResource.init("org.postgresql.Driver").setupDataSource(props).getDataSource());
 	
 	resultSetHandler = new ResultSetHandler<List<String[]>>() {
-	    public List<String[]>> handle(ResultSet rs) throws SQLException {
+	    public List<String[]> handle(ResultSet rs) throws SQLException {
 		if(!rs.next()) { return null; }
 
 		ResultSetMetaData meta = rs.getMetaData();
 		int cols = meta.getColumnCount();
 
 		ArrayList<String[]> results = new ArrayList<String[]>();
-
+		String[] record = null;
 		while(rs.next()) {
-		    String[] record = new String[cols];
-
+		    record = new String[cols];
 		    for (int i = 0; i < cols; i++) {
 			record[i] = rs.getString(i + 1);
 		    }
 		    results.add(record);
+		    record = null; //gc courtesy
 		}
+		return results;
 	    }
 	};
 	log.trace("initialization complete");
@@ -137,7 +143,7 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
     public List<String[]> fetchAccessLogData(long startTime, long endTime) {
 	try{
 	    log.trace("Pulling raw access log data from active database table");
-	    List<String[]>> results = queryRunner.query(accessLogQuery, resultSetHandler,startTime,endTime);
+	    List<String[]> results = queryRunner.query(accessLogQuery, resultSetHandler,startTime,endTime);
 	    if(results != null) { log.info("Retrieved "+results.size()+" records"); }
 	    return results;
 	}catch(SQLException ex) {
@@ -145,7 +151,7 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
 	}catch(Throwable t) {
 	    log.error(t);
 	}
-	return new ArrayList();
+	return new ArrayList<String[]>();
     }
 
 }

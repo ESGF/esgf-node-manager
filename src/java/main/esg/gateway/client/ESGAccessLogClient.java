@@ -56,6 +56,8 @@
 ***************************************************************************/
 package esg.gateway.client;
 
+import java.util.List;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
@@ -77,16 +79,18 @@ public class ESGAccessLogClient {
 	this.factory = new HessianProxyFactory();	
     }
 
-    protected Object factoryCreate(Class serviceClass,String serviceURL) throws ESGException { 
-	log.trace("factoryCreate -> serviceClass: "+serviceClass+" , serviceURL: "+serviceURL);
-	if (serviceURL == null) serviceURL = getServiceURL();
+    private Object factoryCreate(Class serviceClass,String serviceURL) { 
+	log.trace("factoryCreate -> serviceClass: "+serviceClass.getName()+" , serviceURL: "+serviceURL);
+	if (serviceURL == null) {
+	    log.error("The service url cannot be null ["+serviceURL+"]");
+	    return null;
+	}
 	Object endpoint = null;
 	try{
 	    endpoint = factory.create(serviceClass, serviceURL); 
 	}catch(Exception e) {
 	    log.error(e);
 	    e.printStackTrace();
-	    throw new ESGException(e);
 	}
 	return endpoint;
     }
