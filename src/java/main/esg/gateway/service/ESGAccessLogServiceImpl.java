@@ -87,6 +87,9 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
 	init();
     }
 
+    /**
+       Initializes the service by setting up the database connection and result handling.
+     */
     private void init() {
 	Properties props = new Properties();
 	props.setProperty("db.protocol","jdbc:postgresql:");
@@ -99,23 +102,50 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
 	
 	resultSetHandler = new ResultSetHandler<List<String[]>>() {
 	    public List<String[]>> handle(ResultSet rs) throws SQLException {
-		if(!rs.next()) { return -1; }
-		return rs.getInt(1);
+		if(!rs.next()) { return null; }
+
+		ResultSetMetaData meta = rs.getMetaData();
+		int cols = meta.getColumnCount();
+
+		ArrayList<String[]> results = new ArrayList<String[]>();
+
+		while(rs.next()) {
+		    String[] record = new String[cols];
+
+		    for (int i = 0; i < cols; i++) {
+			record[i] = rs.getString(i + 1);
+		    }
+		    results.add(record);
+		}
 	    }
 	};
-	log.trace("initialization complete")
+	log.trace("initialization complete");
     }
     
+    /**
+       Remote method implementation that returns records from the
+       "access_logging" database table This method always returns
+       something, even if that is just an empty result.  (NOTE: The
+       caller has no way of distinguishing if the query returned no
+       records or if the query was bad and had an exception - I may
+       revisit this if it is determined a distinction should be made
+       and reflected to the caller)
+
+       @param startTime the earliest date record to return
+       @param endTime latest date record to return
+     */
     public List<String[]> fetchAccessLogData(long startTime, long endTime) {
 	try{
 	    log.trace("Pulling raw access log data from active database table");
-	    List<String[]>> results = queryRunner.query(accessLogQuery, resultSetHandler,NotificationDAO.this.getNodeID());
+	    List<String[]>> results = queryRunner.query(accessLogQuery, resultSetHandler,startTime,endTime);
 	    if(results != null) { log.info("Retrieved "+results.size()+" records"); }
 	    return results;
 	}catch(SQLException ex) {
 	    log.error(ex);	    
+	}catch(Throwable t) {
+	    log.error(t);
 	}
-	return ret;
+	return new ArrayList();
     }
 
 }
