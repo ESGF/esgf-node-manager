@@ -86,7 +86,7 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
     private ResultSetHandler<List<String[]>> resultSetHandler = null;
 
     private static final String accessLogQuery = "SELECT * FROM access_logging WHERE date_fetched >= ? AND date_fetched < ? ORDER BY date_fetched ASC";
-    
+        
     public ESGAccessLogServiceImpl() {
 	log.trace("Instantiating ESGAccessLogService implementation");
 	init();
@@ -100,7 +100,7 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
 	props.setProperty("db.protocol","jdbc:postgresql:");
 	props.setProperty("db.host","localhost");
 	props.setProperty("db.port","5432");
-	props.setProperty("db.database","esg-datanode");
+	props.setProperty("db.database","esgcet");
 	props.setProperty("db.user","dbsuper");
 	props.setProperty("db.password","changeme");
 	queryRunner = new QueryRunner(DatabaseResource.init("org.postgresql.Driver").setupDataSource(props).getDataSource());
@@ -114,13 +114,16 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
 
 		ResultSetMetaData meta = rs.getMetaData();
 		int cols = meta.getColumnCount();
+		log.trace("Number of fields: "+cols);
 		
-		while(rs.next()) {
+		for(int i=0;rs.next();i++) {
 		    record = new String[cols];
-		    for (int i = 0; i < cols; i++) {
-			record[i] = rs.getString(i + 1);
+		    for (int j = 0; j < cols; i++) {
+			record[j] = rs.getString(j + 1);
+			log.trace("gathering result record column "+(j+1));
 		    }
 		    results.add(record);
+		    log.trace("adding result record "+i);
 		    record = null; //gc courtesy
 		}
 		return results;
@@ -143,8 +146,9 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
      */
     public List<String[]> fetchAccessLogData(long startTime, long endTime) {
 	try{
-	    log.trace("Pulling raw access log data from active database table");
+	    log.trace("Fetching raw access_logging data from active database table");
 	    List<String[]> results = queryRunner.query(accessLogQuery, resultSetHandler,startTime,endTime);
+	    log.trace("Query is: "+accessLogQuery);
 	    if(results != null) { log.info("Retrieved "+results.size()+" records"); }
 	    return results;
 	}catch(SQLException ex) {

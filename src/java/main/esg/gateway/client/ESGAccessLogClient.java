@@ -118,13 +118,15 @@ public class ESGAccessLogClient {
      */
     public List<String[]> fetchAccessLogData(String serviceURL, long startTime, long endTime) {
 	ESGAccessLogService endpoint = null;
-	log.info("Query for: "+serviceURL+" -> from: "+startTime+" to: "+endTime);
 	try{
+	    log.trace("Creating stub endpoint to : "+serviceURL);
 	    endpoint = (ESGAccessLogService)factory.create(ESGAccessLogService.class,serviceURL);
 	}catch(Exception e) {
 	    log.error(e);
 	    e.printStackTrace();
 	}
+	
+	log.info("Query for: "+serviceURL+" -> from: "+startTime+" to: "+endTime);
 	return endpoint.fetchAccessLogData(startTime,endTime);
     }
     
@@ -132,8 +134,11 @@ public class ESGAccessLogClient {
 	try {
 	    ESGAccessLogClient client = new ESGAccessLogClient();
 	    List<String[]> results = null;
-	    if(args[0] != null) client.fetchAccessLogData(args[0]);
-	    client.fetchAccessLogData();
+	    if(args.length > 0) {
+		results = client.fetchAccessLogData(args[0]);
+	    }else {
+		results = client.fetchAccessLogData();
+	    }
 	    System.out.println("---results:["+results.size()+"]---");
 	    for(String[] record : results) {
 		StringBuilder sb = new StringBuilder();
@@ -145,6 +150,7 @@ public class ESGAccessLogClient {
 	    System.out.println("-----------------");
 	}catch(Throwable t) {
 	    log.error(t);
+	    t.printStackTrace();
 	}
     }
 }
