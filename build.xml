@@ -523,6 +523,10 @@ Builds the project via ant (obviously).
     
   </target>
   
+  <!--
+      To run a single test case...
+      ant test -Dtestcase=esg.node.foo.ESGFooTest
+    -->
   <target name="test" depends="make_test"
 	  description="[RUNS JUNIT TEST CODE]">
     <delete dir="${test_results_dir}" />
@@ -537,7 +541,8 @@ Builds the project via ant (obviously).
       <classpath refid="test_classpath" />
       <formatter type="brief" usefile="false"/>
       <formatter type="xml" />
-      <batchtest todir="${test_results_dir}" >
+      <test name="${testcase}" todir="${test_results_dir}" if="testcase"/>
+      <batchtest todir="${test_results_dir}" unless="testcase">
 	<fileset dir="${test_build_dir}" includes="**/*Test*.class"/>
       </batchtest>
       <assertions enableSystemAssertions="true">
