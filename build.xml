@@ -87,8 +87,8 @@ Builds the project via ant (obviously).
   
   <property file="${user.home}/.esg-node.ant.properties"/>
   <echo message="user property file ${user.home}/.esg-node.ant.properties"/>
-  <property file="./etc/esg-node.ant.properties"/> 
-  <echo message="user property file ./etc/esg-node.ant.properties"/>
+  <property file="${basedir}/etc/esg-node.ant.properties"/> 
+  <echo message="user property file ${basedir}/etc/esg-node.ant.properties"/>
 
   <property name="filter" value="false"/>
 
@@ -154,18 +154,18 @@ Builds the project via ant (obviously).
         
     <!-- defaults to use if local .esg-node.ant.properties file does not exist --> 
     <property name="module"	          value="esg-node"/>
-    <property name="src_dir"   	          value="./src/java/main"/>
-    <property name="lib_dir"   	          value="./lib"/>
-    <property name="build_dir"   	  value="./build"/>
-    <property name="dist_dir"   	  value="./dist"/>
-    <property name="test_src_dir"  	  value="./src/java/test"/>
-    <property name="test_build_dir"       value="./build/test"/>
-    <property name="test_results_dir"     value="./test-results"/>
-    <property name="test_reports_dir"     value="./test-reports"/>
-    <property name="etc_dir"   	          value="./etc"/>
+    <property name="src_dir"   	          value="${basedir}/src/java/main"/>
+    <property name="lib_dir"   	          value="${basedir}/lib"/>
+    <property name="build_dir"   	  value="${basedir}/build"/>
+    <property name="dist_dir"   	  value="${basedir}/dist"/>
+    <property name="test_src_dir"  	  value="${basedir}/src/java/test"/>
+    <property name="test_build_dir"       value="${basedir}/build/test"/>
+    <property name="test_results_dir"     value="${basedir}/test-results"/>
+    <property name="test_reports_dir"     value="${basedir}/test-reports"/>
+    <property name="etc_dir"   	          value="${basedir}/etc"/>
     <property name="conf_dir"   	  value="${etc_dir}/conf"/>
-    <property name="web_dir"   	          value="./web"/>
-    <property name="doc_dir"   	          value="./docs"/>
+    <property name="web_dir"   	          value="${basedir}/web"/>
+    <property name="doc_dir"   	          value="${basedir}/docs"/>
     <property name="jdoc_dir"   	  value="${dist_dir}/javadocs"/>
     <property name="depcache_dir"     	  value="${java.io.tmpdir}/${module}/depcache"/>
     <property name="log_config"       	  value="${conf_dir}/log4j.properties"/>
@@ -628,15 +628,15 @@ Builds the project via ant (obviously).
 
   <!--
       ************************************************************
-      Python Targets....(calls targets defined in ./src/python/build.xml
+      Python Targets....(calls targets defined in ${basedir}/src/python/build.xml
       ************************************************************
     -->
   <target name="make_python">
-    <ant dir="./src/python" antfile="build.xml" target="gen"/>
+    <ant dir="${basedir}/src/python" antfile="build.xml" target="gen"/>
   </target>
                 
   <target name="clean_python">
-    <ant dir="./src/python" antfile="build.xml" target="clean"/>
+    <ant dir="${basedir}/src/python" antfile="build.xml" target="clean"/>
   </target>
  
 </project>
