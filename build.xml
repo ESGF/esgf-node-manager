@@ -298,7 +298,9 @@ Builds the project via ant (obviously).
 	<attribute name="Version"      value="${version_num}"/>
 	<attribute name="Release-Name" value="${release_name}"/>
 	<attribute name="Main-Class"   value="${main_class}"/>
-	<section name="org/"/>
+	<section name="esg/">
+	  <attribute name="Sealed" value="false"/>
+	</section>
       </manifest>
     </jar>
   </target>
@@ -317,7 +319,9 @@ Builds the project via ant (obviously).
 	<attribute name="Project"      value="Esg-Node Tests"/>
 	<attribute name="Version"      value="${version_num}"/>
 	<attribute name="Release-Name" value="${release_name}"/>
-	<section name="test/"/>
+	<section name="esg/">
+	  <attribute name="Sealed" value="false"/>
+	</section>
       </manifest>
     </jar>
   </target>
@@ -339,7 +343,9 @@ Builds the project via ant (obviously).
 	<attribute name="Project"      value="Esg-Node"/>
 	<attribute name="Version"      value="${version_num}"/>
 	<attribute name="Release-Name" value="${release_name}"/>
-	<section name="org/"/>
+	<section name="esg/">
+	  <attribute name="Sealed" value="false"/>
+	</section>
       </manifest>
     </jar>
   </target>
@@ -360,7 +366,9 @@ Builds the project via ant (obviously).
 	<attribute name="Project"      value="Esg-Node Common"/>
 	<attribute name="Version"      value="${version_num}"/>
 	<attribute name="Release-Name" value="${release_name}"/>
-	<section name="common/"/>
+	<section name="esg/common/">
+	  <attribute name="Sealed" value="false"/>
+	</section>
       </manifest>
     </jar>
   </target>
@@ -381,7 +389,9 @@ Builds the project via ant (obviously).
 	<attribute name="Version"      value="${version_num}"/>
 	<attribute name="Release-Name" value="${release_name}"/>
 	<attribute name="Main-Class"   value="esg.gateway.client.ESGAccessLogClient"/>
-	<section name="common/"/>
+	<section name="esg/gateway/">
+	  <attribute name="Sealed" value="false"/>
+	</section>
       </manifest>
     </jar>
   </target>
@@ -397,7 +407,7 @@ Builds the project via ant (obviously).
       <fileset dir="${lib_dir}" includes="**/*.jar" excludes="**/junit*.jar"/>
     </copy>
     
-    <delete file="${dist_dir}/${module}.war"/> 
+    <delete file="${dist_dir}/${module}.war"/>
     <war destfile="${dist_dir}/${module}.war" webxml="${conf_dir}/node-web.xml">
       <fileset dir="${web_dir}" excludes="WEB-INF/**/web.xml/**,**semantic.cache**"/>
       <lib dir="${dist_dir}/tmplib">
@@ -628,7 +638,7 @@ Builds the project via ant (obviously).
   </target>
 
   
-  <target name="everything" depends="make_jar,make_test_jar,docs,test,make_python"
+  <target name="everything" depends="make_dist,test,docs,make_python"
 	  description="Does Everything..."/>
 
 
