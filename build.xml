@@ -162,6 +162,7 @@ Builds the project via ant (obviously).
     <property name="test_build_dir"       value="${basedir}/build/test"/>
     <property name="test_results_dir"     value="${basedir}/test-results"/>
     <property name="test_reports_dir"     value="${basedir}/test-reports"/>
+    <property name="test_last_failed_file" location="${build_dir}/.lasttestsfailed"/>
     <property name="etc_dir"   	          value="${basedir}/etc"/>
     <property name="conf_dir"   	  value="${etc_dir}/conf"/>
     <property name="web_dir"   	          value="${basedir}/web"/>
@@ -555,7 +556,9 @@ Builds the project via ant (obviously).
       </fileset> 
       <report format="frames" todir="${test_reports_dir}"/> 
     </junitreport>
-    <fail if="failed" message="Test cases failed"/>
+    <echo message="last build failed tests" file="${test_last_failed_file}"/>
+    <fail if="failed" message="Unit tests failed.  Check log or reports for details"/>
+    <delete file="${test_last_failed_file}"/> 
   </target>
   
   <!--
