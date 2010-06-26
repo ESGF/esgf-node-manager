@@ -67,7 +67,7 @@ Note: Check Maven for propery dependency parameter values @
 	    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:noNamespaceSchemaLocation=
                       "http://ant.apache.org/ivy/schemas/ivy.xsd">
-  <info organisation="esgf" module="esg-publisher"/>
+  <info organisation="esgf" module="esg-node"/>
   <dependencies>
     <dependency org="commons-dbcp" name="commons-dbcp" rev="1.2.2"/>
     <dependency org="commons-dbutils" name="commons-dbutils" rev="1.3"/>

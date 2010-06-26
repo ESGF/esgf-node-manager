@@ -422,7 +422,7 @@ Builds the project via ant (obviously).
     </jar>
   </target>
 
-  <target name="make_all_jars" depends="make_jar,make_test_jar,make_filter_jar,make_common_jar,make_access_log_jar"/>
+  <target name="make_all_jars" depends="make_jar,make_test_jar,make_filter_jar,make_common_jar,make_access_log_client_jar"/>
 
   <target name="make_war" depends="make,init"
 	  description="(Creates war file of this project)">
