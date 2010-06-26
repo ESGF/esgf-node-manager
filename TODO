@@ -62,4 +62,11 @@ screw things up?
        ivy-2.1.0.jar
        [javamail = mail.jar, smtp.jar] ? working on resoving ivy repo failure
        (everything else we fetch via ivy)
+
+-Find out how to put fetched jars in a separate lib subdirectory
+ "fetched" so we can seperate the two types of libs and then have git
+ be able to ignore the fetched ones and remove that directory on
+ cleanup with ant.
+
+
 ---
