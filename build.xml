@@ -206,7 +206,7 @@ Builds the project via ant (obviously).
     <echo message="--------------------------------"/> 
     <tstamp/>
   </target> 
-  
+
   <!--
       ************************************************************
       Library and Resource Dependencies...
@@ -317,7 +317,7 @@ Builds the project via ant (obviously).
     </delete>
     <mkdir dir="${dist_dir}" />
     <jar destfile="${dist_dir}/${module}.${version_num}.jar">
-      <fileset dir="${build_dir}" 
+      <fileset dir="${build_dir}"
 	       includes="esg/**,**/*.properties,**/*filter-web.xml"
 	       excludes="**/test/**"/>
       <manifest>
@@ -542,7 +542,7 @@ Builds the project via ant (obviously).
     <echo>${test_cp}</echo>
     -->
     <echo message="--------------------------------"/> 
-    
+
     <mkdir dir="${test_build_dir}" />
     <mkdir dir="${depcache_dir}" />
     
@@ -565,12 +565,41 @@ Builds the project via ant (obviously).
     
   </target>
 
+  <target name="test_check">
+    <condition property="tests_uptodate">
+      <and>
+        <uptodate>
+          <srcfiles dir="${src_dir}" includes="**/*.java"/>
+          <mapper type="glob"
+                  from="*.java"
+                  to="${build_dir}/*.class" />
+        </uptodate>
+
+        <uptodate>
+          <srcfiles dir="${test_src_dir}" includes="**/*.java"/>
+          <mapper type="glob"
+                  from="*.java"
+                  to="${test_build_dir}/*.class" />
+        </uptodate>
+
+        <not>
+          <available file="${test_last_failed_file}"/>
+        </not>
+
+        <not>
+          <isset property="testcase"/>
+        </not>
+      </and>
+    </condition>
+    <echo message="tests_uptodate = ${tests_uptodate}"/>
+  </target>
+
   <!--
       To run a single test case...
       ant test -Dtestcase=esg.node.foo.ESGFooTest
     -->
-  <target name="test" depends="make_test"
-	  description="(Runs unit test code: JUnit]">
+  <target name="test" depends="make_test,test_check"
+	  description="(Runs unit test code: JUnit)">
     <delete dir="${test_results_dir}" />
     <mkdir dir="${test_results_dir}"/>
     <delete dir="${test_reports_dir}" />
