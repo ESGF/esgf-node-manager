@@ -37,4 +37,29 @@ Metrics & Monitoring
 -Put in XML Parsing of Payload message data (the catalog)
  -> Have to get or make catalog specific XSD to JAXB on.
 
+libs: (todo's and issues)
+-When cut over to ivy make sure to get rid of [jsr173] api jar since the
+tansient dependency [stax] api jar is fetched.  Also the [jaxb1-impl.jar]
+may be removed since ivy pulls down the transient dependency
+[jaxb-impl.jar] that replaces it.
+
+	git rm jsr173 api use fetched stax api
+	git rm jaxb1-impl use fetched jaxb-impl
+
+-Roll back log4j from 1.2.15 to 1.2.14 to avoid ivy repo fetch failure
+issue.
+
+	git rm log4j-1.2.15.jar use fetched log4j-1.2.14.jar
+
+-Find out from Bob what the deal is/was with hessian to see if I can
+safely upgrade to using 3.1.5 - he alluded to hacking the hessian code
+on the python side for things to work... will an upgraded hessian
+screw things up?
+
+      hessian-3.0.20.jar ->? hessian-3.1.5.jar
+
+-Keep only:
+       ivy-2.1.0.jar
+       [javamail = mail.jar, smtp.jar] ? working on resoving ivy repo failure
+       (everything else we fetch via ivy)
 ---
