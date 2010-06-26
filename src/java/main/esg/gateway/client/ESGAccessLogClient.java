@@ -1,5 +1,3 @@
-<web-app>
-<!--
 /***************************************************************************
 *                                                                          *
 *  Organization: Lawrence Livermore National Lab (LLNL)                    *
@@ -56,77 +54,103 @@
 *   SUCH DAMAGE.                                                           *
 *                                                                          *
 ***************************************************************************/
--->
+package esg.gateway.client;
 
-  <!-- ******************************************************** -->
-  <!-- ESG Data Node Service                                    -->
-  <!-- ******************************************************** -->
-  <servlet>
-   <servlet-name>datanode</servlet-name>
-   <servlet-class>com.caucho.hessian.server.HessianServlet</servlet-class>
-    <init-param>
-      <param-name>home-class</param-name>
-      <param-value>esg.node.service.ESGDataNodeServiceImpl</param-value>
-    </init-param>
-    <init-param>
-      <param-name>home-api</param-name>
-      <param-value>esg.node.service.ESGDataNodeService</param-value>
-    </init-param>
-  </servlet>
+import java.util.List;
 
-  <servlet-mapping>
-    <url-pattern>/datanode</url-pattern>
-    <servlet-name>datanode</servlet-name>
-    <load-on-startup>1</load-on-startup>
-  </servlet-mapping>
-  <!-- ******************************************************** -->
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
 
+import com.caucho.hessian.client.HessianProxyFactory;
 
+import esg.gateway.service.ESGAccessLogService;
 
-  <!-- ******************************************************** -->
-  <!-- ACCESS LOG DATA FETCHING SERVICE                         -->
-  <!-- ******************************************************** -->
-  <servlet>
-   <servlet-name>accesslog</servlet-name>
-   <servlet-class>com.caucho.hessian.server.HessianServlet</servlet-class>
-    <init-param>
-      <param-name>home-class</param-name>
-      <param-value>esg.gateway.service.ESGAccessLogServiceImpl</param-value>
-    </init-param>
-    <init-param>
-      <param-name>home-api</param-name>
-      <param-value>esg.gateway.service.ESGAccessLogService</param-value>
-    </init-param>
-  </servlet>
+/**
+   Description:
+   This is the client side the the AccessLogService.
+*/
+public class ESGAccessLogClient {
+    private static final Log log = LogFactory.getLog(ESGAccessLogClient.class);    
+    private HessianProxyFactory factory = null;
 
-  <servlet-mapping>
-    <url-pattern>/accesslog</url-pattern>
-    <servlet-name>accesslog</servlet-name>
-  </servlet-mapping>
-  <!-- ******************************************************** -->
+    public ESGAccessLogClient() {
+	log.trace("Instantiating ESGAccessLogClient");
+	this.factory = new HessianProxyFactory();	
+    }
 
-
-
-  <!-- ******************************************************** -->
-  <!-- TEST FAUX GATEWAY TO TEST DATANODE - GATEWAY INTERACTION -->
-  <!-- ******************************************************** -->
-  <servlet>
-   <servlet-name>gateway</servlet-name>
-   <servlet-class>com.caucho.hessian.server.HessianServlet</servlet-class>
-    <init-param>
-      <param-name>home-class</param-name>
-      <param-value>esg.gateway.service.ESGGatewayServiceImpl</param-value>
-    </init-param>
-    <init-param>
-      <param-name>home-api</param-name>
-      <param-value>esg.gateway.service.ESGGatewayService</param-value>
-    </init-param>
-  </servlet>
-
-  <servlet-mapping>
-    <url-pattern>/gateway</url-pattern>
-    <servlet-name>gateway</servlet-name>
-  </servlet-mapping>
-  <!-- ******************************************************** -->
-
-</web-app>
+    private Object factoryCreate(Class serviceClass,String serviceURL) { 
+	log.trace("factoryCreate -> serviceClass: "+serviceClass.getName()+" , serviceURL: "+serviceURL);
+	if (serviceURL == null) {
+	    log.error("The service url cannot be null ["+serviceURL+"]");
+	    return null;
+	}
+	Object endpoint = null;
+	try{
+	    endpoint = factory.create(serviceClass, serviceURL); 
+	}catch(Exception e) {
+	    log.error(e);
+	    e.printStackTrace();
+	}
+	return endpoint;
+    }
+    
+    /**
+       Overloading method... Takes no args - fetches all access log data from test data node
+     */
+    public List<String[]> fetchAccessLogData() {
+	return this.fetchAccessLogData("http://test-dnode.llnl.gov/esg-node/accesslog",Long.MIN_VALUE,Long.MAX_VALUE);
+    }
+    
+    /**
+       Overloading method... takes the service url - uses min and max long value for time span.
+       @param serviceURL The url for the RPC target
+     */
+    public List<String[]> fetchAccessLogData(String serviceURL) {
+	return this.fetchAccessLogData(serviceURL,Long.MIN_VALUE,Long.MAX_VALUE);
+    }
+    
+    /**
+       Providing a simple delgating wrapper, for making the remote call
+       @param serviceURL The url for the RPC target
+       @param startTime  The <code>Long</code> time stamp value for the earliest record (inclusive)
+       @param endTime    The <code>Long</code> time stamp value for the latest record (not inclusive)
+     */
+    public List<String[]> fetchAccessLogData(String serviceURL, long startTime, long endTime) {
+	ESGAccessLogService endpoint = null;
+	try{
+	    log.trace("Creating stub endpoint to : "+serviceURL);
+	    endpoint = (ESGAccessLogService)factory.create(ESGAccessLogService.class,serviceURL);
+	}catch(Exception e) {
+	    log.error(e);
+	    e.printStackTrace();
+	}
+	
+	log.info("Query for: "+serviceURL+" -> from: "+startTime+" to: "+endTime);
+	return endpoint.fetchAccessLogData(startTime,endTime);
+    }
+    
+    public static void main(String[] args) {
+	try {
+	    ESGAccessLogClient client = new ESGAccessLogClient();
+	    List<String[]> results = null;
+	    if(args.length > 0) {
+		results = client.fetchAccessLogData(args[0]);
+	    }else {
+		results = client.fetchAccessLogData();
+	    }
+	    System.out.println("---results:["+results.size()+"]---");
+	    for(String[] record : results) {
+		StringBuilder sb = new StringBuilder();
+		for(String column : record) {
+		    sb.append("["+column+"] ");
+		}
+		System.out.println(sb.toString());
+	    }
+	    System.out.println("-----------------");
+	}catch(Throwable t) {
+	    log.error(t);
+	    t.printStackTrace();
+	}
+    }
+}

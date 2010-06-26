@@ -2198,47 +2198,132 @@ check_tomcat_process() {
     return 1
 }
 
+#--------------------------------------------------------------------------
+# Donated code from Estanislao (thanks!)
+# To do a bit more robust version checking... See the "check_version" function 
 #-----
-#(A quick and dirty function for checking version)
-#returns okay (0) if the current version is newer than specified target version
-#-----
+compare_versions_() {
+    (($DEBUG)) && echo "Comparing versions: $@"
+    OLDIFS=$IFS
+    IFS=".-_/@+#"
+    (($DEBUG)) && echo $@
+    count1=0
+    for v1 in $1; do
+        (($DEBUG2)) && echo v1=$v1
+        count2=0
+        for v2 in $3; do
+            (($DEBUG2)) && echo "v2=$v2" && echo "[[ \$count2=$count2 == \$count1=$count1 ]]"
+            if [[ $count2 == $count1 && $v1 != $v2 ]]; then
+                #if same so keep going... so break inner for loop
+                (($DEBUG2)) && echo "[[ \$v1=$v1 == \$v2=$v2 ]]"
+                [[ $v1 == $v2 ]] && break
+
+                #ok, no match here we resolve it: compare v1 and v2
+                (($DEBUG2)) && echo "[[ $v1 $2 $v2 ]]"
+                #don't forget to set it back!
+                IFS=$OLDIFS
+		
+		eval "[[ $v1 $2 $v2 ]]"
+                return $?
+            fi
+            : $((++count2)) 
+        done
+        #remove last count (which doesn't count :-)
+        : $((--count2))
+	: $((++count1))
+    done
+    #remove last count (which doesn't count :-)
+    : $((--count1))
+    
+    #don't mess with this...
+    IFS=$OLDIFS
+    
+    (($DEBUG)) && echo "compare last one again in case we have two equal versions"
+    eval "[[ $v1 $2 $v2 ]]"
+    ret=$?
+    
+    (($DEBUG)) && echo "equality was allowed, check passed"
+    [[ $ret == 0 ]] && return 0
+    
+    
+    #if here the strings were equal or $1 is longer than $2 (and therefore "greater")
+    (($DEBUG)) && echo "[[ count1=$count1 > count2=$count2 ]]"
+    if [[ $count1 = $count2 ]]; then
+        (($DEBUG)) && echo "they were equal, but equality wasn't expected (ret 1)"
+        return 1
+    else
+        (($DEBUG)) && echo "the longest is the gretest. Compare length.i"
+        eval "[[ $count1 $2 $count2 ]]"
+        return $?
+    fi
+}
+
+#------
+# "Private Utility/Helper method for the check_version[^_] function to follow.
+# Does some arge scrubbing etc.
+#------
+# the first non numeric field breaks comparison and is treated as a special field
+# which is equal to any other non numneric one.
+# only numeric fields before non numeric ones are considered
+# so 1.1.a == 1.1.b and 1.1_B203 == 1.1_B204 and 1.b.1 == 1.c.4 (!!)
+# but and 1.2.a > 1.1.y and 1.1.a > 1.1 (!!)
+check_version_helper() {
+    (($DEBUG)) && echo "in check_version_helper $@"
+    #only one parameter, probably a string, expand it
+    [[ $# == 1 ]] && set -- $1
+    (($DEBUG)) && echo "\$1=$1, \$2=$2, \$3=$3"
+    
+    #check we have what we need
+    if [[  -z $1 || -z $2  || -z $3 ]]; then 
+        [[ $verbose ]] && usage
+        return 255 
+    fi
+
+    #transform operators in arithmetic ones (if not already)
+    case $2 in
+        '>') op="-gt" ;;
+        '>=') op="-ge" ;;
+        '<') op="-lt" ;;
+        '<=') op="-le" ;;
+        =|==) op="-eq" ;;
+        !=|'<>') op="-ne" ;;
+        *) op=$2
+    esac
+    
+    #we only need three params for this function
+    compare_versions_ "${1}" "$op" "${3}"
+    local ret=$?
+    (($DEBUG)) && echo "compare_versions from check_version_ returns $ret"
+    return $ret
+}
+
+#The "Public" function that should be called.  Delegates to the helper functions (the two above)
+#Makes the calls to fetch the version information about the passed in executable
 check_version() {
+    (($DEBUG)) && echo "check_version $@"
     [ -z $2 ] && return 0
-    ((DEBUG)) && echo $2
-    local target_version=$(echo $2 | perl -ne '/(\d+.*\d*.*\d*[_.]*\d*).*/, print "$1 "' | tr -d "." | tr -d "_" | tr -d "\"" | cut -d " " -f1,1)
-    ((DEBUG)) && echo "target_version = [$target_version]"
+    (($DEBUG)) && echo $2
+    local target_version=$(echo $2 | perl -ne '/(\d+.*\d*.*\d*[.-_@+#]*\d*).*/, print "$1 "' | tr -d "\"" | cut -d " " -f1,1)
+    (($DEBUG)) && echo "target_version = [$target_version]"
+
     $1 --version >& /tmp/f || $1 -version >& /tmp/f
     [ $? != 0 ] && echo && echo "Oops, $1 command not found" && return 2
-    line=($(cat /tmp/f 2>&1 | perl -ne '/(\d+.*\d*.*\d*[_.]*\d*).*/, print "$1 "' | tr -d "." | tr -d "_" | tr -d "\"" | cut -d " " -f1,1))
+    current_version=$(cat /tmp/f 2>&1 | perl -ne '/(\d+.*\d*.*\d*[.-_@+#]*\d*).*/, print "$1 "' | tr -d "\""  | cut -d " " -f1,1)
+    (($DEBUG)) && echo "current_version = [$current_version]"
     
-    #-----
-    #If you are reading this... I know this looks a bit hokey...
-    #But I could not find an easy way (in bash) to post-pend 0's to a string.
-    #(no printf doesn't do that, sadly)
-    #This will take care of the case where you want to make sure that someone with 
-    #java version 1.6.0_20 is not considered higher than someone with 1.7
-    #since 16020 is indeed "greater than" 17 vs
-    #16020 being properly compared to 17000 :-)
-    #I could have sub-shelled out to perl or python to do this in a call but where possible, 
-    #I like to stay in bash.  If you know of a better/cleaner solution feel free to make it happen.
-    #(yes... I know you could just pass in 17000) but then that doesn't parse against the regex
-    #so to keep version number formats consistent... this is cleanest.)
-    let i=0
+    (($DEBUG)) && echo "calling helper, check_version_helper ${current_version} >= ${target_version}"
+    check_version_helper "${current_version}" ">=" "${target_version}" # note: bug found (needed to quote the operation ">=")
+    local ret=$?
+    (($DEBUG)) && echo "The return value from the call to helper function check_version_ is $ret"
+    [ $ret == 0 ] && return 0
 
-    while (( ${#target_version} < ${#line} )); do
-	target_version=$((target_version*10))
-	((i == 6)) && exit
-	((i++))
-    done
-    #-----
-
-    ((DEBUG)) && echo "[$line] >= [$target_version] ?"
-    [ $((line >= $target_version)) == 1 ] && return 0
-    echo "Minimum Target version: $2 is newer than..."
+    printf "\nSorry, the detected version of $1 [${current_version}] is older than required minium version [$2] \n"
     cat /tmp/f
     rm /tmp/f >& /dev/null
     return 1
 }
+#--------------------------------------------------------------------------
+
 
 checked_done() {
     if (($1)); then
@@ -2702,7 +2787,6 @@ main() {
 		echo
 		;;
 	    --version)
-		echo ""
 		echo "Version: $version"
 		echo "Earth Systems Grid"
 		echo "Data Node Installation Script"

@@ -76,7 +76,7 @@
       <param-name>db.port</param-name>
       <param-value>5432</param-value>
       <param-name>db.database</param-name>
-      <param-value>esg-datanode</param-value>
+      <param-value>esgcet</param-value>
       <param-name>db.user</param-name>
       <param-value>dbsuper</param-value>
       <param-name>db.password</param-name>

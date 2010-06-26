@@ -1,5 +1,3 @@
-<web-app>
-<!--
 /***************************************************************************
 *                                                                          *
 *  Organization: Lawrence Livermore National Lab (LLNL)                    *
@@ -56,77 +54,16 @@
 *   SUCH DAMAGE.                                                           *
 *                                                                          *
 ***************************************************************************/
--->
+package esg.gateway.service;
 
-  <!-- ******************************************************** -->
-  <!-- ESG Data Node Service                                    -->
-  <!-- ******************************************************** -->
-  <servlet>
-   <servlet-name>datanode</servlet-name>
-   <servlet-class>com.caucho.hessian.server.HessianServlet</servlet-class>
-    <init-param>
-      <param-name>home-class</param-name>
-      <param-value>esg.node.service.ESGDataNodeServiceImpl</param-value>
-    </init-param>
-    <init-param>
-      <param-name>home-api</param-name>
-      <param-value>esg.node.service.ESGDataNodeService</param-value>
-    </init-param>
-  </servlet>
+import java.util.List;
 
-  <servlet-mapping>
-    <url-pattern>/datanode</url-pattern>
-    <servlet-name>datanode</servlet-name>
-    <load-on-startup>1</load-on-startup>
-  </servlet-mapping>
-  <!-- ******************************************************** -->
+/**
+   Description:
+   A simple interface for RPC (hessian) call definition.
+*/
+public interface ESGAccessLogService {
 
+    public List<String[]> fetchAccessLogData(long startTime, long endTime);
 
-
-  <!-- ******************************************************** -->
-  <!-- ACCESS LOG DATA FETCHING SERVICE                         -->
-  <!-- ******************************************************** -->
-  <servlet>
-   <servlet-name>accesslog</servlet-name>
-   <servlet-class>com.caucho.hessian.server.HessianServlet</servlet-class>
-    <init-param>
-      <param-name>home-class</param-name>
-      <param-value>esg.gateway.service.ESGAccessLogServiceImpl</param-value>
-    </init-param>
-    <init-param>
-      <param-name>home-api</param-name>
-      <param-value>esg.gateway.service.ESGAccessLogService</param-value>
-    </init-param>
-  </servlet>
-
-  <servlet-mapping>
-    <url-pattern>/accesslog</url-pattern>
-    <servlet-name>accesslog</servlet-name>
-  </servlet-mapping>
-  <!-- ******************************************************** -->
-
-
-
-  <!-- ******************************************************** -->
-  <!-- TEST FAUX GATEWAY TO TEST DATANODE - GATEWAY INTERACTION -->
-  <!-- ******************************************************** -->
-  <servlet>
-   <servlet-name>gateway</servlet-name>
-   <servlet-class>com.caucho.hessian.server.HessianServlet</servlet-class>
-    <init-param>
-      <param-name>home-class</param-name>
-      <param-value>esg.gateway.service.ESGGatewayServiceImpl</param-value>
-    </init-param>
-    <init-param>
-      <param-name>home-api</param-name>
-      <param-value>esg.gateway.service.ESGGatewayService</param-value>
-    </init-param>
-  </servlet>
-
-  <servlet-mapping>
-    <url-pattern>/gateway</url-pattern>
-    <servlet-name>gateway</servlet-name>
-  </servlet-mapping>
-  <!-- ******************************************************** -->
-
-</web-app>
+}
