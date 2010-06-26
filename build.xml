@@ -133,7 +133,7 @@ Builds the project via ant (obviously).
   <property environment="env"/>
   <!-- ****************** -->
   
-	
+
   <!--
       ************************************************************
       Initialization and Preparation....
@@ -245,7 +245,7 @@ Builds the project via ant (obviously).
   </target>
 
   <target name="make" depends="init" 
-	  description="(Java compiles all the source code)">
+	  description="(Java compiles all the main source code)">
     <echo message="Java Compiling Esg-Node..."/> 
     
     <mkdir dir="${build_dir}" />
@@ -283,8 +283,8 @@ Builds the project via ant (obviously).
     -->
   <target name="make_jar" depends="make"
 	  description="(Creates the jar file distribution of this project)">
-    <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}.${version_num}.jar"/> 
-    <delete> 
+    <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}.${version_num}.jar"/>
+    <delete>
       <fileset dir="." includes="${dist_dir}/${module}.${version_num}.jar"/>
     </delete>
     <mkdir dir="${dist_dir}" />
@@ -305,10 +305,10 @@ Builds the project via ant (obviously).
       </manifest>
     </jar>
   </target>
-  
+
   <target name="make_test_jar" depends="make_test" description="(Creates test jar file)">
     <echo message="JAR -  ${test_build_dir} ->> ${dist_dir}/${module}-test.${version_num}.jar"/> 
-    <delete> 
+    <delete>
       <fileset dir="." includes="${dist_dir}/${module}-test.${version_num}.jar"/>
     </delete>
     <mkdir dir="${dist_dir}" />
@@ -351,7 +351,6 @@ Builds the project via ant (obviously).
     </jar>
   </target>
   
-
   <target name="make_common_jar" depends="make" description="(Creates common jar file)">
     <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}-common.${version_num}.jar"/> 
     <delete> 
@@ -374,13 +373,13 @@ Builds the project via ant (obviously).
     </jar>
   </target>
 
-  <target name="make_access_log_jar" depends="make" description="(Creates jar file for client rpc call to access log service)">
-    <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}-accesslog.${version_num}.jar"/> 
+  <target name="make_access_log_client_jar" depends="make" description="(Creates jar file for client rpc call to access log service)">
+    <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}-accesslog-client.${version_num}.jar"/> 
     <delete> 
-      <fileset dir="." includes="${dist_dir}/${module}-accesslog*.jar"/>
+      <fileset dir="." includes="${dist_dir}/${module}-accesslog-client*.jar"/>
     </delete>
     <mkdir dir="${dist_dir}" />
-    <jar destfile="${dist_dir}/${module}-accesslog.${version_num}.jar">
+    <jar destfile="${dist_dir}/${module}-accesslog-client.${version_num}.jar">
       <fileset dir="${build_dir}"
 	       includes="esg/gateway/client/**,esg/gateway/service/ESGAccessLogService.class"/>
       <manifest>
@@ -498,20 +497,22 @@ Builds the project via ant (obviously).
       JUnit Tests....
       ************************************************************
     -->
-  
+
   <target name="make_test" depends="make" 
 	  description="(Java compile all the test source code)">
     <echo message="Java Compiling Esg-Node TESTs..."/> 
-    
+
     <path id="test_classpath">
       <fileset dir="${lib_dir}" includes="**/junit*.jar"/>
       <path refid="main_classpath"/>
       <pathelement location="${test_build_dir}" />
     </path>
-    
+    <!--
+    <echo message="TEST CLASSPATH:"/>
     <pathconvert property="test_cp" refid="test_classpath" pathsep="${line.separator}"/>
     <echo>${test_cp}</echo>
-
+    -->
+    <echo message="--------------------------------"/> 
     
     <mkdir dir="${test_build_dir}" />
     <mkdir dir="${depcache_dir}" />
@@ -534,24 +535,24 @@ Builds the project via ant (obviously).
     <tstamp/>
     
   </target>
-  
+
   <!--
       To run a single test case...
       ant test -Dtestcase=esg.node.foo.ESGFooTest
     -->
   <target name="test" depends="make_test"
-	  description="[RUNS JUNIT TEST CODE]">
+	  description="(Runs unit test code: JUnit]">
     <delete dir="${test_results_dir}" />
     <mkdir dir="${test_results_dir}"/>
     <delete dir="${test_reports_dir}" />
     <mkdir dir="${test_reports_dir}"/>
-    <junit errorproperty="failed" 
-	   failureproperty="failed" 
-	   printsummary="on" 
-	   fork="yes" 
+    <junit errorproperty="failed"
+	   failureproperty="failed"
+	   printsummary="on"
+	   fork="yes"
 	   maxmemory="1024M">
       <classpath refid="test_classpath" />
-      <formatter type="brief" usefile="false"/>
+      <formatter type="plain" usefile="false"/>
       <formatter type="xml" />
       <test name="${testcase}" todir="${test_results_dir}" if="testcase"/>
       <batchtest todir="${test_results_dir}" unless="testcase">
@@ -561,23 +562,23 @@ Builds the project via ant (obviously).
 	<enable/>
       </assertions>
     </junit>
-    <junitreport todir="${test_results_dir}"> 
-      <fileset dir="${test_results_dir}"> 
-	<include name="TEST-*.xml"/> 
-      </fileset> 
-      <report format="frames" todir="${test_reports_dir}"/> 
+    <junitreport todir="${test_results_dir}">
+      <fileset dir="${test_results_dir}">
+	<include name="TEST-*.xml"/>
+      </fileset>
+      <report format="frames" todir="${test_reports_dir}"/>
     </junitreport>
     <echo message="last build failed tests" file="${test_last_failed_file}"/>
     <fail if="failed" message="Unit tests failed.  Check log or reports for details"/>
-    <delete file="${test_last_failed_file}"/> 
+    <delete file="${test_last_failed_file}"/>
   </target>
-  
+
   <!--
       ************************************************************
       DOCUMENTATION....
       ************************************************************
     -->
-  
+
   <target name="docs" depends="init"
 	  description="(Generates the javadoc for this project)">
     <delete dir="${javadoc_dir}"/>
@@ -587,7 +588,7 @@ Builds the project via ant (obviously).
        author="true"
        version="true"
        use="true"
-       linksource="${javadoc_link_src}"	  
+       linksource="${javadoc_link_src}"
        windowtitle="ESG-NODE API">
 
       <packageset dir="${src_dir}" defaultexcludes="yes">
@@ -639,8 +640,12 @@ Builds the project via ant (obviously).
   </target>
 
   
-  <target name="everything" depends="make_dist,test,docs,make_python"
-	  description="Does Everything..."/>
+  <target name="make_everything" depends="make_dist,test,docs"
+	  description="(Builds Everything... Distributions, Tests, Docs & Reports)">
+    <echo message="JavaDocs -> file://${basedir}/dist/javadocs/index.html"/>
+    <echo message="Unit Test Report -> file://${basedir}/file:///Users/cue/projects/esg-publisher/"/>
+    <echo message="Web Site -> http://esg-repo.llnl.gov/dist"/>
+  </target>
 
 
 
