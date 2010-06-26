@@ -83,7 +83,7 @@ Description:
 Builds the project via ant (obviously).
 -->
 
-<project name="esg-node" default="make" basedir=".">
+<project name="esg-node" default="make" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
   
   <property file="${user.home}/.esg-node.ant.properties"/>
   <echo message="user property file ${user.home}/.esg-node.ant.properties"/>
@@ -178,19 +178,8 @@ Builds the project via ant (obviously).
     <property name="jaxb_gen_src_dir" value="${src_dir}/esg/common/generated"/>
     <property name="jaxb_gen_package" value="esg.common.generated"/>
 
-    
-    <path id="main_classpath">
-      <fileset dir="${lib_dir}">
-	<include name="**/*.jar"/>
-	<exclude name="**/junit*.jar"/>
-      </fileset>
-      <pathelement path="${build_dir}"/>
-    </path>
+    <property name="lib_deps_reports_dir" value="${basedir}/dep-reports"/>
   
-    <taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
-      <classpath refid="main_classpath"/>
-    </taskdef>
- 
     <echo message="--------------------------------"/> 
     <echo message="version_num       = ${version_num} "/> 
     <echo message="release_name      = ${release_name} "/> 
@@ -214,24 +203,61 @@ Builds the project via ant (obviously).
     <echo message="log_file          = ${log_file}"/>
     <echo message="javadoc_link_src  = ${javadoc_link_src}"/>
     <echo message="filter            = ${filter} "/> 
-    
-    <echo message=""/>
-    <echo message="MAIN CLASSPATH:"/>
-    <pathconvert property="_cp" refid="main_classpath" pathsep="${line.separator}"/>
-    <echo>${_cp}</echo>
-    
     <echo message="--------------------------------"/> 
-    <echo message=""/>
     <tstamp/>
   </target> 
   
+  <!--
+      ************************************************************
+      Library and Resource Dependencies...
+      ************************************************************
+    -->
+  
+  
+  <target name="init-ivy" depends="init">
+    <property name="ivy_version" value="2.1.0" />
+    <!-- <get src="http://repo2.maven.org/maven2/org/apache/ivy/ivy/${ivy_version}/ivy-${ivy_version}.jar" 
+	      dest="ivy-${ivy_version}.jar" usetimestamp="true"/> -->
+    <taskdef resource="org/apache/ivy/ant/antlib.xml"
+             uri="antlib:org.apache.ivy.ant" classpath="${lib_dir}/ivy-${ivy_version}.jar"/>
+  </target>
+  
+  <target name="deps" depends="init-ivy" description="(Sets up library dependencies: Ivy)">
+    <ivy:retrieve/>
+    <path id="main_classpath">
+      <fileset dir="${lib_dir}">
+	<include name="**/*.jar"/>
+	<exclude name="**/junit*.jar"/>
+      </fileset>
+      <pathelement path="${build_dir}"/>
+    </path>
+    
+    <taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
+      <classpath refid="main_classpath"/>
+    </taskdef>
+
+    <echo message="MAIN CLASSPATH:"/>
+    <pathconvert property="_cp" refid="main_classpath" pathsep="${line.separator}"/>
+    <echo>${_cp}</echo>
+    <echo message="--------------------------------"/> 
+  </target>
+
+  <target name="dep_report" depends="deps" description="(Generates a report of library dependencies)">
+    <mkdir dir="${lib_deps_reports_dir}"/>
+    <ivy:report todir="${lib_deps_reports_dir}"/>
+  </target>
+  
+  <target name="dep_clean_cache" depends="init,init-ivy" description="(Clean the ivy cache)">
+    <ivy:cleancache />
+  </target>
+
   <!--
       ************************************************************
       Generation  and Compilation....
       ************************************************************
     -->
 
-  <target name="gen_jaxb" depends="init" 
+  <target name="gen_jaxb" depends="deps" 
 	  description="(Generates Java Objects from XML schema)">
     <mkdir dir="${jaxb_gen_src_dir}"/>
     <xjc package="${jaxb_gen_package}"
@@ -244,7 +270,7 @@ Builds the project via ant (obviously).
     </xjc>
   </target>
 
-  <target name="make" depends="init" 
+  <target name="make" depends="deps" 
 	  description="(Java compiles all the main source code)">
     <echo message="Java Compiling Esg-Node..."/> 
     
@@ -456,6 +482,7 @@ Builds the project via ant (obviously).
     <delete dir="${build_dir}"/>
     <delete dir="${test_results_dir}"/>
     <delete dir="${test_reports_dir}"/>
+    <delete dir="${lib_deps_reports_dir}"/>
     <tstamp/>
   </target>
 
