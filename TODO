@@ -18,7 +18,8 @@
 TODO:
 
 overall:
--Put in JUnit testing.
+xPut in JUnit testing.
+-Write test cases for codebase.
 -Install BDM client and simple sanity check call(s)
 -Clean up InstallCert Blurting out exception stack trace simply because
  you don't have the key.  (that's the point - you're trying to get it :-)
@@ -38,7 +39,7 @@ Metrics & Monitoring
  -> Have to get or make catalog specific XSD to JAXB on.
 
 libs: (todo's and issues)
--When cut over to ivy make sure to get rid of [jsr173] api jar since the
+xWhen cut over to ivy make sure to get rid of [jsr173] api jar since the
 tansient dependency [stax] api jar is fetched.  Also the [jaxb1-impl.jar]
 may be removed since ivy pulls down the transient dependency
 [jaxb-impl.jar] that replaces it.
@@ -46,7 +47,7 @@ may be removed since ivy pulls down the transient dependency
 	git rm jsr173 api use fetched stax api
 	git rm jaxb1-impl use fetched jaxb-impl
 
--Roll back log4j from 1.2.15 to 1.2.14 to avoid ivy repo fetch failure
+xRoll back log4j from 1.2.15 to 1.2.14 to avoid ivy repo fetch failure
 issue.
 
 	git rm log4j-1.2.15.jar use fetched log4j-1.2.14.jar
@@ -58,10 +59,31 @@ screw things up?
 
       hessian-3.0.20.jar ->? hessian-3.1.5.jar
 
+-Fix issue with ivy having problems with resolving "javamail" to fetch
+ mailapi.jar and smtp.jar
+
 -Keep only:
        ivy-2.1.0.jar
+       [hessian-3.0.20.jar] ? Test that still wire compatible with python version.
        [javamail = mail.jar, smtp.jar] ? working on resoving ivy repo failure
        (everything else we fetch via ivy)
+
+(jars that will be fetched by ivy that can be removed)
+
+    activation.jar
+    commons-dbcp-1.2.2.jar
+    commons-dbutils-1.3.jar
+    commons-logging-1.1.1.jar
+    commons-pool-1.5.4.jar
+    jaxb-api.jar
+    jaxb-impl.jar
+    jaxb-xjc.jar
+    jaxb1-impl.jar
+    jsr173_1.0_api.jar
+    junit-4.8.2.jar
+    log4j-1.2.15.jar
+    postgresql-8.3-603.jdbc3.jar
+    servlet-api.jar
 
 -Find out how to put fetched jars in a separate lib subdirectory
  "fetched" so we can seperate the two types of libs and then have git
