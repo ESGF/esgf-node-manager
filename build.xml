@@ -432,7 +432,7 @@ Builds the project via ant (obviously).
     <mkdir dir="${dist_dir}/tmplib"/>
     
     <copy todir="${dist_dir}/tmplib" overwrite="true" flatten="yes">
-      <fileset dir="${lib_dir}" includes="**/*.jar" excludes="**/junit*.jar"/>
+      <fileset dir="${lib_dir}" includes="**/*.jar" excludes="**/junit*.jar,**/*sources.jar,**/*javadoc.jar"/>
     </copy>
     
     <delete file="${dist_dir}/${module}.war"/>
