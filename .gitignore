@@ -34,3 +34,6 @@ generated/
 /build
 /dist
 /test-results
+/test-reports
+/dep-reports
+/lib/fetched
