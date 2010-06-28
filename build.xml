@@ -711,9 +711,10 @@ Builds the project via ant (obviously).
   
   <target name="make_everything" depends="make_dist,test,docs"
 	  description="(Builds Everything... Distributions, Tests, Docs n Reports)">
-    <echo message="JavaDocs -> file://${basedir}/dist/javadocs/index.html"/>
-    <echo message="Unit Test Report -> file://${basedir}/file:///Users/cue/projects/esg-publisher/"/>
-    <echo message="Web Site -> http://esg-repo.llnl.gov/dist"/>
+    <echo message="JavaDocs -> file://${jdoc_dir}/index.html"/>
+    <echo message="Unit Test Report -> file://${test_reports_dir}/index.html"/>
+    <echo message="Dependency Report -> file://${lib_deps_reports_dir}/esgf-${module}-default.html"/>
+    <echo message="Web Site -> http://esg-repo.llnl.gov/esgf/${module}/index.html"/>
   </target>
 
 
