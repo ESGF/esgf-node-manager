@@ -682,7 +682,7 @@ Builds the project via ant (obviously).
       </packageset>
 
       <doctitle><![CDATA[<h1>${module}</h1>]]></doctitle>
-      <bottom><![CDATA[<i>ESG / BSD OpenSource License</i>]]></bottom>
+      <bottom><![CDATA[<i><a href="http://esg-repo.llnl.gov/esgf" target="_top">ESGF</a> / <a href="http://esg-repo.llnl.gov/" target="_top">BSD OpenSource License</a></i>]]></bottom>
       <tag name="todo" scope="all" description="To do:"/>
       <group title="Core Packages" packages="esg.node.core*"/>
       <group title="Component Packages" packages="esg.node.components*"/>
