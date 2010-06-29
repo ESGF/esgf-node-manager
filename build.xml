@@ -658,7 +658,8 @@ Builds the project via ant (obviously).
        version="true"
        use="true"
        linksource="${javadoc_link_src}"
-       windowtitle="ESG-NODE API">
+       windowtitle="ESG-NODE API"
+       classpathref="main_classpath">
 
       <packageset dir="${src_dir}" defaultexcludes="yes">
 	<exclude name="**/test/**"/>
