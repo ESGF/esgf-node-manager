@@ -732,7 +732,7 @@ setup_postgress() {
 	#NOTE: "useradd/groupadd" are a RedHat/CentOS thing... to make this cross distro compatible clean this up.
 	/usr/sbin/groupadd -r -f ${pg_sys_acct_group}
 	[ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add postgres system group: ${pg_sys_acct_group}" && popd && checked_done 1
-	/usr/sbin/useradd -r -u26 -c"PostgreSQL Service" -g $pg_sys_acct_group -p $pg_sys_acct_passwd $pg_sys_acct
+	/usr/sbin/useradd -r -u26 -c"PostgreSQL Service" -g $pg_sys_acct_group -p $pg_sys_acct_passwd -s /bin/bash $pg_sys_acct
 	[ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add postgres system account user" && popd && checked_done 1
     fi
     ########
