@@ -102,6 +102,7 @@
   <servlet-mapping>
     <url-pattern>/accesslog</url-pattern>
     <servlet-name>accesslog</servlet-name>
+    <load-on-startup>2</load-on-startup>
   </servlet-mapping>
   <!-- ******************************************************** -->
 

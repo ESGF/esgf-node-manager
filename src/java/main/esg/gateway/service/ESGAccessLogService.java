@@ -64,6 +64,7 @@ import java.util.List;
 */
 public interface ESGAccessLogService {
 
+    public boolean ping();
     public List<String[]> fetchAccessLogData(long startTime, long endTime);
 
 }

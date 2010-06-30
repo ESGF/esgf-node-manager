@@ -92,6 +92,11 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
 	init();
     }
 
+    public boolean ping() {
+	log.trace("Access Log Service got \"ping\"");
+	return true;
+    }
+
     /**
        Initializes the service by setting up the database connection and result handling.
      */
