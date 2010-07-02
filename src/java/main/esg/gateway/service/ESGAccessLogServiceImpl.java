@@ -162,7 +162,7 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
 	    List<String[]> results = queryRunner.query(accessLogQuery, resultSetHandler,startTime,endTime);
 	    log.trace("Query is: "+accessLogQuery);
 	    log.trace("Results = "+results);
-	    if(results != null) { log.info("Retrieved "+results.size()+" records"); }
+	    if(results != null) { log.info("Retrieved "+(results.size()-1)+" records"); }
 	    return results;
 	}catch(SQLException ex) {
 	    log.error(ex);	    
