@@ -61,6 +61,10 @@
 **/
 package esg.gateway.service;
 
+import org.junit.*;
+import static org.junit.Assert.*;
+import static org.junit.Assume.*;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
@@ -71,22 +75,28 @@ import com.caucho.hessian.client.HessianRuntimeException;
 import esg.node.core.BasicGateway;
 import esg.node.core.Gateway;
 
-public class FauxGatewayRemoteClient {
-    private static final Log log = LogFactory.getLog(FauxGatewayRemoteClient.class);
+public class GatewayRemoteClientTest {
+    private static final Log log = LogFactory.getLog(GatewayRemoteClientTest.class);
 
-    public static void main(String[] args) throws Exception {
-	String serviceURL;
-	if (args.length != 1) {
-	    System.out.println(" \nError: Must provide service endpoint url!");
-	    System.out.println(" usage: % java esg.node.service.FauxGatewayRemoteClient http://rainbow.llnl.gov/esg-node/gateway\n");
-	    System.exit(1);
+    @Test
+    public void testRemoteGatewayRegistration() {
+	try {
+	    String serviceHost = "xnode.llnl.gov"; //zoiks (don't hard code the host!!!)
+	    String serviceURL = "http://"+serviceHost+"/esg-node/gateway";
+	    if (serviceURL == null) {
+		System.out.println(" \nError: Must provide service endpoint url!");
+		System.out.println(" usage: % java esg.node.service.FauxGatewayRemoteClient http://rainbow.llnl.gov/esg-node/gateway\n");
+		
+	    }
+	    
+	    BasicGateway gway = new BasicGateway(serviceURL,Gateway.GATEWAY);
+	    gway.init();
+	    log.trace("Calling Ping: "+(gway.ping() ? "[OK]" : "[FAIL]") );
+	    log.trace("Calling RegisterToGateway: "+(gway.registerToGateway() ? "[OK]" : "[FAIL]") );
+	}catch(Throwable t) {
+	    log.error(t);
+	    t.printStackTrace();
 	}
-	serviceURL = args[0];
-
-	BasicGateway gway = new BasicGateway(serviceURL,Gateway.GATEWAY);
-	gway.init();
-	System.out.println("Calling Ping: "+(gway.ping() ? "[OK]" : "[FAIL]") );
-	System.out.println("Calling RegisterToGateway: "+(gway.registerToGateway() ? "[OK]" : "[FAIL]") );
-
     }
+
 }

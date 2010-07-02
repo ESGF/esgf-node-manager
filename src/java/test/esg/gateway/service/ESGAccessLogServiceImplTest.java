@@ -54,110 +54,50 @@
 *   SUCH DAMAGE.                                                           *
 *                                                                          *
 ***************************************************************************/
+
+/**
+   Description:
+   Test code for Testing the ESGAccessLogServiceImpl code
+**/
 package esg.gateway.service;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Properties;
-import java.net.MalformedURLException;
-import java.net.InetAddress;
-import java.sql.SQLException;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
+import org.junit.*;
+import static org.junit.Assert.*;
+import static org.junit.Assume.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-import org.apache.commons.dbutils.QueryRunner;
-import org.apache.commons.dbutils.ResultSetHandler;
+import java.util.List;
 
-import esg.common.db.DatabaseResource;
-
-/**
-   Description:
-
-   The implementation class providing the substance behind the
-   interface being exposed to the world via RPC (hessian)
-*/
-public class ESGAccessLogServiceImpl implements ESGAccessLogService {
-    private static final Log log = LogFactory.getLog(ESGAccessLogService.class);
-    private QueryRunner queryRunner = null;
-    private ResultSetHandler<List<String[]>> resultSetHandler = null;
-    private static final String accessLogQuery = "SELECT * FROM access_logging WHERE date_fetched >= ? AND date_fetched < ? ORDER BY date_fetched ASC";
-        
-    public ESGAccessLogServiceImpl() {
-	log.trace("Instantiating ESGAccessLogService implementation");
-	init();
-    }
-
-    public boolean ping() {
-	log.trace("Access Log Service got \"ping\"");
-	return true;
-    }
-
-    /**
-       Initializes the service by setting up the database connection and result handling.
-     */
-    public void init() {
-	Properties props = new Properties();
-	props.setProperty("db.protocol","jdbc:postgresql:");
-	props.setProperty("db.host","localhost");
-	props.setProperty("db.port","5432");
-	props.setProperty("db.database","esgcet");
-	props.setProperty("db.user","dbsuper");
-	props.setProperty("db.password","changeme");
-	queryRunner = new QueryRunner(DatabaseResource.init("org.postgresql.Driver").setupDataSource(props).getDataSource());
-	
-	resultSetHandler = new ResultSetHandler<List<String[]>>() {
-	    public List<String[]> handle(ResultSet rs) throws SQLException {
-		ArrayList<String[]> results = new ArrayList<String[]>();
-		String[] record = null;
-		assert (null!=results);
-
-		ResultSetMetaData meta = rs.getMetaData();
-		int cols = meta.getColumnCount();
-		log.trace("Number of fields: "+cols);
-		
-		for(int i=0;rs.next();i++) {
-		    log.trace("Looking at record "+(i+1));
-		    record = new String[cols];
-		    for (int j = 0; j < cols; j++) {
-			record[j] = rs.getString(j + 1);
-			log.trace("gathering result record column "+(j+1)+" -> "+record[j]);
-		    }
-		    results.add(record);
-		    log.trace("adding result record "+i);
-		    record = null; //gc courtesy
-		}
-		return results;
-	    }
-	};
-	log.trace("initialization complete");
-    }
+public class ESGAccessLogServiceImplTest {
+    private static final Log log = LogFactory.getLog(ESGAccessLogServiceImplTest.class);
     
-    /**
-       Remote method implementation that returns records from the
-       "access_logging" database table This method always returns
-       something, even if that is just an empty result.  
-
-       @param startTime the earliest date record to return (inclusive)
-       @param endTime latest date record to return (exclusive)
-     */
-    public List<String[]> fetchAccessLogData(long startTime, long endTime) {
-	try{
-	    log.trace("Fetching raw access_logging data from active database table");
-	    List<String[]> results = queryRunner.query(accessLogQuery, resultSetHandler,startTime,endTime);
-	    log.trace("Query is: "+accessLogQuery);
-	    log.trace("Results = "+results);
-	    if(results != null) { log.info("Retrieved "+results.size()+" records"); }
-	    return results;
-	}catch(SQLException ex) {
-	    log.error(ex);	    
+    @Test
+    public void testAccessLoggingQuery() {
+	try {
+	    ESGAccessLogServiceImpl impl = new ESGAccessLogServiceImpl();
+	    impl.init();
+	    if(impl.ping()) {
+		List<String[]> results = null;
+		results = impl.fetchAccessLogData(0,Long.MAX_VALUE);
+		assert (null != results);
+		
+		System.out.println("---results:["+results.size()+"]---");
+		for(String[] record : results) {
+		    StringBuilder sb = new StringBuilder();
+		    for(String column : record) {
+			sb.append("["+column+"] ");
+		    }
+		    System.out.println(sb.toString());
+		}
+	    }
+	    System.out.println("-----------------");
 	}catch(Throwable t) {
 	    log.error(t);
+	    t.printStackTrace();
 	}
-	return new ArrayList<String[]>();
+	
     }
-
 }
