@@ -166,7 +166,7 @@ public class ESGAccessLogClient {
 		List<String[]> results = null;
 		results = client.fetchAccessLogData(startTime,endTime);
 		
-		System.out.println("---results:["+results.size()+"]---");
+		System.out.println("---results:["+(results.size() - 1)+"]---");
 		for(String[] record : results) {
 		    StringBuilder sb = new StringBuilder();
 		    for(String column : record) {

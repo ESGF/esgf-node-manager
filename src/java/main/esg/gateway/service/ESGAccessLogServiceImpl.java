@@ -118,6 +118,18 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
 		ResultSetMetaData meta = rs.getMetaData();
 		int cols = meta.getColumnCount();
 		log.trace("Number of fields: "+cols);
+
+		log.trace("adding column data...");
+		record = new String[cols];
+		for(int i=0;i<cols;i++) {
+		    try{
+			record[i]=meta.getColumnLabel(i+1)+"|"+meta.getColumnType(i+1);
+		    }catch (SQLException e) {
+			log.error(e);
+		    }
+		}
+		results.add(record);
+
 		
 		for(int i=0;rs.next();i++) {
 		    log.trace("Looking at record "+(i+1));
@@ -126,8 +138,8 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
 			record[j] = rs.getString(j + 1);
 			log.trace("gathering result record column "+(j+1)+" -> "+record[j]);
 		    }
-		    results.add(record);
 		    log.trace("adding result record "+i);
+		    results.add(record);
 		    record = null; //gc courtesy
 		}
 		return results;
