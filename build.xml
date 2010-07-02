@@ -299,7 +299,7 @@ Builds the project via ant (obviously).
 
   <target name="make" depends="deps" 
 	  description="(Java compiles all the main source code)">
-    <echo message="Java compiling ${Module}..."/> 
+    <echo message="Java compiling ${module}..."/> 
     
     <mkdir dir="${build_dir}" />
     <mkdir dir="${depcache_dir}" />
@@ -556,7 +556,7 @@ Builds the project via ant (obviously).
 
   <target name="make_test" depends="make" 
 	  description="(Java compile all the test source code)">
-    <echo message="Java compiling ${Module} TESTs..."/> 
+    <echo message="Java compiling ${module} TESTs..."/> 
 
     <path id="test_classpath">
       <fileset dir="${lib_dir}" includes="**/junit*.jar"/>
