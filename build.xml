@@ -151,7 +151,7 @@ Builds the project via ant (obviously).
       ************************************************************
     -->
   
-  <target name="pre-init" unless="build.master">
+  <target name="-pre-init" unless="build.master">
     <property name="build.compiler" value="javac1.5" /> 
     <property name="build.compiler.emacs" value="true" /> 
     <echo message="set build.compiler to ${build.compiler}"/>
@@ -159,7 +159,7 @@ Builds the project via ant (obviously).
   
   <!-- ********************************************************* -->
   
-  <target name="init" depends="pre-init" unless="build.master" 
+  <target name="init" depends="-pre-init" unless="build.master" 
 	  description="(View the properties defined in this file)">
     <echo message="Initializing build environment..."/>
         
