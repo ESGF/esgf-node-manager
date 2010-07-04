@@ -1347,11 +1347,15 @@ stop_tomcat() {
     sleep 1
     ./bin/jsvc -pidfile $tomcat_pid_file -stop org.apache.catalina.startup.Bootstrap
     if [ $? != 0 ]; then
+	local ret=0
 	echo " WARNING: Unable to stop tomcat, (nicely)" 
-	echo " Hmmm...  okay no more mr nice guy... issuing \"killall jsvc\" and \"pkill -9 $(cat ${tomcat_pid_file})\""
-	killall jsvc
-	kill -9 $(cat ${tomcat_pid_file}) >& /dev/null
-	[ $? != 0 ] && echo "Hmmm... still could not shutdown... process may have already been stopped"
+	echo -n " Hmmm...  okay no more mr nice guy... issuing "
+	#echo -n "\"killall jsvc\" and " && killall jsvc
+	#((ret+=$?))
+	echo -n "\"pkill -9 $(cat ${tomcat_pid_file})\"" && kill -9 $(cat ${tomcat_pid_file}) >& /dev/null
+	((ret+=$?))
+	echo ""
+	[ "$ret" != 0 ] && echo "Hmmm... still could not shutdown... process may have already been stopped"
     fi
     /bin/ps -elf | grep jsvc | grep -v grep
     popd >& /dev/null
