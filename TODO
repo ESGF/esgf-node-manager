@@ -85,10 +85,11 @@ screw things up?
     postgresql-8.3-603.jdbc3.jar
     servlet-api.jar
 
--Find out how to put fetched jars in a separate lib subdirectory
+xFind out how to put fetched jars in a separate lib subdirectory
  "fetched" so we can seperate the two types of libs and then have git
  be able to ignore the fetched ones and remove that directory on
  cleanup with ant.
 
 
 ---
+-Install and setup database version control like LiquiBase, for DNM managed tables
