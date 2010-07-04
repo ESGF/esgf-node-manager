@@ -84,7 +84,8 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
     private static final Log log = LogFactory.getLog(ESGAccessLogService.class);
     private QueryRunner queryRunner = null;
     private ResultSetHandler<List<String[]>> resultSetHandler = null;
-    private static final String accessLogQuery = "SELECT * FROM access_logging WHERE date_fetched >= ? AND date_fetched < ? ORDER BY date_fetched ASC";
+    private int limit = 999;
+    private static final String accessLogQuery = "SELECT * FROM access_logging WHERE date_fetched >= ? AND date_fetched < ? ORDER BY date_fetched ASC LIMIT ?";
         
     public ESGAccessLogServiceImpl() {
 	log.trace("Instantiating ESGAccessLogService implementation");
@@ -138,7 +139,7 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
 			record[j] = rs.getString(j + 1);
 			log.trace("gathering result record column "+(j+1)+" -> "+record[j]);
 		    }
-		    log.trace("adding result record "+i);
+		    log.trace("adding record ");
 		    results.add(record);
 		    record = null; //gc courtesy
 		}
@@ -159,9 +160,9 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
     public List<String[]> fetchAccessLogData(long startTime, long endTime) {
 	try{
 	    log.trace("Fetching raw access_logging data from active database table");
-	    List<String[]> results = queryRunner.query(accessLogQuery, resultSetHandler,startTime,endTime);
+	    List<String[]> results = queryRunner.query(accessLogQuery, resultSetHandler,startTime,endTime,limit);
 	    log.trace("Query is: "+accessLogQuery);
-	    log.trace("Results = "+results);
+	    assert (null != results);
 	    if(results != null) { log.info("Retrieved "+(results.size()-1)+" records"); }
 	    return results;
 	}catch(SQLException ex) {

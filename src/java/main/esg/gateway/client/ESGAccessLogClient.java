@@ -107,6 +107,7 @@ public class ESGAccessLogClient {
        @param serviceURL The url for the RPC target
     */
     public ESGAccessLogClient setEndpoint(String serviceHost) {
+	assert (serviceHost != null);
 	String serviceURL = "http://"+serviceHost+"/esg-node/accesslog";
 	log.trace("Creating stub endpoint to : "+serviceURL);
 	this.currentEndpoint = (ESGAccessLogService)factoryCreate(ESGAccessLogService.class,serviceURL);
@@ -151,8 +152,8 @@ public class ESGAccessLogClient {
     //Run the program like java -jar esg-node-accesslog-client.0.0.3.jar [service host]
     public static void main(String[] args) {
 	String serviceHost=null;
-	long startTime=1001L;
-	long endTime=1010L;
+	long startTime=0;
+	long endTime=Long.MAX_VALUE;
 	
 	try{
 	    serviceHost=args[0];
