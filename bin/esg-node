@@ -2851,6 +2851,7 @@ main() {
 		    start_globus_services datanode ${gridftp_config_args}
 		start_postgress
 		start_tomcat
+		show_svc_list
 		exit 0
 		;;
 	    --check)
