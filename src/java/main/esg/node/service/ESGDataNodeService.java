@@ -67,10 +67,40 @@ package esg.node.service;
 import esg.common.service.ESGRemoteEvent;
 
 public interface ESGDataNodeService {
+    
+    /**
+       Simple synchronous boolean call.  Useful for checking
+       availability, network reachability, and RPC functionality.
 
+       @return true if all is well, false indicates the endpoint is
+       alive but busy or somehow "unavailable".
+     */
     public boolean ping();
-    public boolean notify(ESGRemoteEvent evt);
+
+    /**
+       Initiate p2p contact... Asked to be registerd with target peer.
+
+       @param evt remote event appropriate for registration
+     */
     public boolean register(ESGRemoteEvent evt);
+
+    /**
+       Upon successfull registration with peer that peer calls us back
+       with notify to let us know that registration is complete.
+
+       @param evt remote event appropriate for notification
+     */
+    public boolean notify(ESGRemoteEvent evt);
+    
+    /**
+       The basic inter-peer message passing method. Outside of the
+       registration handshake process, this is the method that is
+       called for all other communication.
+
+       @param evt remote event constructed with event information to
+       be routed to remote peer.
+
+     */
     public void handleESGRemoteEvent(ESGRemoteEvent evt);
 
 }

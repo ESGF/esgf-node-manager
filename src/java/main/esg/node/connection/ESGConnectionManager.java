@@ -254,6 +254,14 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 	    String peerURL = peer.getServiceURL();
 	    if(peerURL != null) {
 		peers.put(peerURL,peer);
+		//Finally... finish the registration transaction by
+		//notifying the registrant that they are accounted for
+		//and recognized...
+
+		//NOTE (TODO): I am not convinced that this call
+		//should be here...  it may get too noisy if peers are
+		//joining because of a process other than
+		//registration! - this should be changed moved...
 		peer.notifyToPeer();
 	    }else{
 		log.warn("Dropping "+peer+"... (no null service urls accepted)");

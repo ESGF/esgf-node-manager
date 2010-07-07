@@ -106,28 +106,4 @@
   </servlet-mapping>
   <!-- ******************************************************** -->
 
-
-
-  <!-- ******************************************************** -->
-  <!-- TEST FAUX GATEWAY TO TEST DATANODE - GATEWAY INTERACTION -->
-  <!-- ******************************************************** -->
-  <servlet>
-   <servlet-name>gateway</servlet-name>
-   <servlet-class>com.caucho.hessian.server.HessianServlet</servlet-class>
-    <init-param>
-      <param-name>home-class</param-name>
-      <param-value>esg.gateway.service.ESGGatewayServiceImpl</param-value>
-    </init-param>
-    <init-param>
-      <param-name>home-api</param-name>
-      <param-value>esg.gateway.service.ESGGatewayService</param-value>
-    </init-param>
-  </servlet>
-
-  <servlet-mapping>
-    <url-pattern>/gateway</url-pattern>
-    <servlet-name>gateway</servlet-name>
-  </servlet-mapping>
-  <!-- ******************************************************** -->
-
 </web-app>
