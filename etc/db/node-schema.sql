@@ -10,11 +10,13 @@ SET escape_string_warning = off;
 CREATE TABLE  access_logging (
     id int NOT NULL,
     user_id character varying NOT NULL,
-    email character varying NOT NULL,
+    email character varying,
     url character varying NOT NULL,
     file_id character varying,
     remote_addr character varying NOT NULL,
     user_agent character varying,
+    xfer_service character varying,
+    batch_update_time double precision,    
     date_fetched double precision NOT NULL,
     success boolean DEFAULT false,
     duration double precision DEFAULT 0
