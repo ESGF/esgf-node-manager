@@ -75,6 +75,8 @@ import esg.node.core.ESGDataNodeManager;
 import esg.node.core.AbstractDataNodeComponent;
 import esg.node.core.ESGEvent;
 import esg.node.core.ESGJoinEvent;
+import esg.node.core.ESGPeer;
+import esg.node.core.BasicPeer;
 import esg.node.connection.ESGConnectionManager;
 import esg.common.service.ESGRemoteEvent;
 
@@ -151,12 +153,34 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 	}
 
 	//Inspect the message type...
-	if(evt_.getMessageType() != ESGRemoteEvent.REGISTER) return false;
+	if(evt_.getMessageType() != ESGRemoteEvent.NOTIFY) return false;
 	
 	//TODO: Do Event Inspection, etc...
 	
 	return true;
     }
+
+    //ingress registration request... returns a registration event to the remote caller's (peer's) notify method.
+    public boolean register(ESGRemoteEvent evt) {
+	log.trace("DataNode service got \"register\" call from datanode with event: ["+evt+"]");
+	boolean ret = false;
+	
+	//Triage incoming revent...
+	if(evt.getMessageType() != ESGRemoteEvent.REGISTER) {
+	    log.trace("Registration called with wrong event type... dropping on floor...");
+	    return ret;
+	}
+	
+	try {
+	    ESGPeer registrant = new BasicPeer(evt.getSource());
+	    ret = datanodeMgr.registerPeer(registrant);
+	}catch (Throwable t) {
+	    log.error(t);
+	}
+	return ret;
+    }
+
+    
 
     //Ingress event handling from remote 'client'
     public void handleESGRemoteEvent(ESGRemoteEvent evt_) {
@@ -170,12 +194,8 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 	ESGEvent evt = null;
 	if(evt_.getMessageType() == ESGRemoteEvent.NOOP) { 
 	    log.trace("GOT NOOP REMOTE EVENT"); 
-	}else if(evt_.getMessageType() == ESGRemoteEvent.REGISTER) { 
-	    this.notify(evt_); 
 	}else if(evt_.getMessageType() == ESGRemoteEvent.UNREGISTER) { 
 	    log.trace("GOT UNREGISTER REMOTE EVENT"); 
-	}else if(evt_.getMessageType() == ESGRemoteEvent.NOTIFY) { 
-	    log.trace("GOT NOTIFY REMOTE EVENT"); 
 	}else if(evt_.getMessageType() == ESGRemoteEvent.HEALTH) { 
 	    log.trace("GOT HEALTH REMOTE EVENT"); 
 	    evt = new ESGEvent(this);

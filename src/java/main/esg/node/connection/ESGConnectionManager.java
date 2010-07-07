@@ -58,9 +58,9 @@
 /**
    Description:
 
-      This class also MANAGES gateway proxy object(s)
-      (ex:BasicGateway) that communicate OUT (egress) to the
-      gateway(s).
+      This class also MANAGES peer proxy object(s)
+      (ex:BasicPeer) that communicate OUT (egress) to the
+      peer(s).
 
 **/
 package esg.node.connection;
@@ -78,52 +78,52 @@ import java.util.TimerTask;
 import java.util.List;
 
 import esg.common.service.ESGRemoteEvent;
-import esg.node.core.ESGGatewayListener;
+import esg.node.core.ESGPeerListener;
 import esg.node.core.ESGDataNodeManager;
 import esg.node.core.AbstractDataNodeComponent;
 import esg.node.core.AbstractDataNodeManager;
 import esg.node.core.ESGEvent;
 import esg.node.core.ESGEventHelper;
 import esg.node.core.ESGJoinEvent;
-import esg.node.core.ESGGatewayEvent;
-import esg.node.core.Gateway;
+import esg.node.core.ESGPeerEvent;
+import esg.node.core.ESGPeer;
 
 
-public class ESGConnectionManager extends AbstractDataNodeComponent implements ESGGatewayListener {
+public class ESGConnectionManager extends AbstractDataNodeComponent implements ESGPeerListener {
 
     private static final Log log = LogFactory.getLog(ESGConnectionManager.class);
     
-    private Map<String,Gateway> gateways = null;
-    private Map<String,Gateway> unavailableGateways = null;
+    private Map<String,ESGPeer> peers = null;
+    private Map<String,ESGPeer> unavailablePeers = null;
     
 
     public ESGConnectionManager(String name) {
 	super(name);
 	log.info("ESGConnectionManager instantiated...");
-	gateways = Collections.synchronizedMap(new HashMap<String,Gateway>());
-	unavailableGateways = Collections.synchronizedMap(new HashMap<String,Gateway>());
+	peers = Collections.synchronizedMap(new HashMap<String,ESGPeer>());
+	unavailablePeers = Collections.synchronizedMap(new HashMap<String,ESGPeer>());
 	init();
     }
-
+    
     //Bootstrap the rest of the subsystems... (ESGDataNodeServiceImpl really bootstraps)
     public void init() {
 	//NOTE:
 	//Just to make sure we have these guys if we decide to re-register.
 	//since we did such a good job cleaning things out with we unregister.
 	//Once could imagine wanting to re-establish the connection manager.
-	if(gateways == null) gateways = Collections.synchronizedMap(new HashMap<String,Gateway>());
-	if(unavailableGateways == null) unavailableGateways = Collections.synchronizedMap(new HashMap<String,Gateway>());
+	if(peers == null) peers = Collections.synchronizedMap(new HashMap<String,ESGPeer>());
+	if(unavailablePeers == null) unavailablePeers = Collections.synchronizedMap(new HashMap<String,ESGPeer>());
 	
-	//periodicallyPingToGateways();
-	//periodicallyRegisterToGateways(); //zoiks: test method (not permanent)
+	//periodicallyPingToPeers();
+	//periodicallyRegisterToPeers(); //zoiks: test method (not permanent)
     }
 
     //--------------------------------------------
     // Status Methods
     //--------------------------------------------
     
-    public int numAvailableGateways() { return gateways.size(); }
-    public int numUnavailableGateways() { return unavailableGateways.size(); }
+    public int numAvailablePeers() { return peers.size(); }
+    public int numUnavailablePeers() { return unavailablePeers.size(); }
 
     //--
     //Communication maintenance... (this could become arbitrarily
@@ -131,72 +131,73 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     //pings, and simple registration)
     //--
     
-    private void periodicallyPingToGateways() {
+    private void periodicallyPingToPeers() {
 	log.trace("Launching ping timer...");
 	Timer timer = new Timer();
 	timer.schedule(new TimerTask() { 
 		public final void run() {
-		    ESGConnectionManager.this.pingToGateways();
+		    ESGConnectionManager.this.pingToPeers();
 		}
 	    },0,5*1000);
     }
-    private void pingToGateways() {
-	Collection<? extends Gateway> gateways_ = gateways.values();
-	for(Gateway gateway: gateways_) {
-	    gateway.ping();
+    private void pingToPeers() {
+	Collection<? extends ESGPeer> peers_ = peers.values();
+	for(ESGPeer peer: peers_) {
+	    peer.ping();
 	}
     }
 
     //----
     //Test code.
     //----
-    private void periodicallyRegisterToGateways() {
-	log.trace("Launching ping timer...");
+    private void periodicallyRegisterToPeers() {
+	log.trace("Launching registration timer...");
 	Timer timer = new Timer();
 
 	//This will transition from active map to inactive map
 	timer.schedule(new TimerTask() { 
 		public final void run() {
-		    ESGConnectionManager.this.registerToGateways();
+		    ESGConnectionManager.this.registerToPeers();
 		}
 	    },0,10*1000);
     }
-    private void registerToGateways() {
-	Collection<? extends Gateway> gateways_ = gateways.values();
-	for(Gateway gateway: gateways_) {
-	    gateway.registerToGateway();
+    private void registerToPeers() {
+	Collection<? extends ESGPeer> peers_ = peers.values();
+	for(ESGPeer peer: peers_) {
+	    peer.registerToPeer();
 	}
     }
 
 
     //We will consider this communications closed (essentially making
     //this unavailable for ingress communication) if there are no
-    //gateways to communicate with. That would be because:
-    //1) There are no gateway proxy objects available for us to use
-    //2) If the gateway proxy objects we DO have are no longer valid
+    //peers to communicate with. That would be because:
+    //1) There are no peer proxy objects available for us to use
+    //2) If the peer proxy objects we DO have are no longer valid
     //(we just need one to be valid for us to be available) 
 
-    //NOTE: review this policy! *for now* good enough as we are only
-    //planning on having a 1:1 between data node and gateways... but
-    //we could imagine that it would only take just having one gateway
+    //NOTE (TODO): review this policy! *for now* good enough as we are
+    //only planning on having a 1:1 between data node and peers... but
+    //we could imagine that it would only take just having one peer
     //that is valid holding open the door for us to be DOS-ed by folks
     //maliciously sending us huge events that flood our system.
     public boolean amAvailable() {
 	boolean amAvailable = false;
-	boolean haveValidGatewayProxies = false;
-	if (gateways.isEmpty()) { amAvailable = false; return false; }
-	Collection<? extends Gateway> gateways_ = gateways.values();
-	for(Gateway gateway: gateways_) {
-	    haveValidGatewayProxies |= gateway.isAvailable();
+	boolean haveValidPeerProxies = false;
+	if (peers.isEmpty()) { amAvailable = false; return false; }
+	Collection<? extends ESGPeer> peers_ = peers.values();
+	for(ESGPeer peer: peers_) {
+	    haveValidPeerProxies |= peer.isAvailable();
 	}
-	amAvailable = (amAvailable || haveValidGatewayProxies );
+	amAvailable = (amAvailable || haveValidPeerProxies );
 	return amAvailable;
     }
     
     public void unregister() {
+	//TODO: Be nice and send all the peers termination events
 	//clear out my datastrutures of node proxies
-	gateways.clear(); gateways = null;
-	unavailableGateways.clear(); unavailableGateways = null;
+	peers.clear(); peers = null; //gc niceness
+	unavailablePeers.clear(); unavailablePeers = null; //gc niceness
 	super.unregister();
     }
 
@@ -209,7 +210,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 
 	ESGRemoteEvent rEvent=null;
 	String targetAddress = null;
-	Gateway targetGateway = null;
+	ESGPeer targetPeer = null;
 	
 	//TODO: pick it up from here to launch egress / return calls...
 	if((rEvent = event.getRemoteEvent()) == null) {
@@ -218,15 +219,17 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 	    return false;
 	}
 	
-	if((targetGateway = gateways.get(targetAddress=rEvent.getSource())) == null) {
-	    targetGateway = unavailableGateways.get(targetAddress);
-	    log.error("Specified gateway named by ["+targetAddress+"] is "+
-		      ((targetGateway == null) ? "unknown " : "unavailable ")+"[event dropped]");
+	if((targetPeer = peers.get(targetAddress=rEvent.getSource())) == null) {
+	    targetPeer = unavailablePeers.get(targetAddress);
+	    log.error("Specified peer named by ["+targetAddress+"] is "+
+		      ((targetPeer == null) ? "unknown " : "unavailable ")+"[event dropped]");
 	    event = null; //gc hint!
 	    return false;
 	}
 
-	targetGateway.handleESGRemoteEvent(ESGEventHelper.createOutboundEvent(event));
+
+	//TODO: have the ESGEventHelper create the remote event properly (TTL, etc...)
+	targetPeer.handleESGRemoteEvent(ESGEventHelper.createOutboundEvent(event));
 	event = null; //gc hint!
 	
 	return true;
@@ -240,55 +243,56 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 
 	ESGJoinEvent event = (ESGJoinEvent)esgEvent;
 	
-	//we only care bout Gateways joining
-	if(!(event.getJoiner() instanceof Gateway)) return;
+	//we only care bout ESGPeers joining
+	if(!(event.getJoiner() instanceof ESGPeer)) return;
 
-	//manage the data structure for gateway 'stubs' locally while
+	//manage the data structure for peer 'stubs' locally while
 	//object is a participating managed component.
 	if(event.hasJoined()) {
-	    log.trace("Detected That A Gateway Component Has Joined: "+event.getJoiner().getName());
-	    Gateway gway = (Gateway)event.getJoiner();
-	    String gwayURL = gway.getServiceURL();
-	    if(gwayURL != null) {
-		gateways.put(gwayURL,gway);
+	    log.trace("Detected That A Peer Component Has Joined: "+event.getJoiner().getName());
+	    ESGPeer peer = (ESGPeer)event.getJoiner();
+	    String peerURL = peer.getServiceURL();
+	    if(peerURL != null) {
+		peers.put(peerURL,peer);
+		peer.notifyToPeer();
 	    }else{
-		log.warn("Dropping "+gway+"... (no null service urls accepted)");
+		log.warn("Dropping "+peer+"... (no null service urls accepted)");
 	    }
 	}else {
-	    log.trace("Detected That A Gateway Component Has Left: "+event.getJoiner().getName());
-	    gateways.remove(event.getJoiner().getName());
-	    unavailableGateways.remove(event.getJoiner().getName());
+	    log.trace("Detected That A Peer Component Has Left: "+event.getJoiner().getName());
+	    peers.remove(event.getJoiner().getName());
+	    unavailablePeers.remove(event.getJoiner().getName());
 	}
-	log.trace("Number of active service managed gateways = "+gateways.size());
+	log.trace("Number of active service managed peers = "+peers.size());
     }
 
     //--------------------------------------------
     //Special Event handling channel... 
-    //(for gateway events directly from managed gateway stub objects)
+    //(for peer events directly from managed peer stub objects)
     //--------------------------------------------
-    public void handleGatewayEvent(ESGGatewayEvent evt) {
-	log.trace("Got Gateway Event: "+evt);
+    public void handlePeerEvent(ESGPeerEvent evt) {
+	log.trace("Got Peer Event: "+evt);
 
 	//TODO: I know I know... use generics in the event!!! (todo)
-	Gateway gway = (Gateway)evt.getSource();
+	ESGPeer peer = (ESGPeer)evt.getSource();
 	switch(evt.getEventType()) {
-	case ESGGatewayEvent.CONNECTION_FAILED:
-	case ESGGatewayEvent.CONNECTION_BUSY:
+	case ESGPeerEvent.CONNECTION_FAILED:
+	case ESGPeerEvent.CONNECTION_BUSY:
 	    log.trace("Transfering from active -to-> inactive list");
-	    if(gateways.remove(gway.getName()) != null) {
-		unavailableGateways.put(gway.getName(),gway);
+	    if(peers.remove(peer.getName()) != null) {
+		unavailablePeers.put(peer.getName(),peer);
 	    }
 	    break;
-	case ESGGatewayEvent.CONNECTION_AVAILABLE:
+	case ESGPeerEvent.CONNECTION_AVAILABLE:
 	    log.trace("Transfering from inactive -to-> active list");
-	    if(unavailableGateways.remove(gway.getName()) != null) {
-		gateways.put(gway.getName(),gway);
+	    if(unavailablePeers.remove(peer.getName()) != null) {
+		peers.put(peer.getName(),peer);
 	    }
 	    break;
 	default:
 	    break;
 	}
-	log.trace("Available Gateways: ["+gateways.size()+"] Unavailable: ["+unavailableGateways.size()+"]");	
+	log.trace("Available Peers: ["+peers.size()+"] Unavailable: ["+unavailablePeers.size()+"]");	
     }
     
 }

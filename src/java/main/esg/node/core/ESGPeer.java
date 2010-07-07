@@ -58,62 +58,102 @@
 /**
    Description:
 
-   This is the result of my push to factor out RPC specific details
-   such that this framework as a whole can support multiple RPC
-   mechanisms and folks know where/how to integrate said new RPC
-   mechanisms. :-) I am positive that as new RPC mechanisms come on
-   line that further factoring etc will take place.  So this can be
-   considered as a first best guess factoring given that at the moment
-   (Feb, 2010) there is only one in place. -gavin :-)
+   This is basically an abstract class that is the STUB for the remote
+   ESGPeer (peer) for making/initiating calls on the peer.
 
-   :-| . o 0 ( I may want to use Generics here to make things
-   easier... Hmmm... Think about this summore later)
- 
 **/
 package esg.node.core;
 
-import esg.common.ESGException;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-import com.caucho.hessian.client.HessianProxyFactory;
+import esg.common.service.ESGRemoteEvent;
 
-public abstract class HessianGateway extends Gateway {
+public abstract class ESGPeer extends AbstractDataNodeComponent{
+
+    //TODO: Okay this should totally be an ENUM!!!!!
+    public static final int DEFAULT_GATEWAY = 1;
+    public static final int GATEWAY = 2;
+    public static final int DATA_NODE_PEER  = 4;
+    private int peerType = 0;
+
+    private static final Log log = LogFactory.getLog(ESGPeer.class);
+    private String serviceURL = null;
+
+    protected boolean isValid = false;
+    protected boolean isAvailable = false;
+
+    private static Pattern hostPattern = Pattern.compile("http://([^/ ]*)/.*[/]*esg-node/(datanode)");
     
-    private static final Log log = LogFactory.getLog(HessianGateway.class);    
-
-    private HessianProxyFactory factory;
-   
-    public HessianGateway(String serviceURL, int type) throws java.net.MalformedURLException { 
-	super(serviceURL,type); 
-	this.factory = new HessianProxyFactory();
-    }
-    
-    protected HessianProxyFactory getFactory() { return factory; }
-
-    //Note: This is what makes this Hessian specific... the
-    //use of the hessian "factory.". Also Note, all RPC
-    //mechanisms follow the same basic mechanics 
-    //protected Object factoryCreate(Class serviceClass) throws ESGException {
-    //	return this.factoryCreate(serviceClass,null);
-    //}
-
-    //TODO: make this a "generics" function...
-    protected Object factoryCreate(Class serviceClass,String serviceURL) throws ESGException { 
-	log.trace("factoryCreate -> serviceClass: "+serviceClass+" , serviceURL: "+serviceURL);
-	if (serviceURL == null) serviceURL = getServiceURL();
-	Object endpoint = null;
-	try{
-	    endpoint = factory.create(serviceClass, serviceURL); 
-	}catch(Exception e) {
-	    log.error(e);
-	    e.printStackTrace();
-	    throw new ESGException(e);
+    public ESGPeer(String serviceURL, int type) throws java.net.MalformedURLException { 
+	//TODO: regex out the IP and set as name
+	new java.net.URL(serviceURL);
+	String host = null;
+	String typeString = null;
+	Matcher hostMatcher = hostPattern.matcher(serviceURL);
+	if(hostMatcher.find()) {
+	    host = hostMatcher.group(1);
+	    typeString = hostMatcher.group(2);
+	}else {
+	    throw new java.net.MalformedURLException("This ["+serviceURL+"] is not a legal ESG datanode URL");
 	}
-	return endpoint;
+	setMyName(serviceURL);
+	this.peerType = type;
+	this.serviceURL = serviceURL;
+	System.out.println("===> Setting up connection to: "+serviceURL);
     }
     
+    public ESGPeer(String name) throws java.net.MalformedURLException { this(name,DATA_NODE_PEER); }
+    public int getPeerType() { return peerType; }
+
+    public abstract void init();
+    protected void setServiceURL(String serviceURL) { this.serviceURL = serviceURL; }
+    public String getServiceURL() { return serviceURL; }
+    public boolean isValid() { return isValid; }
+    public boolean isAvailable() { return isAvailable; }
+    
+    
+    //-----------------------------------------------------------------
+    //Delgating: remote method wrappers.
+    //-----------------------------------------------------------------
+    //override me (all services should have a "ping" remote method! according to me! :-)
+    public abstract boolean ping();
+
+    //This is called to present this endpoint (the peer) with notification that 
+    //they have been properly registered into this data node
+    public abstract boolean notifyToPeer();
+
+
+    //Present the peer with a token and callback address for 
+    //making calls back to the data node services.
+    public abstract boolean registerToPeer();
+
+    //Send the represented ESGPeer endpoint an event object
+    public abstract void handleESGRemoteEvent(ESGRemoteEvent evt);
+    //-----------------------------------------------------------------
+    
+
+
+    //-----------------------------------------------------------------
+    //Overriding superclass to perform gateway object specific unregistration
+    //from the data node manager. (unrelated to RPC, internal management)
+    //-----------------------------------------------------------------
+    public void unregister() {
+	DataNodeManager dataNodeManager = getDataNodeManager();
+	if(dataNodeManager == null) return;
+	if(this instanceof ESGPeer) { dataNodeManager.removePeer(this); }
+	//Note: don't have to null out mgr like in the super class
+	//because I am never holding on to a mgr handle directly ;-)
+    }
+    //-----------------------------------------------------------------
+
+
+    public String toString() {
+	return "ESGPeer: ["+getName()+"] -> ["+(serviceURL == null ? "NULL" : serviceURL)+"] ("+isValid+") [PT:"+peerType+"]";
+    }
     
 }

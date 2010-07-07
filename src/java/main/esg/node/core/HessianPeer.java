@@ -58,12 +58,67 @@
 /**
    Description:
 
+   This is the result of my push to factor out RPC specific details
+   such that this framework as a whole can support multiple RPC
+   mechanisms and folks know where/how to integrate said new RPC
+   mechanisms. :-) I am positive that as new RPC mechanisms come on
+   line that further factoring etc will take place.  So this can be
+   considered as a first best guess factoring given that at the moment
+   (Feb, 2010) there is only one in place. -gavin :-)
+
+   :-| . o 0 ( I may want to use Generics here to make things
+   easier... Hmmm... Think about this summore later)
+ 
 **/
 package esg.node.core;
 
-import esg.node.core.ESGGatewayEvent;
+import esg.common.ESGException;
 
-public interface ESGGatewayListener {
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
+
+import com.caucho.hessian.client.HessianProxyFactory;
+
+public abstract class HessianPeer extends ESGPeer {
     
-    public void handleGatewayEvent(ESGGatewayEvent evt);
+    private static final Log log = LogFactory.getLog(HessianPeer.class);    
+
+    private HessianProxyFactory factory;
+   
+    public HessianPeer(String serviceURL, int type) throws java.net.MalformedURLException { 
+	super(serviceURL,type); 
+	this.factory = new HessianProxyFactory();
+    }
+    
+    //From the super-class the default type is set to "DATA_NODE_PEER"
+    public HessianPeer(String serviceURL) throws java.net.MalformedURLException { 
+	super(serviceURL); 
+	this.factory = new HessianProxyFactory();
+    }
+    protected HessianProxyFactory getFactory() { return factory; }
+
+    //Note: This is what makes this Hessian specific... the
+    //use of the hessian "factory.". Also Note, all RPC
+    //mechanisms follow the same basic mechanics 
+    //protected Object factoryCreate(Class serviceClass) throws ESGException {
+    //	return this.factoryCreate(serviceClass,null);
+    //}
+
+    //TODO: make this a "generics" function...
+    protected Object factoryCreate(Class serviceClass,String serviceURL) throws ESGException { 
+	log.trace("factoryCreate -> serviceClass: "+serviceClass+" , serviceURL: "+serviceURL);
+	if (serviceURL == null) serviceURL = getServiceURL();
+	Object endpoint = null;
+	try{
+	    endpoint = factory.create(serviceClass, serviceURL); 
+	}catch(Exception e) {
+	    log.error(e);
+	    e.printStackTrace();
+	    throw new ESGException(e);
+	}
+	return endpoint;
+    }
+    
+    
 }

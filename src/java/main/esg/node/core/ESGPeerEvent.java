@@ -58,95 +58,26 @@
 /**
    Description:
 
-   This is basically an abstract class that is the STUB for the remote
-   Gateway (peer) for making/initiating calls on the peer.
-
 **/
 package esg.node.core;
 
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
+public class ESGPeerEvent extends ESGEvent{
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.commons.logging.impl.*;
+    //TODO: YES YES YES... I KNOW... I'll make these enums later! ;-)
+    public static final int CONNECTION_FAILED = 2;
+    public static final int CONNECTION_BUSY = 4;
+    public static final int CONNECTION_AVAILABLE = 8;
 
-import esg.common.service.ESGRemoteEvent;
-
-public abstract class Gateway extends AbstractDataNodeComponent{
-
-    //TODO: Okay this should totally be an ENUM!!!!!
-    public static final int DEFAULT_GATEWAY = 1;
-    public static final int GATEWAY = 2;
-    public static final int DATA_NODE_PEER  = 4;
-    private int peerType = 0;
-
-    private static final Log log = LogFactory.getLog(Gateway.class);
-    private String serviceURL = null;
-
-    protected boolean isValid = false;
-    protected boolean isAvailable = false;
-
-    private static Pattern hostPattern = Pattern.compile("http://([^/ ]*)/.*[/]*/(datanode|gateway)");
+    private int eventType = -1;
     
-    public Gateway(String serviceURL, int type) throws java.net.MalformedURLException { 
-	//TODO: regex out the IP and set as name
-	new java.net.URL(serviceURL);
-	String host = null;
-	String typeString = null;
-	Matcher hostMatcher = hostPattern.matcher(serviceURL);
-	if(hostMatcher.find()) {
-	    host = hostMatcher.group(1);
-	    typeString = hostMatcher.group(2);
-	}
-	setMyName(serviceURL);
-	this.peerType = type;
-	this.serviceURL = serviceURL;
-	System.out.println("===> Setting up connection to: "+serviceURL);
+    public ESGPeerEvent(Object source, String message, int eventType) { 
+	super(source,message); 
+	this.eventType = eventType;
     }
-
-    public Gateway(String name) throws java.net.MalformedURLException { this(name,GATEWAY); }
-    public int getPeerType() { return peerType; }
-
-    public abstract void init();
-    protected void setServiceURL(String serviceURL) { this.serviceURL = serviceURL; }
-    public String getServiceURL() { return serviceURL; }
-    public boolean isValid() { return isValid; }
-    public boolean isAvailable() { return isAvailable; }
-    
-    
-    //-----------------------------------------------------------------
-    //Delgating: remote method wrappers.
-    //-----------------------------------------------------------------
-    //override me (all services should have a "ping" remote method! according to me! :-)
-    public abstract boolean ping();
-
-    //Present the gateway with a token and callback address for 
-    //making calls back to the data node services.
-    public abstract boolean registerToGateway();
-
-    //Send the represented Gateway endpoint an event object
-    public abstract void handleESGRemoteEvent(ESGRemoteEvent evt);
-    //-----------------------------------------------------------------
-    
-
-
-    //-----------------------------------------------------------------
-    //Overriding superclass to perform gateway object specific unregistration
-    //from the data node manager. (unrelated to RPC, internal management)
-    //-----------------------------------------------------------------
-    public void unregister() {
-	DataNodeManager dataNodeManager = getDataNodeManager();
-	if(dataNodeManager == null) return;
-	if(this instanceof Gateway) { dataNodeManager.removeGateway(this); }
-	//Note: don't have to null out mgr like in the super class
-	//because I am never holding on to a mgr handle directly ;-)
-    }
-    //-----------------------------------------------------------------
-
-
-    public String toString() {
-	return "Gateway: ["+getName()+"] -> ["+(serviceURL == null ? "NULL" : serviceURL)+"] ("+isValid+") [PT:"+peerType+"]";
+    public ESGPeerEvent(Object source,int eventType) { 
+	this(source,null,eventType); 
     }
     
+    public int getEventType() { return eventType; }
+    public String toString() { return "s:["+source+"] t:["+eventType+"]"; }
 }

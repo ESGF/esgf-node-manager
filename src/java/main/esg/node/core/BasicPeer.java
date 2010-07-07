@@ -58,12 +58,12 @@
 /**
    Description:
 
-        This is essentially the wrapped stubs to the gateway.
-        The data node side of the rpc call where calls
-        ORIGINATE. (from DataNode -to-> Gateway).
+        This is essentially the wrapped stubs to the peer(s).
+        This (node) side of the rpc call where calls
+        ORIGINATE. (from DataNode -to-> ESGPeer).
 
         ----------------------------------------------------
-        THIS CLASS REPRESNTS *EGRESS* CALLS TO THE GATEWAY!!
+        THIS CLASS REPRESNTS *EGRESS* CALLS TO THE ESGPeer!!
         ----------------------------------------------------
            (I don't think I can make this any clearer)
 
@@ -79,22 +79,28 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.ArrayList;
 
-import esg.node.core.ESGGatewayListener;
-import esg.gateway.service.ESGGatewayService;
+import esg.node.core.ESGPeerListener;
+import esg.node.service.ESGDataNodeService;
 import esg.common.service.ESGRemoteEvent;
 import esg.common.Utils;
 
-public class BasicGateway extends HessianGateway {
+public class BasicPeer extends HessianPeer {
 
-    private static final Log log = LogFactory.getLog(BasicGateway.class);
-    private ESGGatewayService gatewayService = null;
-    private List<ESGGatewayListener> gatewayEventListeners = null;
+    private static final Log log = LogFactory.getLog(BasicPeer.class);
+    private ESGDataNodeService datanodeService = null;
+    private List<ESGPeerListener> peerEventListeners = null;
     
     private boolean pingState = false;
 
-    public BasicGateway(String serviceURL, int type) throws java.net.MalformedURLException { 
+    public BasicPeer(String serviceURL, int type) throws java.net.MalformedURLException { 
 	super(serviceURL,type); 
-	gatewayEventListeners = new ArrayList<ESGGatewayListener>();
+	peerEventListeners = new ArrayList<ESGPeerListener>();
+    }
+    
+    //From the super-dooper-class the default type is set to "DATA_NODE_PEER" ;-)
+    public BasicPeer(String serviceURL) throws java.net.MalformedURLException { 
+	super(serviceURL); 
+	peerEventListeners = new ArrayList<ESGPeerListener>();
     }
     
     //The idea here is to establish communication with the rpc
@@ -107,29 +113,29 @@ public class BasicGateway extends HessianGateway {
 
 	//I am not a valid object if I don't have a name
 	if(getName() == null) {
-	    log.warn("Cannot initialize Gateway : NO NAME!!");
+	    log.warn("Cannot initialize Peer DataNode: NO NAME!!");
 	    isValid = false;
 	    return;
 	}
 
 	//I am not a valid object if I don't have an endpoint URL
 	if(getServiceURL() == null) {
-	    log.warn("Cannot initialize Gateway ["+getName()+"]: NO SERVICE URL!!");
+	    log.warn("Cannot initialize Peer DataNode @ ["+getName()+"]: NO SERVICE URL!!");
 	    isValid = false;
 	    return;
 	}
 
 	try {
 	    //The call to our superclass to create the proper stub object to remote service.
-	    gatewayService = (ESGGatewayService)factoryCreate(ESGGatewayService.class, getServiceURL());
-	    log.trace("Gateway Service handle is ["+gatewayService+"]");
+	    datanodeService = (ESGDataNodeService)factoryCreate(ESGDataNodeService.class, getServiceURL());
+	    log.trace("Peer DataNode Service handle is ["+datanodeService+"]");
 	}catch(Exception ex) {
-	    log.warn("Could not connect to serviceURL ["+getServiceURL()+"]",ex);
+	    log.warn("Could not connect to peer @ serviceURL ["+getServiceURL()+"]",ex);
 	    isAvailable = false;
 	}
 	
-	if(gatewayService != null) {
-	    log.trace(getName()+" Proxy properly initialized");
+	if(datanodeService != null) {
+	    log.trace(getName()+" Peer Proxy properly initialized");
 	    isValid = true;
 	}else {
 	    log.warn(getName()+" Proxy NOT properly initialized");
@@ -146,22 +152,23 @@ public class BasicGateway extends HessianGateway {
     //that the RPC works at a basic level... If and only if I can ping
     //you and you respond (return true) that I can consider you a
     //VALID end point, and therefore, my proxy ;-), *I* am valid to
-    //use for communicating to you, mr. gateway. gyot it? :-) 
+    //use for communicating to you, mr. peer. gyot it? :-) 
 
     //A return true of false indicate that you are able to be
     //communicated with, however a return of false is you responding
-    //that you are open to being talked to and thus I, by proxy am not
-    //going to perform calls on your behalf, and therefore not valid.
+    //that you are not open to being talked to (busy etc.) and thus
+    //this object, by proxy, am not going to perform calls on your
+    //behalf, and therefore not valid.
 
     //This semantically expected to be the START of the communication
-    //between data node and gateway.  (called by the bootstrapping
+    //between data node and the peer this object represents.  (called by the bootstrapping
     //service: ESGDataNodeService)
     public boolean ping() { 
 	log.trace("ping -->> ["+getName()+"]");
 	boolean response = false;
 	try {
 	    //TODO see about changing the timeout so don't have to wait forever to fail!	    
-	    response = gatewayService.ping();
+	    response = datanodeService.ping();
 	    pingState = (response  && isValid);
 	    log.trace( (response ? "[OK]" : "[BUSY]") );
 	}catch (RuntimeException ex) {
@@ -174,7 +181,7 @@ public class BasicGateway extends HessianGateway {
 	}
 	
 	//This is basically saying that because of a ping there is a
-	//change in the availability state of the gateway in question.
+	//change in the availability state of the peer in question.
 	//So only upon a change in state will there be events fired
 	//through the rest of the system and the new state recorded
 	//and dispatched to the rest of the system.  This saves us
@@ -192,10 +199,43 @@ public class BasicGateway extends HessianGateway {
 	//FYI: the isAvailable() method is defined in super-superclass)
     }
     
-    //Present the gateway with this client's identity and thus
+    //-------------------------------------------------------------
+    //This is called to present this endpoint (the peer) with notification that 
+    //they have been properly registered into this data node
+    //-------------------------------------------------------------
+    //(yes, it looks like I am falling into the copy paste trap with
+    //the registerToPeer method, but the truth is that in the scheme
+    //of things these methods get called relatively infrequently so
+    //I'd like to put this info on the stack so it will get cleaned up
+    //when this method pops out of scope (off the stack) so I don't
+    //have to worry about things lingering in memory longer than
+    //necessary.)
+    public boolean notifyToPeer() {
+	String myLocation = null;
+	try{
+	    myLocation = "http://"+InetAddress.getLocalHost().getCanonicalHostName()+"/esg-node/datanode";
+	}catch (java.net.UnknownHostException ex) {
+	    log.error("Could not build proper location string for myself",ex);
+	    return false;
+	}
+	
+	ESGRemoteEvent notificationEvent = new ESGRemoteEvent(myLocation,ESGRemoteEvent.NOTIFY,Utils.nextSeq());
+	
+	try {
+	    log.trace("Making Remote Call to \"notify\" method, sending: "+notificationEvent);
+	    return datanodeService.notify(notificationEvent);
+	}catch (RuntimeException ex) {
+	    log.error("Problem calling \"notify\" on ["+getServiceURL()+"] "+ex.getMessage());
+	    fireConnectionFailed(ex);
+	    return false;
+	}
+    }
+    
+
+    //Present the peer with this client's identity and thus
     //callback address for making calls back to the data node
     //services for sending notifications
-    public boolean registerToGateway() { 
+    public boolean registerToPeer() { 
 	if(!isValid  || !isAvailable) {
 	    log.warn("May not issue \"register\" rpc call unless object has been initialized to be made valid and ping has been issued to make sure I am available!!!");
 	    return false;
@@ -206,14 +246,14 @@ public class BasicGateway extends HessianGateway {
 	    myLocation = "http://"+InetAddress.getLocalHost().getCanonicalHostName()+"/esg-node/datanode";
 	}catch (java.net.UnknownHostException ex) {
 	    log.error("Could not build proper location string for myself",ex);
+	    return false;
 	}
 	
 	ESGRemoteEvent registrationEvent = new ESGRemoteEvent(myLocation,ESGRemoteEvent.REGISTER,Utils.nextSeq());
 	
 	try {
 	    log.trace("Making Remote Call to \"register\" method, sending: "+registrationEvent);
-	    gatewayService.register(registrationEvent);
-	    return true;
+	    return datanodeService.register(registrationEvent);
 	}catch (RuntimeException ex) {
 	    log.error("Problem calling \"register\" on ["+getServiceURL()+"] "+ex.getMessage());
 	    fireConnectionFailed(ex);
@@ -224,7 +264,7 @@ public class BasicGateway extends HessianGateway {
     public void handleESGRemoteEvent(ESGRemoteEvent evt) {
 	try {
 	    log.trace("Making Remote Call to remote \"handleESGRemoteEvent\" method, sending: "+evt);
-	    gatewayService.handleESGRemoteEvent(evt);
+	    datanodeService.handleESGRemoteEvent(evt);
 	}catch (RuntimeException ex) {
 	    log.error("Problem calling remote \"handleESGRemoteEvent\" on ["+getServiceURL()+"] "+ex.getMessage());
 	    fireConnectionFailed(ex);
@@ -233,24 +273,24 @@ public class BasicGateway extends HessianGateway {
 
     protected void fireConnectionAvailable() {
 	log.trace("Firing Connection Available to "+getServiceURL());
-	fireESGGatewayEvent(new ESGGatewayEvent(this,ESGGatewayEvent.CONNECTION_AVAILABLE));
+	fireESGPeerEvent(new ESGPeerEvent(this,ESGPeerEvent.CONNECTION_AVAILABLE));
     }
     protected void fireConnectionFailed(Throwable t) {
 	log.trace("Firing Connection Failed to "+getServiceURL());
-	fireESGGatewayEvent(new ESGGatewayEvent(this,t.getMessage(),ESGGatewayEvent.CONNECTION_FAILED));
+	fireESGPeerEvent(new ESGPeerEvent(this,t.getMessage(),ESGPeerEvent.CONNECTION_FAILED));
     }
     protected void fireConnectionBusy() {
 	log.trace("Firing Connection Busy to "+getServiceURL());
-	fireESGGatewayEvent(new ESGGatewayEvent(this,ESGGatewayEvent.CONNECTION_BUSY));
+	fireESGPeerEvent(new ESGPeerEvent(this,ESGPeerEvent.CONNECTION_BUSY));
     }
     //--------------------------------------------
-    //Event dispatching to all registered ESGGatewayListeners
-    //calling their handleGatewayEvent method
+    //Event dispatching to all registered ESGPeerListeners
+    //calling their handlePeerEvent method
     //--------------------------------------------
-    protected void fireESGGatewayEvent(ESGGatewayEvent esgEvent) {
+    protected void fireESGPeerEvent(ESGPeerEvent esgEvent) {
 	log.trace("Firing Event: "+esgEvent);
-	for(ESGGatewayListener listener: gatewayEventListeners) {
-	    listener.handleGatewayEvent(esgEvent);
+	for(ESGPeerListener listener: peerEventListeners) {
+	    listener.handlePeerEvent(esgEvent);
 	}
     }
 

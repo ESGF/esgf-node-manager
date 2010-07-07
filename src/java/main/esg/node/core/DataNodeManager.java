@@ -70,11 +70,11 @@ public interface DataNodeManager extends ESGListener {
     public void removeComponent(DataNodeComponent component);
     public int numOfComponents();
     public String[] getComponentNames();
-    public boolean registerGateway(Gateway gateway);
-    public void removeGateway(String gatewayName);
-    public void removeGateway(Gateway gateway);
-    public int numOfGateways();
-    public String[] getGatewayNames();
+    public boolean registerPeer(ESGPeer peer);
+    public void removePeer(String peerName);
+    public void removePeer(ESGPeer peer);
+    public int numOfPeers();
+    public String[] getPeerNames();
     public Properties getMatchingProperties(String regex);
     
 }

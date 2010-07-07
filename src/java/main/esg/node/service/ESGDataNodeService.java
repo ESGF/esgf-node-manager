@@ -59,7 +59,7 @@
    Description:
 
       These are methods that will be exposed, for calling by remote
-      callers, namely the GATEWAY!
+      callers, namely ESGPeers!
 
 **/
 package esg.node.service;
@@ -70,6 +70,7 @@ public interface ESGDataNodeService {
 
     public boolean ping();
     public boolean notify(ESGRemoteEvent evt);
+    public boolean register(ESGRemoteEvent evt);
     public void handleESGRemoteEvent(ESGRemoteEvent evt);
 
 }

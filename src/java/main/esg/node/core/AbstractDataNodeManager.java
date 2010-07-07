@@ -86,7 +86,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 
     private static Log log = LogFactory.getLog(AbstractDataNodeManager.class);
 
-    private Map<String,Gateway> gateways = null;
+    private Map<String,ESGPeer> peers = null;
     private Map<String,DataNodeComponent> components = null;
     private Map<String,Properties> propCache = null;
     private Properties props = null;
@@ -94,7 +94,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     
     public AbstractDataNodeManager() {
 	myName="DN_MGR";
-	gateways = new HashMap<String,Gateway>();
+	peers = new HashMap<String,ESGPeer>();
 	components = new HashMap<String,DataNodeComponent>();
 	propCache = new HashMap<String,Properties>();
 	loadProperties();
@@ -186,8 +186,8 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	}
 	
 	log.trace("Registering Component: "+component.getName());
-	if (component instanceof Gateway) {
-	    log.warn("WARNING: Will not register gateway ["+component.getName()+"] as a component!");
+	if (component instanceof ESGPeer) {
+	    log.warn("WARNING: Will not register peer ["+component.getName()+"] as a component!");
 	    return false;
 	}
 	components.put(component.getName(), component);
@@ -236,57 +236,57 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     }
     
     //-------------------------------------------
-    //The Gateway Proxy object is a type of DataNodeComponent but with
+    //The Peer Proxy object is a type of DataNodeComponent but with
     //special logic for handling it's connectivity and life cycle.  It
     //is treated separely here for more *semantic* reasons than
-    //anything else.  I want to enforce the thinking that gateway
+    //anything else.  I want to enforce the thinking that peer
     //stubs represent a different type of beast than "ordinary"
     //components.
     //-------------------------------------------
-    public boolean registerGateway(Gateway gateway) {
-	if (gateway == null) return false;
-	if ( (gateway.getName() == null)  || (gateway.getName().equals(DataNodeComponent.ANONYMOUS)) ) {
-	    log.warn("Will not register a gateway without a name... call setMyName(<name>)");
+    public boolean registerPeer(ESGPeer peer) {
+	if (peer == null) return false;
+	if ( (peer.getName() == null)  || (peer.getName().equals(DataNodeComponent.ANONYMOUS)) ) {
+	    log.warn("Will not register a peer without a name... call setMyName(<name>)");
 	    return false;
 	}
 
-	log.trace("Registering Gateway: "+gateway.getName());
-	gateways.put(gateway.getName(), gateway);
-	log.trace("Initializing newly registered gateway component: "+gateway.getName());
-	gateway.init();
-	sendJoinNotification(gateway);
-	gateway.addESGListener(this);
+	log.trace("Registering Peer: "+peer.getName());
+	peers.put(peer.getName(), peer);
+	log.trace("Initializing newly registered peer component: "+peer.getName());
+	peer.init();
+	sendJoinNotification(peer);
+	peer.addESGListener(this);
 	return true;
     }
     
-    public void removeGateway(String gatewayName) {
-	Gateway gateway = gateways.remove(gatewayName);	
-	if(gateway == null) {
-	    log.trace("No gateway mapping to "+gatewayName+" (nothing to remove)");
+    public void removePeer(String peerName) {
+	ESGPeer peer = peers.remove(peerName);	
+	if(peer == null) {
+	    log.trace("No peer mapping to "+peerName+" (nothing to remove)");
 	    return;
 	}
-	log.trace("Removing Gateway: "+gatewayName);
-	gateway.removeESGListener(this);
-	sendUnjoinNotification(gateway);
+	log.trace("Removing Peer: "+peerName);
+	peer.removeESGListener(this);
+	sendUnjoinNotification(peer);
     }
 
     //overloaded delegation of above
-    public void removeGateway(Gateway gateway) {
-	removeGateway(gateway.getName());
+    public void removePeer(ESGPeer peer) {
+	removePeer(peer.getName());
     }
 
-    //For communicating with a specific gateway...
-    public Gateway getGateway(String name) {
-	return gateways.get(name);
+    //For communicating with a specific peer...
+    public ESGPeer getPeer(String peerName) {
+	return peers.get(peerName);
     }
 
-    //For getting the list of active gateways...
-    public List<Gateway> getGateways() {
-	return new ArrayList<Gateway>(gateways.values());
+    //For getting the list of active peers...
+    public List<ESGPeer> getPeers() {
+	return new ArrayList<ESGPeer>(peers.values());
     }
 
-    public int numOfGateways() { return gateways.size(); }
-    public String[] getGatewayNames() { return gateways.keySet().toArray(new String[] {""}); }
+    public int numOfPeers() { return peers.size(); }
+    public String[] getPeerNames() { return peers.keySet().toArray(new String[] {""}); }
 
 
     //--------------------------------------------
@@ -376,9 +376,9 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	out += "Number of Components: "+numOfComponents()+"\n";
 	names = getComponentNames();
 	for(String dncName : names) { out +="\t"+dncName+"\n"; }
-	out += "Number of Gateways  : "+numOfGateways()+"\n";
-	names = getGatewayNames();
-	for(String gwayName : names) { out +="\t"+gwayName+"\n"; }
+	out += "Number of Peers  : "+numOfPeers()+"\n";
+	names = getPeerNames();
+	for(String peerName : names) { out +="\t"+peerName+"\n"; }
 	return out;
     }
 

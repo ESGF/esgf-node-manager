@@ -61,23 +61,9 @@
 **/
 package esg.node.core;
 
-public class ESGGatewayEvent extends ESGEvent{
+import esg.node.core.ESGPeerEvent;
 
-    //TODO: YES YES YES... I KNOW... I'll make these enums later! ;-)
-    public static final int CONNECTION_FAILED = 2;
-    public static final int CONNECTION_BUSY = 4;
-    public static final int CONNECTION_AVAILABLE = 8;
-
-    private int eventType = -1;
+public interface ESGPeerListener {
     
-    public ESGGatewayEvent(Object source, String message, int eventType) { 
-	super(source,message); 
-	this.eventType = eventType;
-    }
-    public ESGGatewayEvent(Object source,int eventType) { 
-	this(source,null,eventType); 
-    }
-    
-    public int getEventType() { return eventType; }
-    public String toString() { return "s:["+source+"] t:["+eventType+"]"; }
+    public void handlePeerEvent(ESGPeerEvent evt);
 }

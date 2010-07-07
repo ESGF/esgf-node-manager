@@ -89,12 +89,10 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
 	registerComponent(connMgr);
 	
 	try{
-	    //for gavin's local testing...
-	    //Gateway gateway = new BasicGateway("https://128.115.184.6/esg-node/gateway",Gateway.DEFAULT_GATEWAY);
 	    String gatewaySvcRoot = System.getenv().get("ESG_GATEWAY_SVC_ROOT");
 	    if(null == gatewaySvcRoot) log.error("The Default Gateway is: ["+gatewaySvcRoot+"]: Hint - set ESG_GATEWAY_SVC_ROOT in /etc/esg.env");
-	    Gateway gateway = new BasicGateway("http://"+gatewaySvcRoot+"/gateway", Gateway.DEFAULT_GATEWAY);
-	    registerGateway(gateway);
+	    ESGPeer peer = new BasicPeer("http://"+gatewaySvcRoot+"/datanode", ESGPeer.DEFAULT_GATEWAY);
+	    registerPeer(peer);
 	}catch(java.net.MalformedURLException e) {log.error(e); }
 
 	ESGNotifier notifier = new ESGNotifier("NOTIFIER");
