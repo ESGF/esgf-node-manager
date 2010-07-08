@@ -106,6 +106,7 @@ public class BasicPeer extends HessianPeer {
     //The idea here is to establish communication with the rpc
     //endpoint this class is a stub for. init() may be called multiple times until valid;
     public void init() {
+	log.trace("4)) Peer init attempting to create handle to endpoint");
 	if(isValid) {
 	    log.info("I am already valid... :-)");
 	    return;
@@ -141,6 +142,13 @@ public class BasicPeer extends HessianPeer {
 	    log.warn(getName()+" Proxy NOT properly initialized");
 	    isValid = false;
 	}
+    }
+
+    //The way to talk back to the connection manager, pretty much who this listener at the very least is
+    public void addPeerListener(ESGPeerListener listener) {
+	if(peerEventListeners.contains(listener)) return;
+	peerEventListeners.add(listener);
+	log.trace("Added Peer Listener: "+listener);
     }
     
     
@@ -211,24 +219,29 @@ public class BasicPeer extends HessianPeer {
     //have to worry about things lingering in memory longer than
     //necessary.)
     public boolean notifyToPeer() {
+	boolean ret = false;
 	String myLocation = null;
 	try{
 	    myLocation = "http://"+InetAddress.getLocalHost().getCanonicalHostName()+"/esg-node/datanode";
 	}catch (java.net.UnknownHostException ex) {
 	    log.error("Could not build proper location string for myself",ex);
-	    return false;
+	    return ret;
 	}
 	
 	ESGRemoteEvent notificationEvent = new ESGRemoteEvent(myLocation,ESGRemoteEvent.NOTIFY,Utils.nextSeq());
 	
 	try {
 	    log.trace("Making Remote Call to \"notify\" method, sending: "+notificationEvent);
-	    return datanodeService.notify(notificationEvent);
+	    if(datanodeService.notify(notificationEvent)) {
+		fireConnectionAvailable();
+		ret = true;
+	    }
 	}catch (RuntimeException ex) {
 	    log.error("Problem calling \"notify\" on ["+getServiceURL()+"] "+ex.getMessage());
 	    fireConnectionFailed(ex);
-	    return false;
+	    ret = false;
 	}
+	return ret;
     }
     
 
@@ -236,9 +249,10 @@ public class BasicPeer extends HessianPeer {
     //callback address for making calls back to the data node
     //services for sending notifications
     public boolean registerToPeer() { 
+	boolean ret = false;
 	if(!isValid  || !isAvailable) {
 	    log.warn("May not issue \"register\" rpc call unless object has been initialized to be made valid and ping has been issued to make sure I am available!!!");
-	    return false;
+	    return ret;
 	}
 
 	String myLocation = null;
@@ -246,19 +260,23 @@ public class BasicPeer extends HessianPeer {
 	    myLocation = "http://"+InetAddress.getLocalHost().getCanonicalHostName()+"/esg-node/datanode";
 	}catch (java.net.UnknownHostException ex) {
 	    log.error("Could not build proper location string for myself",ex);
-	    return false;
+	    return ret;
 	}
 	
 	ESGRemoteEvent registrationEvent = new ESGRemoteEvent(myLocation,ESGRemoteEvent.REGISTER,Utils.nextSeq());
 	
 	try {
 	    log.trace("Making Remote Call to \"register\" method, sending: "+registrationEvent);
-	    return datanodeService.register(registrationEvent);
+	    if(datanodeService.register(registrationEvent)) {
+		fireConnectionAvailable();
+		ret = true;
+	    }
 	}catch (RuntimeException ex) {
 	    log.error("Problem calling \"register\" on ["+getServiceURL()+"] "+ex.getMessage());
 	    fireConnectionFailed(ex);
-	    return false;
+	    ret = false;
 	}
+	return ret;
     }
 
     public void handleESGRemoteEvent(ESGRemoteEvent evt) {

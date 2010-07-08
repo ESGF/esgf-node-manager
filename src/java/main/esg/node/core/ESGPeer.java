@@ -134,6 +134,9 @@ public abstract class ESGPeer extends AbstractDataNodeComponent{
 
     //Send the represented ESGPeer endpoint an event object
     public abstract void handleESGRemoteEvent(ESGRemoteEvent evt);
+
+    //Add listener for handling this peer's events
+    public abstract void addPeerListener(ESGPeerListener listener);
     //-----------------------------------------------------------------
     
 

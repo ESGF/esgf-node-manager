@@ -250,10 +250,11 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	    return false;
 	}
 
-	log.trace("Registering Peer: "+peer.getName());
+	log.trace("2)) Registering Peer in node manager: "+peer.getName());
 	peers.put(peer.getName(), peer);
-	log.trace("Initializing newly registered peer component: "+peer.getName());
+	log.trace("3)) Initializing newly registered peer component: "+peer.getName());
 	peer.init();
+	log.trace("5)) Sending Join Notification...");
 	sendJoinNotification(peer);
 	peer.addESGListener(this);
 	return true;

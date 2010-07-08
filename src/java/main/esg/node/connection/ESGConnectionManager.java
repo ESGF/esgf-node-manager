@@ -249,20 +249,20 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 	//manage the data structure for peer 'stubs' locally while
 	//object is a participating managed component.
 	if(event.hasJoined()) {
-	    log.trace("Detected That A Peer Component Has Joined: "+event.getJoiner().getName());
+	    log.trace("6)) Detected That A Peer Component Has Joined: "+event.getJoiner().getName());
 	    ESGPeer peer = (ESGPeer)event.getJoiner();
 	    String peerURL = peer.getServiceURL();
 	    if(peerURL != null) {
-		peers.put(peerURL,peer);
-		//Finally... finish the registration transaction by
-		//notifying the registrant that they are accounted for
-		//and recognized...
-
-		//NOTE (TODO): I am not convinced that this call
-		//should be here...  it may get too noisy if peers are
-		//joining because of a process other than
-		//registration! - this should be changed moved...
+		
+		//Have the newly joined peer (stub) attempt to contact
+		//it's endpoint to establish notification.  By adding
+		//"this" connection manager, the peer stub can now
+		//send us an event if the notify call to the endpoint
+		//was successful or not.(see handlePeerEvent below)
+		peer.addPeerListener(this);
+		unavailablePeers.put(peer.getName(),peer);
 		peer.notifyToPeer();
+		
 	    }else{
 		log.warn("Dropping "+peer+"... (no null service urls accepted)");
 	    }
