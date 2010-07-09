@@ -147,17 +147,23 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     //Remote (ingress) calls to method...
     public boolean notify(ESGRemoteEvent evt_) {
 	log.trace("DataNode service got \"notify\" call with event: ["+evt_+"]");
-	if(!amAvailable()) {
-	    log.warn("Dropping ingress notification event on the floor, I am NOT available. ["+evt_+"]");
-	    return false;
-	}
+	boolean ret = false;
+
+	//zoiks: revisit this p2p chicken b4 egg issue
+	//if(!amAvailable()) {
+	//    log.warn("Dropping ingress notification event on the floor, I am NOT available. ["+evt_+"]");
+	//    return ret;
+	//}
 
 	//Inspect the message type...
-	if(evt_.getMessageType() != ESGRemoteEvent.NOTIFY) return false;
+	if(evt_.getMessageType() != ESGRemoteEvent.NOTIFY) {
+	    log.trace("Registration called with wrong event type... dropping on floor...");
+	    return ret;
+	}
 	
 	//TODO: Do Event Inspection, etc...
 	
-	return true;
+	return ret;
     }
 
     //ingress registration request... returns a registration event to the remote caller's (peer's) notify method.
@@ -165,7 +171,13 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 	log.trace("DataNode service got \"register\" call from datanode with event: ["+evt+"]");
 	boolean ret = false;
 	
-	//Triage incoming revent...
+	//zoiks: revisit this p2p chicken b4 egg issue
+	//if(!amAvailable()) {
+	//    log.warn("Dropping ingress notification event on the floor, I am NOT available. ["+evt_+"]");
+	//    return ret;
+	//}
+
+	//Inspect the message type...
 	if(evt.getMessageType() != ESGRemoteEvent.REGISTER) {
 	    log.trace("Registration called with wrong event type... dropping on floor...");
 	    return ret;

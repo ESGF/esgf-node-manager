@@ -205,6 +205,8 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	return true;
     }
     
+    public boolean hasComponent(String componentName) { return peers.containsKey(componentName); }
+
     public void removeComponent(String componentName) {
 	DataNodeComponent component = components.remove(componentName);
 	if(component == null) {
@@ -245,21 +247,22 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     //-------------------------------------------
     public boolean registerPeer(ESGPeer peer) {
 	if (peer == null) return false;
-	if ( (peer.getName() == null)  || (peer.getName().equals(DataNodeComponent.ANONYMOUS)) ) {
-	    log.warn("Will not register a peer without a name... call setMyName(<name>)");
-	    return false;
-	}
-
 	log.trace("2)) Registering Peer in node manager: "+peer.getName());
-	peers.put(peer.getName(), peer);
 	log.trace("3)) Initializing newly registered peer component: "+peer.getName());
 	peer.init();
-	log.trace("5)) Sending Join Notification...");
-	sendJoinNotification(peer);
-	peer.addESGListener(this);
-	return true;
+	if(peer.isValid()) {
+	    peers.put(peer.getName(), peer);
+	    log.trace("5)) Sending Join Notification...");
+	    sendJoinNotification(peer);
+	    peer.addESGListener(this);
+	    return true;
+	}
+	log.warn("Sorry Not Able To Register This Peer: "+peer);
+	return false;
     }
     
+    public boolean hasPeer(String peerName) { return peers.containsKey(peerName); }
+
     public void removePeer(String peerName) {
 	ESGPeer peer = peers.remove(peerName);	
 	if(peer == null) {

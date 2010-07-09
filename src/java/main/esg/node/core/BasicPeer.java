@@ -103,8 +103,15 @@ public class BasicPeer extends HessianPeer {
 	peerEventListeners = new ArrayList<ESGPeerListener>();
     }
     
-    //The idea here is to establish communication with the rpc
-    //endpoint this class is a stub for. init() may be called multiple times until valid;
+    /**
+       The idea here is to establish the proper proxy object to the
+       rpc endpoint. This class is an rpc stub wrapper. "init()" may
+       be called multiple times until valid i.e. until an endpoint can
+       be created with the given serviceURL. "isValid()" indicates
+       that an rpc stub was able to be created referencing the
+       endpoint at the serviceURL, not whether or not that endpoint is
+       available or even present for communication.
+    */
     public void init() {
 	log.trace("4)) Peer init attempting to create handle to endpoint");
 	if(isValid) {
@@ -113,15 +120,8 @@ public class BasicPeer extends HessianPeer {
 	}
 
 	//I am not a valid object if I don't have a name
-	if(getName() == null) {
-	    log.warn("Cannot initialize Peer DataNode: NO NAME!!");
-	    isValid = false;
-	    return;
-	}
-
-	//I am not a valid object if I don't have an endpoint URL
-	if(getServiceURL() == null) {
-	    log.warn("Cannot initialize Peer DataNode @ ["+getName()+"]: NO SERVICE URL!!");
+	if(getName() == null || (peer.getName().equals(DataNodeComponent.ANONYMOUS)) ) {
+	    log.warn("Cannot initialize Peer DataNode with name/serviceURL ["+getName()+"]");
 	    isValid = false;
 	    return;
 	}
@@ -268,7 +268,6 @@ public class BasicPeer extends HessianPeer {
 	try {
 	    log.trace("Making Remote Call to \"register\" method, sending: "+registrationEvent);
 	    if(datanodeService.register(registrationEvent)) {
-		fireConnectionAvailable();
 		ret = true;
 	    }
 	}catch (RuntimeException ex) {

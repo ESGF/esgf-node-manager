@@ -285,16 +285,21 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 	ESGPeer peer = (ESGPeer)evt.getSource();
 	switch(evt.getEventType()) {
 	case ESGPeerEvent.CONNECTION_FAILED:
+	    log.trace("Got ESGPeerEVent.CONNECTION_FAILED from: "+peer.getName());
 	case ESGPeerEvent.CONNECTION_BUSY:
-	    log.trace("Transfering from active -to-> inactive list");
+	    log.trace("Got ESGPeerEVent.CONNECTION_BUSY from: "+peer.getName());
 	    if(peers.remove(peer.getName()) != null) {
+		log.trace("Transfering from active -to-> inactive list");
 		unavailablePeers.put(peer.getName(),peer);
 	    }
 	    break;
 	case ESGPeerEvent.CONNECTION_AVAILABLE:
-	    log.trace("Transfering from inactive -to-> active list");
+	    log.trace("Got ESGPeerEVent.CONNECTION_AVAILABLE from: "+peer.getName());
 	    if(unavailablePeers.remove(peer.getName()) != null) {
+		log.trace("Transfering from inactive -to-> active list");
 		peers.put(peer.getName(),peer);
+	    }else {
+		log.trace("no status change for "+peer.getName());
 	    }
 	    break;
 	default:

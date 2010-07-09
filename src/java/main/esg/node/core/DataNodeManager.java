@@ -65,16 +65,23 @@ import java.util.Properties;
 
 public interface DataNodeManager extends ESGListener {
     
+    //Component focused methods...
     public boolean registerComponent(DataNodeComponent component);
+    public boolean hasComponent(String componentName);
     public void removeComponent(String componentName);
     public void removeComponent(DataNodeComponent component);
     public int numOfComponents();
     public String[] getComponentNames();
+
+    //Peer focused methods...
     public boolean registerPeer(ESGPeer peer);
+    public boolean hasPeer(String peerName);
     public void removePeer(String peerName);
     public void removePeer(ESGPeer peer);
     public int numOfPeers();
     public String[] getPeerNames();
+
+    //Other....
     public Properties getMatchingProperties(String regex);
     
 }
