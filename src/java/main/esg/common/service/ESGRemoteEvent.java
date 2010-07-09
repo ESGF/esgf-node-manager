@@ -77,6 +77,7 @@ public class ESGRemoteEvent implements java.io.Serializable {
     public static final int NOTIFY     = 8;
     public static final int HEALTH     = 16;
     public static final int METRICS    = 32;
+    public static final int APPLICATION = 64;
 
     private String source  = null;
     private int    messageType = -1;
