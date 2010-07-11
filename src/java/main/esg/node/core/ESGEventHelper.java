@@ -82,7 +82,7 @@ public class ESGEventHelper {
 	//Create the string for *our* callback address...
 	String myLocation = null;
 	try{
-	    myLocation = "http://"+java.net.InetAddress.getLocalHost().getCanonicalHostName()+"/esg-node/gateway";
+	    myLocation = "http://"+java.net.InetAddress.getLocalHost().getCanonicalHostName()+"/esg-node/datanode";
 	}catch (java.net.UnknownHostException ex) {
 	    log.error("Could not build proper location string for myself",ex);
 	}
@@ -101,7 +101,7 @@ public class ESGEventHelper {
 	//Create the string for *our* callback address...
 	String myLocation = null;
 	try{
-	    myLocation = "http://"+java.net.InetAddress.getLocalHost().getCanonicalHostName()+"/esg-node/gateway";
+	    myLocation = "http://"+java.net.InetAddress.getLocalHost().getCanonicalHostName()+"/esg-node/datanode";
 	}catch (java.net.UnknownHostException ex) {
 	    log.error("Could not build proper location string for myself",ex);
 	}
