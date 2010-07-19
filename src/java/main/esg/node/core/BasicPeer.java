@@ -120,7 +120,7 @@ public class BasicPeer extends HessianPeer {
 	}
 
 	//I am not a valid object if I don't have a name
-	if(getName() == null || (peer.getName().equals(DataNodeComponent.ANONYMOUS)) ) {
+	if(getName() == null || (getName().equals(DataNodeComponent.ANONYMOUS)) ) {
 	    log.warn("Cannot initialize Peer DataNode with name/serviceURL ["+getName()+"]");
 	    isValid = false;
 	    return;
