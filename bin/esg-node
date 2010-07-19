@@ -809,7 +809,7 @@ setup_postgress() {
     eval "perl -p -i -e 's/\\@\\@postgress_port\\@\\@/${postgress_port}/g' ${fetch_file}"    
     [ $? == 0 ] && printf "[OK]\n" || printf "[FAIL]\n"
 
-    printf "\Setting Postgress Log Dir: ${postgress_install_dir} "
+    printf "Setting Postgress Log Dir: ${postgress_install_dir} "
     eval "perl -p -i -e 's#\\@\\@postgress_install_dir\\@\\@#${postgress_install_dir}#g' ${fetch_file}"    
     [ $? == 0 ] && printf "[OK]\n" || printf "[FAIL]\n"
 
@@ -1187,7 +1187,7 @@ setup_tomcat() {
     if [ -e ./bin/jsvc ] && [ -x ./bin/jsvc ]; then
 	echo "[OK]"
     else
-	echo "[BAD]"
+	echo "[NOT PRESENT]"
 	[ ! -x ./bin/jsvc ] &&  rm -v ./bin/jsvc >& /dev/null
 	echo "Building jsvc... (JAVA_HOME=$java_install_dir)"
 	cd bin
@@ -1268,12 +1268,10 @@ setup_tomcat() {
 
     start_tomcat
 
-    echo "---------------------------------------------------------"
-    echo "Should see the page source below: means server works :-)"
-    echo "--------------------page source start--------------------"
     echo "curl http://localhost:80"
     curl http://localhost:80
-    echo "--------------------page source end----------------------"
+    [ $? != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to contact top level tomcat page on this server" && popd && checked_done 1
+    echo " [OK]"
     echo
     
     popd >& /dev/null
@@ -1375,7 +1373,7 @@ test_tomcat() {
     echo "--------------------page source end----------------------"
     echo
 
-    checked_done $?
+    checked_done $ret
 }
 
 #####
