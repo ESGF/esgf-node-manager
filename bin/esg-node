@@ -176,7 +176,7 @@ init() {
     pg_sys_acct=${pg_sys_acct:-postgres}
     pg_sys_acct_group=${pg_sys_acct_group:-$pg_sys_acct}
     postgress_dist_url=http://ftp9.us.postgresql.org/pub/mirrors/postgresql/source/v${postgress_version}/postgresql-${postgress_version}.tar.gz
-    cdat_repo=http://esg-repo.llnl.gov/git/cdat.git
+    cdat_repo=git://esg-repo.llnl.gov/git/cdat.git
     esgcet_egg_file=esgcet-${esgcet_version}-py${esgcet_python_version}.egg
     esg_testdir=${workdir}/../esg_test
     tomcat_dist_url=http://download.filehat.com/apache/tomcat/tomcat-6/v${tomcat_version}/bin/apache-tomcat-${tomcat_version}.tar.gz
@@ -915,7 +915,7 @@ setup_cdat() {
     [ $? != 0 ] && checked_done 1
     pushd ${workdir} >& /dev/null
     if [ ! -d ${workdir}/cdat ]; then
-	echo "This may take a few minutes... GIT over http is slooooow :-)"
+	echo "Fetching the cdat projectd from GIT Repo..."
 	git clone ${cdat_repo}
     fi
     cd cdat >& /dev/null
