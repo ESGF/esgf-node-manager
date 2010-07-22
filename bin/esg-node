@@ -160,7 +160,7 @@ init() {
     #Script vars (internal)
     #--------------
     word_size=${word_size:-$(file /bin/bash | perl -ple 's/^.*ELF\s*(32|64)-bit.*$/$1/g')}
-    esg_dist_url=http://rainbow.llnl.gov/dist
+    esg_dist_url=http://198.128.245.140/dist
     date_format="+%Y_%m_%d_%H%M%S"
     num_backups_to_keep=${num_backups_to_keep:-7}
     java_dist_url=${esg_dist_url}/java/${java_version}/jdk${java_version}-${word_size}.tar.gz
@@ -2536,7 +2536,7 @@ _verify() {
 }
 
 self_verify() {
-    _verify 'http://rainbow.llnl.gov/dist' >& /dev/null 
+    _verify 'http://198.128.245.140/dist' >& /dev/null 
     if (( $? == 3 )); then 
 	printf "WARNING: $0 could not be verified!! \n(This file, ${0}, may have been tampered with or there is a newer version posted at the distribution server.\nPlease update this script.)\n\n"
 	
