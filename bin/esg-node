@@ -2030,6 +2030,7 @@ write_env() {
 #####
 #(called by setup_tds)
 #arg1 - hostname of the machine with the cert you want to get
+#(arg2 - password to truststore where cert will be inserted)
 register() {
     echo "Installing Certificate From Gateway...( -> MyProxy endpoint)"
     
