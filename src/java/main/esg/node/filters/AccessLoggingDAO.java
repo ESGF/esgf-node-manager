@@ -79,8 +79,8 @@ public class AccessLoggingDAO implements Serializable {
 
     //TODO figure out what these queries should be!
     private static final String accessLoggingIngressQuery = 
-	"insert into access_logging (id, user_id, email, url, file_id, remote_addr, user_agent, date_fetched, success) "+
-	"values ( nextval('seq_access_logging'), ?, ?, ?, ?, ?, ?, ?, ?)";
+	"insert into access_logging (id, user_id, email, url, file_id, remote_addr, user_agent, service_type, date_fetched, success) "+
+	"values ( nextval('seq_access_logging'), ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     private static final String accessLoggingEgressQuery = 
 	"update access_logging set success = ?, date_fetched = ? "+
 	"where user_id = ?, url = ?, file_id = ?, remote_addr = ?, date_fetched = ?";
@@ -106,14 +106,21 @@ public class AccessLoggingDAO implements Serializable {
     }
     
     //TODO: put in args and setup query!!!
-    public int logIngressInfo(String userID,  String email, String url, String fileID, String remoteAddress, String userAgent, long dateFetched) {
+    public int logIngressInfo(String userID,  
+			      String email, 
+			      String url, 
+			      String fileID, 
+			      String remoteAddress, 
+			      String userAgent, 
+			      String serviceType, 
+			      long dateFetched) {
 	int ret = -1;
 	try{
 	    //TODO: Perhaps the url can be used to resolve the dataset???
 	    //That is the bit of information we really want to also have.
 	    //What we really need is an absolute id for a file!!!
 	    ret = queryRunner.update(accessLoggingIngressQuery,
-				     userID,email,url,fileID,remoteAddress,userAgent,dateFetched,false);
+				     userID,email,url,fileID,remoteAddress,userAgent,serviceType,dateFetched,false);
 	}catch(SQLException ex) {
 	    log.error(ex);
 	}
@@ -127,7 +134,12 @@ public class AccessLoggingDAO implements Serializable {
     //tuple of information is the same as the ingress log fields.
     //Once the record is uniquely identified then the egress
     //information (the last pair) can be updated.
-    public int logEgressInfo(String userID, String url, String fileID, String remoteAddress, long dateFetched, boolean success, long duration) {
+    public int logEgressInfo(String userID, 
+			     String url, 
+			     String fileID, 
+			     String remoteAddress, 
+			     long dateFetched, 
+			     boolean success, long duration) {
 	int ret = -1;
 	try {
 	    ret = queryRunner.update(accessLoggingEgressQuery,

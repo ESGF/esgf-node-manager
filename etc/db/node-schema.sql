@@ -15,7 +15,7 @@ CREATE TABLE  access_logging (
     file_id character varying,
     remote_addr character varying NOT NULL,
     user_agent character varying,
-    xfer_service character varying,
+    service_type character varying,
     batch_update_time double precision,    
     date_fetched double precision NOT NULL,
     success boolean DEFAULT false,
