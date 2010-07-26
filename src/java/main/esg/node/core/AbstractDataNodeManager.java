@@ -115,6 +115,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	try {
 	    propCache.clear();
 	    Resource config = new Resource("node.properties");
+	    assert (null != config) : "Resource object named config is null!";
 	    in = config.getInputStream();
 	    props = new Properties();
 	    props.load(in);
