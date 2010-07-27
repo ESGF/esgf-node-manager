@@ -1224,10 +1224,19 @@ setup_tomcat() {
 	echo "Launching Java's keytool: we suggest using the default Tomcat password \"changeit\""
 	#$JAVA_HOME/bin/keytool -list -keystore keystore-tomcat
 	$java_install_dir/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365
-	[ $? != 0 ] && echo " ERROR: keytool command failed" && popd && checked_done 1
+	[ $? != 0 ] && echo " ERROR: keytool genkey command failed" && popd && checked_done 1
     else
 	echo "Using existing keystore \"${keystore_file}\""
     fi
+
+    local genreq=N
+    read -p "Do you wish to generate a Certificate Signing Request at this time? [y/N] " genreq
+    if [ "${genreq}" == "Y" ] || [ "${genreq}" == "y" ]; then
+	echo "Generating Certificate Signing Request..."
+	${java_install_dir}/bin/keytool -certreq -alias ${keystore_alias} -keystore ${keystore_file} -file $HOME/$(hostname --fqdn)-esg-node.csr
+	[ $? != 0 ] && echo " ERROR: keytool certreq command failed"
+    fi
+	
 
     #Fetch/Copy truststore to $tomcat_install_dir/conf
     #(first try getting it from distribution server otherwise copy Java's)
