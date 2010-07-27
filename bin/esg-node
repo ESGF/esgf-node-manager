@@ -2320,7 +2320,7 @@ check_version() {
     (($DEBUG)) && echo "The return value from the call to helper function check_version_ is $ret"
     [ $ret == 0 ] && return 0
 
-    printf "\nSorry, the detected version of $1 [${current_version}] is older than required minium version [$2] \n"
+    printf "\nSorry, the detected version of $1 [${current_version}] is older than required minimum version [$2] \n"
     cat /tmp/f
     rm /tmp/f >& /dev/null
     return 1
