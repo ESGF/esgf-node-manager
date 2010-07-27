@@ -2306,12 +2306,12 @@ check_version() {
     (($DEBUG)) && echo "check_version $@"
     [ -z $2 ] && return 0
     (($DEBUG)) && echo $2
-    local target_version=$(echo $2 | perl -ne '/(\d+.*\d*.*\d*[.-_@+#]*\d*).*/, print "$1 "' | tr -d "\"" | cut -d " " -f1,1)
+    local target_version=$(echo $2 | perl -ne '/(\d+\.+\d*\.*\d*[.-_@+#]*\d*).*/, print "$1 "' | tr -d "\"" | cut -d " " -f1,1)
     (($DEBUG)) && echo "target_version = [$target_version]"
 
     $1 --version >& /tmp/f || $1 -version >& /tmp/f
     [ $? != 0 ] && echo && echo "Oops, $1 command not found" && return 2
-    current_version=$(cat /tmp/f 2>&1 | perl -ne '/(\d+.*\d*.*\d*[.-_@+#]*\d*).*/, print "$1 "' | tr -d "\""  | cut -d " " -f1,1)
+    current_version=$(cat /tmp/f 2>&1 | perl -ne '/(\d+\.+\d*\.*\d*[.-_@+#]*\d*).*/, print "$1 "' | tr -d "\""  | cut -d " " -f1,1)
     (($DEBUG)) && echo "current_version = [$current_version]"
     
     (($DEBUG)) && echo "calling helper, check_version_helper ${current_version} >= ${target_version}"
