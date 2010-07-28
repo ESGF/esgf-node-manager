@@ -20,9 +20,9 @@
 *   All rights reserved. This file is part of the:                         *
 *   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
 *                                                                          *
-*   For details, see http://esg-repo.llnl.gov/esg-node/                    *
+*   For details, see http://esgf.org/esg-node/                             *
 *   Please also read this link                                             *
-*    http://esg-repo.llnl.gov/LICENSE                                      *
+*    http://esgf.org/LICENSE                                               *
 *                                                                          *
 *   * Redistribution and use in source and binary forms, with or           *
 *   without modification, are permitted provided that the following        *
@@ -682,7 +682,7 @@ Builds the project via ant (obviously).
       </packageset>
 
       <doctitle><![CDATA[<h1>${module}</h1>]]></doctitle>
-      <bottom><![CDATA[<i><a href="http://esg-repo.llnl.gov/esgf" target="_top">ESGF</a> / <a href="http://esg-repo.llnl.gov/" target="_top">BSD OpenSource License</a></i>]]></bottom>
+      <bottom><![CDATA[<i><a href="http://esgf.org" target="_top">ESGF</a> / <a href="http://esgf.org/" target="_top">BSD OpenSource License</a></i>]]></bottom>
       <tag name="todo" scope="all" description="To do:"/>
       <group title="Core Packages" packages="esg.node.core*"/>
       <group title="Component Packages" packages="esg.node.components*"/>
@@ -731,7 +731,7 @@ Builds the project via ant (obviously).
     <echo message="JavaDocs -> file://${jdoc_dir}/index.html"/>
     <echo message="Unit Test Report -> file://${test_reports_dir}/index.html"/>
     <echo message="Dependency Report -> file://${lib_deps_reports_dir}/esgf-${module}-default.html"/>
-    <echo message="Web Site -> http://esg-repo.llnl.gov/esgf/${module}/index.html"/>
+    <echo message="Web Site -> http://esgf.org/${module}/index.html"/>
   </target>
 
 
