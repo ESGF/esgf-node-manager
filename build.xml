@@ -171,6 +171,7 @@ Builds the project via ant (obviously).
     <property name="dist_dir"   	  value="${basedir}/dist"/>
     <property name="test_src_dir"  	  value="${basedir}/src/java/test"/>
     <property name="test_build_dir"       value="${basedir}/build/test"/>
+    <property name="test_build_dir_inst" value="${basedir}/build/test-instrumented" />
     <property name="etc_dir"   	          value="${basedir}/etc"/>
     <property name="conf_dir"   	  value="${etc_dir}/conf"/>
     <property name="web_dir"   	          value="${basedir}/web"/>
@@ -185,6 +186,7 @@ Builds the project via ant (obviously).
     <property name="jdoc_dir"   	  value="${doc_dir_generated}/javadocs"/>
     <property name="test_results_dir"     value="${doc_dir_generated}/test-results"/>
     <property name="test_reports_dir"     value="${doc_dir_generated}/test-reports"/>
+    <property name="test_coverage_dir"    value="${doc_dir_generated}/coverage-reports" />
     <property name="lib_deps_reports_dir" value="${doc_dir_generated}/dep-reports"/>
 
     <property name="jaxb_xsd_dir"         value="${etc_dir}/xsd/"/>
@@ -234,8 +236,6 @@ Builds the project via ant (obviously).
   
   <target name="init-ivy" depends="init">
     <property name="ivy_version" value="2.1.0" />
-    <!-- <get src="http://repo2.maven.org/maven2/org/apache/ivy/ivy/${ivy_version}/ivy-${ivy_version}.jar" 
-	      dest="ivy-${ivy_version}.jar" usetimestamp="true"/> -->
     <taskdef resource="org/apache/ivy/ant/antlib.xml"
              uri="antlib:org.apache.ivy.ant" classpath="${lib_dir}/ivy-${ivy_version}.jar"/>
   </target>
@@ -632,6 +632,23 @@ Builds the project via ant (obviously).
     <mkdir dir="${test_results_dir}"/>
     <delete dir="${test_reports_dir}" />
     <mkdir dir="${test_reports_dir}"/>
+    <delete dir="${test_coverage_dir}" />
+    <mkdir dir="${test_coverage_dir}" />
+
+    <path id="coverage.classpath">
+      <fileset dir="${lib_dir}" includes="**/*.jar" />
+      <path refid="main_classpath" />
+      <pathelement location="${test_build_dir}" />
+    </path>
+    <taskdef resource="tasks.properties" classpathref="coverage.classpath" />
+    
+    <!-- instrument test classes -->
+    <cobertura-instrument todir="${test_build_dir_inst}">
+      <fileset dir="${build_dir}/esgf">
+	<include name="**/*.class" />
+      </fileset>
+    </cobertura-instrument>
+
     <junit errorproperty="failed"
 	   failureproperty="failed"
 	   printsummary="on"
@@ -642,18 +659,27 @@ Builds the project via ant (obviously).
       <formatter type="xml" />
       <test name="${testcase}" todir="${test_results_dir}" if="testcase"/>
       <batchtest todir="${test_results_dir}" unless="testcase">
-	<fileset dir="${test_build_dir}" includes="**/*Test*.class"/>
+	<fileset dir="${test_build_dir}" includes="**/*Test*.class">
+	  <exclude name="**/Internal*.class"/>
+	  <exclude name="**/*$$*.class"/>
+	</fileset>
       </batchtest>
       <assertions enableSystemAssertions="true">
 	<enable/>
       </assertions>
     </junit>
+
     <junitreport todir="${test_results_dir}">
       <fileset dir="${test_results_dir}">
 	<include name="TEST-*.xml"/>
       </fileset>
       <report format="frames" todir="${test_reports_dir}"/>
     </junitreport>
+
+    <!-- coverage report -->
+    <cobertura-report srcdir="${src_dir}" destdir="${test_coverage_dir}" />
+    <cobertura-report format="xml" srcdir="${src_dir}" destdir="${test_coverage_dir}/xml" />
+
     <echo message="last build failed tests" file="${test_last_failed_file}"/>
     <fail if="failed" message="Unit tests failed.  Check log or reports for details"/>
     <delete file="${test_last_failed_file}"/>
@@ -665,6 +691,47 @@ Builds the project via ant (obviously).
       ************************************************************
     -->
 
+  <!-- - - - - - - - - - - - - - - - - - 
+       target: coverage_report                      
+   - - - - - - - - - - - - - - - - - -->
+  <target name="coverage_report" depends="init,make">
+    <delete dir="${test_results_dir}" />
+    <mkdir dir="${test_results_dir}" />
+    <mkdir dir="${test_build_dir}" />
+    <depend srcdir="${test_src_dir}" destdir="${test_build_dir}" cache="${depcache_dir}" closure="yes" />
+    <javac srcdir="${test_src_dir}" destdir="${test_build_dir}" excludes="**/no_comp/**,**/ignore/**,**/*_,**/*_*/**" classpathref="test_classpath" deprecation="true" failonerror="true" target="1.5" debug="on" verbose="off" nowarn="on" />
+    
+    <!-- instrument test classes -->
+    <cobertura-instrument todir="${test_build_dir_inst}">
+      <fileset dir="${build_dir}/esg">
+	<include name="**/*.class" />
+      </fileset>
+    </cobertura-instrument>
+    
+    <path id="test_classpath">
+      <pathelement location="${test_build_dir_inst}" />
+      <fileset dir="${lib_dir}" includes="**/junit*.jar" />
+      <path refid="main_classpath" />
+      <pathelement location="${test_build_dir}" />
+    </path>
+    
+    <junit errorproperty="failed" failureproperty="failed" printsummary="on" fork="yes" maxmemory="1024M">
+      <classpath refid="test_classpath" />
+      <formatter type="plain" usefile="false" />
+      <formatter type="xml" />
+      <test name="${testcase}" todir="${test_results_dir}" if="testcase" />
+      <batchtest todir="${test_results_dir}" unless="testcase">
+	<fileset dir="${test_build_dir}" includes="**/*Test*.class" />
+      </batchtest>
+      <assertions enableSystemAssertions="true">
+	<enable />
+      </assertions>
+    </junit>
+    
+    <cobertura-report srcdir="${src_dir}" destdir="${test_coverage_dir}" />
+  </target>
+  
+  
   <target name="docs" depends="init"
 	  description="(Generates the javadoc for this project)">
     <delete dir="${javadoc_dir}"/>
@@ -685,13 +752,13 @@ Builds the project via ant (obviously).
       <doctitle><![CDATA[<h1>${module}</h1>]]></doctitle>
       <bottom><![CDATA[<i><a href="http://esgf.org" target="_top">ESGF</a> / <a href="http://esgf.org/" target="_top">BSD OpenSource License</a></i>]]></bottom>
       <tag name="todo" scope="all" description="To do:"/>
-      <group title="Core Packages" packages="esg.node.core*"/>
-      <group title="Component Packages" packages="esg.node.components*"/>
-      <group title="Connection Packages" packages="esg.node.connection*"/>
-      <group title="Server Packages" packages="esg.node.service*"/>
-      <group title="Common Packages" packages="esg.common*"/>
-      <group title="Database Packages" packages="esg.node.db*"/>
-      <group title="Utility Packages" packages="esg.node.util*"/>
+      <group title="ESGF Core Packages" packages="esg.node.core*"/>
+      <group title="ESGF Component Packages" packages="esg.node.components*"/>
+      <group title="ESGF Connection Packages" packages="esg.node.connection*"/>
+      <group title="ESGF Server Packages" packages="esg.node.service*"/>
+      <group title="ESGF Common Packages" packages="esg.common*"/>
+      <group title="ESGF Database Packages" packages="esg.node.db*"/>
+      <group title="ESGF Utility Packages" packages="esg.node.util*"/>
       <link offline="true" href="http://java.sun.com/javase/6/docs/api/" packagelistLoc="${java.io.tmpdir}"/>
       <link href="http://java.sun.com/javase/6/docs/api/"/>
     </javadoc>
@@ -730,7 +797,8 @@ Builds the project via ant (obviously).
   <target name="make_everything" depends="make_dist,test,docs,dep_report"
 	  description="(Builds Everything... Distributions, Tests, Docs n Reports)">
     <echo message="JavaDocs -> file://${jdoc_dir}/index.html"/>
-    <echo message="Unit Test Report -> file://${test_reports_dir}/index.html"/>
+    <echo message="Unit Test Report  -> file://${test_reports_dir}/index.html"/>
+    <echo message="Coverage Report   -> file://${test_coverage_dir}/index.html"/>
     <echo message="Dependency Report -> file://${lib_deps_reports_dir}/esgf-${module}-default.html"/>
     <echo message="Web Site -> http://esgf.org/${module}/index.html"/>
   </target>
