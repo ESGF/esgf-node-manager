@@ -115,6 +115,7 @@ init() {
     java_install_dir=${JAVA_HOME:-${install_prefix}/java}
     ant_install_dir=${ANT_HOME:-${install_prefix}/ant}
     tomcat_install_dir=${CATALINA_HOME:-${install_prefix}/tomcat}
+    tomcat_opts=${CATALINA_OPTS}
     tomcat_user=${tomcat_user:-tomcat}
     tomcat_group=${tomcat_group:-$tomcat_user}
     globus_location=${GLOBUS_LOCATION:-${install_prefix}/globus}
@@ -144,6 +145,7 @@ init() {
     export ANT_HOME=${ant_install_dir}
     export CATALINA_HOME=${tomcat_install_dir}
     export CATALINA_BASE=${CATALINA_HOME}
+    export CATALINA_OPTS=${tomcat_opts}
     export GLOBUS_LOCATION=${globus_location}
     export X509_CERT_DIR=${X509_CERT_DIR:-${HOME}/.globus/certificates-esg}
     export ESG_ROOT_ID=${esg_root_id}
@@ -1310,13 +1312,18 @@ start_tomcat() {
 
     echo "Starting Tomcat (jsvc)..."
     pushd $tomcat_install_dir >& /dev/null
-    jsvc_launch_command="JAVA_HOME=$java_install_dir ./bin/jsvc -Djava.endorsed.dirs=./endorsed -pidfile $tomcat_pid_file -cp $(find $(readlink -f `pwd`/bin/) | grep jar | xargs | perl -pe 's/ /:/g') -outfile ./logs/catalina.out -errfile ./logs/catalina.err -user $tomcat_user $java_opts -Dsun.security.ssl.allowUnsafeRenegotiation=true org.apache.catalina.startup.Bootstrap"
+    jsvc_launch_command="JAVA_HOME=$java_install_dir ./bin/jsvc -Djava.endorsed.dirs=./endorsed -Djava.awt.headless=true -Dcatalina.home=${tomcat_install_dir} -pidfile $tomcat_pid_file -cp $(find $(readlink -f `pwd`/bin/) | grep jar | xargs | perl -pe 's/ /:/g') -outfile ./logs/catalina.out -errfile ./logs/catalina.err -user $tomcat_user $tomcat_opts $java_opts -Dsun.security.ssl.allowUnsafeRenegotiation=true org.apache.catalina.startup.Bootstrap"
     echo "$jsvc_launch_command"
-    JAVA_HOME=$java_install_dir ./bin/jsvc -Djava.endorsed.dirs=./endorsed -pidfile $tomcat_pid_file \
+    JAVA_HOME=${java_install_dir} ./bin/jsvc \
+	-Djava.endorsed.dirs=./endorsed \
+	-Djava.awt.headless=true \
+	-Dcatalina.home=${tomcat_install_dir} \
+	-pidfile ${tomcat_pid_file} \
 	-cp $(find $(readlink -f `pwd`/bin/) | grep .jar | xargs | perl -pe 's/ /:/g') \
 	-outfile ./logs/catalina.out \
 	-errfile ./logs/catalina.err \
 	-user $tomcat_user \
+	${tomcat_opts} \
 	$java_opts -Dsun.security.ssl.allowUnsafeRenegotiation=true \
 	org.apache.catalina.startup.Bootstrap
     if [ $? != 0 ]; then 
