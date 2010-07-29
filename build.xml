@@ -88,8 +88,6 @@ Builds the project via ant (obviously).
   <property name="module" value="esg-node"/>
   <property name="organization" value="Earth Systems Grid Federation"/>
   
-  <ivy:settings file="./ivysettings.xml" />
-
   <!--
       ************************************************************
       Global Initialization and Preparation....
@@ -242,6 +240,7 @@ Builds the project via ant (obviously).
   
   <target name="deps" depends="init-ivy" description="(Sets up library dependencies: Ivy)">
     <mkdir dir="${lib_fetched_dir}"/>
+    <ivy:settings file="./ivysettings.xml" />
     <ivy:retrieve sync="false"/>
     <path id="main_classpath">
       <fileset dir="${lib_dir}">
@@ -794,7 +793,7 @@ Builds the project via ant (obviously).
   </target>
 
   
-  <target name="make_everything" depends="make_dist,test,docs,dep_report"
+  <target name="make_everything" depends="make_dist,test,docs,dep_report,coverage_report"
 	  description="(Builds Everything... Distributions, Tests, Docs n Reports)">
     <echo message="JavaDocs -> file://${jdoc_dir}/index.html"/>
     <echo message="Unit Test Report  -> file://${test_reports_dir}/index.html"/>
