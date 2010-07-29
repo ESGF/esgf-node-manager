@@ -87,9 +87,9 @@ Builds the project via ant (obviously).
   
   <property name="module" value="esg-node"/>
   <property name="organization" value="Earth Systems Grid Federation"/>
-  <property name="project_name" value="ESG-Node"/>
-  <property name="author" value="Gavin M. Bell"/>
   
+  <ivy:settings file="./ivysettings.xml" />
+
   <!--
       ************************************************************
       Global Initialization and Preparation....
@@ -322,6 +322,7 @@ Builds the project via ant (obviously).
 
     <copy todir="${build_dir}" filtering="${filter}" overwrite="true">
       <fileset dir="${conf_dir}" includes="**/*.properties,**/*.template,**/*filter-web.xml"/>
+      <fileset dir="${src_dir}" includes="**/*.properties,**/*.template,**/*.xml"/>
     </copy> 
 
     <tstamp/>
