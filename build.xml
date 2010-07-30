@@ -417,7 +417,7 @@ Builds the project via ant (obviously).
     <jar destfile="${dist_dir}/${module}-filters.${version_num}.jar">
       <fileset dir="${build_dir}" 
 	       includes="esg/node/filters/**,esg/common/db/**,**/*.properties,**/*filter-web.xml"
-	       excludes="**/test/**,**/node.properties/**"/>
+	       excludes="**/test/**,**/${module}.properties/**"/>
       <manifest>
 	<attribute name="Organization" value="${organization}"/>
 	<attribute name="Author"       value="${author}"/>
@@ -468,7 +468,7 @@ Builds the project via ant (obviously).
     </copy>
     
     <delete file="${dist_dir}/${module}.war"/>
-    <war destfile="${dist_dir}/${module}.war" webxml="${conf_dir}/node-web.xml">
+    <war destfile="${dist_dir}/${module}.war" webxml="${conf_dir}/${module}-web.xml">
       <fileset dir="${web_dir}" excludes="WEB-INF/**/web.xml/**,**semantic.cache**"/>
       <lib dir="${dist_dir}/tmplib">
 	<include name="**/*.jar"/>
@@ -802,6 +802,11 @@ Builds the project via ant (obviously).
   </target>
 
 
+  <target name="post"  depends="init">
+    <exec executable="rsync" dir="${basedir}">
+      <arg line="-caOvzl --chmod=g+r,a+r --exclude *~ --exclude semantic* ${doc_dir_generated} ${dest.user}@${dest.server}:${dest.dir}"/>
+    </exec>
+  </target>
 
 
   <!--
