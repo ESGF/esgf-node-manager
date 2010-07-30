@@ -169,7 +169,7 @@ Builds the project via ant (obviously).
     <property name="dist_dir"   	  value="${basedir}/dist"/>
     <property name="test_src_dir"  	  value="${basedir}/src/java/test"/>
     <property name="test_build_dir"       value="${basedir}/build/test"/>
-    <property name="test_build_dir_inst" value="${basedir}/build/test-instrumented" />
+    <property name="test_build_dir_inst"  value="${basedir}/build/test-instrumented" />
     <property name="etc_dir"   	          value="${basedir}/etc"/>
     <property name="conf_dir"   	  value="${etc_dir}/conf"/>
     <property name="web_dir"   	          value="${basedir}/web"/>
@@ -192,6 +192,7 @@ Builds the project via ant (obviously).
     <property name="jaxb_gen_package" value="esg.common.generated"/>
 
     <property name="test_last_failed_file" location="${build_dir}/.lasttestsfailed"/>
+    <property name="test_coverage_file"   value="${basedir}/.cobertura.ser"/>
     <property name="ivy.lib.dir" value="${lib_fetched_dir}"/>
 
     <echo message="--------------------------------"/> 
@@ -220,6 +221,7 @@ Builds the project via ant (obviously).
     <echo message="jdoc_dir             = ${jdoc_dir}"/>
     <echo message="test_results_dir     = ${test_results_dir}"/>
     <echo message="test_reports_dir     = ${test_reports_dir}"/>
+    <echo message="test_coverage_dir    = ${test_coverage_dir}"/>
     <echo message="lib_deps_reports_dir = ${doc_dir_generated}/dep-reports"/>
     <echo message="--------------------------------"/> 
     <tstamp/>
@@ -267,12 +269,12 @@ Builds the project via ant (obviously).
     <ivy:report todir="${lib_deps_reports_dir}"/>
   </target>
   
-  <target name="dep_clean_cache" depends="init,init-ivy" description="(Cleans the ivy cache)">
+  <target name="dep_clean_cache" depends="init,init-ivy" description="(Cleans the Ivy cache)">
     <ivy:cleancache />
   </target>
 
   <target name="dep_clean_libs" depends="init"
-	  description="(Cleans out [removes] jars fetched by Ivy)">
+	  description="(Cleans out [removes] local workspace jars fetched by Ivy)">
     <echo message="Removing local jars fetched by Ivy"/>
     <delete dir="${lib_fetched_dir}"/>
   </target>
@@ -361,7 +363,7 @@ Builds the project via ant (obviously).
   </target>
 
   <target name="make_test_jar" depends="make_test" description="(Creates test jar file)">
-    <echo message="JAR -  ${test_build_dir} ->> ${dist_dir}/${module}-test.${version_num}.jar"/> 
+    <echo message="JAR -  ${test_build_dir} ->> ${dist_dir}/${module}-test.${version_num}.jar"/>
     <delete>
       <fileset dir="." includes="${dist_dir}/${module}-test.${version_num}.jar"/>
     </delete>
@@ -419,7 +421,7 @@ Builds the project via ant (obviously).
       <manifest>
 	<attribute name="Organization" value="${organization}"/>
 	<attribute name="Author"       value="${author}"/>
-	<attribute name="Project"      value="${project_name} Tests"/>
+	<attribute name="Project"      value="${project_name} Filters"/>
 	<attribute name="Module"       value="${module}"/>
 	<attribute name="Version"      value="${version_num}"/>
 	<attribute name="Release-Name" value="${release_name}"/>
@@ -495,12 +497,6 @@ Builds the project via ant (obviously).
 
   </target>
 
-  <target name="make_dist_in_place" depends="make_war"
-	  description="(Creates full software distribution deployed directly to local web app server)">
-    <!-- TODO: integrate the tomcat ant tasks to do this properly -->
-  </target>
-  
-  
 
   <!--
       ************************************************************
@@ -513,6 +509,7 @@ Builds the project via ant (obviously).
     <echo message="Removing build directory"/> 
     <delete dir="${build_dir}"/>
     <delete dir="${doc_dir_generated}"/>
+    <delete file="${test_coverage_file}"/>
     <tstamp/>
   </target>
 
@@ -554,9 +551,9 @@ Builds the project via ant (obviously).
       ************************************************************
     -->
 
-  <target name="make_test" depends="make" 
+  <target name="make_test" depends="make"
 	  description="(Java compile all the test source code)">
-    <echo message="Java compiling ${module} TESTs..."/> 
+    <echo message="Java compiling ${module} TESTs..."/>
 
     <path id="test_classpath">
       <fileset dir="${lib_dir}" includes="**/junit*.jar"/>
@@ -589,7 +586,7 @@ Builds the project via ant (obviously).
 	   verbose="off"
 	   nowarn="on"/>
     <tstamp/>
-    
+
   </target>
 
   <target name="test_check">
@@ -624,6 +621,7 @@ Builds the project via ant (obviously).
   <!--
       To run a single test case...
       ant test -Dtestcase=esg.node.foo.ESGFooTest
+      (unless="tests_uptodate")
     -->
   <target name="test" depends="make_test,test_check"
 	  description="(Runs unit test code: JUnit)">
@@ -643,7 +641,7 @@ Builds the project via ant (obviously).
     
     <!-- instrument test classes -->
     <cobertura-instrument todir="${test_build_dir_inst}">
-      <fileset dir="${build_dir}/esgf">
+      <fileset dir="${build_dir}/esg">
 	<include name="**/*.class" />
       </fileset>
     </cobertura-instrument>
@@ -653,6 +651,7 @@ Builds the project via ant (obviously).
 	   printsummary="on"
 	   fork="yes"
 	   maxmemory="1024M">
+      <sysproperty key="net.sourceforge.cobertura.datafile" value="${test_coverage_file}"/>
       <classpath refid="test_classpath" />
       <formatter type="plain" usefile="false"/>
       <formatter type="xml" />
@@ -733,7 +732,7 @@ Builds the project via ant (obviously).
   
   <target name="docs" depends="init"
 	  description="(Generates the javadoc for this project)">
-    <delete dir="${javadoc_dir}"/>
+    <delete dir="${jdoc_dir}"/>
     <mkdir dir="${jdoc_dir}" />
     <javadoc
        destdir="${jdoc_dir}"
@@ -799,7 +798,7 @@ Builds the project via ant (obviously).
     <echo message="Unit Test Report  -> file://${test_reports_dir}/index.html"/>
     <echo message="Coverage Report   -> file://${test_coverage_dir}/index.html"/>
     <echo message="Dependency Report -> file://${lib_deps_reports_dir}/esgf-${module}-default.html"/>
-    <echo message="Web Site -> http://esgf.org/${module}/index.html"/>
+    <echo message="Web Site -> http://esgf.org/${module}-site/index.html"/>
   </target>
 
 
