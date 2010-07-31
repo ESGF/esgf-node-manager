@@ -193,7 +193,7 @@ Builds the project via ant (obviously).
 
     <property name="test_last_failed_file" location="${build_dir}/.lasttestsfailed"/>
     <property name="test_coverage_file"   value="${basedir}/cobertura.ser"/>
-    <property name="ivy.lib.dir" value="${lib_fetched_dir}"/>
+    <property name="ivy.lib.dir"          value="${lib_fetched_dir}"/>
 
     <echo message="--------------------------------"/> 
     <echo message="module            = ${module} "/> 
@@ -346,7 +346,7 @@ Builds the project via ant (obviously).
     <jar destfile="${dist_dir}/${module}.${version_num}.jar">
       <fileset dir="${build_dir}"
 	       includes="esg/**,**/*.properties,**/*filter-web.xml"
-	       excludes="**/test/**"/>
+	       excludes="**/test/**,**/test-instrumented/**"/>
       <manifest>
 	<attribute name="Organization" value="${organization}"/>
 	<attribute name="Author"       value="${author}"/>
@@ -417,7 +417,7 @@ Builds the project via ant (obviously).
     <jar destfile="${dist_dir}/${module}-filters.${version_num}.jar">
       <fileset dir="${build_dir}" 
 	       includes="esg/node/filters/**,esg/common/db/**,**/*.properties,**/*filter-web.xml"
-	       excludes="**/test/**,**/${module}.properties/**"/>
+	       excludes="**/test/**,**/test-instrumented/**,**/${module}.properties/**"/>
       <manifest>
 	<attribute name="Organization" value="${organization}"/>
 	<attribute name="Author"       value="${author}"/>
@@ -510,6 +510,7 @@ Builds the project via ant (obviously).
     <delete dir="${build_dir}"/>
     <delete dir="${doc_dir_generated}"/>
     <delete file="${test_coverage_file}"/>
+    <delete dir="${test_build_dir_inst}"/>
     <tstamp/>
   </target>
 
@@ -540,7 +541,7 @@ Builds the project via ant (obviously).
     <echo message="Removing JAXB generated Java source files"/>
     <delete dir="${jaxb_gen_src_dir}"/>
   </target>
-  
+
   <target name="clean_all"
 	  depends="clean,clean_dist,clean_jaxb,dep_clean_libs"
 	  description="(Cleans out generatable artifacts)"/>
@@ -624,7 +625,7 @@ Builds the project via ant (obviously).
       (unless="tests_uptodate")
     -->
   <target name="test" depends="make_test,test_check"
-	  description="(Runs unit test code: JUnit)">
+	  description="(Runs unit tests: JUnit)">
     <delete dir="${test_results_dir}" />
     <mkdir dir="${test_results_dir}"/>
     <delete dir="${test_reports_dir}" />
@@ -645,6 +646,14 @@ Builds the project via ant (obviously).
 	<include name="**/*.class" />
       </fileset>
     </cobertura-instrument>
+
+    <!-- set test_classapth to see instrumented test classes -->
+    <path id="test_classpath">
+      <pathelement location="${test_build_dir_inst}" />
+      <fileset dir="${lib_dir}" includes="**/junit*.jar" />
+      <path refid="main_classpath" />
+      <pathelement location="${test_build_dir}" />
+    </path>
 
     <junit errorproperty="failed"
 	   failureproperty="failed"
@@ -688,47 +697,6 @@ Builds the project via ant (obviously).
       DOCUMENTATION....
       ************************************************************
     -->
-
-  <!-- - - - - - - - - - - - - - - - - - 
-       target: coverage_report                      
-   - - - - - - - - - - - - - - - - - -->
-  <target name="coverage_report" depends="init,make">
-    <delete dir="${test_results_dir}" />
-    <mkdir dir="${test_results_dir}" />
-    <mkdir dir="${test_build_dir}" />
-    <depend srcdir="${test_src_dir}" destdir="${test_build_dir}" cache="${depcache_dir}" closure="yes" />
-    <javac srcdir="${test_src_dir}" destdir="${test_build_dir}" excludes="**/no_comp/**,**/ignore/**,**/*_,**/*_*/**" classpathref="test_classpath" deprecation="true" failonerror="true" target="1.5" debug="on" verbose="off" nowarn="on" />
-    
-    <!-- instrument test classes -->
-    <cobertura-instrument todir="${test_build_dir_inst}">
-      <fileset dir="${build_dir}/esg">
-	<include name="**/*.class" />
-      </fileset>
-    </cobertura-instrument>
-    
-    <path id="test_classpath">
-      <pathelement location="${test_build_dir_inst}" />
-      <fileset dir="${lib_dir}" includes="**/junit*.jar" />
-      <path refid="main_classpath" />
-      <pathelement location="${test_build_dir}" />
-    </path>
-    
-    <junit errorproperty="failed" failureproperty="failed" printsummary="on" fork="yes" maxmemory="1024M">
-      <classpath refid="test_classpath" />
-      <formatter type="plain" usefile="false" />
-      <formatter type="xml" />
-      <test name="${testcase}" todir="${test_results_dir}" if="testcase" />
-      <batchtest todir="${test_results_dir}" unless="testcase">
-	<fileset dir="${test_build_dir}" includes="**/*Test*.class" />
-      </batchtest>
-      <assertions enableSystemAssertions="true">
-	<enable />
-      </assertions>
-    </junit>
-    
-    <cobertura-report srcdir="${src_dir}" destdir="${test_coverage_dir}" />
-  </target>
-  
   
   <target name="docs" depends="init"
 	  description="(Generates the javadoc for this project)">
@@ -744,7 +712,7 @@ Builds the project via ant (obviously).
        classpathref="main_classpath">
 
       <packageset dir="${src_dir}" defaultexcludes="yes">
-	<exclude name="**/test/**"/>
+	<exclude name="**/test/**,**/test-instrumented/**"/>
       </packageset>
 
       <doctitle><![CDATA[<h1>${module}</h1>]]></doctitle>
@@ -792,7 +760,7 @@ Builds the project via ant (obviously).
   </target>
 
   
-  <target name="make_everything" depends="make_dist,test,docs,dep_report,coverage_report"
+  <target name="make_everything" depends="make_dist,test,docs,dep_report"
 	  description="(Builds Everything... Distributions, Tests, Docs n Reports)">
     <echo message="JavaDocs ----------> file://${jdoc_dir}/index.html"/>
     <echo message="Dependency Report -> file://${lib_deps_reports_dir}/esgf-${module}-default.html"/>
@@ -803,8 +771,17 @@ Builds the project via ant (obviously).
 
 
   <target name="post"  depends="init">
+    <property name="orig.dir" value="${doc_dir_generated}"/>
+    <property name="dest.server" value="esgf.org"/>
+    <property name="dest.dir" value="www/${module}-site/"/>
+    
+    <echo message="orig.dir      = ${orig.dir} "/>
+    <echo message="dest.server   = ${dest.server} "/> 
+    <echo message="dest.dir      = ${dest.dir} "/> 
+    <echo message="dest.user     = ${dest.user} "/> 
+
     <exec executable="rsync" dir="${basedir}">
-      <arg line="-caOvzl --chmod=g+r,a+r --exclude *~ --exclude semantic* ${doc_dir_generated} ${dest.user}@${dest.server}:${dest.dir}"/>
+      <arg line="-caOvzl --chmod=g+r,a+r --exclude *~ --exclude semantic* ${orig.dir} ${dest.user}@${dest.server}:${dest.dir}"/>
     </exec>
   </target>
 
