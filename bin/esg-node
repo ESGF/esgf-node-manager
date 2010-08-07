@@ -734,7 +734,7 @@ setup_postgress() {
 	#NOTE: "useradd/groupadd" are a RedHat/CentOS thing... to make this cross distro compatible clean this up.
 	/usr/sbin/groupadd -r -f ${pg_sys_acct_group}
 	[ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add postgres system group: ${pg_sys_acct_group}" && popd && checked_done 1
-	/usr/sbin/useradd -r -u26 -c"PostgreSQL Service" -g $pg_sys_acct_group -p $pg_sys_acct_passwd -s /bin/bash $pg_sys_acct
+	/usr/sbin/useradd -r -c"PostgreSQL Service" -g $pg_sys_acct_group -p $pg_sys_acct_passwd -s /bin/bash $pg_sys_acct
 	[ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add postgres system account user" && popd && checked_done 1
     fi
     ########
@@ -1175,7 +1175,7 @@ setup_tomcat() {
 	#NOTE: "useradd/groupadd" are a RedHat/CentOS thing... to make this cross distro compatible clean this up.
 	/usr/sbin/groupadd -r -f ${tomcat_group}
 	[ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add tomcat system group: ${tomcat_group}" && popd && checked_done 1
-	/usr/sbin/useradd -r -u91 -c"Tomcat Server Identity" -g $tomcat_group $tomcat_user
+	/usr/sbin/useradd -r -c"Tomcat Server Identity" -g $tomcat_group $tomcat_user
 	[ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add tomcat system account user \"$tomcat_user\"" && popd && checked_done 1
     fi
         
@@ -1333,16 +1333,26 @@ start_tomcat() {
 	checked_done 1
     fi
     
-    #NOTE: How long does it take for tomcat to come up? Set sleep appropriately
+    #Don't wait forever, but give tomcat some time before it starts
     local wait_time=5
-    echo -n "Giving tomcat time to startup... $wait_time seconds " 
-    sleep $wait_time
-    curl http://localhost:80 >& /dev/null
-    [ $? != 0 ] && echo " WARNING: Could not verify tomcat is running..." || echo "[OK]"
-    ps -elf | grep jsvc  | grep -v grep
-    date
-    popd >& /dev/null
-    checked_done 0
+    while [[ $wait_time > 0 ]]; do
+        check_tomcat_process && break
+        sleep 1
+        $((wait_time--))
+    done
+
+    #check last time
+    if check_tomcat_process; then
+        echo "[OK]"
+        ps -elf | grep jsvc  | grep -v grep
+        date
+        popd
+        checked_done 0
+    else 
+        echo "Tomcat couldn't be started."
+        checked_done 1
+    fi
+
 }
 
 stop_tomcat() {
@@ -1380,16 +1390,33 @@ test_tomcat() {
 
     echo -n "Tomcat Test...  "
     start_tomcat
-    echo "---------------------------------------------------------"
-    echo "Should see the page source below: means server works :-)"
-    echo "--------------------page source start--------------------"
-    echo "curl http://localhost:80"
-    curl http://localhost:80
-    local ret=$?
-    echo "--------------------page source end----------------------"
-    echo
+    
+    echo "giving tomcat some time to wake up"
+    sleep 5
 
-    checked_done $ret
+    #check_tomcat_process 
+    #[ $? != 0 ] && echo "[FAILED] process not running..." && return 0
+    ports=$(sed -n 's/.*Connector.*port="\([0-9]*\)".*/\1/p' $tomcat_install_dir/conf/server.xml)
+    echo "checking connection at ports "$ports
+    local running_port="$(
+        echo "$ports" | while read check_port; do
+            echo "checking $check_port" >&2
+            wget http://localhost:$check_port -O - -q >/dev/null
+            if [[ $? == "0" ]]; then
+                echo $check_port
+                break
+            fi
+        done
+        )"
+    
+    if [[ -n "$running_port" ]]; then
+        echo "Tomcat is running on port $running_port"
+        checked_done 0
+    else
+        echo "Tomcat is not listening to any listed port."
+        checked_done 1
+    fi
+
 }
 
 #####
