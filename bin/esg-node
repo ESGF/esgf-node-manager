@@ -229,6 +229,20 @@ check_prerequisites() {
     [ $? != 0 ] && printf "[FAIL] \n\tMust run this program with root's effective UID\n\n" && return 1
     echo "[OK]"
 
+    #Yes, I could make this more cleaver and not call id twice but use
+    #a single sed expression with two capture groups and then assign
+    #them accordingly... but sadly I have to brush up on my sed'ing
+    #:-\ But this works... Basically it installer id is based on the
+    #$HOME directory.
+
+    installer_uid=$(id ${HOME##*/} | sed 's/.*uid=\([0-9]*\).*/\1/')
+    [ $? != 0 ] || [ -z "$installer_uid" ] && echo "installer_uid is not set" && exit 1
+    installer_gid=$(id ${HOME##*/} | sed 's/.*gid=\([0-9]*\).*/\1/')
+    [ $? != 0 ] || [ -z "$installer_gid" ] && echo "installer_gid is not set" && exit 1
+
+    echo "installer uid = ${installer_uid}"
+    echo "installer gid = ${installer_gid}"
+
     #----------------------------------------
     echo "Checking requisites... "
 
@@ -1034,7 +1048,6 @@ setup_esgcet() {
 	break
     done
 
-
     if((!upgrade)); then
 	local input=""
 	read -p "What is your organization's id? [${esg_root_id}]: " input
@@ -1044,6 +1057,10 @@ setup_esgcet() {
 	$cdat_home/bin/esgsetup --config --rootid ${esg_root_id}
 	[ $? != 0 ] && popd && checked_done 1
     fi
+
+    echo "chown -R ${installer_uid}:${installer_gid} $HOME/.esgcet"
+    chown -R ${installer_uid}:${installer_gid} $HOME/.esgcet 
+    [ $? != 0 ] && echo "**WARNING**: Could not change owner successfully - this will lead to inability to use the publisher properly!"
     start_postgress
 
     echo "$cdat_home/bin/esgsetup --db"
@@ -1852,6 +1869,11 @@ setup_tds() {
     #Fetch and Insert the Certificate for parent gateway
     register ${myproxy_endpoint}
     #----------------------
+
+    #Set ownership of esgcet "thredds content" directory to installation owner
+    echo "chown -R ${installer_uid}:${installer_gid} ${tomcat_install_dir}/content/thredds/esgcet"
+    chown -R ${installer_uid}:${installer_gid} ${tomcat_install_dir}/content/thredds/esgcet 
+    [ $? != 0 ] && echo "WARNING: Could not change owner successfully - this will lead to unability to create new catalogs via the publisher!"
 
     #restart tomcat to put modifications in effect.
     stop_tomcat 
