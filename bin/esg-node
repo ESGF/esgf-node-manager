@@ -119,7 +119,6 @@ init() {
     tomcat_user=${tomcat_user:-tomcat}
     tomcat_group=${tomcat_group:-$tomcat_user}
     globus_location=${GLOBUS_LOCATION:-${install_prefix}/globus}
-    backupdir=${backupdir:-"/esg/backups"}
     gateway_name=${ESG_GATEWAY_NAME}
     gateway_service_root=${ESG_GATEWAY_SVC_ROOT}
     myproxy_endpoint=${myproxy_endpoint:-${gateway_service_root%%/*}}
@@ -161,6 +160,12 @@ init() {
     #--------------
     #Script vars (internal)
     #--------------
+    esg_root_dir=${esg_root_dir:-"/esg"}
+    esg_backup_dir=${esg_backup_dir:-"${esg_root_dir}/backups"}
+    esg_config_dir=${esg_config_dir:-"${esg_root_dir}/config"}
+    esg_log_dir=${esg_log_dir:-"${esg_root_dir}/log"}
+    esg_tools_dir=${esg_tools_dir:-"${esg_root_dir}/tools"}
+
     word_size=${word_size:-$(file /bin/bash | perl -ple 's/^.*ELF\s*(32|64)-bit.*$/$1/g')}
     esg_dist_url=http://198.128.245.140/dist
     date_format="+%Y_%m_%d_%H%M%S"
@@ -187,8 +192,8 @@ init() {
     thredds_dist_url=ftp://ftp.unidata.ucar.edu/pub/thredds/${tds_version}/thredds.war
     thredds_esg_dist_url=${esg_dist_url}/thredds/${tds_version}/thredds.war
     #NOTE: This root dir should match a root set in the thredds setup 
-    thredds_root_dir=/esg/data
-    thredds_replica_dir=/esg/data.replica
+    thredds_root_dir=${esg_root_dir}/data
+    thredds_replica_dir=${esg_root_dir}/data.replica
     node_dist_url=${esg_dist_url}/esg-node/esg-node.${node_version}.tar.gz
     node_db_name=esgcet
     node_app_context_root=esg-node
@@ -240,6 +245,13 @@ check_prerequisites() {
 	echo "[OK]"
     fi
     #----------------------------------------
+
+    mkdir -p ${esg_backup_dir}  && \
+	mkdir -p ${esg_tools_dir} && \
+	mkdir -p ${esg_log_dir} && \
+	mkdir -p ${esg_config_dir}
+    [ $? != 0 ] && echo "ERROR: could not create ${esg_root_dir} dir and/or subdirectories" && checked_done 1
+
     echo
     return 0
 }
@@ -1186,23 +1198,33 @@ setup_tomcat() {
     #build jsvc (if necessary)
     #----------
     echo -n "Checking for jsvc... "
-    if [ -e ./bin/jsvc ] && [ -x ./bin/jsvc ]; then
+    pushd ./bin >& /dev/null
+    if [ -e ./jsvc ] && [ -x ./jsvc ]; then
 	echo "[OK]"
     else
 	echo "[NOT PRESENT]"
-	[ ! -x ./bin/jsvc ] &&  rm -v ./bin/jsvc >& /dev/null
 	echo "Building jsvc... (JAVA_HOME=$java_install_dir)"
-	cd bin
-	[ -e ./jsvc-src ] && echo "removing source tree for jsvc" && rm -v -rf ./jsvc-src
-	tar xvzf jsvc.tar.gz
-	cd jsvc-src
-	autoconf
+
+	if [ -e commons-daemon-native.tar.gz ]; then
+	    tar xvzf commons-daemon-native.tar.gz
+	    cd commons-daemon-*-native-src/unix
+	    #It turns out they shipped with .o files in there (oops) so I have to clean out manually.
+	    rm -v $(find . | egrep '*.o$' | xargs)
+	    make clean all
+	elif [ -e jsvc.tar.gz ]; then
+	    tar xvzf jsvc.tar.gz
+	    cd jsvc-src
+	    autoconf
+	else
+	    echo "NOT ABLE TO INSTALL JSVC!" && checked_done 1
+	fi
+
 	chmod 755 ./configure
-	./configure --with-java=$java_install_dir
+	./configure --with-java=${java_install_dir}
 	make
-	cp jsvc ..
-	cd ../.. #(back up to tomcat_install_dir)
+	[ -x ./jsvc ] && cp ./jsvc ${tomcat_install_dir}/bin
     fi
+    popd >& /dev/null
     #----------
 
 
@@ -2459,8 +2481,8 @@ backup() {
     local source="$(readlink -f $1)"
     echo "Backup - Creating a backup archive of ${source}"
     pushd ${source%/*} >& /dev/null
-    mkdir -p ${backupdir} >& /dev/null
-    local backup_filename=$(readlink -f ${backupdir})/${source##*/}.$(date ${date_format}).tgz
+    mkdir -p ${esg_backup_dir} >& /dev/null
+    local backup_filename=$(readlink -f ${esg_backup_dir})/${source##*/}.$(date ${date_format}).tgz
     tar czf ${backup_filename} ${source##*/}
     [ $? != 0 ] && echo " ERROR: Problem with creating backup archive: ${backup_filename}" && popd >& /dev/null && return 1
     if [ -e ${backup_filename} ]; then 
@@ -2475,7 +2497,7 @@ backup() {
     #-------------
     #keep only the last num_backups_to_keep files
     num_backups_to_keep=${num_backups_to_keep:-7}
-    pushd ${backupdir} >& /dev/null
+    pushd ${esg_backup_dir} >& /dev/null
     files=(`ls -t | grep ${source##*/}.\*.tgz | tail -n +$((${num_backups_to_keep}+1)) | xargs`)
     if (( ${#files[@]} > 0 )); then
 	echo "Tidying up a bit..."
@@ -2492,8 +2514,8 @@ backup() {
 }
 
 backup_db() {
-    mkdir -p ${backupdir}
-    pushd ${backupdir} >& /dev/null
+    mkdir -p ${esg_backup_dir}
+    pushd ${esg_backup_dir} >& /dev/null
     
     echo -n "Backing up database: ${node_db_name} to  ${node_db_name}_backup_$(date ${date_format}).sql"
     pg_dump -U ${postgress_user} ${node_db_name} > ${node_db_name}_backup_$(date ${date_format}).sql
