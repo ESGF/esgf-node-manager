@@ -3053,9 +3053,9 @@ main() {
     #---------------------------------------
     #---filters------
     [ $((sel & 1)) != 0 ] && echo "security filters subsystem (TOKEN)" && setup_subsystem security-token-filters filters $@
-    #[ $((sel & 1)) != 0 ] && echo "security filters subsystem (SAML)"  && setup_subsystem security-saml-filters filters $@
+    [ $((sel & 1)) != 0 ] && echo "security filters subsystem (SAML)"  && setup_subsystem security-saml-filters filters $@
     #---subsystems--- 
-    #[ $((sel & 1)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
+    [ $((sel & 1)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
     #[ $((sel & 1)) != 0 ] && echo "product server subsystem" && setup_subsystem product-server $@
 
 
