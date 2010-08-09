@@ -76,7 +76,7 @@ DEBUG=${DEBUG:-0}
 #User Defined / Settable (public)
 #--------------
 progname=esg-node
-version="0.3.3"
+version="0.3.4"
 
 envfile=${envfile:-"/etc/esg.env"}
 t=${0%.*}
@@ -3083,7 +3083,7 @@ main() {
 #trap stop_tomcat INT TERM
 #trap - INT TERM
 
-#echo "start time: `date`" >> ${logfile}
+echo "start time: `date`" >> ${logfile}
 main $@
-#echo "end time: `date`" >> ${logfile}
-exit 0
+echo "end time: `date`" >> ${logfile}
+
