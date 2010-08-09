@@ -2572,46 +2572,7 @@ insert_file_at_pattern() {
 # arg 1 - The environment file to dedup.
 dedup() {
     local infile=${1:-${envfile}}
-    local outfile=${infile}
-
-    local key=""
-    local last_key=""
-    local value=""
-    local last_value=""
-    local output
-    local i
-    local dups
-    
-    let dups=0
-    let i=0
-    
-    #What is key here is that we make sure the sort is a "stable" sort! (-t)
-    for line in $(cat ${infile} | tr -s " " | cut -d " " -f2 | sort -s -t= -k1,1); do
-	key=${line%=*}
-	value=${line#*=}
-	#echo "key is: [${key}]  value is: [${value}]"
-	if [ "${key}" != "${last_key}" ]; then
-		output[((i++))]="export ${last_key}=${last_value}"
-	else
-	    ((dups++))
-	fi
-	[ -n $key ] && last_key=$key
-	last_value=$value
-    done
-    #boundary condition catch...
-    output[((i++))]="export ${last_key}=${last_value}"
-
-    ((dups == 0)) && unset output && return 0
-    (($DEBUG)) && echo "Elided [${dups}] duplcate entries"
-    
-    i=0
-    cat /dev/null > ${outfile}
-    for entry in "${output[@]}"; do
-	((i>0)) && echo $entry >> ${outfile}
-	((i++))
-    done
-    (($DEBUG)) && echo "Deduped $(readlink -f ${infile})"
-    return 0
+    echo "$(tac $infile | nl -n rz -s= | sort -k2,2 -s -t= -u | sort -r | sed -n 's/[^=]*=//p')" > $infile
 }
 
 #"private" function
