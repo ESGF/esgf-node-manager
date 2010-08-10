@@ -1790,7 +1790,7 @@ setup_tds() {
     (( $? > 1 )) && echo " ERROR: Problem pulling down ${fetch_file} from esg distribution" && popd && checked_done 1
 
     
-    #Get the templated web.xml file... (with tokens for subsequent filter entries: see [esg-]security-[saml|token]-filters[.xml] files)
+    #Get the templated web.xml file... (with tokens for subsequent filter entries: see [esg-]security-[token|tokenless]-filters[.xml] files)
     fetch_file=web.xml 
     checked_get ${tomcat_install_dir}/webapps/thredds/WEB-INF/${fetch_file} ${esg_dist_url}/thredds/thredds.${fetch_file}
     (( $? > 1 )) && popd && checked_done 1
