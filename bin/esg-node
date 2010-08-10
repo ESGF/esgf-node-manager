@@ -1253,6 +1253,7 @@ setup_tomcat() {
     cd $tomcat_install_dir/conf
     
     local fetch_file
+    local genreq=N
 
     fetch_file=server.xml
     checked_get ./${fetch_file} ${esg_dist_url}/externals/bootstrap/dnode.${fetch_file}
@@ -1266,12 +1267,12 @@ setup_tomcat() {
 	#$JAVA_HOME/bin/keytool -list -keystore keystore-tomcat
 	$java_install_dir/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365
 	[ $? != 0 ] && echo " ERROR: keytool genkey command failed" && popd && checked_done 1
+	genreq="Y"
     else
 	echo "Using existing keystore \"${keystore_file}\""
     fi
 
-    local genreq=N
-    read -p "Do you wish to generate a Certificate Signing Request at this time? [y/N] " genreq
+    read -p "Do you wish to generate a Certificate Signing Request at this time? $([ $genreq = "Y" ] && echo "[Y/n]" || echo "[y/N]") " genreq
     if [ "${genreq}" == "Y" ] || [ "${genreq}" == "y" ]; then
 	echo "Generating Certificate Signing Request..."
 	${java_install_dir}/bin/keytool -certreq -alias ${keystore_alias} -keystore ${keystore_file} -file $HOME/$(hostname --fqdn)-esg-node.csr
