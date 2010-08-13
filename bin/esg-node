@@ -82,6 +82,7 @@ envfile=${envfile:-"/etc/esg.env"}
 t=${0%.*}
 logfile=${logfile:-"/var/tmp/${t##*/}.out"}
 install_prefix=${install_prefix:-"/usr/local"}
+esg_root_dir=${esg_root_dir:-"/esg"}
 workdir=${workdir:-~/workbench/esg}
 
 init() {
@@ -91,14 +92,14 @@ init() {
     cdat_version=${cdat_version:-"eb8b668"}
     esgcet_version=${esgcet_version:-"2.4"}
     esgcet_python_version=${esgcet_python_version:-"2.6"}
-    node_version=${node_version:-"0.0.3"}
+    node_version=${node_version:-"1.0.0.4"}
     
     #external programs' versions
     curl_version=${curl_version:="7.20.1"}
     git_version=${git_version:="1.7.1"}
     java_version=${java_version:-"1.6.0_20"}
     ant_version=${ant_version:-"1.8.1"}
-    postgress_version=${postgress_version:-"8.4.3"}
+    postgress_version=${postgress_version:-"8.4.4"}
     tomcat_version=${tomcat_version:-"6.0.26"}
     tds_version=${tds_version:-"4.1.6"}
 
@@ -160,7 +161,6 @@ init() {
     #--------------
     #Script vars (internal)
     #--------------
-    esg_root_dir=${esg_root_dir:-"/esg"}
     esg_backup_dir=${esg_backup_dir:-"${esg_root_dir}/backups"}
     esg_config_dir=${esg_config_dir:-"${esg_root_dir}/config"}
     esg_log_dir=${esg_log_dir:-"${esg_root_dir}/log"}
@@ -183,7 +183,7 @@ init() {
     pg_sys_acct=${pg_sys_acct:-postgres}
     pg_sys_acct_group=${pg_sys_acct_group:-$pg_sys_acct}
     postgress_dist_url=http://ftp9.us.postgresql.org/pub/mirrors/postgresql/source/v${postgress_version}/postgresql-${postgress_version}.tar.gz
-    cdat_repo=git://esg-repo.llnl.gov/git/cdat.git
+    cdat_repo=git://esg-repo.llnl.gov/cdat.git
     esgcet_egg_file=esgcet-${esgcet_version}-py${esgcet_python_version}.egg
     esg_testdir=${workdir}/../esg_test
     tomcat_dist_url=http://download.filehat.com/apache/tomcat/tomcat-6/v${tomcat_version}/bin/apache-tomcat-${tomcat_version}.tar.gz
@@ -209,6 +209,12 @@ init() {
     keystore_alias=tomcat
     keystore_password=changeit
     truststore_file=${tomcat_install_dir}/conf/jssecacerts
+
+    mkdir -p ${esg_backup_dir}  && \
+	mkdir -p ${esg_tools_dir} && \
+	mkdir -p ${esg_log_dir} && \
+	mkdir -p ${esg_config_dir}
+    [ $? != 0 ] && echo "ERROR: could not create ${esg_root_dir} dir and/or subdirectories" && checked_done 1
 
     write_paths
 }
@@ -259,12 +265,6 @@ check_prerequisites() {
 	echo "[OK]"
     fi
     #----------------------------------------
-
-    mkdir -p ${esg_backup_dir}  && \
-	mkdir -p ${esg_tools_dir} && \
-	mkdir -p ${esg_log_dir} && \
-	mkdir -p ${esg_config_dir}
-    [ $? != 0 ] && echo "ERROR: could not create ${esg_root_dir} dir and/or subdirectories" && checked_done 1
 
     echo
     return 0
@@ -412,7 +412,7 @@ setup_git() {
         (( size == 0 )) && rm -v ${git_dist_file}
     fi
 
-    #Check to see if we have postgres distribution directory
+    #Check to see if we have git distribution directory
     if [ ! -e ${git_dist_dir} ]; then
 	echo "Don't see GIT distribution dir ${git_dist_dir}"
 	if [ ! -e ${git_dist_file} ]; then
@@ -537,6 +537,7 @@ setup_java() {
 	[ $? != 0 ] && \
 	    echo " ERROR*: Could not create sym link ${java_install_dir%/*}/${java_dist_dir} -> ${java_install_dir}" && popd && checked_done 1
     fi
+    chown -R ${installer_uid}:${installer_gid} ${java_install_dir}
 
     popd >& /dev/null
 
@@ -913,8 +914,9 @@ test_postgress() {
     ${postgress_install_dir}/bin/psql --version
     [ $? != 0 ] && echo" ERROR: Could NOT successfully locate postgres installation!!" && popd >& /dev/null && checked_done 1
 
-    PGPASSWORD=${PGPASSWORD:-${pg_sys_acct_passwd}} psql -qt -c "select table_name from information_schema.tables where table_schema='public';" ${node_db_name} ${postgress_user} | grep -v ^$ | sort
+    PGPASSWORD=${PGPASSWORD:-${pg_sys_acct_passwd}} psql -qt -c "select table_name from information_schema.tables where table_schema='public';" ${node_db_name} ${postgress_user} | grep -v ^$ | sort >& /dev/null
     [ $? != 0 ] && echo " ERROR: Could not verify ESG database installation! (perhaps \"pg_sys_acct_passwd\"  was not set correctly?)" && checked_done 1
+    echo" [OK]"
     checked_done 0
 }
 
@@ -943,7 +945,7 @@ setup_cdat() {
     [ $? != 0 ] && checked_done 1
     pushd ${workdir} >& /dev/null
     if [ ! -d ${workdir}/cdat ]; then
-	echo "Fetching the cdat projectd from GIT Repo..."
+	echo "Fetching the cdat project from GIT Repo..."
 	git clone ${cdat_repo}
     fi
     cd cdat >& /dev/null
@@ -1319,10 +1321,19 @@ setup_tomcat() {
 
     start_tomcat
 
-    echo "curl http://localhost:80"
-    curl http://localhost:80
-    [ $? != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to contact top level tomcat page on this server" && popd && checked_done 1
-    echo " [OK]"
+    echo -n "curl http://localhost:80 "
+    local wait_time=5
+    local ret=1
+    while [[ $wait_time > 0 ]]; do
+	curl http://localhost:80 >& /dev/null
+	ret=$?
+	[ $ret == 0 ] && break
+        sleep 1
+        $((wait_time--))
+    done
+
+    [ $ret != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to contact top level tomcat page on this server" && popd && checked_done 1
+    echo "[OK]"
     echo
     
     popd >& /dev/null
@@ -1531,7 +1542,7 @@ setup_node() {
 
     #strip the version number off(.#.#.#) the dir and append .war to get the name of war file
     #(Ex: esg-node.0.0.1 -> esg-node.war)
-    local trimmed_name=$(pwd)/$(echo ${node_dist_dir} | awk '{print substr($1,1,length($1)-6)}')
+    local trimmed_name=$(pwd)/$(echo ${node_dist_dir} | awk '{print substr($1,1,length($1)-8)}')
     node_war_file=${trimmed_name}.war
     echo "node_war_file = "${node_war_file}
 
@@ -1540,7 +1551,7 @@ setup_node() {
 
 
     #----------------------------
-    fetch_file=node.properties
+    fetch_file=esg-node.properties
 
     #NOTE: The saving of the last config file must be done *BEFORE* we untar the new distro!
     if ((upgrade)) && [ -e WEB-INF/classes/${fetch_file} ]; then
@@ -1871,11 +1882,6 @@ setup_tds() {
     register ${myproxy_endpoint}
     #----------------------
 
-    #Set ownership of esgcet "thredds content" directory to installation owner
-    echo "chown -R ${installer_uid}:${installer_gid} ${tomcat_install_dir}/content/thredds/esgcet"
-    chown -R ${installer_uid}:${installer_gid} ${tomcat_install_dir}/content/thredds/esgcet 
-    [ $? != 0 ] && echo "WARNING: Could not change owner successfully - this will lead to unability to create new catalogs via the publisher!"
-
     #restart tomcat to put modifications in effect.
     stop_tomcat 
     start_tomcat
@@ -1891,6 +1897,11 @@ setup_tds() {
     mkdir -p ${thredds_replica_dir}
     [ $? != 0 ] && echo " Error: could not create ${thredds_replica_dir}" && checked_done 1
     echo
+
+    #Set ownership of esgcet "thredds content" directory to installation owner
+    echo "chown -R ${installer_uid}:${installer_gid} ${tomcat_install_dir}/content/thredds/esgcet"
+    chown -R ${installer_uid}:${installer_gid} ${tomcat_install_dir}/content/thredds/esgcet 
+    [ $? != 0 ] && echo "WARNING: Could not change owner successfully - this will lead to unability to create new catalogs via the publisher!"
 
     sleep 3
     echo "curl http://${node_host_ip_address}/thredds"
@@ -2490,7 +2501,7 @@ checked_get() {
 	cp -v ${local_file} ${local_file}.bak 
 	chmod 600 ${local_file}.bak
     fi
-    wget -O ${local_file} ${remote_file}
+    wget --no-check-certificate -O ${local_file} ${remote_file}
     [ $? != 0 ] && echo " ERROR: Problem pulling down [${remote_file##*/}] from esg distribution site" && return 2
     diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
     [ $? != 0 ] && echo " WARNING: Could not verify this file!" && return 3
