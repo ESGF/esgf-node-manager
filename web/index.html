@@ -1,3 +1,4 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <!--
 /***************************************************************************
 *                                                                          *
@@ -7,7 +8,7 @@
 *      Division: S&T Global Security                                       *
 *        Matrix: Atmospheric, Earth and Energy Division                    *
 *       Program: PCMDI                                                     *
-*       Project: Earth Systems Grid (ESG) Data Node Software Stack         *
+*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
 *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
 *                                                                          *
 ****************************************************************************
@@ -20,9 +21,9 @@
 *   All rights reserved. This file is part of the:                         *
 *   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
 *                                                                          *
-*   For details, see http://esg-repo.llnl.gov/esg-node/                    *
+*   For details, see http://esgf.org/esg-node/                             *
 *   Please also read this link                                             *
-*    http://esg-repo.llnl.gov/LICENSE                                      *
+*    http://esgf.org/LICENSE                                               *
 *                                                                          *
 *   * Redistribution and use in source and binary forms, with or           *
 *   without modification, are permitted provided that the following        *
@@ -55,28 +56,96 @@
 *   SUCH DAMAGE.                                                           *
 *                                                                          *
 ***************************************************************************/
+
+	  Flatbush release v1
+
 -->
+
 <html>
-  <head>
-  </head>
-  <body>
-    <center>
-    <h1>ESG Data Node</h1>
-    <a href="pics/Lolas_DataNode.jpg" style="border-style: none">
-	<img src=pics/Lolas_DataNode_med.jpg>
-    </a>
-    <br>
-    <a href="http://rainbow.llnl.gov/dist/esg-node/HOWTO">HOWTO</a>
-    |
-    <a href="http://rainbow.llnl.gov/dist/esg-node/INSTALL">INSTALL</a>
-    |
-    <a href="http://rainbow.llnl.gov/dist/esg-node/esg-update">SCRIPT</a>
-    |
-    <a href="http://rainbow.llnl.gov/dist/esg-node/HOWTO">DEVELOPMENT</a>
-    |
-    <a href="http://rainbow.llnl.gov/dist/esg-node/LICENSE">LICENSE</a>
-    </center>
+	<head>
+	  <title>ESGF</title>
+          <!-- the syle sheet link  -->
+	  <link rel='stylesheet' href='styles.css' type='text/css'>
+          <!-- favuorite icon - needs to have the http://full_path link  -->
+	  <link rel="icon" type="image/png" href="http://esgf.org/images/esgf-favicon.png">
+          
+          <!-- keywords for search  engines  -->
+	  <meta name="keywords" content="earth systems grid, go-essp, esg, esgf, distributed computing, distributed storage, climate science">
+	  <meta name="description" content="A distributed database for structured data.">
+          <meta http-equiv='Content-Type' content='text/html;charset=utf-8'> 
+	</head>
+	
+	<!-- the page code starts here -->    
+	<body>
+    	  <div >  <!-- body -->    
+            <!-- header starts here -->
+	    <div id="header" style="overflow: hidden">
+              <!-- image floats tot the right -->
+              <div style='float: right; margin-right: 10px'> 
+		<img src='pics/install-logo.jpg' width="70" height="70" >	 
+              </div>
+              
+              <div style='float: left; margin-right: 20px; margin-left: -10px'> 
+		<img src='http://esgf.org/images/esgf-logo.png' width="70" height="70" >	 
+              </div>
+	      
+	      <div>  <!-- inside header -->   
+		<div class="title">ESGF</div>
+		<div class="subtitle">Earth System Grid Federation</div>
+		<!-- projects top navigation -->  
+		<div class="projects">  <!-- projects -->   
+                  <a href="http://esgf.org/esg-node-site">node-manager</a> &middot;
+		  <a href="http://esgf.org/esg-publisher-site">publisher</a> &middot;
+		  <a href="http://esgf.org/esg-orp-site">orp</a> &middot;
+		  <a href="http://esgf.org/esg_saml-site">saml</a> &middot;
+		  <a href="http://esgf.org/esg-search-site">search</a> &middot; 
+		  <a href="http://esgf.org/esg-script-gen-site">script-gen</a> &middot;
+		  <a href="http://esgf.org/esgf-drslib-site">drslib</a> &middot;
+		  <a href="http://esgf.org/esgf-stager-site">stager</a> 
+                </div> <!-- projects -->    
+		
+              </div>  <!-- inside header -->
+	    </div>  <!-- header -->
+            
+            <!-- left side navigation bar starts here -->
+	    <div class="lsidebar">  <!-- lsidebar -->
+	      <ul>
+		<li>   <a href="http://esgf.org/">esgf</a> </li>
+		<li>   <a href="http://esgf.org/mission.html">mission</a> </li>
+		<li>   <a href="http://esgf.org/node.html">node</a> </li>
+		<li>   <a href="http://esgf.org/design.html">design</a> </li>
+		<p/>
+		<li> <b>Tools:</b>
+		<li> <a href="">Dashboard</a> </li>
+		<li> <a href="">Publisher UI</a> </li>
+              </ul>
+              
+	      
+	    </div>   <!-- lsidebar -->
+	    
+	    <!-- main text comes here -->
+	    <div class='content'>
+	    
+	      <center>
+		<h1>Data Node</h1>
+		<p/>
+		  <a href="pics/Lolas_DataNode.jpg" style="border-style: none">
+		    <img src=pics/Lolas_DataNode_med.jpg border=0>
+		  </a>
+	      </center>
 
-  </body>
-
+	    </div> <!-- content -->
+            
+            <br class="clearfloat" />
+            <!-- footer section here -->
+            <div id="footer"> 
+	      <div >  
+		<div class="projects"> 
+		  <a href="http://esgf.org/" target="_other">ESGF</a> &middot;
+		  <a href="http://rainbow.llnl.gov/dist/externals/LICENSE">LICENSE</a>
+	      </div>
+	    </div>    <!-- footer -->      
+            
+	  </div> <!-- body -->    
+	</body>
 </html>
