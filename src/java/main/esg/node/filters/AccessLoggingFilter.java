@@ -162,9 +162,12 @@ public class AccessLoggingFilter implements Filter {
 
 	//Record identifying tuple
 	String userID = null;
+	String email = null;
 	String url = null;
 	String fileID = null;
 	String remoteAddress = null;
+	String userAgent = null;
+	String serviceType = null;
 	long   dateFetched = 0L;
 
 	//firewall off any errors so that nothing stops the show...
@@ -172,19 +175,15 @@ public class AccessLoggingFilter implements Filter {
 	    if(accessLoggingDAO != null) {
 		
 		HttpServletRequest req = (HttpServletRequest)request;
+		
+		//------------------------------------------------------------------------------------------
+		//For Token authentication there is a Validation Map present with user and email information
+		//------------------------------------------------------------------------------------------
 		Map<String,String> validationMap = (Map<String,String>)req.getAttribute("validationMap");
 		if(validationMap != null) {
 		    
 		    userID = validationMap.get("user");
-		    String email = validationMap.get("email");
-		    url = req.getRequestURL().toString();
-		    fileID = "0A";
-		    remoteAddress = req.getRemoteAddr();
-		    String userAgent = (String)req.getAttribute("userAgent");
-		    dateFetched = System.currentTimeMillis()/1000;
-		    
-		    success = (accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,dateFetched) > 0);
-		    
+		    email = validationMap.get("email");
 		    
 		    //Want to make sure that any snooping filters
 		    //behind this one does not have access to this
@@ -196,8 +195,32 @@ public class AccessLoggingFilter implements Filter {
 		    req.removeAttribute("validationMap");
 		    
 		}else{
-		    log.warn("Validation Map is ["+validationMap+"]");
+		    log.info("Validation Map is ["+validationMap+"] - (not a token based request)");
 		}
+		//------------------------------------------------------------------------------------------
+
+		
+
+		//------------------------------------------------------------------------------------------
+		//For TokenLESS authentication the userid information is in a parameter called "esg.openid"
+		//------------------------------------------------------------------------------------------
+		if (userID == null || userID.isEmpty()) {
+		    userID = ((req.getAttribute("esg.openid") == null) ? "" : req.toString());
+		    if(userID == null || userID.isEmpty()) { log.warn("This request is apparently not a \"tokenless\" request either - no openid attribute!!!!!"); }
+		}
+		//------------------------------------------------------------------------------------------
+
+
+		url = req.getRequestURL().toString();
+		fileID = "0A";
+		remoteAddress = req.getRemoteAddr();
+		userAgent = (String)req.getAttribute("userAgent");
+		serviceType = "<THREDDS>";
+		dateFetched = System.currentTimeMillis()/1000;
+		
+		success = (accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,serviceType,dateFetched) > 0);
+		
+		
 	    }else{
 		log.error("DAO is null :["+accessLoggingDAO+"]");
 		HttpServletResponse resp = (HttpServletResponse)response;

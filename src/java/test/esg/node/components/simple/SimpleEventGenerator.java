@@ -72,16 +72,18 @@ import org.apache.commons.logging.impl.*;
 public class SimpleEventGenerator {
     private static final Log log = LogFactory.getLog(SimpleEventGenerator.class);
     
-    public ESGSimpleComponentTest() {
+    public SimpleEventGenerator() {
 	log.trace("Instantiating SimpleEventGenerator");
     }
     
     public ESGEvent nextEvent() {
-	
+	log.warn("IMPLEMENT ME!!!");
+	return null;
     }
 
     public ESGRemoteEvent nextRemoteEvent() {
-	
+	log.warn("IMPLEMENT ME!!!");
+	return null;
     }
     
 }

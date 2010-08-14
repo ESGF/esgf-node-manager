@@ -1570,7 +1570,7 @@ setup_node() {
 
     cp ${fetch_file} ${fetch_file}.tmpl
     if((upgrade)) && [ -e ${fetch_file}.saved ]; then
-	#reuse the last node.properties file...
+	#reuse the last esg-node.properties file...
 	#pull it out of the tar archive we made a few lines up
 	cp ${fetch_file}.saved ${fetch_file}
     else
@@ -1649,7 +1649,7 @@ configure_postgress() {
     [ $? != 0 ] && echo " ERROR: Could not find node distribution dir ${workdir}/${node_dist_dir}" && checked_done 1
 
     echo "${ANT_HOME}/bin/ant -buildfile database-tasks.ant.xml \
-	-Dnode.property.file=${node_app_home}/WEB-INF/classes/node.properties \
+	-Dnode.property.file=${node_app_home}/WEB-INF/classes/esg-node.properties \
         -Dsql.jdbc.base.url=${postgress_protocol}//${postgress_host}:${postgress_port}/ \
         -Dsql.jdbc.database.name=${node_db_name} \
         -Dsql.jdbc.database.user=${postgress_user} \
@@ -1657,7 +1657,7 @@ configure_postgress() {
         -Dsql.jdbc.driver.jar=${node_app_home}/WEB-INF/lib/${postgress_jar} make_node_db"
 
     ${ANT_HOME}/bin/ant -buildfile database-tasks.ant.xml \
-	-Dnode.property.file=${node_app_home}/WEB-INF/classes/node.properties \
+	-Dnode.property.file=${node_app_home}/WEB-INF/classes/esg-node.properties \
         -Dsql.jdbc.base.url=${postgress_protocol}//${postgress_host}:${postgress_port}/ \
         -Dsql.jdbc.database.name=${node_db_name} \
         -Dsql.jdbc.database.user=${postgress_user} \

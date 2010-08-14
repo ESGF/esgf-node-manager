@@ -95,7 +95,7 @@ public class ESGSimpleComponent extends AbstractDataNodeComponent {
      */
     public void init() {
 	log.info("Initializing ESGSimpleComponent");
-	props = getNodeManager().getMatchingProperties("^simple.*");
+	props = getDataNodeManager().getMatchingProperties("^simple.*");
     }
 
     public void handleESGEvent(ESGEvent event) {
@@ -104,8 +104,9 @@ public class ESGSimpleComponent extends AbstractDataNodeComponent {
 
     /**
      */
-    public void handleESGQueuedEvent(ESGEvent event) {
+    public boolean handleESGQueuedEvent(ESGEvent event) {
 	log.info(getName()+" Got Queued Event ["+(mesgCount++)+"] from :"+event.getSource());
-	enqueuESGEvent(event);
+	enqueueESGEvent(event);
+	return true;
     }
 }

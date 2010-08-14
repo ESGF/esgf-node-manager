@@ -114,12 +114,12 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	InputStream in = null;
 	try {
 	    propCache.clear();
-	    Resource config = new Resource("node.properties");
+	    Resource config = new Resource("esg-node.properties");
 	    assert (null != config) : "Resource object named config is null!";
 	    in = config.getInputStream();
 	    props = new Properties();
 	    props.load(in);
-	    log.trace("Properties of node.properties file: "+props);
+	    log.trace("Properties of esg-node.properties file: "+props);
 	}catch(IOException ex) {
 	    log.error("Problem loading datanode's property file!", ex);
 	}catch(NullPointerException ex) {
