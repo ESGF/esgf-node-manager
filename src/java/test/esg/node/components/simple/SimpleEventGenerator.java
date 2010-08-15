@@ -6,7 +6,7 @@
 *      Division: S&T Global Security                                       *
 *        Matrix: Atmospheric, Earth and Energy Division                    *
 *       Program: PCMDI                                                     *
-*       Project: Earth Systems Grid (ESG) Data Node Software Stack         *
+*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
 *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
 *                                                                          *
 ****************************************************************************
@@ -73,17 +73,17 @@ public class SimpleEventGenerator {
     private static final Log log = LogFactory.getLog(SimpleEventGenerator.class);
     
     public SimpleEventGenerator() {
-	log.trace("Instantiating SimpleEventGenerator");
+        log.trace("Instantiating SimpleEventGenerator");
     }
     
     public ESGEvent nextEvent() {
-	log.warn("IMPLEMENT ME!!!");
-	return null;
+        log.warn("IMPLEMENT ME!!!");
+        return null;
     }
 
     public ESGRemoteEvent nextRemoteEvent() {
-	log.warn("IMPLEMENT ME!!!");
-	return null;
+        log.warn("IMPLEMENT ME!!!");
+        return null;
     }
     
 }
