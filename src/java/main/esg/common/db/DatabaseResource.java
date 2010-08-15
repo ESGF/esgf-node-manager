@@ -17,11 +17,11 @@
 *   LLNL-CODE-420962                                                       *
 *                                                                          *
 *   All rights reserved. This file is part of the:                         *
-*   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
+*   Earth System Grid Federation (ESGF) Data Node Software Stack           *
 *                                                                          *
-*   For details, see http://esgf.org/esg-node/                    *
+*   For details, see http://esgf.org/esg-node/                             *
 *   Please also read this link                                             *
-*    http://esgf.org/LICENSE                                      *
+*    http://esgf.org/LICENSE                                               *
 *                                                                          *
 *   * Redistribution and use in source and binary forms, with or           *
 *   without modification, are permitted provided that the following        *
@@ -85,71 +85,71 @@ public class DatabaseResource {
     private String driverName = null;
 
     public static DatabaseResource init(String driverName) {
-	log.trace("Initializing... with Driver: ["+driverName+"]");
-	if(instance == null) {
-	    instance = new DatabaseResource(driverName);
-	}else {
-	    log.trace("fetching instance: ["+instance+"]");
-	}
-	return instance;
+        log.trace("Initializing... with Driver: ["+driverName+"]");
+        if(instance == null) {
+            instance = new DatabaseResource(driverName);
+        }else {
+            log.trace("fetching instance: ["+instance+"]");
+        }
+        return instance;
     }
     public static DatabaseResource getInstance() { 
-	if(instance == null) log.warn("Instance is NULL!!! \"init\" must be called prior to calling this method!!");
-	return instance; 
+        if(instance == null) log.warn("Instance is NULL!!! \"init\" must be called prior to calling this method!!");
+        return instance; 
     }
 
     //Private Singleton Constructor...
     private DatabaseResource(String driverName) { 
-	log.trace("Instantating DatabaseResource object...");
-	try {
-	    log.info("Loading JDBC driver: ["+driverName+"]");
-	    Class.forName(driverName);
-	    this.driverName = driverName;
-	} catch (ClassNotFoundException e) {
-	    log.error(e);
-	}
+        log.trace("Instantating DatabaseResource object...");
+        try {
+            log.info("Loading JDBC driver: ["+driverName+"]");
+            Class.forName(driverName);
+            this.driverName = driverName;
+        } catch (ClassNotFoundException e) {
+            log.error(e);
+        }
     }
     
     public DatabaseResource setupDataSource(Properties props) {
-	log.trace("Setting up data source ");
-	if(props == null) { log.error("Property object is ["+props+"]: Cannot setup up data source"); return this; }
-	//Ex: jdbc:postgresql://pcmdi3.llnl.gov:5432/esgcet
-	String protocol = props.getProperty("db.protocol","jdbc:postgresql:");
-	String host = props.getProperty("db.host","localhost");
-	String port = props.getProperty("db.port","5432");
-	String database = props.getProperty("db.database","esgcet");
-	String user = props.getProperty("db.user","dbsuper");
-	String password = props.getProperty("db.password","changeme");
+        log.trace("Setting up data source ");
+        if(props == null) { log.error("Property object is ["+props+"]: Cannot setup up data source"); return this; }
+        //Ex: jdbc:postgresql://pcmdi3.llnl.gov:5432/esgcet
+        String protocol = props.getProperty("db.protocol","jdbc:postgresql:");
+        String host = props.getProperty("db.host","localhost");
+        String port = props.getProperty("db.port","5432");
+        String database = props.getProperty("db.database","esgcet");
+        String user = props.getProperty("db.user","dbsuper");
+        String password = props.getProperty("db.password","changeme");
 
-	String connectURI = protocol+"//"+host+":"+port+"/"+database; //zoiks
-	log.info("Connection URI = "+connectURI);
-	connectionPool = new GenericObjectPool(null);
- 	ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connectURI,user,password);
- 	PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory,connectionPool,null,null,false,true);
-	dataSource = new PoolingDataSource(connectionPool);
-	return this;
+        String connectURI = protocol+"//"+host+":"+port+"/"+database; //zoiks
+        log.info("Connection URI = "+connectURI);
+        connectionPool = new GenericObjectPool(null);
+        ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connectURI,user,password);
+        PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory,connectionPool,null,null,false,true);
+        dataSource = new PoolingDataSource(connectionPool);
+        return this;
     }
 
     public String getDriverName() { return driverName; }
     
     public DataSource getDataSource() {
-	if(null == dataSource) log.error("Data Source Is NULL!!!");
-	return dataSource;
+        if(null == dataSource) log.error("Data Source Is NULL!!!");
+        return dataSource;
     }
 
     public void showDriverStats() {
- 	System.out.println(" NumActive: " + (connectionPool == null ? "X" : connectionPool.getNumActive()));
- 	System.out.println(" NumIdle:   " + (connectionPool == null ? "X" : connectionPool.getNumIdle()));
+        System.out.println(" NumActive: " + (connectionPool == null ? "X" : connectionPool.getNumActive()));
+        System.out.println(" NumIdle:   " + (connectionPool == null ? "X" : connectionPool.getNumIdle()));
     }
 
     public void shutdownResource() {
-	log.info("Shutting Down Database Resource! ("+driverName+")");
-	try{
-	    connectionPool.close();
-	}catch(Exception ex) {
-	    log.error("Problem with closing connection Pool!",ex);
-	}
-	dataSource = null;
-	instance = null;
+        log.info("Shutting Down Database Resource! ("+driverName+")");
+        try{
+            connectionPool.close();
+        }catch(Exception ex) {
+            log.error("Problem with closing connection Pool!",ex);
+        }
+        dataSource = null;
+        instance = null;
     }
 }

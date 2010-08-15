@@ -17,11 +17,11 @@
 *   LLNL-CODE-420962                                                       *
 *                                                                          *
 *   All rights reserved. This file is part of the:                         *
-*   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
+*   Earth System Grid Federation (ESGF) Data Node Software Stack           *
 *                                                                          *
-*   For details, see http://esgf.org/esg-node/                    *
+*   For details, see http://esgf.org/esg-node/                             *
 *   Please also read this link                                             *
-*    http://esgf.org/LICENSE                                      *
+*    http://esgf.org/LICENSE                                               *
 *                                                                          *
 *   * Redistribution and use in source and binary forms, with or           *
 *   without modification, are permitted provided that the following        *
@@ -75,19 +75,19 @@ import java.math.BigInteger;
 
 public class QuickHash {
     public static String sum(String plaintext) throws NoSuchAlgorithmException {
-	return sum("SHA1",plaintext);
+        return sum("SHA1",plaintext);
     }
     public static String sum(String algo,String plaintext) throws NoSuchAlgorithmException {
-	MessageDigest m = MessageDigest.getInstance(algo);
-	byte[] data = plaintext.getBytes(); 
-	m.update(data,0,data.length);
-	BigInteger i = new BigInteger(1,m.digest());
-	return String.format("%1$032X", i);
+        MessageDigest m = MessageDigest.getInstance(algo);
+        byte[] data = plaintext.getBytes(); 
+        m.update(data,0,data.length);
+        BigInteger i = new BigInteger(1,m.digest());
+        return String.format("%1$032X", i);
     }
     
     public static void main(String[] args) {
-	long start = System.currentTimeMillis();
-	try { System.out.println(args[0]+" -> "+QuickHash.sum(args[1],args[0])); } catch(Throwable t) { System.out.println(t.getMessage()); }
-	System.out.println(System.currentTimeMillis() - start);
+        long start = System.currentTimeMillis();
+        try { System.out.println(args[0]+" -> "+QuickHash.sum(args[1],args[0])); } catch(Throwable t) { System.out.println(t.getMessage()); }
+        System.out.println(System.currentTimeMillis() - start);
     }
 }

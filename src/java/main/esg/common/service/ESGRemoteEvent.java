@@ -17,11 +17,11 @@
 *   LLNL-CODE-420962                                                       *
 *                                                                          *
 *   All rights reserved. This file is part of the:                         *
-*   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
+*   Earth System Grid Federation (ESGF) Data Node Software Stack           *
 *                                                                          *
-*   For details, see http://esgf.org/esg-node/                    *
+*   For details, see http://esgf.org/esg-node/                             *
 *   Please also read this link                                             *
-*    http://esgf.org/LICENSE                                      *
+*    http://esgf.org/LICENSE                                               *
 *                                                                          *
 *   * Redistribution and use in source and binary forms, with or           *
 *   without modification, are permitted provided that the following        *
@@ -85,14 +85,14 @@ public class ESGRemoteEvent implements java.io.Serializable {
     private long   seqNum = 0L;
 
     public ESGRemoteEvent(String source, int messageType, Object payload, Long seqNum) {
-	this.source  = source;
-	this.messageType = messageType;
-	this.seqNum = seqNum;
-	this.payload = payload;
+        this.source  = source;
+        this.messageType = messageType;
+        this.seqNum = seqNum;
+        this.payload = payload;
     }
 
     public ESGRemoteEvent(String source, int messageType,long seqNum) {
-	this(source,messageType,null,seqNum);
+        this(source,messageType,null,seqNum);
     }
 
     public ESGRemoteEvent(String source) { this(source,NOOP,null,-1L); }
