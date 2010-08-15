@@ -18,6 +18,8 @@
 TODO:
 
 overall:
+-set new header for all files
+-untabify all files (use only spaces)
 xPut in JUnit testing.
 -Write test cases for codebase.
 -Install BDM client and simple sanity check call(s)
