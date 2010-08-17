@@ -3090,12 +3090,17 @@ main() {
     exit 0
 }
 
+esg_node_clean_up() {
+    echo "(esg_datanode: cleaning up)"
+    exit 0
+}
+
 #Set system traps
-#trap stop_postgress INT TERM
-#trap stop_tomcat INT TERM
-#trap - INT TERM
+trap esg_node_clean_up INT TERM
 
 echo "start time: `date`" >> ${logfile}
 main $@
+trap - INT TERM
+esg_node_clean_up
 echo "end time: `date`" >> ${logfile}
 
