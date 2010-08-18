@@ -211,9 +211,9 @@ init() {
     truststore_file=${tomcat_install_dir}/conf/jssecacerts
 
     mkdir -p ${esg_backup_dir}  && \
-	mkdir -p ${esg_tools_dir} && \
-	mkdir -p ${esg_log_dir} && \
-	mkdir -p ${esg_config_dir}
+        mkdir -p ${esg_tools_dir} && \
+        mkdir -p ${esg_log_dir} && \
+        mkdir -p ${esg_config_dir}
     [ $? != 0 ] && echo "ERROR: could not create ${esg_root_dir} dir and/or subdirectories" && checked_done 1
 
     write_paths
@@ -260,9 +260,9 @@ check_prerequisites() {
     echo -n "Checking for X11 libs... "
     Xorg -version >& /dev/null 
     if [ $? != 0 ]; then
-	echo "[WARNING] X11 is needed for publisher UI..."
+        echo "[WARNING] X11 is needed for publisher UI..."
     else
-	echo "[OK]"
+        echo "[OK]"
     fi
     #----------------------------------------
 
@@ -287,13 +287,13 @@ setup_curl() {
 
     local dosetup
     if [ -x ${curl_install_dir}/bin/curl ]; then 
-	echo "Detected an existing (older) CURL installation..."
-	read -p "Do you want to continue with CURL installation and setup? [y/N] " dosetup
-	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
-	    echo "Skipping CURL installation and setup - will assume CURL is setup properly"
-	    return 0
-	fi
-	echo
+        echo "Detected an existing (older) CURL installation..."
+        read -p "Do you want to continue with CURL installation and setup? [y/N] " dosetup
+        if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
+            echo "Skipping CURL installation and setup - will assume CURL is setup properly"
+            return 0
+        fi
+        echo
     fi
 
     mkdir -p ${curl_workdir}
@@ -304,48 +304,48 @@ setup_curl() {
     local curl_dist_file=${curl_dist_url##*/}
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
     local curl_dist_dir=$(echo ${curl_dist_file} | awk '{print substr($1,1,length($1)-7)}')
-        
+    
     #There is this pesky case of having a zero sized dist file... WTF!?
     if [ -e ${curl_dist_file} ]; then
         ls -l ${curl_dist_file}
-	#NOTE: I know there must be a cleaner way to get this, maybe stat?
+        #NOTE: I know there must be a cleaner way to get this, maybe stat?
         local size=$(ls -l | grep ${curl_dist_file} | tr -s " " | cut -d " " -f 5)
         (( size == 0 )) && rm -v ${curl_dist_file}
     fi
 
     #Check to see if we have postgres distribution directory
     if [ ! -e ${curl_dist_dir} ]; then
-	echo "Don't see CURL distribution dir ${curl_dist_dir}"
-	if [ ! -e ${curl_dist_file} ]; then
-	    echo "Don't see CURL distribution file ${curl_dist_file} either"
-	    echo "Downloading CURL from ${curl_dist_url}"
-	    wget -O ${curl_dist_file} ${curl_dist_url}
-	    [ $? != 0 ] && echo " ERROR: Could not download CURL:${curl_dist_file}" && popd && checked_done 1
-	    tar xvzf ${curl_dist_file}
-	    [ $? != 0 ] && echo " ERROR: Could not extract CURL: ${curl_dist_file}" && popd && checked_done 1
-	fi
+        echo "Don't see CURL distribution dir ${curl_dist_dir}"
+        if [ ! -e ${curl_dist_file} ]; then
+            echo "Don't see CURL distribution file ${curl_dist_file} either"
+            echo "Downloading CURL from ${curl_dist_url}"
+            wget -O ${curl_dist_file} ${curl_dist_url}
+            [ $? != 0 ] && echo " ERROR: Could not download CURL:${curl_dist_file}" && popd && checked_done 1
+            tar xvzf ${curl_dist_file}
+            [ $? != 0 ] && echo " ERROR: Could not extract CURL: ${curl_dist_file}" && popd && checked_done 1
+        fi
     fi
 
     #If you don't see the directory but see the tar.gz distribution
     #then expand it and go from there....
     if [ -e ${curl_dist_file} ] && [ ! -e ${curl_dist_dir} ]; then
-	tar xvzf ${curl_dist_file}
+        tar xvzf ${curl_dist_file}
     fi
 
     pushd ${curl_dist_dir}
     echo "./configure --prefix=${curl_install_dir}"
     if ./configure --prefix=${curl_install_dir} \
-	&& gmake all \
-	&& gmake install 
-	then
-	echo "Successfully Configured and Built CURL in: ${curl_install_dir}"
-	#this is the "test"
-	${curl_install_dir}/bin/curl --version
-	[ $? != 0 ] && 	echo" ERROR: Could NOT successfully build CURL!!" && popd >& /dev/null && checked_done 1
+        && gmake all \
+        && gmake install 
+    then
+        echo "Successfully Configured and Built CURL in: ${curl_install_dir}"
+        #this is the "test"
+        ${curl_install_dir}/bin/curl --version
+        [ $? != 0 ] &&  echo" ERROR: Could NOT successfully build CURL!!" && popd >& /dev/null && checked_done 1
     else
-	echo" ERROR: Could NOT successfully build CURL!!"
-	popd >& /dev/null
-	checked_done 1
+        echo" ERROR: Could NOT successfully build CURL!!"
+        popd >& /dev/null
+        checked_done 1
     fi
 
     popd >& /dev/null
@@ -386,13 +386,13 @@ setup_git() {
 
     local dosetup
     if [ -x ${git_install_dir}/bin/git ]; then 
-	echo "Detected an existing (older) GIT installation..."
-	read -p "Do you want to continue with GIT installation and setup? [y/N] " dosetup
-	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
-	    echo "Skipping GIT installation and setup - will assume GIT is setup properly"
-	    return 0
-	fi
-	echo
+        echo "Detected an existing (older) GIT installation..."
+        read -p "Do you want to continue with GIT installation and setup? [y/N] " dosetup
+        if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
+            echo "Skipping GIT installation and setup - will assume GIT is setup properly"
+            return 0
+        fi
+        echo
     fi
 
     mkdir -p ${git_workdir}
@@ -403,48 +403,48 @@ setup_git() {
     local git_dist_file=${git_dist_url##*/}
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
     local git_dist_dir=$(echo ${git_dist_file} | awk '{print substr($1,1,length($1)-7)}')
-        
+    
     #There is this pesky case of having a zero sized dist file... WTF!?
     if [ -e ${git_dist_file} ]; then
         ls -l ${git_dist_file}
-	#NOTE: I know there must be a cleaner way to get this, maybe stat?
+        #NOTE: I know there must be a cleaner way to get this, maybe stat?
         local size=$(ls -l | grep ${git_dist_file} | tr -s " " | cut -d " " -f 5)
         (( size == 0 )) && rm -v ${git_dist_file}
     fi
 
     #Check to see if we have git distribution directory
     if [ ! -e ${git_dist_dir} ]; then
-	echo "Don't see GIT distribution dir ${git_dist_dir}"
-	if [ ! -e ${git_dist_file} ]; then
-	    echo "Don't see GIT distribution file ${git_dist_file} either"
-	    echo "Downloading GIT from ${git_dist_url}"
-	    wget -O ${git_dist_file} ${git_dist_url}
-	    [ $? != 0 ] && echo " ERROR: Could not download GIT:${git_dist_file}" && popd && checked_done 1
-	    tar xvzf ${git_dist_file}
-	    [ $? != 0 ] && echo " ERROR: Could not extract GIT: ${git_dist_file}" && popd && checked_done 1
-	fi
+        echo "Don't see GIT distribution dir ${git_dist_dir}"
+        if [ ! -e ${git_dist_file} ]; then
+            echo "Don't see GIT distribution file ${git_dist_file} either"
+            echo "Downloading GIT from ${git_dist_url}"
+            wget -O ${git_dist_file} ${git_dist_url}
+            [ $? != 0 ] && echo " ERROR: Could not download GIT:${git_dist_file}" && popd && checked_done 1
+            tar xvzf ${git_dist_file}
+            [ $? != 0 ] && echo " ERROR: Could not extract GIT: ${git_dist_file}" && popd && checked_done 1
+        fi
     fi
 
     #If you don't see the directory but see the tar.gz distribution
     #then expand it and go from there....
     if [ -e ${git_dist_file} ] && [ ! -e ${git_dist_dir} ]; then
-	tar xvzf ${git_dist_file}
+        tar xvzf ${git_dist_file}
     fi
 
     pushd ${git_dist_dir}
     echo "./configure --prefix=${git_install_dir}"
     if ./configure --prefix=${git_install_dir} \
-	&& gmake all \
-	&& gmake install 
-	then
-	echo "Successfully Configured and Built GIT in: ${git_install_dir}"
-	#this is the "test"
-	${git_install_dir}/bin/git --version
-	[ $? != 0 ] && 	echo" ERROR: Could NOT successfully build GIT!!" && popd >& /dev/null && checked_done 1
+        && gmake all \
+        && gmake install 
+    then
+        echo "Successfully Configured and Built GIT in: ${git_install_dir}"
+        #this is the "test"
+        ${git_install_dir}/bin/git --version
+        [ $? != 0 ] &&  echo" ERROR: Could NOT successfully build GIT!!" && popd >& /dev/null && checked_done 1
     else
-	echo" ERROR: Could NOT successfully build GIT!!"
-	popd >& /dev/null
-	checked_done 1
+        echo" ERROR: Could NOT successfully build GIT!!"
+        popd >& /dev/null
+        checked_done 1
     fi
 
     popd >& /dev/null
@@ -487,14 +487,14 @@ setup_java() {
 
     local dosetup
     if [ -x ${java_install_dir}/bin/java ]; then 
-	echo "Detected an existing (older) java installation..."
-	read -p "Do you want to continue with Java installation and setup? [y/N] " dosetup
-	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
-	    echo "Skipping Java installation and setup - will assume Java is setup properly"
-	    return 0
-	fi
-	last_java_truststore_file=$(readlink -f ${truststore_file}) 
-	echo
+        echo "Detected an existing (older) java installation..."
+        read -p "Do you want to continue with Java installation and setup? [y/N] " dosetup
+        if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
+            echo "Skipping Java installation and setup - will assume Java is setup properly"
+            return 0
+        fi
+        last_java_truststore_file=$(readlink -f ${truststore_file}) 
+        echo
     fi
 
     mkdir -p ${workdir}
@@ -507,35 +507,35 @@ setup_java() {
 
     #Check to see if we have an Java distribution directory
     if [ ! -e ${java_install_dir%/*}/${java_dist_dir} ]; then
-	echo "Don't see java distribution dir ${java_install_dir%/*}/${java_dist_dir}"
-	if [ ! -e ${java_dist_file} ]; then
-	    echo "Don't see java distribution file $(pwd)/${java_dist_file} either"
-	    echo "Downloading Java from ${java_dist_url}"
-	    checked_get ${java_dist_file} ${java_dist_url}
-	    [ $? != 0 ] && echo " ERROR: Could not download Java" && popd && checked_done 1
-    	    tar xvzf ${java_dist_file} -C ${java_install_dir%/*} # i.e. /usr/local
-	    [ $? != 0 ] && echo " ERROR: Could not extract Java" && popd && checked_done 1
-	fi
+        echo "Don't see java distribution dir ${java_install_dir%/*}/${java_dist_dir}"
+        if [ ! -e ${java_dist_file} ]; then
+            echo "Don't see java distribution file $(pwd)/${java_dist_file} either"
+            echo "Downloading Java from ${java_dist_url}"
+            checked_get ${java_dist_file} ${java_dist_url}
+            [ $? != 0 ] && echo " ERROR: Could not download Java" && popd && checked_done 1
+            tar xvzf ${java_dist_file} -C ${java_install_dir%/*} # i.e. /usr/local
+            [ $? != 0 ] && echo " ERROR: Could not extract Java" && popd && checked_done 1
+        fi
     fi
 
     #If you don't see the directory but see the tar.gz distribution
     #then expand it
     if [ -e ${java_dist_file} ] && [ ! -e ${java_install_dir%/*}/${java_dist_dir} ]; then
-	tar xvzf ${java_dist_file} -C ${java_install_dir%/*} # i.e. /usr/local
-	[ $? != 0 ] && echo " ERROR: Could not extract Java..." && popd && checked_done 1
+        tar xvzf ${java_dist_file} -C ${java_install_dir%/*} # i.e. /usr/local
+        [ $? != 0 ] && echo " ERROR: Could not extract Java..." && popd && checked_done 1
     fi
 
     if [ ! -e ${java_install_dir} ]; then
-	ln -s ${java_install_dir%/*}/${java_dist_dir} ${java_install_dir}
-	[ $? != 0 ] && \
-	    echo " ERROR: Could not create sym link ${java_install_dir%/*}/${java_dist_dir} -> ${java_install_dir}" && popd && checked_done 1
+        ln -s ${java_install_dir%/*}/${java_dist_dir} ${java_install_dir}
+        [ $? != 0 ] && \
+            echo " ERROR: Could not create sym link ${java_install_dir%/*}/${java_dist_dir} -> ${java_install_dir}" && popd && checked_done 1
     else
-	unlink ${java_install_dir} 
-	[ $? != 0 ] && mv ${java_install_dir} ${java_install_dir}.$(date ${date_format}).bak
-	
-	ln -s ${java_install_dir%/*}/${java_dist_dir} ${java_install_dir}
-	[ $? != 0 ] && \
-	    echo " ERROR*: Could not create sym link ${java_install_dir%/*}/${java_dist_dir} -> ${java_install_dir}" && popd && checked_done 1
+        unlink ${java_install_dir} 
+        [ $? != 0 ] && mv ${java_install_dir} ${java_install_dir}.$(date ${date_format}).bak
+        
+        ln -s ${java_install_dir%/*}/${java_dist_dir} ${java_install_dir}
+        [ $? != 0 ] && \
+            echo " ERROR*: Could not create sym link ${java_install_dir%/*}/${java_dist_dir} -> ${java_install_dir}" && popd && checked_done 1
     fi
     chown -R ${installer_uid}:${installer_gid} ${java_install_dir}
 
@@ -554,8 +554,8 @@ setup_java() {
     #ESG_GATEWAY_SVC_ROOT being pointed to.  We should copy over that
     #jssecacerts into this newly installed VM to satisfy SSL.
     if [ -e "${last_java_truststore_file}" ]; then
-	cp -v ${last_java_truststore_file} ${java_install_dir}/conf
-	chmod 644 ${java_install_dir}/conf/${last_java_truststore_file##*/}
+        cp -v ${last_java_truststore_file} ${java_install_dir}/conf
+        chmod 644 ${java_install_dir}/conf/${last_java_truststore_file##*/}
     fi
     #-----------------------------
 
@@ -593,13 +593,13 @@ setup_ant() {
 
     local dosetup
     if [ -x ${ant_install_dir}/bin/ant ]; then 
-	echo "Detected an existing (older) ant installation..."
-	read -p "Do you want to continue with Ant installation and setup? [y/N] " dosetup
-	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
-	    echo "Skipping Ant installation and setup - will assume ant is setup properly"
-	    return 0
-	fi
-	echo
+        echo "Detected an existing (older) ant installation..."
+        read -p "Do you want to continue with Ant installation and setup? [y/N] " dosetup
+        if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
+            echo "Skipping Ant installation and setup - will assume ant is setup properly"
+            return 0
+        fi
+        echo
     fi
 
     mkdir -p ${workdir}
@@ -613,42 +613,42 @@ setup_ant() {
     #There is this pesky case of having a zero sized dist file... WTF!?
     if [ -e ${ant_dist_file} ]; then
         ls -l ${ant_dist_file}
-	#NOTE: I know there must be a cleaner way to get this, maybe stat?
+        #NOTE: I know there must be a cleaner way to get this, maybe stat?
         local size=$(ls -l | grep ${ant_dist_file} | tr -s " " | cut -d " " -f 5)
         (( size == 0 )) && rm -v ${ant_dist_file}
     fi
 
     #Check to see if we have an Ant distribution directory
     if [ ! -e ${ant_install_dir%/*}/${ant_dist_dir} ]; then
-	echo "Don't see ant distribution dir ${ant_install_dir%/*}/${ant_dist_dir}"
-	if [ ! -e ${ant_dist_file} ]; then
-	    echo "Don't see ant distribution file $(pwd)/${ant_dist_file} either"
-	    echo "Downloading Ant from ${ant_dist_url}"
-	    wget -O ${ant_dist_file} ${ant_dist_url}
-	    [ $? != 0 ] && echo " ERROR: Could not download Ant" && popd && checked_done 1
-    	    tar xvzf ${ant_dist_file} -C ${ant_install_dir%/*} # i.e. /usr/local
-	    [ $? != 0 ] && echo " ERROR: Could not extract Ant" && popd && checked_done 1
-	fi
+        echo "Don't see ant distribution dir ${ant_install_dir%/*}/${ant_dist_dir}"
+        if [ ! -e ${ant_dist_file} ]; then
+            echo "Don't see ant distribution file $(pwd)/${ant_dist_file} either"
+            echo "Downloading Ant from ${ant_dist_url}"
+            wget -O ${ant_dist_file} ${ant_dist_url}
+            [ $? != 0 ] && echo " ERROR: Could not download Ant" && popd && checked_done 1
+            tar xvzf ${ant_dist_file} -C ${ant_install_dir%/*} # i.e. /usr/local
+            [ $? != 0 ] && echo " ERROR: Could not extract Ant" && popd && checked_done 1
+        fi
     fi
 
     #If you don't see the directory but see the tar.gz distribution
     #then expand it
     if [ -e ${ant_dist_file} ] && [ ! -e ${ant_install_dir%/*}/${ant_dist_dir} ]; then
-	tar xvzf ${ant_dist_file} -C ${ant_install_dir%/*} # i.e. /usr/local
-	[ $? != 0 ] && echo " ERROR: Could not extract Ant..." && popd && checked_done 1
+        tar xvzf ${ant_dist_file} -C ${ant_install_dir%/*} # i.e. /usr/local
+        [ $? != 0 ] && echo " ERROR: Could not extract Ant..." && popd && checked_done 1
     fi
 
     if [ ! -e ${ant_install_dir} ]; then
-	ln -s ${ant_install_dir%/*}/${ant_dist_dir} ${ant_install_dir}
-	[ $? != 0 ] && \
-	    echo " ERROR: Could not create sym link ${ant_install_dir%/*}/${ant_dist_dir} -> ${ant_install_dir}" && popd && checked_done 1
+        ln -s ${ant_install_dir%/*}/${ant_dist_dir} ${ant_install_dir}
+        [ $? != 0 ] && \
+            echo " ERROR: Could not create sym link ${ant_install_dir%/*}/${ant_dist_dir} -> ${ant_install_dir}" && popd && checked_done 1
     else
-	unlink ${ant_install_dir} 
-	[ $? != 0 ] && mv ${ant_install_dir} ${ant_install_dir}.$(date ${date_format}).bak
+        unlink ${ant_install_dir} 
+        [ $? != 0 ] && mv ${ant_install_dir} ${ant_install_dir}.$(date ${date_format}).bak
 
-	ln -s ${ant_install_dir%/*}/${ant_dist_dir} ${ant_install_dir}
-	[ $? != 0 ] && \
-	    echo " ERROR: Could not create sym link ${ant_install_dir%/*}/${ant_dist_dir} -> ${ant_install_dir}" && popd && checked_done 1
+        ln -s ${ant_install_dir%/*}/${ant_dist_dir} ${ant_install_dir}
+        [ $? != 0 ] && \
+            echo " ERROR: Could not create sym link ${ant_install_dir%/*}/${ant_dist_dir} -> ${ant_install_dir}" && popd && checked_done 1
     fi
 
     ${ant_install_dir}/bin/ant -version
@@ -689,13 +689,13 @@ setup_postgress() {
 
     local dosetup
     if [ -x ${postgress_install_dir}/bin/psql ]; then 
-	echo "Detected an existing (older) postgress installation..."
-	read -p "Do you want to continue with postgress installation and setup? [y/N] " dosetup
-	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
-	    echo "Skipping postgres installation and setup - will assume postgres is setup properly"
-	    return 0
-	fi
-	echo
+        echo "Detected an existing (older) postgress installation..."
+        read -p "Do you want to continue with postgress installation and setup? [y/N] " dosetup
+        if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
+            echo "Skipping postgres installation and setup - will assume postgres is setup properly"
+            return 0
+        fi
+        echo
     fi
 
     mkdir -p ${postgress_workdir}
@@ -706,48 +706,48 @@ setup_postgress() {
     local postgress_dist_file=${postgress_dist_url##*/}
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
     postgress_dist_dir=$(echo ${postgress_dist_file} | awk '{print substr($1,1,length($1)-7)}')
-        
+    
     #There is this pesky case of having a zero sized dist file... WTF!?
     if [ -e ${postgress_dist_file} ]; then
         ls -l ${postgress_dist_file}
-	#NOTE: I know there must be a cleaner way to get this, maybe stat?
+        #NOTE: I know there must be a cleaner way to get this, maybe stat?
         local size=$(ls -l | grep ${postgress_dist_file} | tr -s " " | cut -d " " -f 5)
         (( size == 0 )) && rm -v ${postgress_dist_file}
     fi
 
     #Check to see if we have postgres distribution directory
     if [ ! -e ${postgress_dist_dir} ]; then
-	echo "Don't see postgress distribution dir ${postgress_dist_dir}"
-	if [ ! -e ${postgress_dist_file} ]; then
-	    echo "Don't see postgress distribution file ${postgress_dist_file} either"
-	    echo "Downloading Postgress from ${postgress_dist_url}"
-	    wget -O ${postgress_dist_file} ${postgress_dist_url}
-	    [ $? != 0 ] && echo " ERROR: Could not download Postgress:${postgress_dist_file}" && popd && checked_done 1
-	    tar xvzf ${postgress_dist_file}
-	    [ $? != 0 ] && echo " ERROR: Could not extract Postgress: ${postgress_dist_file}" && popd && checked_done 1
-	fi
+        echo "Don't see postgress distribution dir ${postgress_dist_dir}"
+        if [ ! -e ${postgress_dist_file} ]; then
+            echo "Don't see postgress distribution file ${postgress_dist_file} either"
+            echo "Downloading Postgress from ${postgress_dist_url}"
+            wget -O ${postgress_dist_file} ${postgress_dist_url}
+            [ $? != 0 ] && echo " ERROR: Could not download Postgress:${postgress_dist_file}" && popd && checked_done 1
+            tar xvzf ${postgress_dist_file}
+            [ $? != 0 ] && echo " ERROR: Could not extract Postgress: ${postgress_dist_file}" && popd && checked_done 1
+        fi
     fi
 
     #If you don't see the directory but see the tar.gz distribution
     #then expand it and go from there....
     if [ -e ${postgress_dist_file} ] && [ ! -e ${postgress_dist_dir} ]; then
-	tar xvzf ${postgress_dist_file}
+        tar xvzf ${postgress_dist_file}
     fi
 
     pushd ${postgress_dist_dir}
     echo "./configure --prefix=${postgress_install_dir} --enable-thread-safety"
     if ./configure --prefix=${postgress_install_dir} --enable-thread-safety \
-	&& gmake \
-	&& gmake install \
-	&& cd contrib/tablefunc/ \
-	&& gmake \
-	&& gmake install
-	then
-	echo "Successfully Configured and Built PostgresSQL in: ${postgress_install_dir}"
+        && gmake \
+        && gmake install \
+        && cd contrib/tablefunc/ \
+        && gmake \
+        && gmake install
+    then
+        echo "Successfully Configured and Built PostgresSQL in: ${postgress_install_dir}"
     else
-	echo" ERROR: Could NOT successfully build POSTGRESS!"
-	popd >& /dev/null
-	checked_done 1
+        echo" ERROR: Could NOT successfully build POSTGRESS!"
+        popd >& /dev/null
+        checked_done 1
     fi
 
     popd >& /dev/null
@@ -757,12 +757,12 @@ setup_postgress() {
     ########
     id $pg_sys_acct
     if [ $? != 0 ]; then
-	echo " WARNING: There is no postgres system account user \"$pg_sys_acct\" present on system"
-	#NOTE: "useradd/groupadd" are a RedHat/CentOS thing... to make this cross distro compatible clean this up.
-	/usr/sbin/groupadd -r -f ${pg_sys_acct_group}
-	[ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add postgres system group: ${pg_sys_acct_group}" && popd && checked_done 1
-	/usr/sbin/useradd -r -c"PostgreSQL Service" -g $pg_sys_acct_group -p $pg_sys_acct_passwd -s /bin/bash $pg_sys_acct
-	[ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add postgres system account user" && popd && checked_done 1
+        echo " WARNING: There is no postgres system account user \"$pg_sys_acct\" present on system"
+        #NOTE: "useradd/groupadd" are a RedHat/CentOS thing... to make this cross distro compatible clean this up.
+        /usr/sbin/groupadd -r -f ${pg_sys_acct_group}
+        [ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add postgres system group: ${pg_sys_acct_group}" && popd && checked_done 1
+        /usr/sbin/useradd -r -c"PostgreSQL Service" -g $pg_sys_acct_group -p $pg_sys_acct_passwd -s /bin/bash $pg_sys_acct
+        [ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add postgres system account user" && popd && checked_done 1
     fi
     ########
     sleep 3
@@ -898,10 +898,10 @@ stop_postgress() {
     echo "stop postgress: su $pg_sys_acct -c \"pg_ctl -D $postgress_install_dir/data -m i stop\""
     su $pg_sys_acct -c "pg_ctl -D $postgress_install_dir/data -m i stop" #(stop server immediately)
     if [ $? != 0 ]; then
-	echo " WARNING: Unable to stop the database (nicely)" 
-	echo " Hmmm...  okay no more mr nice guy... issuing \"killall postgres\""
-	killall postgres
-	[ $? != 0 ] && echo "Hmmm... still could not shutdown... do so manually"
+        echo " WARNING: Unable to stop the database (nicely)" 
+        echo " Hmmm...  okay no more mr nice guy... issuing \"killall postgres\""
+        killall postgres
+        [ $? != 0 ] && echo "Hmmm... still could not shutdown... do so manually"
     fi
     /bin/ps -elf | grep postgres | grep -v grep
     return 0
@@ -932,21 +932,21 @@ setup_cdat() {
 
     local dosetup
     if [ -x ${cdat_home}/bin/cdat ]; then 
-	echo "Detected an existing CDAT installation..."
-	read -p "Do you want to continue with CDAT installation and setup? [y/N] " dosetup
-	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
-	    echo "Skipping CDAT installation and setup - will assume CDAT is setup properly"
-	    return 0
-	fi
-	echo
+        echo "Detected an existing CDAT installation..."
+        read -p "Do you want to continue with CDAT installation and setup? [y/N] " dosetup
+        if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
+            echo "Skipping CDAT installation and setup - will assume CDAT is setup properly"
+            return 0
+        fi
+        echo
     fi
 
     mkdir -p ${workdir}
     [ $? != 0 ] && checked_done 1
     pushd ${workdir} >& /dev/null
     if [ ! -d ${workdir}/cdat ]; then
-	echo "Fetching the cdat project from GIT Repo..."
-	git clone ${cdat_repo}
+        echo "Fetching the cdat project from GIT Repo..."
+        git clone ${cdat_repo}
     fi
     cd cdat >& /dev/null
     git checkout ${cdat_version}
@@ -988,9 +988,9 @@ write_cdat_install_log() {
     
     #Parse the cdat installation config.log file and entries to the install log
     if [ -e ${workdir}/cdat/config.log ]; then
-	awk '/building/ {print "'"$(date ${date_format})"' cdat->"$(NF-1)":"$2"="$NF" '"${cdat_home}"'"}' ${workdir}/cdat/config.log >> ${install_logfile}
+        awk '/building/ {print "'"$(date ${date_format})"' cdat->"$(NF-1)":"$2"="$NF" '"${cdat_home}"'"}' ${workdir}/cdat/config.log >> ${install_logfile}
     else
-	echo " WARNING: Could not find cdat config.log file [${workdir}/cdat/config.log] installation log entries could not be generated!"
+        echo " WARNING: Could not find cdat config.log file [${workdir}/cdat/config.log] installation log entries could not be generated!"
     fi
     
     dedup ${install_logfile}
@@ -1012,13 +1012,13 @@ setup_esgcet() {
     
     local dosetup
     if [ -e ${HOME}/.esgcet/esg.ini ]; then 
-	echo "Detected an existing esgcet installation..."
-	read -p "Do you want to continue with esgcet installation and setup? [y/N] " dosetup
-	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
-	    echo "Skipping esgcet installation and setup - will assume esgcet is setup properly"
-	    return 0
-	fi
-	echo
+        echo "Detected an existing esgcet installation..."
+        read -p "Do you want to continue with esgcet installation and setup? [y/N] " dosetup
+        if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
+            echo "Skipping esgcet installation and setup - will assume esgcet is setup properly"
+            return 0
+        fi
+        echo
     fi
 
     mkdir -p ${workdir}
@@ -1028,36 +1028,36 @@ setup_esgcet() {
     #Gives you 30 seconds to make a choice or will choose "I" by default
     local choice
     while [ 1 ]; do
-	read -p "Is this an install or update of the esgcet module? [I/u]: " choice
-	if [ "${choice}" = "i" ] || [ "${choice}" = "I" ] || [ -z "${choice}" ]; then
-	    #echo "$cdat_home/bin/easy_install -f ${esg_dist_url}/externals esgcet"
-	    #$cdat_home/bin/easy_install -f ${esg_dist_url}/externals esgcet
-	    checked_get ${esg_dist_url}/externals/${esgcet_egg_file}
-	    (( $? > 1 )) && return 0
-	    $cdat_home/bin/easy_install ${esgcet_egg_file}
-	    [ $? != 0 ] && checked_done 1
-	elif [ "${choice}" = "u" ] || [ "${choice}" = "U" ]; then
-	    #echo "$cdat_home/bin/easy_install --upgrade -f ${esg_dist_url}/externals esgcet"
-	    #$cdat_home/bin/easy_install --upgrade -f ${esg_dist_url}/externals esgcet
-	    checked_get ${esg_dist_url}/externals/${esgcet_egg_file}
-	    (( $? > 1 )) && return 0
-	    $cdat_home/bin/easy_install --upgrade ${esgcet_egg_file}
-	    [ $? != 0 ] && checked_done 1
-	else
-	    echo "Not a valid selection..."
-	    continue
-	fi
-	break
+        read -p "Is this an install or update of the esgcet module? [I/u]: " choice
+        if [ "${choice}" = "i" ] || [ "${choice}" = "I" ] || [ -z "${choice}" ]; then
+            #echo "$cdat_home/bin/easy_install -f ${esg_dist_url}/externals esgcet"
+            #$cdat_home/bin/easy_install -f ${esg_dist_url}/externals esgcet
+            checked_get ${esg_dist_url}/externals/${esgcet_egg_file}
+            (( $? > 1 )) && return 0
+            $cdat_home/bin/easy_install ${esgcet_egg_file}
+            [ $? != 0 ] && checked_done 1
+        elif [ "${choice}" = "u" ] || [ "${choice}" = "U" ]; then
+            #echo "$cdat_home/bin/easy_install --upgrade -f ${esg_dist_url}/externals esgcet"
+            #$cdat_home/bin/easy_install --upgrade -f ${esg_dist_url}/externals esgcet
+            checked_get ${esg_dist_url}/externals/${esgcet_egg_file}
+            (( $? > 1 )) && return 0
+            $cdat_home/bin/easy_install --upgrade ${esgcet_egg_file}
+            [ $? != 0 ] && checked_done 1
+        else
+            echo "Not a valid selection..."
+            continue
+        fi
+        break
     done
 
     if((!upgrade)); then
-	local input=""
-	read -p "What is your organization's id? [${esg_root_id}]: " input
-	[ ! -z "${input}" ] && esg_root_id=${input}
-	
-	echo "$cdat_home/bin/esgsetup --config --rootid ${esg_root_id}" 
-	$cdat_home/bin/esgsetup --config --rootid ${esg_root_id}
-	[ $? != 0 ] && popd && checked_done 1
+        local input=""
+        read -p "What is your organization's id? [${esg_root_id}]: " input
+        [ ! -z "${input}" ] && esg_root_id=${input}
+        
+        echo "$cdat_home/bin/esgsetup --config --rootid ${esg_root_id}" 
+        $cdat_home/bin/esgsetup --config --rootid ${esg_root_id}
+        [ $? != 0 ] && popd && checked_done 1
     fi
 
     echo "chown -R ${installer_uid}:${installer_gid} $HOME/.esgcet"
@@ -1073,7 +1073,7 @@ setup_esgcet() {
     echo
     echo
     if((!upgrade)); then
-	write_esgcet_env
+        write_esgcet_env
     fi
     checked_done 0
 }
@@ -1141,13 +1141,13 @@ setup_tomcat() {
 
     local dosetup
     if [ -x ${tomcat_install_dir}/bin/jsvc ]; then 
-	echo "Detected an existing tomcat installation..."
-	read -p "Do you want to continue with tomcat installation and setup? [y/N] " dosetup
-	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
-	    echo "Skipping tomcat installation and setup - will assume tomcat is setup properly"
-	    return 0
-	fi
-	echo
+        echo "Detected an existing tomcat installation..."
+        read -p "Do you want to continue with tomcat installation and setup? [y/N] " dosetup
+        if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
+            echo "Skipping tomcat installation and setup - will assume tomcat is setup properly"
+            return 0
+        fi
+        echo
     fi
 
     mkdir -p ${workdir}
@@ -1161,55 +1161,55 @@ setup_tomcat() {
     #There is this pesky case of having a zero sized dist file... WTF!?                                                                            
     if [ -e ${tomcat_dist_file} ]; then
         ls -l ${tomcat_dist_file}
-	#NOTE: I know there must be a cleaner way to get this, maybe stat?
+        #NOTE: I know there must be a cleaner way to get this, maybe stat?
         local size=$(ls -l | grep ${tomcat_dist_file} | tr -s " " | cut -d " " -f 5)
         (( size == 0 )) && rm -v ${tomcat_dist_file}
     fi
 
     #Check to see if we have a tomcat distribution directory
     if [ ! -e ${tomcat_install_dir%/*}/${tomcat_dist_dir} ]; then
-	echo "Don't see tomcat distribution dir ${tomcat_install_dir%/*}/${tomcat_dist_dir}"
-	if [ ! -e ${tomcat_dist_file} ]; then
-	    echo "Don't see tomcat distribution file $(pwd)/${tomcat_dist_file} either"
-	    echo "Downloading Tomcat from ${tomcat_dist_url}"
-	    wget -O ${tomcat_dist_file} ${tomcat_dist_url}
-	    [ $? != 0 ] && echo " ERROR: Could not download Tomcat" && popd && checked_done 1
-    	    tar xvzf ${tomcat_dist_file} -C ${tomcat_install_dir%/*} # i.e. /usr/local
-	    [ $? != 0 ] && echo " ERROR: Could not extract Tomcat" && popd && checked_done 1
-	fi
+        echo "Don't see tomcat distribution dir ${tomcat_install_dir%/*}/${tomcat_dist_dir}"
+        if [ ! -e ${tomcat_dist_file} ]; then
+            echo "Don't see tomcat distribution file $(pwd)/${tomcat_dist_file} either"
+            echo "Downloading Tomcat from ${tomcat_dist_url}"
+            wget -O ${tomcat_dist_file} ${tomcat_dist_url}
+            [ $? != 0 ] && echo " ERROR: Could not download Tomcat" && popd && checked_done 1
+            tar xvzf ${tomcat_dist_file} -C ${tomcat_install_dir%/*} # i.e. /usr/local
+            [ $? != 0 ] && echo " ERROR: Could not extract Tomcat" && popd && checked_done 1
+        fi
     fi
 
     #If you don't see the directory but see the tar.gz distribution
     #then expand it
     if [ -e ${tomcat_dist_file} ] && [ ! -e ${tomcat_install_dir%/*}/${tomcat_dist_dir} ]; then
-	tar xvzf ${tomcat_dist_file} -C ${tomcat_install_dir%/*} # i.e. /usr/local
-	[ $? != 0 ] && echo " ERROR: Could not extract Tomcat..." && popd && checked_done 1
+        tar xvzf ${tomcat_dist_file} -C ${tomcat_install_dir%/*} # i.e. /usr/local
+        [ $? != 0 ] && echo " ERROR: Could not extract Tomcat..." && popd && checked_done 1
     fi
 
     if [ ! -e ${tomcat_install_dir} ]; then
-	ln -s ${tomcat_install_dir%/*}/${tomcat_dist_dir} ${tomcat_install_dir}
-	[ $? != 0 ] && \
-	    echo " ERROR: Could not create sym link ${tomcat_install_dir%/*}/${tomcat_dist_dir} -> ${tomcat_install_dir}" && popd && checked_done 1
+        ln -s ${tomcat_install_dir%/*}/${tomcat_dist_dir} ${tomcat_install_dir}
+        [ $? != 0 ] && \
+            echo " ERROR: Could not create sym link ${tomcat_install_dir%/*}/${tomcat_dist_dir} -> ${tomcat_install_dir}" && popd && checked_done 1
     else
-	unlink ${tomcat_install_dir}
-	[ $? != 0 ] && mv ${tomcat_install_dir} ${tomcat_install_dir}.$(date ${date_format}).bak
+        unlink ${tomcat_install_dir}
+        [ $? != 0 ] && mv ${tomcat_install_dir} ${tomcat_install_dir}.$(date ${date_format}).bak
 
-	ln -s ${tomcat_install_dir%/*}/${tomcat_dist_dir} ${tomcat_install_dir}
-	[ $? != 0 ] && \
-	    echo " ERROR: Could not create sym link ${tomcat_install_dir%/*}/${tomcat_dist_dir} -> ${tomcat_install_dir}" && popd && checked_done 1
+        ln -s ${tomcat_install_dir%/*}/${tomcat_dist_dir} ${tomcat_install_dir}
+        [ $? != 0 ] && \
+            echo " ERROR: Could not create sym link ${tomcat_install_dir%/*}/${tomcat_dist_dir} -> ${tomcat_install_dir}" && popd && checked_done 1
     fi
     
     #If there is no tomcat user on the system create one (double check that usradd does the right thing)
     id $tomcat_user
     if [ $? != 0 ]; then 
-	echo " WARNING: There is no tomcat user \"$tomcat_user\" present on system"
-	#NOTE: "useradd/groupadd" are a RedHat/CentOS thing... to make this cross distro compatible clean this up.
-	/usr/sbin/groupadd -r -f ${tomcat_group}
-	[ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add tomcat system group: ${tomcat_group}" && popd && checked_done 1
-	/usr/sbin/useradd -r -c"Tomcat Server Identity" -g $tomcat_group $tomcat_user
-	[ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add tomcat system account user \"$tomcat_user\"" && popd && checked_done 1
+        echo " WARNING: There is no tomcat user \"$tomcat_user\" present on system"
+        #NOTE: "useradd/groupadd" are a RedHat/CentOS thing... to make this cross distro compatible clean this up.
+        /usr/sbin/groupadd -r -f ${tomcat_group}
+        [ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add tomcat system group: ${tomcat_group}" && popd && checked_done 1
+        /usr/sbin/useradd -r -c"Tomcat Server Identity" -g $tomcat_group $tomcat_user
+        [ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add tomcat system account user \"$tomcat_user\"" && popd && checked_done 1
     fi
-        
+    
 
     cd $tomcat_install_dir
 
@@ -1219,29 +1219,29 @@ setup_tomcat() {
     echo -n "Checking for jsvc... "
     pushd ./bin >& /dev/null
     if [ -e ./jsvc ] && [ -x ./jsvc ]; then
-	echo "[OK]"
+        echo "[OK]"
     else
-	echo "[NOT PRESENT]"
-	echo "Building jsvc... (JAVA_HOME=$java_install_dir)"
+        echo "[NOT PRESENT]"
+        echo "Building jsvc... (JAVA_HOME=$java_install_dir)"
 
-	if [ -e commons-daemon-native.tar.gz ]; then
-	    tar xvzf commons-daemon-native.tar.gz
-	    cd commons-daemon-*-native-src/unix
-	    #It turns out they shipped with .o files in there (oops) so I have to clean out manually.
-	    rm -v $(find . | egrep '*.o$' | xargs)
-	    make clean all
-	elif [ -e jsvc.tar.gz ]; then
-	    tar xvzf jsvc.tar.gz
-	    cd jsvc-src
-	    autoconf
-	else
-	    echo "NOT ABLE TO INSTALL JSVC!" && checked_done 1
-	fi
+        if [ -e commons-daemon-native.tar.gz ]; then
+            tar xvzf commons-daemon-native.tar.gz
+            cd commons-daemon-*-native-src/unix
+            #It turns out they shipped with .o files in there (oops) so I have to clean out manually.
+            rm -v $(find . | egrep '*.o$' | xargs)
+            make clean all
+        elif [ -e jsvc.tar.gz ]; then
+            tar xvzf jsvc.tar.gz
+            cd jsvc-src
+            autoconf
+        else
+            echo "NOT ABLE TO INSTALL JSVC!" && checked_done 1
+        fi
 
-	chmod 755 ./configure
-	./configure --with-java=${java_install_dir}
-	make
-	[ -x ./jsvc ] && cp ./jsvc ${tomcat_install_dir}/bin
+        chmod 755 ./configure
+        ./configure --with-java=${java_install_dir}
+        make
+        [ -x ./jsvc ] && cp ./jsvc ${tomcat_install_dir}/bin
     fi
     popd >& /dev/null
     #----------
@@ -1265,34 +1265,34 @@ setup_tomcat() {
     #Create a keystore in $tomcat_install_dir/conf
     echo "Keystore setup: "
     if [ ! -e ${keystore_file} ]; then
-	echo "Launching Java's keytool: we suggest using the default Tomcat password \"changeit\""
-	#$JAVA_HOME/bin/keytool -list -keystore keystore-tomcat
-	$java_install_dir/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365
-	[ $? != 0 ] && echo " ERROR: keytool genkey command failed" && popd && checked_done 1
-	genreq="Y"
+        echo "Launching Java's keytool: we suggest using the default Tomcat password \"changeit\""
+        #$JAVA_HOME/bin/keytool -list -keystore keystore-tomcat
+        $java_install_dir/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365
+        [ $? != 0 ] && echo " ERROR: keytool genkey command failed" && popd && checked_done 1
+        genreq="Y"
     else
-	echo "Using existing keystore \"${keystore_file}\""
+        echo "Using existing keystore \"${keystore_file}\""
     fi
 
     read -p "Do you wish to generate a Certificate Signing Request at this time? $([ $genreq = "Y" ] && echo "[Y/n]" || echo "[y/N]") " genreq
     if [ "${genreq}" == "Y" ] || [ "${genreq}" == "y" ]; then
-	echo "Generating Certificate Signing Request..."
-	${java_install_dir}/bin/keytool -certreq -alias ${keystore_alias} -keystore ${keystore_file} -file $HOME/$(hostname --fqdn)-esg-node.csr
-	[ $? != 0 ] && echo " ERROR: keytool certreq command failed"
+        echo "Generating Certificate Signing Request..."
+        ${java_install_dir}/bin/keytool -certreq -alias ${keystore_alias} -keystore ${keystore_file} -file $HOME/$(hostname --fqdn)-esg-node.csr
+        [ $? != 0 ] && echo " ERROR: keytool certreq command failed"
     fi
-	
+    
 
     #Fetch/Copy truststore to $tomcat_install_dir/conf
     #(first try getting it from distribution server otherwise copy Java's)
     if [ ! -e ${truststore_file} ]; then
-	fetch_file=${truststore_file##*/} # i.e. jssecacerts
-	checked_get ${truststore_file} ${esg_dist_url}/externals/${fetch_file}
-	if (( $? > 1 )); then
-	    echo " Warning: Could not download certificates ${fetch_file} for tomcat - will copy local java certificat file"
-	    echo "(note - the truststore password will probably not match!)"
-	    cp -v ${java_home}/jre/lib/security/cacerts ${truststore_file}
-	    [ $? != 0 ] && echo " ERROR: Could not fetch or copy ${fetch_file} for tomcat!!" && popd && checked_done 1
-	fi
+        fetch_file=${truststore_file##*/} # i.e. jssecacerts
+        checked_get ${truststore_file} ${esg_dist_url}/externals/${fetch_file}
+        if (( $? > 1 )); then
+            echo " Warning: Could not download certificates ${fetch_file} for tomcat - will copy local java certificat file"
+            echo "(note - the truststore password will probably not match!)"
+            cp -v ${java_home}/jre/lib/security/cacerts ${truststore_file}
+            [ $? != 0 ] && echo " ERROR: Could not fetch or copy ${fetch_file} for tomcat!!" && popd && checked_done 1
+        fi
     fi
     
     #Edit the server.xml file to contain proper location of certificates
@@ -1310,13 +1310,13 @@ setup_tomcat() {
     #-------------------------------
 
     if [ -d ${tomcat_install_dir}/webapps/examples ]; then
-	local dodel="Y"
-	echo "For security reasons we recommend removing the examples web app"
-	readlink -f ${tomcat_install_dir}/webapps/examples
-	read -p "Is the directory show above correct? [Y/n] " dodel
-	if [ "${dodel}" = "Y" ] || [ "${dodel}" = "y" ]; then
-	    rm -rf ${tomcat_install_dir}/webapps/examples && echo "removed the examples webapp..."
-	fi
+        local dodel="Y"
+        echo "For security reasons we recommend removing the examples web app"
+        readlink -f ${tomcat_install_dir}/webapps/examples
+        read -p "Is the directory show above correct? [Y/n] " dodel
+        if [ "${dodel}" = "Y" ] || [ "${dodel}" = "y" ]; then
+            rm -rf ${tomcat_install_dir}/webapps/examples && echo "removed the examples webapp..."
+        fi
     fi
 
     start_tomcat
@@ -1325,9 +1325,9 @@ setup_tomcat() {
     local wait_time=5
     local ret=1
     while [[ $wait_time > 0 ]]; do
-	curl http://localhost:80 >& /dev/null
-	ret=$?
-	[ $ret == 0 ] && break
+        curl http://localhost:80 >& /dev/null
+        ret=$?
+        [ $ret == 0 ] && break
         sleep 1
         $((wait_time--))
     done
@@ -1366,22 +1366,22 @@ start_tomcat() {
     jsvc_launch_command="JAVA_HOME=$java_install_dir ./bin/jsvc -Djava.endorsed.dirs=./endorsed -Djava.awt.headless=true -Dcatalina.home=${tomcat_install_dir} -pidfile $tomcat_pid_file -cp $(find $(readlink -f `pwd`/bin/) | grep jar | xargs | perl -pe 's/ /:/g') -outfile ./logs/catalina.out -errfile ./logs/catalina.err -user $tomcat_user $tomcat_opts $java_opts -Dsun.security.ssl.allowUnsafeRenegotiation=true org.apache.catalina.startup.Bootstrap"
     echo "$jsvc_launch_command"
     JAVA_HOME=${java_install_dir} ./bin/jsvc \
-	-Djava.endorsed.dirs=./endorsed \
-	-Djava.awt.headless=true \
-	-Dcatalina.home=${tomcat_install_dir} \
-	-pidfile ${tomcat_pid_file} \
-	-cp $(find $(readlink -f `pwd`/bin/) | grep .jar | xargs | perl -pe 's/ /:/g') \
-	-outfile ./logs/catalina.out \
-	-errfile ./logs/catalina.err \
-	-user $tomcat_user \
-	${tomcat_opts} \
-	$java_opts -Dsun.security.ssl.allowUnsafeRenegotiation=true \
-	org.apache.catalina.startup.Bootstrap
+        -Djava.endorsed.dirs=./endorsed \
+        -Djava.awt.headless=true \
+        -Dcatalina.home=${tomcat_install_dir} \
+        -pidfile ${tomcat_pid_file} \
+        -cp $(find $(readlink -f `pwd`/bin/) | grep .jar | xargs | perl -pe 's/ /:/g') \
+        -outfile ./logs/catalina.out \
+        -errfile ./logs/catalina.err \
+        -user $tomcat_user \
+        ${tomcat_opts} \
+        $java_opts -Dsun.security.ssl.allowUnsafeRenegotiation=true \
+        org.apache.catalina.startup.Bootstrap
     if [ $? != 0 ]; then 
-	echo " ERROR: Could not start up tomcat"
-	tail ./logs/catalina.err
-	popd >& /dev/null
-	checked_done 1
+        echo " ERROR: Could not start up tomcat"
+        tail ./logs/catalina.err
+        popd >& /dev/null
+        checked_done 1
     fi
     
     #Don't wait forever, but give tomcat some time before it starts
@@ -1422,15 +1422,15 @@ stop_tomcat() {
     sleep 1
     ./bin/jsvc -pidfile $tomcat_pid_file -stop org.apache.catalina.startup.Bootstrap
     if [ $? != 0 ]; then
-	local ret=0
-	echo " WARNING: Unable to stop tomcat, (nicely)" 
-	echo -n " Hmmm...  okay no more mr nice guy... issuing "
-	#echo -n "\"killall jsvc\" and " && killall jsvc
-	#((ret+=$?))
-	echo -n "\"pkill -9 $(cat ${tomcat_pid_file})\"" && kill -9 $(cat ${tomcat_pid_file}) >& /dev/null
-	((ret+=$?))
-	echo ""
-	[ "$ret" != 0 ] && echo "Hmmm... still could not shutdown... process may have already been stopped"
+        local ret=0
+        echo " WARNING: Unable to stop tomcat, (nicely)" 
+        echo -n " Hmmm...  okay no more mr nice guy... issuing "
+        #echo -n "\"killall jsvc\" and " && killall jsvc
+        #((ret+=$?))
+        echo -n "\"pkill -9 $(cat ${tomcat_pid_file})\"" && kill -9 $(cat ${tomcat_pid_file}) >& /dev/null
+        ((ret+=$?))
+        echo ""
+        [ "$ret" != 0 ] && echo "Hmmm... still could not shutdown... process may have already been stopped"
     fi
     /bin/ps -elf | grep jsvc | grep -v grep
     popd >& /dev/null
@@ -1450,15 +1450,15 @@ test_tomcat() {
     ports=$(sed -n 's/.*Connector.*port="\([0-9]*\)".*/\1/p' $tomcat_install_dir/conf/server.xml)
     echo "checking connection at ports "$ports
     local running_port="$(
-        echo "$ports" | while read check_port; do
-            echo "checking $check_port" >&2
-            wget http://localhost:$check_port -O - -q >/dev/null
-            if [[ $? == "0" ]]; then
-                echo $check_port
-                break
-            fi
-        done
-        )"
+            echo "$ports" | while read check_port; do
+                echo "checking $check_port" >&2
+                wget http://localhost:$check_port -O - -q >/dev/null
+                if [[ $? == "0" ]]; then
+                    echo $check_port
+                    break
+                fi
+            done
+            )"
     
     if [[ -n "$running_port" ]]; then
         echo "Tomcat is running on port $running_port"
@@ -1490,21 +1490,21 @@ setup_node() {
 
     local dosetup
     if [ -d ${node_app_home} ]; then 
-	echo "Detected an existing node manager installation..."
-	read -p "Do you want to continue with node manager installation and setup? [y/N] " dosetup
-	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
-	    echo "Skipping node manager installation and setup - will assume it's setup properly"
-	    return 0
-	fi
-	
-	local dobackup="N"
-	read -p "Do you want to make a back up of the existing distribution?? [y/N] " dobackup
-	if [ "${dobackup}" = "Y" ] || [ "${dobackup}" = "y" ]; then
-	    echo "Creating a backup archive of this web application $node_app_home"
-	    backup ${node_app_home}
-	fi
+        echo "Detected an existing node manager installation..."
+        read -p "Do you want to continue with node manager installation and setup? [y/N] " dosetup
+        if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
+            echo "Skipping node manager installation and setup - will assume it's setup properly"
+            return 0
+        fi
+        
+        local dobackup="N"
+        read -p "Do you want to make a back up of the existing distribution?? [y/N] " dobackup
+        if [ "${dobackup}" = "Y" ] || [ "${dobackup}" = "y" ]; then
+            echo "Creating a backup archive of this web application $node_app_home"
+            backup ${node_app_home}
+        fi
 
-	echo
+        echo
     fi
 
     mkdir -p ${workdir}
@@ -1522,15 +1522,15 @@ setup_node() {
     no_new_update=$?
 
     if((upgrade)); then
-	((no_new_update == 1)) && echo "nothing more to do, you are up2date" && return 1
-	echo "Upgrading the ESG Node Manager..."
-	if [ -e ${node_dist_dir} ]; then
-	    local archive=${node_dist_dir}.arch.$(date ${date_format}).tgz
-	    echo "...archiving... ${node_dist_dir} -> ${archive} ${node_dist_dir}"
-	    tar czf ${archive} ${node_dist_dir}
-	    echo "...removing... ${node_dist_dir}"
-	    rm -rf ${node_dist_dir}
-	fi
+        ((no_new_update == 1)) && echo "nothing more to do, you are up2date" && return 1
+        echo "Upgrading the ESG Node Manager..."
+        if [ -e ${node_dist_dir} ]; then
+            local archive=${node_dist_dir}.arch.$(date ${date_format}).tgz
+            echo "...archiving... ${node_dist_dir} -> ${archive} ${node_dist_dir}"
+            tar czf ${archive} ${node_dist_dir}
+            echo "...removing... ${node_dist_dir}"
+            rm -rf ${node_dist_dir}
+        fi
     fi
     
     tar xzf ${node_dist_file}
@@ -1555,8 +1555,8 @@ setup_node() {
 
     #NOTE: The saving of the last config file must be done *BEFORE* we untar the new distro!
     if ((upgrade)) && [ -e WEB-INF/classes/${fetch_file} ]; then
-	cp WEB-INF/classes/${fetch_file} WEB-INF/classes/${fetch_file}.saved
-	chmod 600 WEB-INF/classes/${fetch_file}*
+        cp WEB-INF/classes/${fetch_file} WEB-INF/classes/${fetch_file}.saved
+        chmod 600 WEB-INF/classes/${fetch_file}*
     fi
 
     echo "Expanding war ${node_war_file} in $(pwd)"
@@ -1570,35 +1570,35 @@ setup_node() {
 
     cp ${fetch_file} ${fetch_file}.tmpl
     if((upgrade)) && [ -e ${fetch_file}.saved ]; then
-	#reuse the last esg-node.properties file...
-	#pull it out of the tar archive we made a few lines up
-	cp ${fetch_file}.saved ${fetch_file}
+        #reuse the last esg-node.properties file...
+        #pull it out of the tar archive we made a few lines up
+        cp ${fetch_file}.saved ${fetch_file}
     else
         #----------------------
-	pwd
-	echo -n "Replacing tokens... "
+        pwd
+        echo -n "Replacing tokens... "
 
-	eval "perl -p -i -e 's/\\@db.driver\\@/${postgress_driver}/g' ${fetch_file}"    
-	echo -n "*"
-	eval "perl -p -i -e 's/\\@db.protocol\\@/${postgress_protocol}/g' ${fetch_file}"
-	echo -n "*"
-	
-	eval "perl -p -i -e 's/\\@db.host\\@/${postgress_host}/g' ${fetch_file}"    
-	echo -n "*"
-	eval "perl -p -i -e 's/\\@db.port\\@/${postgress_port}/g' ${fetch_file}"
-	echo -n "*"
-	eval "perl -p -i -e 's/\\@db.database\\@/${node_db_name}/g' ${fetch_file}"
-	echo -n "*"
-	eval "perl -p -i -e 's/\\@db.user\\@/${postgress_user}/g' ${fetch_file}"
-	echo -n "*"
-	eval "perl -p -i -e 's/\\@db.password\\@/${pg_sys_acct_passwd}/g' ${fetch_file}"
-	echo -n "*"
-	
-	eval "perl -p -i -e 's/\\@mail.smtp.host\\@/${mail_smtp_host}/g' ${fetch_file}"
-	echo -n "*"
-	eval "perl -p -i -e 's/\\@mail.admin.address\\@/${mail_admin_address}/g' ${fetch_file}"
-	echo -n "*"
-	echo " [OK]"
+        eval "perl -p -i -e 's/\\@db.driver\\@/${postgress_driver}/g' ${fetch_file}"    
+        echo -n "*"
+        eval "perl -p -i -e 's/\\@db.protocol\\@/${postgress_protocol}/g' ${fetch_file}"
+        echo -n "*"
+        
+        eval "perl -p -i -e 's/\\@db.host\\@/${postgress_host}/g' ${fetch_file}"    
+        echo -n "*"
+        eval "perl -p -i -e 's/\\@db.port\\@/${postgress_port}/g' ${fetch_file}"
+        echo -n "*"
+        eval "perl -p -i -e 's/\\@db.database\\@/${node_db_name}/g' ${fetch_file}"
+        echo -n "*"
+        eval "perl -p -i -e 's/\\@db.user\\@/${postgress_user}/g' ${fetch_file}"
+        echo -n "*"
+        eval "perl -p -i -e 's/\\@db.password\\@/${pg_sys_acct_passwd}/g' ${fetch_file}"
+        echo -n "*"
+        
+        eval "perl -p -i -e 's/\\@mail.smtp.host\\@/${mail_smtp_host}/g' ${fetch_file}"
+        echo -n "*"
+        eval "perl -p -i -e 's/\\@mail.admin.address\\@/${mail_admin_address}/g' ${fetch_file}"
+        echo -n "*"
+        echo " [OK]"
         #----------------------
     fi
     chown -R ${tomcat_user} ${node_app_home}
@@ -1640,7 +1640,7 @@ configure_postgress() {
     echo "${postgress_install_dir}/bin/createdb ${node_db_name}"
     ${postgress_install_dir}/bin/createdb ${node_db_name} >& /dev/null
     (( $? > 1 )) && echo " ERROR: Could not create esg node database: ${node_db_name}" && return 0
-        
+    
     #TODO... Make the above call idempotent...
     #NOTE: (zoiks) Need to be able to tell the difference between a
     #database already there vs another error
@@ -1649,7 +1649,7 @@ configure_postgress() {
     [ $? != 0 ] && echo " ERROR: Could not find node distribution dir ${workdir}/${node_dist_dir}" && checked_done 1
 
     echo "${ANT_HOME}/bin/ant -buildfile database-tasks.ant.xml \
-	-Dnode.property.file=${node_app_home}/WEB-INF/classes/esg-node.properties \
+        -Dnode.property.file=${node_app_home}/WEB-INF/classes/esg-node.properties \
         -Dsql.jdbc.base.url=${postgress_protocol}//${postgress_host}:${postgress_port}/ \
         -Dsql.jdbc.database.name=${node_db_name} \
         -Dsql.jdbc.database.user=${postgress_user} \
@@ -1657,7 +1657,7 @@ configure_postgress() {
         -Dsql.jdbc.driver.jar=${node_app_home}/WEB-INF/lib/${postgress_jar} make_node_db"
 
     ${ANT_HOME}/bin/ant -buildfile database-tasks.ant.xml \
-	-Dnode.property.file=${node_app_home}/WEB-INF/classes/esg-node.properties \
+        -Dnode.property.file=${node_app_home}/WEB-INF/classes/esg-node.properties \
         -Dsql.jdbc.base.url=${postgress_protocol}//${postgress_host}:${postgress_port}/ \
         -Dsql.jdbc.database.name=${node_db_name} \
         -Dsql.jdbc.database.user=${postgress_user} \
@@ -1683,13 +1683,13 @@ setup_tds() {
 
     local dosetup
     if [ -d ${tomcat_install_dir}/webapps/thredds ]; then 
-	echo "Detected an existing thredds installation..."
-	read -p "Do you want to continue with thredds installation and setup? [y/N] " dosetup
-	if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
-	    echo "Skipping thredds installation and setup - will assume thredds is setup properly"
-	    return 0
-	fi
-	echo
+        echo "Detected an existing thredds installation..."
+        read -p "Do you want to continue with thredds installation and setup? [y/N] " dosetup
+        if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
+            echo "Skipping thredds installation and setup - will assume thredds is setup properly"
+            return 0
+        fi
+        echo
     fi
 
     mkdir -p ${workdir}
@@ -1706,19 +1706,19 @@ setup_tds() {
     #There is this pesky case of having a zero sized dist file... WTF!?                                                                            
     if [ -e ${thredds_dist_file} ]; then
         ls -l ${thredds_dist_file}
-	#NOTE: I know there must be a cleaner way to get this, maybe stat?
+        #NOTE: I know there must be a cleaner way to get this, maybe stat?
         local size=$(ls -l | grep ${thredds_dist_file} | tr -s " " | cut -d " " -f 5)
         (( size == 0 )) && rm -v ${thredds_dist_file}
     fi
 
     #Check to see if we have this war file already in the workbench...
     #if [ ! -e ${thredds_dist_file} ]; then
-    #	wget -O ${thredds_dist_file} ${thredds_dist_url}
-    #	if [ $? != 0 ]; then
-    #	    echo " ERROR: Could not download ${thredds_dist_url}, fetching the copy at PCMDI (LLNL)..."
-    	    checked_get ${thredds_dist_file} ${thredds_esg_dist_url}
-    	    (( $? > 1 )) && echo " ERROR: Could not download ${thredds_esg_dist_url} either" && popd && checked_done 1
-    #	fi
+    #   wget -O ${thredds_dist_file} ${thredds_dist_url}
+    #   if [ $? != 0 ]; then
+    #       echo " ERROR: Could not download ${thredds_dist_url}, fetching the copy at PCMDI (LLNL)..."
+    checked_get ${thredds_dist_file} ${thredds_esg_dist_url}
+    (( $? > 1 )) && echo " ERROR: Could not download ${thredds_esg_dist_url} either" && popd && checked_done 1
+    #   fi
     #fi
     
     stop_tomcat
@@ -1756,36 +1756,36 @@ setup_tds() {
     local input
 
     while [ 1 ]; do 
-	#default credential values...
-	local username="dnode_user"
-	local password="changeme"
-	unset input
-	unset addanother
-	read -p "Please enter username for tomcat [${username}]:  " input
-	[ ! -z "${input}" ] && username=${input}    
-	echo ${username}
-	unset input
-	read -s -t60 -p "Please enter password for user, \"${username}\" [********]:   " input
-	[ ! -z "${input}" ] && password=${input}    
-	password_hash=$($tomcat_install_dir/bin/digest.sh -a SHA ${password} | cut -d ":" -f 2)
-	echo ${password_hash}
-	
-	#Create user entry in tomcat-users.xml for thredds user
-	user_entry="<user username=\"${username}\" password=\"${password_hash}\" roles=\"tdrAdmin,tdsConfig\"\/>"
-	#Note: Have to escape the last "/" in "/>"
-	
-    	#Insert the entry in the right place in tomcat-users.xml
-    	#Replace <!--@@user_entry@@--> with ${user_entry}\n<!--@@user_entry@@-->
-	#Command Line:% perl -p -i -e 's/<!--\@\@user_entry\@\@-->/<test>\n  <!--\@\@user_entry\@\@-->/g' tomcat-users.xml
-	eval "perl -p -i -e 's/<!--\\@\\@user_entry\\@\\@-->/${user_entry}\n  <!--\\@\\@user_entry\\@\\@-->/g' tomcat-users.xml"
-	
-	read -p "Would you like to add another user? [y/N]: " addanother
-	if [ "${addanother}" = "y" ] || [ "${addanother}" = "Y" ]; then
-	    echo 
-	    continue
-	fi
-	echo
-	break
+        #default credential values...
+        local username="dnode_user"
+        local password="changeme"
+        unset input
+        unset addanother
+        read -p "Please enter username for tomcat [${username}]:  " input
+        [ ! -z "${input}" ] && username=${input}    
+        echo ${username}
+        unset input
+        read -s -t60 -p "Please enter password for user, \"${username}\" [********]:   " input
+        [ ! -z "${input}" ] && password=${input}    
+        password_hash=$($tomcat_install_dir/bin/digest.sh -a SHA ${password} | cut -d ":" -f 2)
+        echo ${password_hash}
+        
+        #Create user entry in tomcat-users.xml for thredds user
+        user_entry="<user username=\"${username}\" password=\"${password_hash}\" roles=\"tdrAdmin,tdsConfig\"\/>"
+        #Note: Have to escape the last "/" in "/>"
+        
+        #Insert the entry in the right place in tomcat-users.xml
+        #Replace <!--@@user_entry@@--> with ${user_entry}\n<!--@@user_entry@@-->
+        #Command Line:% perl -p -i -e 's/<!--\@\@user_entry\@\@-->/<test>\n  <!--\@\@user_entry\@\@-->/g' tomcat-users.xml
+        eval "perl -p -i -e 's/<!--\\@\\@user_entry\\@\\@-->/${user_entry}\n  <!--\\@\\@user_entry\\@\\@-->/g' tomcat-users.xml"
+        
+        read -p "Would you like to add another user? [y/N]: " addanother
+        if [ "${addanother}" = "y" ] || [ "${addanother}" = "Y" ]; then
+            echo 
+            continue
+        fi
+        echo
+        break
     done
     unset input
 
@@ -1829,47 +1829,47 @@ setup_tds() {
     
     local choice
     while [ 1 ]; do
-	unset choice
-	printf "Please select the gateway for this node: \n"
-	printf "\t-------------------------------------------\n"
-	printf "\t*[1] : ESG-PCMDI -> pcmdi3.llnl.gov/esgcet\n"
-	printf "\t [2] : ESG-NCAR  -> esg.ucar.edu\n"
-	printf "\t-------------------------------------------\n"
-	printf "\t [C] : (Manual Entry)\n"
-	printf "\t-------------------------------------------\n"
-	read -p "select [1] > " choice
-	
-	[ -z "${choice}" ] && choice=1 #default
-	case ${choice} in
-	    2)  gateway_name="ESG-NCAR"
-		gateway_service_root="esg.ucar.edu"
-		;;
-	    1)  gateway_name="ESG-PCMDI"
-		gateway_service_root="pcmdi3.llnl.gov/esgcet"
-		myproxy_port=2119 #hack till we open the right port
-		;;
-	    c | C)
-		gateway_name=${ESG_GATEWAY_NAME:-"ESG-PCMDI"}
-		gateway_service_root=${ESG_GATEWAY_SVC_ROOT:-"pcmdi3.llnl.gov/esgcet"}
-		read -p "Please enter the Gateway name [${ESG_GATEWAY_NAME}] " gateway_name
-		read -p "Please enter the Gateway Service Root [${ESG_GATEWAY_SVC_ROOT}] " gateway_service_root
-		gateway_name=$(echo ${gateway_name} | tr 'a-z' 'A-Z')
-		choice="(Manual Entry)"
-		;;
-	    *)  echo "Invalid selection [${choice}]"
-	esac
-	echo
-	echo "You have selected: ${choice}"
-	echo "${gateway_name} -> ${gateway_service_root}"
-	echo 
-	local is_correct
-	read -p "Is this correct? [Y/n] " is_correct
-	is_correct=$(echo ${is_correct} | tr 'A-Z' 'a-z')
-	if [ "${is_correct}" = "n" ]; then
-	    continue
-	else
-	    break
-	fi
+        unset choice
+        printf "Please select the gateway for this node: \n"
+        printf "\t-------------------------------------------\n"
+        printf "\t*[1] : ESG-PCMDI -> pcmdi3.llnl.gov/esgcet\n"
+        printf "\t [2] : ESG-NCAR  -> esg.ucar.edu\n"
+        printf "\t-------------------------------------------\n"
+        printf "\t [C] : (Manual Entry)\n"
+        printf "\t-------------------------------------------\n"
+        read -p "select [1] > " choice
+        
+        [ -z "${choice}" ] && choice=1 #default
+        case ${choice} in
+            2)  gateway_name="ESG-NCAR"
+                gateway_service_root="esg.ucar.edu"
+                ;;
+            1)  gateway_name="ESG-PCMDI"
+                gateway_service_root="pcmdi3.llnl.gov/esgcet"
+                myproxy_port=2119 #hack till we open the right port
+                ;;
+            c | C)
+                gateway_name=${ESG_GATEWAY_NAME:-"ESG-PCMDI"}
+                gateway_service_root=${ESG_GATEWAY_SVC_ROOT:-"pcmdi3.llnl.gov/esgcet"}
+                read -p "Please enter the Gateway name [${ESG_GATEWAY_NAME}] " gateway_name
+                read -p "Please enter the Gateway Service Root [${ESG_GATEWAY_SVC_ROOT}] " gateway_service_root
+                gateway_name=$(echo ${gateway_name} | tr 'a-z' 'A-Z')
+                choice="(Manual Entry)"
+                ;;
+            *)  echo "Invalid selection [${choice}]"
+        esac
+        echo
+        echo "You have selected: ${choice}"
+        echo "${gateway_name} -> ${gateway_service_root}"
+        echo 
+        local is_correct
+        read -p "Is this correct? [Y/n] " is_correct
+        is_correct=$(echo ${is_correct} | tr 'A-Z' 'a-z')
+        if [ "${is_correct}" = "n" ]; then
+            continue
+        else
+            break
+        fi
     done
     
     myproxy_endpoint=${gateway_service_root%%/*}
@@ -2046,12 +2046,12 @@ setup_subsystem() {
     echo
     read -p "Would you like to set up ${subsystem} services? [Y/n] " dosetup
     if [ "${dosetup}" = "N" ] || [ "${dosetup}" = "n" ] || [ "${dosetup}" = "no" ]; then
-	return 0
+        return 0
     fi    
 
     #if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
-    #	echo "Skipping ${subsysem} installation"
-    #	return 0
+    #   echo "Skipping ${subsysem} installation"
+    #   return 0
     #fi
     echo
 
@@ -2158,9 +2158,9 @@ register() {
     local CP=".:${workdir}"
 
     echo "${JAVA_HOME}/bin/java -classpath ${CP} InstallCert \
-	${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd}"
+        ${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd}"
     ${JAVA_HOME}/bin/java -classpath ${CP} InstallCert \
-	${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd}
+        ${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd}
     local ret=$?
 
     #------
@@ -2188,9 +2188,9 @@ check_shmmax() {
     let cur_value_bytes=${cur_value_bytes## }
     
     if ((cur_value_bytes < set_value_bytes)); then
-	echo "Current system shared mem value too low [$cur_value_bytes bytes] changing to [$set_value_bytes bytes]"
-	sysctl -w kernel.shmmax=${set_value_bytes}
-	echo "kernel.shmmax = ${set_value_bytes}" >> /etc/sysctl.conf
+        echo "Current system shared mem value too low [$cur_value_bytes bytes] changing to [$set_value_bytes bytes]"
+        sysctl -w kernel.shmmax=${set_value_bytes}
+        echo "kernel.shmmax = ${set_value_bytes}" >> /etc/sysctl.conf
     fi
 }
 
@@ -2199,75 +2199,75 @@ uninstall() {
     read -p "Are you sure you want to uninstall? [y/N]: " doit
     if [ "$doit" = "y" ] || [ "$doit" = "Y" ]; then
 
-	doit="N"
-	if [ -e $postgress_install_dir ]; then 
-	    read -p "remove postgress? ($postgress_install_dir) [y/N]: " doit
-	    if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
-		echo "removing $postgress_install_dir"
-		rm -rf ${postgress_install_dir}
-		[ $? != 0 ] && echo "ERROR: Unable to remove ${postgress_install_dir}"
-	    fi
-	fi
-	
-	doit="N"
-	if [ -e $cdat_home ]; then
-	    read -p "remove cdat? ($cdat_home) [y/N]: " doit
-	    if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
-		echo "removing $cdat_home"
-		rm -rf ${cdat_home}
-		[ $? != 0 ] && echo "ERROR: Unable to remove ${cdat_home}"
-	    fi
-	fi
+        doit="N"
+        if [ -e $postgress_install_dir ]; then 
+            read -p "remove postgress? ($postgress_install_dir) [y/N]: " doit
+            if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
+                echo "removing $postgress_install_dir"
+                rm -rf ${postgress_install_dir}
+                [ $? != 0 ] && echo "ERROR: Unable to remove ${postgress_install_dir}"
+            fi
+        fi
+        
+        doit="N"
+        if [ -e $cdat_home ]; then
+            read -p "remove cdat? ($cdat_home) [y/N]: " doit
+            if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
+                echo "removing $cdat_home"
+                rm -rf ${cdat_home}
+                [ $? != 0 ] && echo "ERROR: Unable to remove ${cdat_home}"
+            fi
+        fi
 
-	doit="N"
-	if [ -e ${HOME}/.esgcet ]; then
-	    read -p "remove .esgcet files? (${HOME}/.esgcet) [y/N]: " doit
-	    if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
-		echo "removing ${HOME}/.esgcet"
-		rm -rf ${HOME}/.esgcet
-		[ $? != 0 ] && echo "ERROR: Unable to remove ${HOME}/.esgcet}"
-	    fi
-	fi
+        doit="N"
+        if [ -e ${HOME}/.esgcet ]; then
+            read -p "remove .esgcet files? (${HOME}/.esgcet) [y/N]: " doit
+            if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
+                echo "removing ${HOME}/.esgcet"
+                rm -rf ${HOME}/.esgcet
+                [ $? != 0 ] && echo "ERROR: Unable to remove ${HOME}/.esgcet}"
+            fi
+        fi
 
-	doit="N"
-	if [ -e ${node_app_home} ]; then
-	    read -p "remove ESG Node web service? (${tomcat_install_dir}/webapps/${node_app_context_root}) [y/N]: " doit
-	    if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
-		echo "removing ${tomcat_install_dir}/webapps/${node_app_context_root}"
-		rm -rf ${tomcat_install_dir}/webapps/${node_app_context_root}
-		[ $? != 0 ] && echo "ERROR: Unable to remove ${tomcat_install_dir}/webapps/${node_app_context_root}"
-	    fi
-	fi 
+        doit="N"
+        if [ -e ${node_app_home} ]; then
+            read -p "remove ESG Node web service? (${tomcat_install_dir}/webapps/${node_app_context_root}) [y/N]: " doit
+            if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
+                echo "removing ${tomcat_install_dir}/webapps/${node_app_context_root}"
+                rm -rf ${tomcat_install_dir}/webapps/${node_app_context_root}
+                [ $? != 0 ] && echo "ERROR: Unable to remove ${tomcat_install_dir}/webapps/${node_app_context_root}"
+            fi
+        fi 
 
-	doit="N"
-	if [ -e ${tomcat_install_dir}/webapps/thredds ]; then
-	    read -p "remove Thredds web service? (${tomcat_install_dir}/webapps/thredds) [y/N]: " doit
-	    if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
-		echo "removing ${tomcat_install_dir}/webapps/thredds"
-		rm -rf ${tomcat_install_dir}/webapps/thredds
-		[ $? != 0 ] && echo "ERROR: Unable to remove ${tomcat_install_dir}/webapps/thredds"
-	    fi
-	fi 
+        doit="N"
+        if [ -e ${tomcat_install_dir}/webapps/thredds ]; then
+            read -p "remove Thredds web service? (${tomcat_install_dir}/webapps/thredds) [y/N]: " doit
+            if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
+                echo "removing ${tomcat_install_dir}/webapps/thredds"
+                rm -rf ${tomcat_install_dir}/webapps/thredds
+                [ $? != 0 ] && echo "ERROR: Unable to remove ${tomcat_install_dir}/webapps/thredds"
+            fi
+        fi 
 
-	doit="N"
-	if [ -e $tomcat_install_dir ]; then
-	    read -p "remove apache tomcat? ($tomcat_install_dir) [y/N]: " doit
-	    if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
-		echo "removing $tomcat_install_dir"
-		rm -ri $tomcat_install_dir
-		[ $? != 0 ] && echo "ERROR: Unable to remove ${tomcat_install_dir}"
-	    fi
-	fi
-	
-	doit="N"
-	if [ -e ${globus_location}/esg_${progname}_installed ] && (( ! no_globus )); then
-	    read -p "remove globus certs? ($globus_location) [y/N]: " doit
-	    if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
-		echo "removing $globus_location"
-		[ -n ${globus_location} ] && [ -e ${globus_location} ] && rm -rf ${globus_location}
-		[ $? != 0 ] && echo "ERROR: Unable to remove ${globus_location}"
-	    fi
-	fi
+        doit="N"
+        if [ -e $tomcat_install_dir ]; then
+            read -p "remove apache tomcat? ($tomcat_install_dir) [y/N]: " doit
+            if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
+                echo "removing $tomcat_install_dir"
+                rm -ri $tomcat_install_dir
+                [ $? != 0 ] && echo "ERROR: Unable to remove ${tomcat_install_dir}"
+            fi
+        fi
+        
+        doit="N"
+        if [ -e ${globus_location}/esg_${progname}_installed ] && (( ! no_globus )); then
+            read -p "remove globus certs? ($globus_location) [y/N]: " doit
+            if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
+                echo "removing $globus_location"
+                [ -n ${globus_location} ] && [ -e ${globus_location} ] && rm -rf ${globus_location}
+                [ $? != 0 ] && echo "ERROR: Unable to remove ${globus_location}"
+            fi
+        fi
     fi
     exit 0
 }
@@ -2277,7 +2277,7 @@ set_classpath() {
     CP=${CP}:${node_app_home}/WEB-INF/classes
     
     for i in $( ls ${node_app_home}/WEB-INF/lib ); do
-	CP=${CP}:${node_app_home}/WEB-INF/lib/"$i"
+        CP=${CP}:${node_app_home}/WEB-INF/lib/"$i"
     done
     
     CP=${CP}:${CATALINA_HOME}/lib/servlet-api.jar
@@ -2324,15 +2324,15 @@ compare_versions_() {
                 (($DEBUG2)) && echo "[[ $v1 $2 $v2 ]]"
                 #don't forget to set it back!
                 IFS=$OLDIFS
-		
-		eval "[[ $v1 $2 $v2 ]]"
+                
+                eval "[[ $v1 $2 $v2 ]]"
                 return $?
             fi
             : $((++count2)) 
         done
         #remove last count (which doesn't count :-)
         : $((--count2))
-	: $((++count1))
+        : $((++count1))
     done
     #remove last count (which doesn't count :-)
     : $((--count1))
@@ -2388,15 +2388,15 @@ check_version_helper() {
         '<') op="-lt" ;;
         '<=') op="-le" ;;
         =|==) op="-eq" ;;
-        !=|'<>') op="-ne" ;;
-        *) op=$2
-    esac
-    
+!=|'<>') op="-ne" ;;
+*) op=$2
+esac
+
     #we only need three params for this function
-    compare_versions_ "${1}" "$op" "${3}"
-    local ret=$?
-    (($DEBUG)) && echo "compare_versions from check_version_ returns $ret"
-    return $ret
+compare_versions_ "${1}" "$op" "${3}"
+local ret=$?
+(($DEBUG)) && echo "compare_versions from check_version_ returns $ret"
+return $ret
 }
 
 #The "Public" function that should be called.  Delegates to the helper functions (the two above)
@@ -2429,12 +2429,12 @@ check_version() {
 
 checked_done() {
     if (($1)); then
-	echo ""
-	echo "Sorry..."
-	echo "This action did not complete successfully"
-	echo "Please re-run this task until successful before continuing further"
-	echo ""
-	exit 1
+        echo ""
+        echo "Sorry..."
+        echo "This action did not complete successfully"
+        echo "Please re-run this task until successful before continuing further"
+        echo ""
+        exit 1
     fi
     return 0
 }
@@ -2498,8 +2498,8 @@ checked_get() {
     fi                      
     
     if [ -e ${local_file} ]; then
-	cp -v ${local_file} ${local_file}.bak 
-	chmod 600 ${local_file}.bak
+        cp -v ${local_file} ${local_file}.bak 
+        chmod 600 ${local_file}.bak
     fi
     wget --no-check-certificate -O ${local_file} ${remote_file}
     [ $? != 0 ] && echo " ERROR: Problem pulling down [${remote_file##*/}] from esg distribution site" && return 2
@@ -2520,11 +2520,11 @@ backup() {
     tar czf ${backup_filename} ${source##*/}
     [ $? != 0 ] && echo " ERROR: Problem with creating backup archive: ${backup_filename}" && popd >& /dev/null && return 1
     if [ -e ${backup_filename} ]; then 
-	echo "Created backup: ${backup_filename}" 
+        echo "Created backup: ${backup_filename}" 
     else
-	echo "Could not locate backup file ${backup_filename}"
-	popd >& /dev/null
-	return 1
+        echo "Could not locate backup file ${backup_filename}"
+        popd >& /dev/null
+        return 1
     fi
     
 
@@ -2534,9 +2534,9 @@ backup() {
     pushd ${esg_backup_dir} >& /dev/null
     files=(`ls -t | grep ${source##*/}.\*.tgz | tail -n +$((${num_backups_to_keep}+1)) | xargs`)
     if (( ${#files[@]} > 0 )); then
-	echo "Tidying up a bit..."
-	echo "${#files[@]} old backup files to remove: ${files[@]}"
-	rm -v ${files[@]}
+        echo "Tidying up a bit..."
+        echo "${#files[@]} old backup files to remove: ${files[@]}"
+        rm -v ${files[@]}
     fi
     popd >& /dev/null
     #-------------
@@ -2599,31 +2599,31 @@ _verify() {
 self_verify() {
     _verify 'http://198.128.245.140/dist' >& /dev/null 
     if (( $? == 3 )); then 
-	printf "WARNING: $0 could not be verified!! \n(This file, ${0}, may have been tampered with or there is a newer version posted at the distribution server.\nPlease update this script.)\n\n"
-	
-	local choice="u"
-	if [ "$#" == 1 ]; then
-	    (($DEBUG)) && echo "Operation $1 was chosen"
-	    choice=$1
-	else
-	    read -t $((1*60)) -p "Do you wish to Update and exit [u], continue anyway [c] or simply exit [N]? [u/c/N]: " choice
-	fi
-	
-	if [ "$choice" = "C" ] || [ "$choice" = "c" ]; then
-	    echo 
-	    return 0
-	elif [ "$choice" = "U" ] || [ "$choice" = "u" ]; then
-	    echo "Updating local script with script from distribution server..."
-	    /usr/local/bin/esg-update node
-	    echo "Please re-run this updated script $0"
-	    echo
-	    exit 1
-	else
-	    echo
-	    exit 1
-	fi
+        printf "WARNING: $0 could not be verified!! \n(This file, ${0}, may have been tampered with or there is a newer version posted at the distribution server.\nPlease update this script.)\n\n"
+        
+        local choice="u"
+        if [ "$#" == 1 ]; then
+            (($DEBUG)) && echo "Operation $1 was chosen"
+            choice=$1
+        else
+            read -t $((1*60)) -p "Do you wish to Update and exit [u], continue anyway [c] or simply exit [N]? [u/c/N]: " choice
+        fi
+        
+        if [ "$choice" = "C" ] || [ "$choice" = "c" ]; then
+            echo 
+            return 0
+        elif [ "$choice" = "U" ] || [ "$choice" = "u" ]; then
+            echo "Updating local script with script from distribution server..."
+            /usr/local/bin/esg-update node
+            echo "Please re-run this updated script $0"
+            echo
+            exit 1
+        else
+            echo
+            exit 1
+        fi
     else
-	return 0
+        return 0
     fi
     return 0
 }
@@ -2633,11 +2633,11 @@ status() {
     #TODO conditionally reflect the status of globus (gridftp) process
     local ret=1
     if check_postgress_process && check_tomcat_process; then
-	echo "Node Running..."
-	ret=0
+        echo "Node Running..."
+        ret=0
     else
-	echo "Stopped: No running processes detected"
-	ret=1
+        echo "Stopped: No running processes detected"
+        ret=1
     fi
     #This is here for sanity checking...
     show_svc_list
@@ -2662,7 +2662,7 @@ start() {
     init
     echo "starting services with globus using config: ${gridftp_config_args}"
     source ${scripts_dir}/esg-globus >& /dev/null && \
-	start_globus_services datanode ${gridftp_config_args}
+        start_globus_services datanode ${gridftp_config_args}
     start_postgress
     start_tomcat
     show_svc_list
@@ -2674,7 +2674,7 @@ stop() {
     stop_tomcat 
     stop_postgress 
     source ${scripts_dir}/esg-globus >& /dev/null && \
-	stop_globus_services datanode ${gridftp_config_args}
+        stop_globus_services datanode ${gridftp_config_args}
     show_svc_list
 }
 
@@ -2685,61 +2685,61 @@ info() {
 
     printf " 
 
-    The goal of this script is to automate as many tasks as
-    possible regarding the installation of the software stack that is
-    the Data Node.  A software stack is a collection of tools that
-    work in concert to perform a particular task or set of tasks that
-    are semantically united.  Essentially, the gestalt is the ESG
-    DataNode. The software stack is comprised of; Tomcat, Thredds,
-    CDAT & CDMS, PostgreSQL, MyProxy and RedHat/CentOS. Through the
-    installation process there are different accounts that are created
-    that facilitate the communication between these separate software
-    entities.  These credentials are internal to the stack.  It is
-    recommended that you use the defaults provided throughout this
-    installation.  The security impact with regards to the visibility
-    and accessibility of the constituent components of the stack
-    depends on other factors to be addressed by your organization.
-    (It is for this reason why it would be advantageous to install on
+The goal of this script is to automate as many tasks as
+possible regarding the installation of the software stack that is
+the Data Node.  A software stack is a collection of tools that
+work in concert to perform a particular task or set of tasks that
+are semantically united.  Essentially, the gestalt is the ESG
+DataNode. The software stack is comprised of; Tomcat, Thredds,
+CDAT & CDMS, PostgreSQL, MyProxy and RedHat/CentOS. Through the
+installation process there are different accounts that are created
+that facilitate the communication between these separate software
+entities.  These credentials are internal to the stack.  It is
+recommended that you use the defaults provided throughout this
+installation.  The security impact with regards to the visibility
+and accessibility of the constituent components of the stack
+depends on other factors to be addressed by your organization.
+(It is for this reason why it would be advantageous to install on
     a virtual machine and manage security from a system wide level.:-)
 
-    Please be sure that you have gotten your Gateway (my proxy)
-    credentials from: 
+Please be sure that you have gotten your Gateway (my proxy)
+credentials from: 
 
-    http://pcmdi3.llnl.gov/esgcet/home.htm -> \"create account\"
+http://pcmdi3.llnl.gov/esgcet/home.htm -> \"create account\"
 
-    This is required for publication.
+This is required for publication.
 
-    Data Node:
-		   --------- 
-		  |Tomcat   |
-		  |-Node Mgr|
-		  |-Thredds |
-		  |-ORP     |
-		  |---------|
-		  |CDAT/CDMS|
-		  |---------|
-		  |Postgres |
-		  |---------|
-		  | MyProxy |  <===(HTTPS)===> [Gateway(s)]*
-		  |---------|
-		  | GridFTP |  <=============> [End User(s)]*
-		  >---------<
-		  | CentOS  |
-		  |(Virtual)|
-		  | Machine |	
-		  |---------|        
-		   ---------        
+Data Node:
+--------- 
+|Tomcat   |
+|-Node Mgr|
+|-Thredds |
+|-ORP     |
+|---------|
+|CDAT/CDMS|
+|---------|
+|Postgres |
+|---------|
+| MyProxy |  <===(HTTPS)===> [Gateway(s)]*
+|---------|
+| GridFTP |  <=============> [End User(s)]*
+>---------<
+| CentOS  |
+|(Virtual)|
+| Machine |   
+|---------|        
+---------        
 
-    -ESG \n\n" | more 
+-ESG \n\n" | more 
     
 }
 
 usage() {
     printf "
-    usage:
-     (as root)
-     ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
-        --prefix      - specify the top level directory for this entire installation
+usage:
+(as root)
+${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
+    --prefix      - specify the top level directory for this entire installation
                         (default:/usr/local - currently:$install_prefix)
         --workdir     - specify the directory used by the installation to download and build esg artifacts for installation
                         (default:~/workbench/esg - currently:$workdir)
@@ -2813,191 +2813,191 @@ main() {
     let sel=0
     while [ -n "$1" ]; do
     #echo "arg ${i} = $1"
-	local unshift=0
-	case $1 in
-	    --install | -i)
-		(($DEBUG)) && echo "INSTALL SERVICES"
-		let sel+=1
-		;;
-	    --verify | --test)
-		#echo "VERIFY SERVICES"
-		let sel+=2
-		;;
-	    start | --start)
-		check_prerequisites
-		[ $? != 0 ] && echo && exit 1
-		(($DEBUG)) && echo "START SERVICES"
-		start
-		exit 0
-		;;
-	    stop | --stop)
-		check_prerequisites
-		[ $? != 0 ] && echo && exit 1
-		(($DEBUG)) && echo "STOP SERVICES"
-		stop
-		exit 0
-		;;
-	    restart)
-		check_prerequisites
-		[ $? != 0 ] && echo && exit 1
-		stop
-		sleep 2
-		start
-		exit 0
-		;;
-	    --write-env)
-		let sel+=16
-		echo
-		;;
-	    --version)
-		echo "Version: $version"
-		echo "Earth Systems Grid"
-		echo "Data Node Installation Script"
-		echo "Lawrence Livermore National Laboratory"
-		echo ""
-		exit 0
-		;;
-	    --clear)
-		self_verify
-		check_prerequisites
-		[ $? != 0 ] && echo && exit 1
-		if [ -e ${envfile} ]; then 
-		    mv -v ${envfile} ${envfile}.bak 
-		    echo "Cleared envfile ${envfile}"
-		fi
-		exit 0
-		;;
-	    --clear-certs)
-		self_verify
-		check_prerequisites
-		[ $? != 0 ] && echo && exit 1
-		init
-		echo "Clearing out certs..."
-		local cert_dir=${HOME}/.globus/certificates-esg
-		[ -e ${cert_dir} ] && rm -rf ${cert_dir}
-		exit 0
-		;;
-	    --test-pub)
-		init
-		echo "test_publication" && test_publication
-		exit
-		;;
-	    --info)
-		info
-		exit
-		;;
-	    --upgrade | --update)
-		self_verify
-		init
-		check_prerequisites
-		[ $? != 0 ] && echo && exit 1
-		
-		#---------------
-		#version checking...
-		#---------------
-		setup_curl
-		setup_git
-		setup_java
-		setup_ant
-		setup_postgress
+        local unshift=0
+        case $1 in
+            --install | -i)
+                (($DEBUG)) && echo "INSTALL SERVICES"
+                let sel+=1
+                ;;
+            --verify | --test)
+                #echo "VERIFY SERVICES"
+                let sel+=2
+                ;;
+            start | --start)
+                check_prerequisites
+                [ $? != 0 ] && echo && exit 1
+                (($DEBUG)) && echo "START SERVICES"
+                start
+                exit 0
+                ;;
+            stop | --stop)
+                check_prerequisites
+                [ $? != 0 ] && echo && exit 1
+                (($DEBUG)) && echo "STOP SERVICES"
+                stop
+                exit 0
+                ;;
+            restart)
+                check_prerequisites
+                [ $? != 0 ] && echo && exit 1
+                stop
+                sleep 2
+                start
+                exit 0
+                ;;
+            --write-env)
+                let sel+=16
+                echo
+                ;;
+            --version)
+                echo "Version: $version"
+                echo "Earth Systems Grid"
+                echo "Data Node Installation Script"
+                echo "Lawrence Livermore National Laboratory"
+                echo ""
+                exit 0
+                ;;
+            --clear)
+                self_verify
+                check_prerequisites
+                [ $? != 0 ] && echo && exit 1
+                if [ -e ${envfile} ]; then 
+                    mv -v ${envfile} ${envfile}.bak 
+                    echo "Cleared envfile ${envfile}"
+                fi
+                exit 0
+                ;;
+            --clear-certs)
+                self_verify
+                check_prerequisites
+                [ $? != 0 ] && echo && exit 1
+                init
+                echo "Clearing out certs..."
+                local cert_dir=${HOME}/.globus/certificates-esg
+                [ -e ${cert_dir} ] && rm -rf ${cert_dir}
+                exit 0
+                ;;
+            --test-pub)
+                init
+                echo "test_publication" && test_publication
+                exit
+                ;;
+            --info)
+                info
+                exit
+                ;;
+            --upgrade | --update)
+                self_verify
+                init
+                check_prerequisites
+                [ $? != 0 ] && echo && exit 1
+                
+                #---------------
+                #version checking...
+                #---------------
+                setup_curl
+                setup_git
+                setup_java
+                setup_ant
+                setup_postgress
 
-		#The arg "1" indicates an upgrade (see functions)
-		setup_esgcet 1
-		setup_node 1
+                #The arg "1" indicates an upgrade (see functions)
+                setup_esgcet 1
+                setup_node 1
 
-		echo "starting services with globus using config: ${gridftp_config_args}"
-		source ${scripts_dir}/esg-globus >& /dev/null && \
-		    start_globus_services datanode ${gridftp_config_args}
-		start_postgress
-		start_tomcat
-		show_svc_list
-		exit 0
-		;;
-	    --check)
-		shift
-		self_verify $1 && echo "$0 is up-to-date"
-		exit $?
-		;;
-	    --config-db)
-		self_verify
-		init
-		check_prerequisites
-		[ $? != 0 ] && echo && exit 1
-		
-		conifgure_postgress 
-		exit $?
-		;;
-	    --uninstall)
-		check_prerequisites
-		[ $? != 0 ] && echo && exit 1
-		init
-		uninstall
-		exit
-		;;
-	    --register)
-		init
-		#First arg is the server
-		#Second arg is the password (not required)
-		shift
-		register $1 $2
-		exit
-		;;
-	    --prefix)
-		local pvalue
-		shift
-		until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
-		    pvalue="$1"
-		    (($DEBUG)) && echo "prefix value is: $1"
-		    shift
-		done
-		unshift=1
-		install_prefix=${pvalue}
-		[ -z "${pvalue}" ] && printf "\nERROR: Did not properly set --prefix value!!!\n\n" && exit 1
-		;;
-	    --workdir)
-		local wvalue
-		shift
-		until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
-		    wvalue="$1"
-		    (($DEBUG)) && echo "workdir value is: $1"
-		    shift
-		done
-		unshift=1
-		workdir=${wvalue}
-		[ -z "${wvalue}" ] && printf "\nERROR: Did not properly set --workdir value!!!\n\n" && exit 1
-		;;
-	    --no-globus)
-		no_globus=1
-		;;
-	    --gridftp-config)
-		#acceptable args:  "with-bdm-config" | "bdm-config-only"
-		#Gather up tokens after this switch as long as the
-		#subsequent tokens do not start with "--"
-		local tmpargs #array to store args for this switch.
-		local let index=0
-		shift
-		until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
-		    tmpargs[((index++))]=$1
-		    (($DEBUG)) && echo "added $1 to args list: ${tmpargs[@]}"
-		    shift
-		done
-		unshift=1
-		[ "${#tmpargs}" = 0 ] && printf "\n\n must follow --gridftp-config with proper flag! \n\n" && usage
-		gridftp_config_args=${tmpargs[@]}
-		unset tmpargs
-		;;
-	    status | --status)
-		status
-		exit $?
-		;;
-	    -h | --help)
-		usage
-		;;
-	    *)
-		printf "\n ERROR: unknown switch $1 \n\n" && exit 1
-		;;
-	esac
-	((!unshift)) && shift
+                echo "starting services with globus using config: ${gridftp_config_args}"
+                source ${scripts_dir}/esg-globus >& /dev/null && \
+                    start_globus_services datanode ${gridftp_config_args}
+                start_postgress
+                start_tomcat
+                show_svc_list
+                exit 0
+                ;;
+            --check)
+                shift
+                self_verify $1 && echo "$0 is up-to-date"
+                exit $?
+                ;;
+            --config-db)
+                self_verify
+                init
+                check_prerequisites
+                [ $? != 0 ] && echo && exit 1
+                
+                conifgure_postgress 
+                exit $?
+                ;;
+            --uninstall)
+                check_prerequisites
+                [ $? != 0 ] && echo && exit 1
+                init
+                uninstall
+                exit
+                ;;
+            --register)
+                init
+                #First arg is the server
+                #Second arg is the password (not required)
+                shift
+                register $1 $2
+                exit
+                ;;
+            --prefix)
+                local pvalue
+                shift
+                until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
+                    pvalue="$1"
+                    (($DEBUG)) && echo "prefix value is: $1"
+                    shift
+                done
+                unshift=1
+                install_prefix=${pvalue}
+                [ -z "${pvalue}" ] && printf "\nERROR: Did not properly set --prefix value!!!\n\n" && exit 1
+                ;;
+            --workdir)
+                local wvalue
+                shift
+                until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
+                    wvalue="$1"
+                    (($DEBUG)) && echo "workdir value is: $1"
+                    shift
+                done
+                unshift=1
+                workdir=${wvalue}
+                [ -z "${wvalue}" ] && printf "\nERROR: Did not properly set --workdir value!!!\n\n" && exit 1
+                ;;
+            --no-globus)
+                no_globus=1
+                ;;
+            --gridftp-config)
+                #acceptable args:  "with-bdm-config" | "bdm-config-only"
+                #Gather up tokens after this switch as long as the
+                #subsequent tokens do not start with "--"
+                local tmpargs #array to store args for this switch.
+                local let index=0
+                shift
+                until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
+                    tmpargs[((index++))]=$1
+                    (($DEBUG)) && echo "added $1 to args list: ${tmpargs[@]}"
+                    shift
+                done
+                unshift=1
+                [ "${#tmpargs}" = 0 ] && printf "\n\n must follow --gridftp-config with proper flag! \n\n" && usage
+                gridftp_config_args=${tmpargs[@]}
+                unset tmpargs
+                ;;
+            status | --status)
+                status
+                exit $?
+                ;;
+            -h | --help)
+                usage
+                ;;
+            *)
+                printf "\n ERROR: unknown switch $1 \n\n" && exit 1
+                ;;
+        esac
+        ((!unshift)) && shift
     done
 
     check_prerequisites
@@ -3019,7 +3019,7 @@ main() {
     local doit="n"
     read -p "Are you ready to begin the installation? [Y/n] " doit
     if [ "${doit}" = "N" ] || [ "${doit}" = "n" ] || [ "${doit}" = "no" ]; then
-	exit 0
+        exit 0
     fi    
 
     init
@@ -3059,7 +3059,7 @@ main() {
     #---------------------------------------
     [ $((sel & 1)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${gridftp_config_args}
     [ $((sel & 2)) != 0 ] && (( ! no_globus )) && echo "test_globus" && source ${scripts_dir}/esg-globus >& /dev/null \
-    	&& test_globus_services datanode
+        && test_globus_services datanode
 
 
     #---------------------------------------
