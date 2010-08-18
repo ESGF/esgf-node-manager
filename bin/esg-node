@@ -3096,7 +3096,7 @@ esg_node_finally() {
 }
 
 #Set system traps
-trap esg_node_clean_up INT TERM
+trap esg_node_finally INT TERM
 
 echo "start time: `date`" >> ${logfile}
 main $@
