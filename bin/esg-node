@@ -1277,8 +1277,9 @@ setup_tomcat() {
     read -p "Do you wish to generate a Certificate Signing Request at this time? $([ $genreq = "Y" ] && echo "[Y/n]" || echo "[y/N]") " genreq
     if [ "${genreq}" == "Y" ] || [ "${genreq}" == "y" ]; then
         echo "Generating Certificate Signing Request..."
-        ${java_install_dir}/bin/keytool -certreq -alias ${keystore_alias} -keystore ${keystore_file} -file $HOME/$(hostname --fqdn)-esg-node.csr
+        ${java_install_dir}/bin/keytool -certreq -alias ${keystore_alias} -keystore ${keystore_file} -file ${HOME}/$(hostname --fqdn)-esg-node.csr
         [ $? != 0 ] && echo " ERROR: keytool certreq command failed"
+        chown -R ${installer_uid}:${installer_gid} ${HOME}/$(hostname --fqdn)-esg-node.csr
     fi
     
 
@@ -3092,6 +3093,7 @@ esg_node_finally() {
     echo "(esg_datanode: cleaning up etc...)"
     chown -R ${installer_uid}:${installer_gid} ${X509_CERT_DIR} >& /dev/null
     chown -R ${installer_uid}:${installer_gid} ${HOME}/.globus >& /dev/null
+    chown -R ${installer_uid}:${installer_gid} ${HOME}/$(hostname --fqdn)-esg-node.csr >& /dev/null
     exit 0
 }
 
