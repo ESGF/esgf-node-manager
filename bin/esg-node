@@ -916,7 +916,7 @@ test_postgress() {
 
     PGPASSWORD=${PGPASSWORD:-${pg_sys_acct_passwd}} psql -qt -c "select table_name from information_schema.tables where table_schema='public';" ${node_db_name} ${postgress_user} | grep -v ^$ | sort >& /dev/null
     [ $? != 0 ] && echo " ERROR: Could not verify ESG database installation! (perhaps \"pg_sys_acct_passwd\"  was not set correctly?)" && checked_done 1
-    echo" [OK]"
+    echo "[OK]"
     checked_done 0
 }
 
@@ -2003,19 +2003,16 @@ test_publication() {
     local personal_credential_repo="$HOME/.globus"
 
     mkdir -p ${personal_credential_repo}
+    chown -R ${installer_uid}:${installer_gid} ${personal_credential_repo}
 
     [ "$(ls -A ${X509_CERT_DIR})" ] && echo "Detected existing content in \$X509_CERT_DIR" || rmdir ${X509_CERT_DIR}
     
     echo "X509_CERT_DIR = ${X509_CERT_DIR}"
     echo "$globus_location/bin/myproxy-logon -s $myproxy_endpoint -l $myproxy_user -p $myproxy_port -o ${personal_credential_repo}/certificate-file -T"
     $globus_location/bin/myproxy-logon -s $myproxy_endpoint -l $myproxy_user -p $myproxy_port -o ${personal_credential_repo}/certificate-file -T
-
-    #(other) way...
-    #rm -rf $X509_CERT_DIR
-    #echo "$globus_location/bin/myproxy-get-trustroots -s $myproxy_endpoint"
-    #$globus_location/bin/myproxy-get-trustroots -s $myproxy_endpoint
-
     [ $? != 0 ] && echo " ERROR: MyProxy not setup properly.  Unable to execute command." && return 1
+
+    chown -R ${installer_uid}:${installer_gid} ${personal_credential_repo}
 
     #Publish the dataset from the THREDDS catalog created above...
     echo "$cdat_home/bin/esgpublish --use-existing pcmdi.${esg_root_id}.test.mytest --noscan --publish"
@@ -3091,8 +3088,10 @@ main() {
     exit 0
 }
 
-esg_node_clean_up() {
-    echo "(esg_datanode: cleaning up)"
+esg_node_finally() {
+    echo "(esg_datanode: cleaning up etc...)"
+    chown -R ${installer_uid}:${installer_gid} ${X509_CERT_DIR}
+    chown -R ${installer_uid}:${installer_gid} ${HOME}/.globus
     exit 0
 }
 
@@ -3102,6 +3101,6 @@ trap esg_node_clean_up INT TERM
 echo "start time: `date`" >> ${logfile}
 main $@
 trap - INT TERM
-esg_node_clean_up
+esg_node_finally
 echo "end time: `date`" >> ${logfile}
 
