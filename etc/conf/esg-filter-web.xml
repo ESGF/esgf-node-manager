@@ -32,6 +32,10 @@
       <param-name>db.password</param-name>
       <param-value>@db.password@</param-value>
     </init-param>
+    <init-param>
+      <param-name>extensions</param-name>
+      <param-value>.nc</param-value>
+    </init-param>
   </filter>
   <filter-mapping>
     <filter-name>AccessLoggingFilter</filter-name>

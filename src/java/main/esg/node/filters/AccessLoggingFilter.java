@@ -58,9 +58,9 @@
 /**
    Description:
 
-   The web.xml entry...
-   (NOTE: must appear AFTER NCAR's Authorization Filter because they put
-    additional information in the request that we need like email address!)
+   The web.xml entry...  (NOTE: must appear AFTER all Authorization
+   Filters because they put additional information in the request that
+   we need like email address and/or userid)
 
   <!-- Filter for token-based authorization -->
   <filter>
@@ -81,6 +81,8 @@
       <param-value>dbsuper</param-value>
       <param-name>db.password</param-name>
       <param-value>***</param-value>
+      <param-name>extensions</param-name>
+      <param-value>.nc,.foo,.bar</param-value>
     </init-param>
   </filter>
   <filter-mapping>
@@ -142,12 +144,13 @@ public class AccessLoggingFilter implements Filter {
         accessLoggingDAO = new AccessLoggingDAO(DatabaseResource.getInstance().getDataSource());
         
         
-        //TODO: see if should make a parameter to stipulate extensions
-        String[] extensions = {".nc"}; 
-        
+        String extensionsParam = filterConfig.getInitParameter("extensions");
+        if (extensionsParam == null) { extensionsParam=""; } //defensive program against null for this param
+        String[] extensions = (".nc,"+extensionsParam.toString()).split(",");
+            
         StringBuffer sb = new StringBuffer();
         for(int i=0 ; i<extensions.length; i++) { 
-            sb.append(extensions[i]);
+            sb.append(extensions[i].trim());
             if(i<extensions.length-1) sb.append("|");
         }
         System.out.println("looking for extensions: "+sb.toString());
