@@ -248,7 +248,7 @@ public class AccessLoggingFilter implements Filter {
                     dateFetched = System.currentTimeMillis()/1000;
                     batchUpdateTime = dateFetched; //For the life of my I am not sure why this is there, something from the gridftp metrics collection. -gmb
                     
-                    success = (accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,batchUpdateTime,serviceType,dateFetched) > 0);
+                    success = (accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,serviceType,batchUpdateTime,dateFetched) > 0);
                     
                 }else {
                     log.debug("No match against: "+url);
