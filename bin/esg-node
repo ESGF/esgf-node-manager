@@ -1330,7 +1330,7 @@ setup_tomcat() {
         ret=$?
         [ $ret == 0 ] && break
         sleep 1
-        $((wait_time--))
+        ((wait_time--))
     done
 
     [ $ret != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to contact top level tomcat page on this server" && popd && checked_done 1

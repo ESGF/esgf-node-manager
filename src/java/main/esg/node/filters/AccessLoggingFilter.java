@@ -234,7 +234,7 @@ public class AccessLoggingFilter implements Filter {
                     //For TokenLESS authentication the userid information is in a parameter called "esg.openid"
                     //------------------------------------------------------------------------------------------
                     if (userID == null || userID.isEmpty()) {
-                        userID = ((req.getAttribute("esg.openid") == null) ? "<no-id>" : req.toString());
+                        userID = ((req.getAttribute("esg.openid") == null) ? "<no-id>" : req.getAttribute("esg.openid").toString());
                         if(userID == null || userID.isEmpty()) { log.warn("This request is apparently not a \"tokenless\" request either - no openid attribute!!!!!"); }
                         System.out.println("AccessLoggingFilter - Tokenless: UserID = ["+userID+"]");
                     }
