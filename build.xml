@@ -135,7 +135,7 @@ Builds the project via ant (obviously).
   <property name="db.password" value="no_name"/>
   <filter token="db.password" value="${db.password}"/>
 
-  <property name="log_dir" value="/esg/logs"/>
+  <property name="log_dir" value="/tmp/esg/logs"/>
   <mkdir dir="${log_dir}" />
   <filter token="log_dir"  value="${log_dir}"/>
 
