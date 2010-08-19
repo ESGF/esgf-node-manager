@@ -236,6 +236,7 @@ public class AccessLoggingFilter implements Filter {
                     if (userID == null || userID.isEmpty()) {
                         userID = ((req.getAttribute("esg.openid") == null) ? "<no-id>" : req.toString());
                         if(userID == null || userID.isEmpty()) { log.warn("This request is apparently not a \"tokenless\" request either - no openid attribute!!!!!"); }
+                        System.out.println("AccessLoggingFilter - Tokenless: UserID = ["+userID+"]");
                     }
                     //------------------------------------------------------------------------------------------
                     
@@ -271,15 +272,15 @@ public class AccessLoggingFilter implements Filter {
         long duration = System.currentTimeMillis() - startTime;
         //NOTE: I Don't think duration means what Nate thinks it means...
 
-        try{
-            if((accessLoggingDAO != null) && success) {
-                accessLoggingDAO.logEgressInfo(userID,url,fileID,remoteAddress, dateFetched, success, duration);
-            }
-        }catch(Throwable t) {
-            log.error(t);
-            HttpServletResponse resp = (HttpServletResponse)response;
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
-        }
+        //try{
+        //    if((accessLoggingDAO != null) && success) {
+        //        accessLoggingDAO.logEgressInfo(userID,url,fileID,remoteAddress, dateFetched, success, duration);
+        //    }
+        //}catch(Throwable t) {
+        //    log.error(t);
+        //    HttpServletResponse resp = (HttpServletResponse)response;
+        //    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
+        //}
     }
     
 }
