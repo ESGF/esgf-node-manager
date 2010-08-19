@@ -79,19 +79,19 @@ public class AccessLoggingDAO implements Serializable {
 
     //TODO figure out what these queries should be!
     private static final String accessLoggingIngressQuery = 
-	"insert into access_logging (id, user_id, email, url, file_id, remote_addr, user_agent, service_type, date_fetched, success) "+
-	"values ( nextval('seq_access_logging'), ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        "insert into access_logging (id, user_id, email, url, file_id, remote_addr, user_agent, service_type, batch_update_time, date_fetched, success) "+
+        "values ( nextval('seq_access_logging'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     private static final String accessLoggingEgressQuery = 
-	"update access_logging set success = ?, date_fetched = ? "+
-	"where user_id = ?, url = ?, file_id = ?, remote_addr = ?, date_fetched = ?";
-
+        "update access_logging set success = ?, duration = ? "+
+        "where user_id = ?, url = ?, file_id = ?, remote_addr = ?, date_fetched = ?";
+    
     private static final Log log = LogFactory.getLog(AccessLoggingDAO.class);
-
+    
     private DataSource dataSource = null;
     private QueryRunner queryRunner = null;
-
+    
     public AccessLoggingDAO(DataSource dataSource) {
-	this.setDataSource(dataSource);
+        this.setDataSource(dataSource);
     }
     
     //Not preferred constructor but here for serialization requirement.
@@ -101,30 +101,31 @@ public class AccessLoggingDAO implements Serializable {
     public void init() { }
     
     public void setDataSource(DataSource dataSource) {
-	this.dataSource = dataSource;
-	this.queryRunner = new QueryRunner(dataSource);
+        this.dataSource = dataSource;
+        this.queryRunner = new QueryRunner(dataSource);
     }
     
     //TODO: put in args and setup query!!!
     public int logIngressInfo(String userID,  
-			      String email, 
-			      String url, 
-			      String fileID, 
-			      String remoteAddress, 
-			      String userAgent, 
-			      String serviceType, 
-			      long dateFetched) {
-	int ret = -1;
-	try{
-	    //TODO: Perhaps the url can be used to resolve the dataset???
-	    //That is the bit of information we really want to also have.
-	    //What we really need is an absolute id for a file!!!
-	    ret = queryRunner.update(accessLoggingIngressQuery,
-				     userID,email,url,fileID,remoteAddress,userAgent,serviceType,dateFetched,false);
-	}catch(SQLException ex) {
-	    log.error(ex);
-	}
-	return ret;
+                              String email, 
+                              String url, 
+                              String fileID, 
+                              String remoteAddress, 
+                              String userAgent, 
+                              String serviceType, 
+                              long batchUpdateTime,
+                              long dateFetched) {
+        int ret = -1;
+        try{
+            //TODO: Perhaps the url can be used to resolve the dataset???
+            //That is the bit of information we really want to also have.
+            //What we really need is an absolute id for a file!!!
+            ret = queryRunner.update(accessLoggingIngressQuery,
+                                     userID,email,url,fileID,remoteAddress,userAgent,serviceType,batchUpdateTime,dateFetched,false);
+        }catch(SQLException ex) {
+            log.error(ex);
+        }
+        return ret;
     }
     
     //Upon egress update the ingress record with additional
@@ -135,25 +136,25 @@ public class AccessLoggingDAO implements Serializable {
     //Once the record is uniquely identified then the egress
     //information (the last pair) can be updated.
     public int logEgressInfo(String userID, 
-			     String url, 
-			     String fileID, 
-			     String remoteAddress, 
-			     long dateFetched, 
-			     boolean success, long duration) {
-	int ret = -1;
-	try {
-	    ret = queryRunner.update(accessLoggingEgressQuery,
-				     success,duration,
-				     userID,url,remoteAddress,fileID,dateFetched);
-	}catch(SQLException ex) {
-	    log.error(ex);
-	}
-	return ret;
+                             String url, 
+                             String fileID, 
+                             String remoteAddress, 
+                             long dateFetched, 
+                             boolean success, long duration) {
+        int ret = -1;
+        try {
+            ret = queryRunner.update(accessLoggingEgressQuery,
+                                     success,duration,
+                                     userID,url,remoteAddress,fileID,dateFetched);
+        }catch(SQLException ex) {
+            log.error(ex);
+        }
+        return ret;
     }
     
     public String toString() {
-	return "DAO:(1)["+this.getClass().getName()+"] - [Q:"+accessLoggingIngressQuery+"] "+((dataSource == null) ? "[OK]\n" : "[INVALID]\n")+
-	       "DAO:(2)["+this.getClass().getName()+"] - [Q:"+accessLoggingEgressQuery+"]  "+((dataSource == null) ? "[OK]\n" : "[INVALID]\n");
+        return "DAO:(1)["+this.getClass().getName()+"] - [Q:"+accessLoggingIngressQuery+"] "+((dataSource == null) ? "[OK]\n" : "[INVALID]\n")+
+            "DAO:(2)["+this.getClass().getName()+"] - [Q:"+accessLoggingEgressQuery+"]  "+((dataSource == null) ? "[OK]\n" : "[INVALID]\n");
     }
 
 }
