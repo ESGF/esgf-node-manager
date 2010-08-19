@@ -6,7 +6,7 @@
 *      Division: S&T Global Security                                       *
 *        Matrix: Atmospheric, Earth and Energy Division                    *
 *       Program: PCMDI                                                     *
-*       Project: Earth Systems Grid (ESG) Data Node Software Stack         *
+*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
 *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
 *                                                                          *
 ****************************************************************************
@@ -17,11 +17,11 @@
 *   LLNL-CODE-420962                                                       *
 *                                                                          *
 *   All rights reserved. This file is part of the:                         *
-*   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
+*   Earth System Grid Federation (ESGF) Data Node Software Stack           *
 *                                                                          *
-*   For details, see http://esgf.org/esg-node/                    *
+*   For details, see http://esgf.org/esg-node/                             *
 *   Please also read this link                                             *
-*    http://esgf.org/LICENSE                                      *
+*    http://esgf.org/LICENSE                                               *
 *                                                                          *
 *   * Redistribution and use in source and binary forms, with or           *
 *   without modification, are permitted provided that the following        *
@@ -95,6 +95,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.Map;
+import java.util.regex.*;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -118,135 +119,162 @@ public class AccessLoggingFilter implements Filter {
     FilterConfig filterConfig = null;
     AccessLoggingDAO accessLoggingDAO = null;
     Properties dbProperties = null;
+    private Pattern urlPattern = null;
 
 
     public void init(FilterConfig filterConfig) throws ServletException {
-	log.debug("Initializing filter: "+this.getClass().getName());
-	this.filterConfig = filterConfig;
-	dbProperties = new Properties();
-	System.out.println("FilterConfig is : "+filterConfig);
-	System.out.println("db.protocol is  : "+filterConfig.getInitParameter("db.protocol"));
-	dbProperties.put("db.protocol",filterConfig.getInitParameter("db.protocol"));
-	dbProperties.put("db.host",filterConfig.getInitParameter("db.host"));
-	dbProperties.put("db.port",filterConfig.getInitParameter("db.port"));
-	dbProperties.put("db.database",filterConfig.getInitParameter("db.database"));
-	dbProperties.put("db.user",filterConfig.getInitParameter("db.user"));
-	dbProperties.put("db.password",filterConfig.getInitParameter("db.password"));
+        log.debug("Initializing filter: "+this.getClass().getName());
+        this.filterConfig = filterConfig;
+        dbProperties = new Properties();
+        System.out.println("FilterConfig is : "+filterConfig);
+        System.out.println("db.protocol is  : "+filterConfig.getInitParameter("db.protocol"));
+        dbProperties.put("db.protocol",filterConfig.getInitParameter("db.protocol"));
+        dbProperties.put("db.host",filterConfig.getInitParameter("db.host"));
+        dbProperties.put("db.port",filterConfig.getInitParameter("db.port"));
+        dbProperties.put("db.database",filterConfig.getInitParameter("db.database"));
+        dbProperties.put("db.user",filterConfig.getInitParameter("db.user"));
+        dbProperties.put("db.password",filterConfig.getInitParameter("db.password"));
 
-	log.trace("Database parameters: "+dbProperties);
+        log.trace("Database parameters: "+dbProperties);
 
-	DatabaseResource.init(filterConfig.getInitParameter("db.driver")).setupDataSource(dbProperties);
-	DatabaseResource.getInstance().showDriverStats();
-	accessLoggingDAO = new AccessLoggingDAO(DatabaseResource.getInstance().getDataSource());
-	log.trace(accessLoggingDAO.toString());
+        DatabaseResource.init(filterConfig.getInitParameter("db.driver")).setupDataSource(dbProperties);
+        DatabaseResource.getInstance().showDriverStats();
+        accessLoggingDAO = new AccessLoggingDAO(DatabaseResource.getInstance().getDataSource());
+        
+        
+        //TODO: see if should make a parameter to stipulate extensions
+        String[] extensions = {".nc"}; 
+        
+        StringBuffer sb = new StringBuffer();
+        for(int i=0 ; i<extensions.length; i++) { 
+            sb.append(extensions[i]);
+            if(i<extensions.length-1) sb.append("|");
+        }
+        System.out.println("looking for extensions: "+sb.toString());
+        String regex = "http.*(?:"+sb.toString()+")$";
+        System.out.println("Regex = "+regex);
+        
+        urlPattern = Pattern.compile(regex,Pattern.CASE_INSENSITIVE);
+        
+        log.trace(accessLoggingDAO.toString());
     }
 
     public void destroy() { 
-	this.filterConfig = null; 
-	this.dbProperties.clear();
-	this.accessLoggingDAO = null;
-	
-	//Shutting down this resource under the assuption that no one
-	//else is using this resource but us
-	DatabaseResource.getInstance().shutdownResource();
+        this.filterConfig = null; 
+        this.dbProperties.clear();
+        this.accessLoggingDAO = null;
+        
+        //Shutting down this resource under the assuption that no one
+        //else is using this resource but us
+        DatabaseResource.getInstance().shutdownResource();
     }
 
     @SuppressWarnings("unchecked")
     public void doFilter(ServletRequest request,
-			 ServletResponse response, 
-			 FilterChain chain) throws IOException, ServletException {
-	
-	if(filterConfig == null) return;
+                         ServletResponse response, 
+                         FilterChain chain) throws IOException, ServletException {
+        
+        if(filterConfig == null) return;
 
-	boolean success = false;
+        boolean success = false;
 
-	//Record identifying tuple
-	String userID = null;
-	String email = null;
-	String url = null;
-	String fileID = null;
-	String remoteAddress = null;
-	String userAgent = null;
-	String serviceType = null;
-	long   dateFetched = 0L;
+        //Record identifying tuple
+        String userID = null;
+        String email = null;
+        String url = null;
+        String fileID = null;
+        String remoteAddress = null;
+        String userAgent = null;
+        String serviceType = null;
+        long   dateFetched = 0L;
 
-	//firewall off any errors so that nothing stops the show...
-	try {
-	    if(accessLoggingDAO != null) {
-		
-		HttpServletRequest req = (HttpServletRequest)request;
-		
-		//------------------------------------------------------------------------------------------
-		//For Token authentication there is a Validation Map present with user and email information
-		//------------------------------------------------------------------------------------------
-		Map<String,String> validationMap = (Map<String,String>)req.getAttribute("validationMap");
-		if(validationMap != null) {
-		    
-		    userID = validationMap.get("user");
-		    email = validationMap.get("email");
-		    
-		    //Want to make sure that any snooping filters
-		    //behind this one does not have access to this
-		    //information (posted by the
-		    //authorizationTokenValidationFilter, which should
-		    //immediately preceed this one).  This is in
-		    //effort to limit information exposure the
-		    //best we can.
-		    req.removeAttribute("validationMap");
-		    
-		}else{
-		    log.info("Validation Map is ["+validationMap+"] - (not a token based request)");
-		}
-		//------------------------------------------------------------------------------------------
-
-		
-
-		//------------------------------------------------------------------------------------------
-		//For TokenLESS authentication the userid information is in a parameter called "esg.openid"
-		//------------------------------------------------------------------------------------------
-		if (userID == null || userID.isEmpty()) {
-		    userID = ((req.getAttribute("esg.openid") == null) ? "" : req.toString());
-		    if(userID == null || userID.isEmpty()) { log.warn("This request is apparently not a \"tokenless\" request either - no openid attribute!!!!!"); }
-		}
-		//------------------------------------------------------------------------------------------
-
-
-		url = req.getRequestURL().toString();
-		fileID = "0A";
-		remoteAddress = req.getRemoteAddr();
-		userAgent = (String)req.getAttribute("userAgent");
-		serviceType = "<THREDDS>";
-		dateFetched = System.currentTimeMillis()/1000;
-		
-		success = (accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,serviceType,dateFetched) > 0);
-		
-		
-	    }else{
-		log.error("DAO is null :["+accessLoggingDAO+"]");
-		HttpServletResponse resp = (HttpServletResponse)response;
-		resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Invalid State Of ESG Access Logging Filter");
-	    }
-	    	    
-	}catch(Throwable t) {
-	    log.error(t);
-	    HttpServletResponse resp = (HttpServletResponse)response;
-	    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
-	}
-	
-	long startTime = System.currentTimeMillis();
+        //firewall off any errors so that nothing stops the show...
+        try {
+            if(accessLoggingDAO != null) {
+                
+                //This filter should only appy to specific requests
+                //in particular requests for data files (*.nc)
+                
+                HttpServletRequest req = (HttpServletRequest)request;
+                url = req.getRequestURL().toString().trim();
+                Matcher m = urlPattern.matcher(url);
+                
+                if(m.matches()) {
+                    
+                    //------------------------------------------------------------------------------------------
+                    //For Token authentication there is a Validation Map present with user and email information
+                    //------------------------------------------------------------------------------------------
+                    Map<String,String> validationMap = (Map<String,String>)req.getAttribute("validationMap");
+                    if(validationMap != null) {
+                        
+                        userID = validationMap.get("user");
+                        email = validationMap.get("email");
+                        
+                        //Want to make sure that any snooping filters
+                        //behind this one does not have access to this
+                        //information (posted by the
+                        //authorizationTokenValidationFilter, which should
+                        //immediately preceed this one).  This is in
+                        //effort to limit information exposure the
+                        //best we can.
+                        req.removeAttribute("validationMap");
+                        
+                    }else{
+                        log.info("Validation Map is ["+validationMap+"] - (not a token based request)");
+                    }
+                    //------------------------------------------------------------------------------------------
+                    
+                    
+                    
+                    //------------------------------------------------------------------------------------------
+                    //For TokenLESS authentication the userid information is in a parameter called "esg.openid"
+                    //------------------------------------------------------------------------------------------
+                    if (userID == null || userID.isEmpty()) {
+                        userID = ((req.getAttribute("esg.openid") == null) ? "<no-id>" : req.toString());
+                        if(userID == null || userID.isEmpty()) { log.warn("This request is apparently not a \"tokenless\" request either - no openid attribute!!!!!"); }
+                    }
+                    //------------------------------------------------------------------------------------------
+                    
+                    
+                    
+                    fileID = "0A";
+                    remoteAddress = req.getRemoteAddr();
+                    userAgent = (String)req.getAttribute("userAgent");
+                    serviceType = "<THREDDS>";
+                    dateFetched = System.currentTimeMillis()/1000;
+                    
+                    success = (accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,serviceType,dateFetched) > 0);
+                    
+                }else {
+                    log.debug("No match against: "+url);
+                }
+                
+            }else{
+                log.error("DAO is null :["+accessLoggingDAO+"]");
+                HttpServletResponse resp = (HttpServletResponse)response;
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Invalid State Of ESG Access Logging Filter");
+            }
+                    
+        }catch(Throwable t) {
+            log.error(t);
+            HttpServletResponse resp = (HttpServletResponse)response;
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
+        }
+        
+        long startTime = System.currentTimeMillis();
         chain.doFilter(request, response);
         long duration = System.currentTimeMillis() - startTime;
-	//NOTE: I Don't think duration means what Nate thinks it means...
+        //NOTE: I Don't think duration means what Nate thinks it means...
 
-	try{
-	    if((accessLoggingDAO != null) && success) {
-		accessLoggingDAO.logEgressInfo(userID,url,fileID,remoteAddress, dateFetched, success, duration);
-	    }
-	}catch(Throwable t) {
-	    log.error(t);
-	    HttpServletResponse resp = (HttpServletResponse)response;
-	    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
-	}
+        try{
+            if((accessLoggingDAO != null) && success) {
+                accessLoggingDAO.logEgressInfo(userID,url,fileID,remoteAddress, dateFetched, success, duration);
+            }
+        }catch(Throwable t) {
+            log.error(t);
+            HttpServletResponse resp = (HttpServletResponse)response;
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
+        }
     }
     
 }
