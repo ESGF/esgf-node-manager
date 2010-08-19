@@ -2079,7 +2079,7 @@ show_summary() {
     if [ $((show_summary_latch == 0)) = 1 ]; then return 0; fi
     echo 
     echo "-------------------"
-    echo "  $esg-node run summary: "
+    echo "  esg-node run summary: "
     echo "-------------------"
     echo "The following environment variables were used during last full install"
     echo "They are written to the file ${envfile}"
@@ -2649,7 +2649,7 @@ show_svc_list() {
     echo "---------------------------"
     echo "Running Node Services..."
     echo "---------------------------"
-    lsof -i |egrep  'postgres|jsvc|globus-gr'
+    /usr/sbin/lsof -i |egrep  'postgres|jsvc|globus-gr'
     echo "---------------------------"
     echo
     return 0
@@ -3086,7 +3086,6 @@ main() {
     echo
     done_remark
     echo 
-    exit 0
 }
 
 esg_node_finally() {
