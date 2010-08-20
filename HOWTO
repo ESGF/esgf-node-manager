@@ -1,23 +1,4 @@
-***************************************************************************
-*									  *
-*   Copyright (c) 2009, Lawrence Livermore National Security, LLC. 	  *
-*   Produced at the Lawrence Livermore National Laboratory 		  *
-*   Written by: Gavin M. Bell (gavin@llnl.gov) 				  *
-*   LLNL-CODE-420962.	BSD Open Source License				  *
-*									  *
-*   All rights reserved. This file is part of the:                        *
-*   Earth System Grid (ESG) Data Node Software Stack                      *
-*									  *
-***************************************************************************
 
-   Description: 
-   Describing how to install the data node software stack.
-
-***************************************************************************
-
-HOWTO:
-
----
 Hello, 
 
 The following describes how to get started with installing the ESG
@@ -47,7 +28,7 @@ Instructions:
 *************
 - Before you do any installation REGISTER (get an account) at the
 gateway you intend to connect to:
-	(ESG-PCMDI) http://pcmdi3.llnl.gov/esgcet/
+        (ESG-PCMDI) http://pcmdi3.llnl.gov/esgcet/
 - Be sure the machine you are installing on is a CentOS/Redhat linux
 family distribution.
 - Be sure the machine has a fully qualified hostname that responds to
@@ -90,46 +71,34 @@ then subsequently to get the latest revisions of install scripts.
 
 6) Run the installation script (read carefully...)
    
-   (The default build includes globus components configured for a *64*bit system)
-
    % esg-node --install --verify
 
-   IMPORTANT NOTE!!!
-   If you have a 32bit system make sure you set the variable
-   globus_word_size=32 before executing the install, like this...
+   With the --verify flag the last step of the installation will
+   perform a test publish to the chosen gateway (default ESG-PCMDI)
 
-   % globus_word_size=32 esg-node --install --verify
-
-   May I suggest doing a multi pass installation.
-
-   -First install the core components
-
-   % esg-node --install
-
-   -Then install globus 
-   (say no [N] to all the already installed components until you get
-   to globus)
-
-   % globus_word_size=32 esg-node --install
-
-   Test the use of myproxy and the publisher by doing the test publish
+   After the initial installation you may subsequently perform test
+   publications independently by using the --test-pub flag.
 
    % esg-node --test-pub
 
 7) Answer prompts...
-	[y/N] means "N" is the default, you may just hit return
-	Default values appear in [] brackets. hitting return uses them.
+        [y/N] means "N" is the default, you may just hit return
+        Default values appear in [] brackets. hitting return uses them.
 
 8) Join the appropriate mailing list...
    End Users : esg-node-user@lists.llnl.gov
    Developers: esg-node-dev@lists.llnl.gov
    
-   Send an email to majordomo@lists.llnl.gov with the body:
+   Send an email to majordomo@lists.llnl.gov with the BODY:
    subscribe <list-name>
 
+   Ex:
+   subscribe esg-node-user
+   and/or
+   subscribe esg-node-dev
+
 ********
-Errant key strokes are picked up, so please don't keep hitting return etc...
-(be careful) 
+Errant key strokes are picked up, so please be careful.
 
 As mentioned the script is in bash, so feel free to read it, however, do
 not modify the script text, that would void the support contract :-).
