@@ -1,22 +1,3 @@
-***************************************************************************
-*									  *
-*   Copyright (c) 2009, Lawrence Livermore National Security, LLC. 	  *
-*   Produced at the Lawrence Livermore National Laboratory 		  *
-*   Written by: Gavin M. Bell (gavin@llnl.gov) 				  *
-*   LLNL-CODE-420962.	BSD Open Source License				  *
-*									  *
-*   All rights reserved. This file is part of the:                        *
-*   Earth System Grid (ESG) Data Node Software Stack                      *
-*									  *
-***************************************************************************
-
-   Description: 
-   Installation instructions for software products
-
-***************************************************************************
-
-
-INSTALL:
 
 #####################################
 Welcome to the Earth Systems Grid!!!
