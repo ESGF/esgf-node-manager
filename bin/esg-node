@@ -2649,7 +2649,7 @@ show_svc_list() {
     echo "---------------------------"
     echo "Running Node Services..."
     echo "---------------------------"
-    /usr/sbin/lsof -i |egrep  'postgres|jsvc|globus-gr'
+    lsof -i |egrep  'postgres|jsvc|globus-gr'
     echo "---------------------------"
     echo
     return 0
