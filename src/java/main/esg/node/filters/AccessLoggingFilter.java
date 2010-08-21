@@ -180,6 +180,7 @@ public class AccessLoggingFilter implements Filter {
         if(filterConfig == null) return;
 
         boolean success = false;
+        int id=-1;
 
         //Record identifying tuple
         String userID = null;
@@ -224,7 +225,7 @@ public class AccessLoggingFilter implements Filter {
                         req.removeAttribute("validationMap");
                         
                     }else{
-                        log.info("Validation Map is ["+validationMap+"] - (not a token based request)");
+                        log.debug("Validation Map is ["+validationMap+"] - (not a token based request)");
                     }
                     //------------------------------------------------------------------------------------------
                     
@@ -236,7 +237,7 @@ public class AccessLoggingFilter implements Filter {
                     if (userID == null || userID.isEmpty()) {
                         userID = ((req.getAttribute("esg.openid") == null) ? "<no-id>" : req.getAttribute("esg.openid").toString());
                         if(userID == null || userID.isEmpty()) { log.warn("This request is apparently not a \"tokenless\" request either - no openid attribute!!!!!"); }
-                        System.out.println("AccessLoggingFilter - Tokenless: UserID = ["+userID+"]");
+                        log.debug("AccessLoggingFilter - Tokenless: UserID = ["+userID+"]");
                     }
                     //------------------------------------------------------------------------------------------
                     
@@ -249,7 +250,7 @@ public class AccessLoggingFilter implements Filter {
                     dateFetched = System.currentTimeMillis()/1000;
                     batchUpdateTime = dateFetched; //For the life of my I am not sure why this is there, something from the gridftp metrics collection. -gmb
                     
-                    success = (accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,serviceType,batchUpdateTime,dateFetched) > 0);
+                    success = ((id = accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,serviceType,batchUpdateTime,dateFetched)) > 0);
                     
                 }else {
                     log.debug("No match against: "+url);
@@ -272,15 +273,15 @@ public class AccessLoggingFilter implements Filter {
         long duration = System.currentTimeMillis() - startTime;
         //NOTE: I Don't think duration means what Nate thinks it means...
 
-        //try{
-        //    if((accessLoggingDAO != null) && success) {
-        //        accessLoggingDAO.logEgressInfo(userID,url,fileID,remoteAddress, dateFetched, success, duration);
-        //    }
-        //}catch(Throwable t) {
-        //    log.error(t);
-        //    HttpServletResponse resp = (HttpServletResponse)response;
-        //    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
-        //}
+        try{
+            if((accessLoggingDAO != null) && success) {
+                accessLoggingDAO.logEgressInfo(id, success, duration);
+            }
+        }catch(Throwable t) {
+            log.error(t);
+            HttpServletResponse resp = (HttpServletResponse)response;
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
+        }
     }
     
 }

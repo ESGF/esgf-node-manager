@@ -6,7 +6,7 @@
 *      Division: S&T Global Security                                       *
 *        Matrix: Atmospheric, Earth and Energy Division                    *
 *       Program: PCMDI                                                     *
-*       Project: Earth Systems Grid (ESG) Data Node Software Stack         *
+*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
 *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
 *                                                                          *
 ****************************************************************************
@@ -17,11 +17,11 @@
 *   LLNL-CODE-420962                                                       *
 *                                                                          *
 *   All rights reserved. This file is part of the:                         *
-*   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
+*   Earth System Grid Federation (ESGF) Data Node Software Stack           *
 *                                                                          *
-*   For details, see http://esgf.org/esg-node/                    *
+*   For details, see http://esgf.org/esg-node/                             *
 *   Please also read this link                                             *
-*    http://esgf.org/LICENSE                                      *
+*    http://esgf.org/LICENSE                                               *
 *                                                                          *
 *   * Redistribution and use in source and binary forms, with or           *
 *   without modification, are permitted provided that the following        *
@@ -78,17 +78,18 @@ import org.apache.commons.logging.impl.*;
 public class AccessLoggingDAO implements Serializable {
 
     //TODO figure out what these queries should be!
+    private static final String getNextPrimaryKeyValQuery = "select nextval('seq_access_logging')";
     private static final String accessLoggingIngressQuery = 
         "insert into access_logging (id, user_id, email, url, file_id, remote_addr, user_agent, service_type, batch_update_time, date_fetched, success) "+
-        "values ( nextval('seq_access_logging'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        "values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     private static final String accessLoggingEgressQuery = 
-        "update access_logging set success = ?, duration = ? "+
-        "where user_id = ?, url = ?, file_id = ?, remote_addr = ?, date_fetched = ?";
+        "update access_logging set success = ?, duration = ? where id = ?";
     
     private static final Log log = LogFactory.getLog(AccessLoggingDAO.class);
     
     private DataSource dataSource = null;
     private QueryRunner queryRunner = null;
+    private ResultSetHandler<Integer> idResultSetHandler = null;
     
     public AccessLoggingDAO(DataSource dataSource) {
         this.setDataSource(dataSource);
@@ -103,10 +104,17 @@ public class AccessLoggingDAO implements Serializable {
     public void setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
         this.queryRunner = new QueryRunner(dataSource);
+        this.idResultSetHandler = new ResultSetHandler<Integer>() {
+		    public Integer handle(ResultSet rs) throws SQLException {
+                if(!rs.next()) { return -1; }
+                return rs.getInt(1);
+		    }
+		};
+        
     }
     
     //TODO: put in args and setup query!!!
-    public int logIngressInfo(String userID,  
+    public synchronized int logIngressInfo(String userID,  
                               String email, 
                               String url, 
                               String fileID, 
@@ -115,17 +123,21 @@ public class AccessLoggingDAO implements Serializable {
                               String serviceType, 
                               long batchUpdateTime,
                               long dateFetched) {
-        int ret = -1;
+        int id = -1;
+        int numRecordsInserted = -1;
         try{
+            //fetch the next value to use as the primary key for this record
+            id = queryRunner.query(getNextPrimaryKeyValQuery,idResultSetHandler);
+
             //TODO: Perhaps the url can be used to resolve the dataset???
             //That is the bit of information we really want to also have.
             //What we really need is an absolute id for a file!!!
-            ret = queryRunner.update(accessLoggingIngressQuery,
-                                     userID,email,url,fileID,remoteAddress,userAgent,serviceType,batchUpdateTime,dateFetched,false);
+            numRecordsInserted = queryRunner.update(accessLoggingIngressQuery,
+                                                    id,userID,email,url,fileID,remoteAddress,userAgent,serviceType,batchUpdateTime,dateFetched,false);
         }catch(SQLException ex) {
             log.error(ex);
         }
-        return ret;
+        return (numRecordsInserted > 0) ? id : -1;
     }
     
     //Upon egress update the ingress record with additional
@@ -135,17 +147,11 @@ public class AccessLoggingDAO implements Serializable {
     //tuple of information is the same as the ingress log fields.
     //Once the record is uniquely identified then the egress
     //information (the last pair) can be updated.
-    public int logEgressInfo(String userID, 
-                             String url, 
-                             String fileID, 
-                             String remoteAddress, 
-                             long dateFetched, 
+    public int logEgressInfo(int id, 
                              boolean success, long duration) {
         int ret = -1;
         try {
-            ret = queryRunner.update(accessLoggingEgressQuery,
-                                     success,duration,
-                                     userID,url,remoteAddress,fileID,dateFetched);
+            ret = queryRunner.update(accessLoggingEgressQuery,success,duration,id);
         }catch(SQLException ex) {
             log.error(ex);
         }
