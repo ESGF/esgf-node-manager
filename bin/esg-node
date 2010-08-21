@@ -302,8 +302,8 @@ setup_curl() {
     pushd ${curl_workdir} >& /dev/null
     
     local curl_dist_file=${curl_dist_url##*/}
-    #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
-    local curl_dist_dir=$(echo ${curl_dist_file} | awk '{print substr($1,1,length($1)-7)}')
+    #strip off .tar.gz at the end
+    local curl_dist_dir=${curl_dist_file/.tar.gz}
     
     #There is this pesky case of having a zero sized dist file... WTF!?
     if [ -e ${curl_dist_file} ]; then
@@ -402,7 +402,7 @@ setup_git() {
 
     local git_dist_file=${git_dist_url##*/}
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
-    local git_dist_dir=$(echo ${git_dist_file} | awk '{print substr($1,1,length($1)-7)}')
+    local git_dist_dir=${git_dist_file/.tar.gz}
     
     #There is this pesky case of having a zero sized dist file... WTF!?
     if [ -e ${git_dist_file} ]; then
@@ -502,8 +502,8 @@ setup_java() {
     pushd ${workdir} #>& /dev/null
     
     local java_dist_file=${java_dist_url##*/}
-    #strip off -32.tar.gz at the end, i.e. last 10 chars, to get untarred dir name
-    java_dist_dir=$(echo ${java_dist_file} | awk '{print substr($1,1,length($1)-10)}')
+    #strip off -(32|64).tar.gz at the end
+    java_dist_dir=$(echo ${java_dist_file/.tar.gz} | awk 'gsub(/-(32|64)/,"")'
 
     #Check to see if we have an Java distribution directory
     if [ ! -e ${java_install_dir%/*}/${java_dist_dir} ]; then
@@ -607,8 +607,8 @@ setup_ant() {
     pushd ${workdir} >& /dev/null
     
     local ant_dist_file=${ant_dist_url##*/}
-    #strip off -bin.tar.gz at the end, i.e. last 11 chars, to get untarred dir name
-    ant_dist_dir=$(echo ${ant_dist_file} | awk '{print substr($1,1,length($1)-11)}')
+    #strip off -bin.tar.gz at the end
+    ant_dist_dir=${ant_dist_file/-bin.tar.gz}
 
     #There is this pesky case of having a zero sized dist file... WTF!?
     if [ -e ${ant_dist_file} ]; then
@@ -704,8 +704,8 @@ setup_postgress() {
     pushd ${postgress_workdir} >& /dev/null
 
     local postgress_dist_file=${postgress_dist_url##*/}
-    #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
-    postgress_dist_dir=$(echo ${postgress_dist_file} | awk '{print substr($1,1,length($1)-7)}')
+    #strip off .tar.gz at the end
+    postgress_dist_dir=${postgress_dist_file/.tar.gz}
     
     #There is this pesky case of having a zero sized dist file... WTF!?
     if [ -e ${postgress_dist_file} ]; then
@@ -1155,8 +1155,8 @@ setup_tomcat() {
     pushd ${workdir} >& /dev/null
     
     local tomcat_dist_file=${tomcat_dist_url##*/}
-    #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
-    tomcat_dist_dir=$(echo ${tomcat_dist_file} | awk '{print substr($1,1,length($1)-7)}')
+    #strip off .tar.gz at the end
+    tomcat_dist_dir=${tomcat_dist_file/.tar.gz}
 
     #There is this pesky case of having a zero sized dist file... WTF!?                                                                            
     if [ -e ${tomcat_dist_file} ]; then
@@ -1515,9 +1515,9 @@ setup_node() {
 
 
     local node_dist_file=${node_dist_url##*/}
-    #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name 
-    #(Ex: esg-node.0.0.1.tar.gz -> esg-node.0.0.1)
-    node_dist_dir=$(echo ${node_dist_file} | awk '{print substr($1,1,length($1)-7)}')
+    #strip off .tar.gz at the end
+    #(Ex: esg-node.1.0.0.4.tar.gz -> esg-node.1.0.0.4)
+    node_dist_dir=${node_dist_file/.tar.gz}
 
     checked_get ${node_dist_file} ${node_dist_url}
     no_new_update=$?
@@ -1541,9 +1541,9 @@ setup_node() {
 
     stop_tomcat
 
-    #strip the version number off(.#.#.#) the dir and append .war to get the name of war file
-    #(Ex: esg-node.0.0.1 -> esg-node.war)
-    local trimmed_name=$(pwd)/$(echo ${node_dist_dir} | awk '{print substr($1,1,length($1)-8)}')
+    #strip the version number off(.#.#.#.#) the dir and append .war to get the name of war file
+    #(Ex: esg-node.1.0.0.4 -> esg-node.war) 
+    local trimmed_name=$(pwd)/${node_dist_dir%%.*}
     node_war_file=${trimmed_name}.war
     echo "node_war_file = "${node_war_file}
 
