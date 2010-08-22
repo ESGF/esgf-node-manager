@@ -8,6 +8,9 @@
       <!-- Third party libraries stored on ESGF system -->
       <include url="${ivy.default.root.url}/ivysettings-shared.xml"/>
       
+      <!-- Java.net Public Maven 2 repository -->
+      <include url="${ivy.default.root.url}/ivysettings-javanet.xml"/>
+
       <!-- Public Maven 2 repository -->
       <include url="${ivy.default.root.url}/ivysettings-public.xml"/>
       
