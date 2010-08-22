@@ -20,17 +20,10 @@ TODO:
 overall:
 -set new header for all files
 -untabify all files (use only spaces)
-xPut in JUnit testing.
+-Put in MORE JUnit testing.
 -Write test cases for codebase.
 -Install BDM client and simple sanity check call(s)
--Clean up InstallCert Blurting out exception stack trace simply because
- you don't have the key.  (that's the point - you're trying to get it :-)
 -Build Shell
-
-esg-node:
--Inspect the "dedup" function to work with install_log as well
-xPut in better software version string checking in check_version()
-xGIT - put in fix to update an existing git fetching for cdat upgraded versions
 
 core:
 Metrics & Monitoring
@@ -38,12 +31,32 @@ Metrics & Monitoring
  ->For Monitoring put in time series results in fixed size LRU cache
 -Remove faux 'gateway' from codebase.
 -Put in XML Parsing of Payload message data (the catalog)
+ ->Test xjc ant task and building stubs
  -> Have to get or make catalog specific XSD to JAXB on.
+
+-Find out from Bob what the deal is/was with hessian to see if I can
+safely upgrade to using 3.1.5 - he alluded to hacking the hessian code
+on the python side for things to work... will an upgraded hessian
+screw things up?
+
+      hessian-3.0.20.jar ->? hessian-3.1.5.jar
+
+-Install and setup database version control like LiquiBase, for DNM managed tables
+
+DONE:
+xClean up InstallCert Blurting out exception stack trace simply because
+ you don't have the key.  (that's the point - you're trying to get it :-)
+
+esg-node:
+xInspect the "dedup" function to work with install_log as well
+xPut in better software version string checking in check_version()
+xGIT - put in fix to update an existing git fetching for cdat upgraded versions
+
 
 libs: (todo's and issues)
 xWhen cut over to ivy make sure to get rid of [jsr173] api jar since the
-tansient dependency [stax] api jar is fetched.  Also the [jaxb1-impl.jar]
-may be removed since ivy pulls down the transient dependency
+xtansient dependency [stax] api jar is fetched.  Also the [jaxb1-impl.jar]
+xmay be removed since ivy pulls down the transient dependency
 [jaxb-impl.jar] that replaces it.
 
 	git rm jsr173 api use fetched stax api
@@ -54,20 +67,14 @@ issue.
 
 	git rm log4j-1.2.15.jar use fetched log4j-1.2.14.jar
 
--Find out from Bob what the deal is/was with hessian to see if I can
-safely upgrade to using 3.1.5 - he alluded to hacking the hessian code
-on the python side for things to work... will an upgraded hessian
-screw things up?
 
-      hessian-3.0.20.jar ->? hessian-3.1.5.jar
-
--Fix issue with ivy having problems with resolving "javamail" to fetch
+xFix issue with ivy having problems with resolving "javamail" to fetch
  mailapi.jar and smtp.jar
 
 -Keep only:
        ivy-2.1.0.jar
        [hessian-3.0.20.jar] ? Test that still wire compatible with python version.
-       [javamail = mail.jar, smtp.jar] ? working on resoving ivy repo failure
+ x     [javamail = mail.jar, smtp.jar] ? working on resoving ivy repo failure
        (everything else we fetch via ivy)
 
 (jars that will be fetched by ivy that can be removed)
@@ -94,4 +101,3 @@ xFind out how to put fetched jars in a separate lib subdirectory
 
 
 ---
--Install and setup database version control like LiquiBase, for DNM managed tables
