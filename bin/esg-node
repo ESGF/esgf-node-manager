@@ -170,6 +170,7 @@ init() {
     esg_dist_url=http://198.128.245.140/dist
     date_format="+%Y_%m_%d_%H%M%S"
     num_backups_to_keep=${num_backups_to_keep:-7}
+    compress_extensions=".tar.gz|.tgz|.bz2"
     java_dist_url=${esg_dist_url}/java/${java_version}/jdk${java_version}-${word_size}.tar.gz
     ant_dist_url=http://www.trieuvan.com/apache/ant/binaries/apache-ant-${ant_version}-bin.tar.gz
     curl_workdir=${workdir}/curl
@@ -303,7 +304,7 @@ setup_curl() {
     
     local curl_dist_file=${curl_dist_url##*/}
     #strip off .tar.gz at the end
-    local curl_dist_dir=${curl_dist_file/.tar.gz}
+    local curl_dist_dir=$(echo ${curl_dist_file} | awk 'gsub(/('$compress_extensions')/,"")')
     
     #There is this pesky case of having a zero sized dist file... WTF!?
     if [ -e ${curl_dist_file} ]; then
@@ -402,7 +403,7 @@ setup_git() {
 
     local git_dist_file=${git_dist_url##*/}
     #strip off .tar.gz at the end, i.e. last 7 chars, to get untarred dir name
-    local git_dist_dir=${git_dist_file/.tar.gz}
+    local git_dist_dir=$(echo ${git_dist_file} | awk 'gsub(/('$compress_extensions')/,"")')
     
     #There is this pesky case of having a zero sized dist file... WTF!?
     if [ -e ${git_dist_file} ]; then
@@ -503,7 +504,7 @@ setup_java() {
     
     local java_dist_file=${java_dist_url##*/}
     #strip off -(32|64).tar.gz at the end
-    java_dist_dir=$(echo ${java_dist_file/.tar.gz} | awk 'gsub(/-(32|64)/,"")'
+    java_dist_dir=$(echo ${java_dist_file} | awk 'gsub(/(-(34|64)('$compress_extensions')/,"")')
 
     #Check to see if we have an Java distribution directory
     if [ ! -e ${java_install_dir%/*}/${java_dist_dir} ]; then
@@ -705,7 +706,7 @@ setup_postgress() {
 
     local postgress_dist_file=${postgress_dist_url##*/}
     #strip off .tar.gz at the end
-    postgress_dist_dir=${postgress_dist_file/.tar.gz}
+    postgress_dist_dir=$(echo ${postgress_dist_file} | awk 'gsub(/('$compress_extensions')/,"")')
     
     #There is this pesky case of having a zero sized dist file... WTF!?
     if [ -e ${postgress_dist_file} ]; then
@@ -1156,7 +1157,7 @@ setup_tomcat() {
     
     local tomcat_dist_file=${tomcat_dist_url##*/}
     #strip off .tar.gz at the end
-    tomcat_dist_dir=${tomcat_dist_file/.tar.gz}
+    tomcat_dist_dir=$(echo ${tomcat_dist_file} | awk 'gsub(/('$compress_extensions')/,"")')
 
     #There is this pesky case of having a zero sized dist file... WTF!?                                                                            
     if [ -e ${tomcat_dist_file} ]; then
@@ -1517,7 +1518,7 @@ setup_node() {
     local node_dist_file=${node_dist_url##*/}
     #strip off .tar.gz at the end
     #(Ex: esg-node.1.0.0.4.tar.gz -> esg-node.1.0.0.4)
-    node_dist_dir=${node_dist_file/.tar.gz}
+    node_dist_dir=$(echo ${node_dist_file} | awk 'gsub(/('$compress_extensions')/,"")')
 
     checked_get ${node_dist_file} ${node_dist_url}
     no_new_update=$?
