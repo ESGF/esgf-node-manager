@@ -77,8 +77,8 @@ public class ESGAccessLogClient {
     private String currentServiceURL = null;
 
     public ESGAccessLogClient() {
-	log.trace("Instantiating ESGAccessLogClient");
-	this.factory = new HessianProxyFactory();	
+        log.trace("Instantiating ESGAccessLogClient");
+        this.factory = new HessianProxyFactory();
     }
 
     public ESGAccessLogClient(String serviceHost) {
@@ -88,21 +88,21 @@ public class ESGAccessLogClient {
 
     /**
        Generic Hessian endpoint creation method (Straight up Hessian no frills)
-     */
+    */
     private Object factoryCreate(Class serviceClass,String serviceURL) { 
-	log.trace("factoryCreate -> serviceClass: "+serviceClass.getName()+" , serviceURL: "+serviceURL);
-	if (serviceURL == null) {
-	    log.error("The service url cannot be null ["+serviceURL+"]");
-	    return null;
-	}
-	Object endpoint = null;
-	try{
-	    endpoint = factory.create(serviceClass, serviceURL); 
-	}catch(Exception e) {
-	    log.error(e);
-	    e.printStackTrace();
-	}
-	return endpoint;
+        log.trace("factoryCreate -> serviceClass: "+serviceClass.getName()+" , serviceURL: "+serviceURL);
+        if (serviceURL == null) {
+            log.error("The service url cannot be null ["+serviceURL+"]");
+            return null;
+        }
+        Object endpoint = null;
+        try{
+            endpoint = factory.create(serviceClass, serviceURL);
+        }catch(Exception e) {
+            log.error(e);
+            e.printStackTrace();
+        }
+        return endpoint;
     }
 
     /**
@@ -112,35 +112,38 @@ public class ESGAccessLogClient {
        @param serviceURL The url for the RPC target
     */
     public ESGAccessLogClient setEndpoint(String serviceHost) {
-	assert (serviceHost != null);
-	String serviceURL = "http://"+serviceHost+"/esg-node/accesslog";
-	log.trace("Creating stub endpoint to : "+serviceURL);
-	this.currentEndpoint = (ESGAccessLogService)factoryCreate(ESGAccessLogService.class,serviceURL);
-	currentServiceURL=serviceURL;
-	return this;
+        assert (serviceHost != null);
+        String serviceURL = "http://"+serviceHost+"/esg-node/accesslog";
+        log.trace("Creating stub endpoint to : "+serviceURL);
+        this.currentEndpoint = (ESGAccessLogService)factoryCreate(ESGAccessLogService.class,serviceURL);
+        this.currentServiceURL=serviceURL;
+        return this;
     }
 
     /**
        Simple ping function to access the viability of the RPC mechanism.
        (if you can ping you know the RPC works)
-     */
+    */
     public boolean ping() {
-	boolean ret = false;
-	try{
-	    ret = currentEndpoint.ping();
-	    log.trace("Ping returns: "+ret);
-	}catch(Exception e) {
-	    log.error(e);
-	    e.printStackTrace();
-	}
-	return ret;
+        boolean ret = false;
+        try{
+            if(null == currentEndpoint) {
+                log.warn("endpoint not set! call setEndpoint before calling ping");
+            }
+            ret = currentEndpoint.ping();
+            log.trace("Ping returns: "+ret);
+        }catch(Exception e) {
+            log.error(e);
+            e.printStackTrace();
+        }
+        return ret;
     }
     
     /**
        Overloading method... Takes no args - fetches all access log data from test data node
-     */
+    */
     public List<String[]> fetchAccessLogData() {
-	return this.fetchAccessLogData(0,Long.MAX_VALUE);
+        return this.fetchAccessLogData(0,Long.MAX_VALUE);
     }
     
     
@@ -148,43 +151,43 @@ public class ESGAccessLogClient {
        Providing a simple delgating wrapper, for making the remote call
        @param startTime  The <code>Long</code> time stamp value for the earliest record (inclusive)
        @param endTime    The <code>Long</code> time stamp value for the latest record (not inclusive)
-     */
+    */
     public List<String[]> fetchAccessLogData(long startTime, long endTime) {
-	log.info("Query for: "+currentServiceURL+" -> from: "+startTime+" to: "+endTime);
-	return currentEndpoint.fetchAccessLogData(startTime,endTime);
+        log.info("Query for: "+currentServiceURL+" -> from: "+startTime+" to: "+endTime);
+        return currentEndpoint.fetchAccessLogData(startTime,endTime);
     }
 
     //Run the program like java -jar esg-node-accesslog-client.0.0.3.jar [service host]
     public static void main(String[] args) {
-	String serviceHost=null;
-	long startTime=0;
-	long endTime=Long.MAX_VALUE;
-	
-	try{
-	    serviceHost=args[0];
-	    startTime = Long.parseLong(args[1]);
-	    endTime = Long.parseLong(args[2]);
-	}catch(Throwable t) { log.error(t.getMessage()); }
-	
-	try {
-	    ESGAccessLogClient client = new ESGAccessLogClient();
-	    if(client.setEndpoint(serviceHost).ping()) {
-		List<String[]> results = null;
-		results = client.fetchAccessLogData(startTime,endTime);
-		
-		System.out.println("---results:["+(results.size() - 1)+"]---");
-		for(String[] record : results) {
-		    StringBuilder sb = new StringBuilder();
-		    for(String column : record) {
-			sb.append("["+column+"] ");
-		    }
-		    System.out.println(sb.toString());
-		}
-	    }
-	    System.out.println("-----------------");
-	}catch(Throwable t) {
-	    log.error(t);
-	    t.printStackTrace();
-	}
+        String serviceHost=null;
+        long startTime=0;
+        long endTime=Long.MAX_VALUE;
+
+        try{
+            serviceHost=args[0];
+            startTime = Long.parseLong(args[1]);
+            endTime = Long.parseLong(args[2]);
+        }catch(Throwable t) { log.error(t.getMessage()); }
+
+        try {
+            ESGAccessLogClient client = new ESGAccessLogClient();
+            if(client.setEndpoint(serviceHost).ping()) {
+                List<String[]> results = null;
+                results = client.fetchAccessLogData(startTime,endTime);
+
+                System.out.println("---results:["+(results.size() - 1)+"]---");
+                for(String[] record : results) {
+                    StringBuilder sb = new StringBuilder();
+                    for(String column : record) {
+                        sb.append("["+column+"] ");
+                    }
+                    System.out.println(sb.toString());
+                }
+            }
+            System.out.println("-----------------");
+        }catch(Throwable t) {
+            log.error(t);
+            t.printStackTrace();
+        }
     }
 }
