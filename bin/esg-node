@@ -1999,7 +1999,7 @@ write_globus_env() {
 #####
 
 test_publication() {
-    echo "Publication test..."
+    echo "Publication test... $@"
     [ -z "${myproxy_user}" ] && read -p "Enter your myproxy username: " myproxy_user
 
     local personal_credential_repo="$HOME/.globus"
@@ -2022,6 +2022,7 @@ test_publication() {
     [ $? != 0 ] && echo " ERROR: unable to successfully execute esgpublish" && return 1
     sleep 3
 
+    [ "$1" = "no-unpublish" ] && echo "Leaving test publication file published" && return 1
     echo "$cdat_home/bin/esgunpublish --skip-thredds pcmdi.${esg_root_id}.test.mytest"
     $cdat_home/bin/esgunpublish --skip-thredds pcmdi.${esg_root_id}.test.mytest
     [ $? != 0 ] && echo " ERROR: unable to successfully execute esgunpublish" && return 1
@@ -2880,7 +2881,8 @@ main() {
                 ;;
             --test-pub)
                 init
-                echo "test_publication" && test_publication
+                shift
+                echo "test_publication" && test_publication $@
                 exit
                 ;;
             --info)
