@@ -322,7 +322,7 @@ setup_curl() {
             echo "Downloading CURL from ${curl_dist_url}"
             wget -O ${curl_dist_file} ${curl_dist_url}
             [ $? != 0 ] && echo " ERROR: Could not download CURL:${curl_dist_file}" && popd && checked_done 1
-            tar xvzf ${curl_dist_file}
+            tar xzf ${curl_dist_file}
             [ $? != 0 ] && echo " ERROR: Could not extract CURL: ${curl_dist_file}" && popd && checked_done 1
         fi
     fi
@@ -330,7 +330,7 @@ setup_curl() {
     #If you don't see the directory but see the tar.gz distribution
     #then expand it and go from there....
     if [ -e ${curl_dist_file} ] && [ ! -e ${curl_dist_dir} ]; then
-        tar xvzf ${curl_dist_file}
+        tar xzf ${curl_dist_file}
     fi
 
     pushd ${curl_dist_dir}
@@ -421,7 +421,7 @@ setup_git() {
             echo "Downloading GIT from ${git_dist_url}"
             wget -O ${git_dist_file} ${git_dist_url}
             [ $? != 0 ] && echo " ERROR: Could not download GIT:${git_dist_file}" && popd && checked_done 1
-            tar xvzf ${git_dist_file}
+            tar xzf ${git_dist_file}
             [ $? != 0 ] && echo " ERROR: Could not extract GIT: ${git_dist_file}" && popd && checked_done 1
         fi
     fi
@@ -429,7 +429,7 @@ setup_git() {
     #If you don't see the directory but see the tar.gz distribution
     #then expand it and go from there....
     if [ -e ${git_dist_file} ] && [ ! -e ${git_dist_dir} ]; then
-        tar xvzf ${git_dist_file}
+        tar xzf ${git_dist_file}
     fi
 
     pushd ${git_dist_dir}
@@ -514,7 +514,7 @@ setup_java() {
             echo "Downloading Java from ${java_dist_url}"
             checked_get ${java_dist_file} ${java_dist_url}
             [ $? != 0 ] && echo " ERROR: Could not download Java" && popd && checked_done 1
-            tar xvzf ${java_dist_file} -C ${java_install_dir%/*} # i.e. /usr/local
+            tar xzf ${java_dist_file} -C ${java_install_dir%/*} # i.e. /usr/local
             [ $? != 0 ] && echo " ERROR: Could not extract Java" && popd && checked_done 1
         fi
     fi
@@ -522,7 +522,7 @@ setup_java() {
     #If you don't see the directory but see the tar.gz distribution
     #then expand it
     if [ -e ${java_dist_file} ] && [ ! -e ${java_install_dir%/*}/${java_dist_dir} ]; then
-        tar xvzf ${java_dist_file} -C ${java_install_dir%/*} # i.e. /usr/local
+        tar xzf ${java_dist_file} -C ${java_install_dir%/*} # i.e. /usr/local
         [ $? != 0 ] && echo " ERROR: Could not extract Java..." && popd && checked_done 1
     fi
 
@@ -627,7 +627,7 @@ setup_ant() {
             echo "Downloading Ant from ${ant_dist_url}"
             wget -O ${ant_dist_file} ${ant_dist_url}
             [ $? != 0 ] && echo " ERROR: Could not download Ant" && popd && checked_done 1
-            tar xvzf ${ant_dist_file} -C ${ant_install_dir%/*} # i.e. /usr/local
+            tar xzf ${ant_dist_file} -C ${ant_install_dir%/*} # i.e. /usr/local
             [ $? != 0 ] && echo " ERROR: Could not extract Ant" && popd && checked_done 1
         fi
     fi
@@ -635,7 +635,7 @@ setup_ant() {
     #If you don't see the directory but see the tar.gz distribution
     #then expand it
     if [ -e ${ant_dist_file} ] && [ ! -e ${ant_install_dir%/*}/${ant_dist_dir} ]; then
-        tar xvzf ${ant_dist_file} -C ${ant_install_dir%/*} # i.e. /usr/local
+        tar xzf ${ant_dist_file} -C ${ant_install_dir%/*} # i.e. /usr/local
         [ $? != 0 ] && echo " ERROR: Could not extract Ant..." && popd && checked_done 1
     fi
 
@@ -724,7 +724,7 @@ setup_postgress() {
             echo "Downloading Postgress from ${postgress_dist_url}"
             wget -O ${postgress_dist_file} ${postgress_dist_url}
             [ $? != 0 ] && echo " ERROR: Could not download Postgress:${postgress_dist_file}" && popd && checked_done 1
-            tar xvzf ${postgress_dist_file}
+            tar xzf ${postgress_dist_file}
             [ $? != 0 ] && echo " ERROR: Could not extract Postgress: ${postgress_dist_file}" && popd && checked_done 1
         fi
     fi
@@ -732,7 +732,7 @@ setup_postgress() {
     #If you don't see the directory but see the tar.gz distribution
     #then expand it and go from there....
     if [ -e ${postgress_dist_file} ] && [ ! -e ${postgress_dist_dir} ]; then
-        tar xvzf ${postgress_dist_file}
+        tar xzf ${postgress_dist_file}
     fi
 
     pushd ${postgress_dist_dir}
@@ -1175,7 +1175,7 @@ setup_tomcat() {
             echo "Downloading Tomcat from ${tomcat_dist_url}"
             wget -O ${tomcat_dist_file} ${tomcat_dist_url}
             [ $? != 0 ] && echo " ERROR: Could not download Tomcat" && popd && checked_done 1
-            tar xvzf ${tomcat_dist_file} -C ${tomcat_install_dir%/*} # i.e. /usr/local
+            tar xzf ${tomcat_dist_file} -C ${tomcat_install_dir%/*} # i.e. /usr/local
             [ $? != 0 ] && echo " ERROR: Could not extract Tomcat" && popd && checked_done 1
         fi
     fi
@@ -1183,7 +1183,7 @@ setup_tomcat() {
     #If you don't see the directory but see the tar.gz distribution
     #then expand it
     if [ -e ${tomcat_dist_file} ] && [ ! -e ${tomcat_install_dir%/*}/${tomcat_dist_dir} ]; then
-        tar xvzf ${tomcat_dist_file} -C ${tomcat_install_dir%/*} # i.e. /usr/local
+        tar xzf ${tomcat_dist_file} -C ${tomcat_install_dir%/*} # i.e. /usr/local
         [ $? != 0 ] && echo " ERROR: Could not extract Tomcat..." && popd && checked_done 1
     fi
 
@@ -1232,7 +1232,7 @@ setup_tomcat() {
             rm -v $(find . | egrep '*.o$' | xargs)
             make clean all
         elif [ -e jsvc.tar.gz ]; then
-            tar xvzf jsvc.tar.gz
+            tar xzf jsvc.tar.gz
             cd jsvc-src
             autoconf
         else
@@ -1313,16 +1313,28 @@ setup_tomcat() {
     fi
 
     #Re-integrate my public key (I mean, my "certificate") from my keystore into the truststore (the place housing all public keys I allow to talk to me)
+    echo "Integrating keystore's certificate into truststore.... "
+    echo -n "Extracting keystore's certificate... "
     keytool -export -alias ${keystore_alias} -file ${keystore_file}.cer -keystore ${keystore_file} -storepass ${store_password}
+    [ $? == 0 ] && echo "[OK]"
+    echo "Importing keystore's certificate into truststore... "
     keytool -import -v -trustcacerts -alias ${keystore_alias} -keypass ${store_password} -file ${keystore_file}.cer -keystore ${truststore_file} -storepass changeit
-    rm ${keystore_file}.cer
+    [ $? == 0 ] && echo "[OK]"
+    echo -n "cleaning up after ourselves... "
+    rm -v ${keystore_file}.cer
+    [ $? == 0 ] && echo "[OK]"
 
     #NOTE: The truststore uses the java default password: "changeit"
 
     #Edit the server.xml file to contain proper location of certificates
     eval "perl -p -i -e 's#\\@\\@truststore_file\\@\\@#${truststore_file}#g' server.xml"
+    echo -n "*"
+    eval "perl -p -i -e 's#\\@\\@truststore_password\\@\\@#changeit#g' server.xml"
+    echo -n "*"
     eval "perl -p -i -e 's#\\@\\@keystore_file\\@\\@#${keystore_file}#g' server.xml"
+    echo -n "*"
     eval "perl -p -i -e 's#\\@\\@keystore_password\\@\\@#${store_password}#g' server.xml"
+    echo "*"
 
     #clean up the password immediately after it is done being used
     unset store_password
@@ -1756,7 +1768,7 @@ setup_tds() {
     pushd ${tomcat_install_dir}/webapps
     mkdir thredds
     cd thredds
-    jar xvf ../${thredds_dist_file}
+    jar xf ../${thredds_dist_file}
     cd ..
     chown -R ${tomcat_user}  thredds*
     chgrp -R ${tomcat_group} thredds*
