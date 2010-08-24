@@ -2622,7 +2622,7 @@ insert_file_at_pattern() {
 # arg 1 - The environment file to dedup.
 dedup() {
     local infile=${1:-${envfile}}
-    echo "$(tac $infile | nl -n rz -s= | sort -k2,2 -s -t= -u | sort -r | sed -n 's/[^=]*=//p')" > $infile
+    tac ${infile} | awk 'BEGIN {FS="[ =]"} !($2 in a) {a[$2];print $0}' | cat | sort -k2,2 > ${infile}
 }
 
 #"private" function
