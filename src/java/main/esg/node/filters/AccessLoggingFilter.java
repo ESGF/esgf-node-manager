@@ -205,7 +205,9 @@ public class AccessLoggingFilter implements Filter {
                 Matcher m = urlPattern.matcher(url);
                 
                 if(m.matches()) {
-                    
+
+                    log.debug("Executing filter on: "+url);
+
                     //------------------------------------------------------------------------------------------
                     //For Token authentication there is a Validation Map present with user and email information
                     //------------------------------------------------------------------------------------------
