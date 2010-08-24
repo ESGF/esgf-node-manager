@@ -1341,7 +1341,7 @@ setup_tomcat() {
         echo "For security reasons we recommend removing the examples web app"
         readlink -f ${tomcat_install_dir}/webapps/examples
         read -p "Is the directory show above correct? [Y/n] " dodel
-        if [ "${dodel}" = "Y" ] || [ "${dodel}" = "y" ]; then
+        if [ "${dodel}" = "Y" ] || [ "${dodel}" = "y" ] || [ -z "${dodel}" ]; then
             rm -rf ${tomcat_install_dir}/webapps/examples && echo "removed the examples webapp..."
         fi
     fi
