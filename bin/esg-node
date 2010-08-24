@@ -1926,6 +1926,7 @@ setup_tds() {
     echo
 
     #Set ownership of esgcet "thredds content" directory to installation owner
+    mkdir -p ${tomcat_install_dir}/content/thredds/esgcet
     echo "chown -R ${installer_uid}:${installer_gid} ${tomcat_install_dir}/content/thredds/esgcet"
     chown -R ${installer_uid}:${installer_gid} ${tomcat_install_dir}/content/thredds/esgcet 
     [ $? != 0 ] && echo "WARNING: Could not change owner successfully - this will lead to unability to create new catalogs via the publisher!"
