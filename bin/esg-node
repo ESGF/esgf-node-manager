@@ -2144,7 +2144,6 @@ write_env() {
     write_java_env
     write_ant_env
     write_postgress_env
-    write_cdms_env
     write_esgcet_env
     write_tomcat_env
     write_tds_env
