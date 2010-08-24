@@ -1136,7 +1136,7 @@ test_esgcet() {
 setup_tomcat() {
     echo
     echo "*******************************"
-    echo "Setting up Apache Tomcat..."
+    echo "Setting up Apache Tomcat...(v${tomcat_version})"
     echo "*******************************"
     echo 
 
@@ -1265,10 +1265,25 @@ setup_tomcat() {
 
     #Create a keystore in $tomcat_install_dir/conf
     echo "Keystore setup: "
+    local store_password=${keystore_password}
     if [ ! -e ${keystore_file} ]; then
-        echo "Launching Java's keytool: we suggest using the default Tomcat password \"changeit\""
-        #$JAVA_HOME/bin/keytool -list -keystore keystore-tomcat
-        $java_install_dir/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365
+        echo "Launching Java's keytool:"
+
+        local verify_password
+        while [ 1 ]; do
+            echo
+            read -s -p "Please enter the password for this keystore   : " store_password
+            [ "${store_password}" = "changeit" ] && break
+            [ -z "${store_password}" ] && echo "Invalid password [${store_password}]" && continue
+            echo
+            read -s -p "Please re-enter the password for this keystore: " verify_password
+            [ "${store_password}" = "${verify_password}" ] && echo && break;
+        done
+        unset verify_password
+        echo
+
+        (($DEBUG)) && ${JAVA_HOME}/bin/keytool -list -keystore ${keystore_file}
+        $java_install_dir/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365 -storepass ${store_password}
         [ $? != 0 ] && echo " ERROR: keytool genkey command failed" && popd && checked_done 1
         genreq="Y"
     else
@@ -1296,11 +1311,21 @@ setup_tomcat() {
             [ $? != 0 ] && echo " ERROR: Could not fetch or copy ${fetch_file} for tomcat!!" && popd && checked_done 1
         fi
     fi
-    
+
+    #Re-integrate my public key (I mean, my "certificate") from my keystore into the truststore (the place housing all public keys I allow to talk to me)
+    keytool -export -alias ${keystore_alias} -file ${keystore_file}.cer -keystore ${keystore_file} -storepass ${store_password}
+    keytool -import -v -trustcacerts -alias ${keystore_alias} -keypass ${store_password} -file ${keystore_file}.cer -keystore ${truststore_file} -storepass changeit
+    rm ${keystore_file}.cer
+
+    #NOTE: The truststore uses the java default password: "changeit"
+
     #Edit the server.xml file to contain proper location of certificates
     eval "perl -p -i -e 's#\\@\\@truststore_file\\@\\@#${truststore_file}#g' server.xml"
     eval "perl -p -i -e 's#\\@\\@keystore_file\\@\\@#${keystore_file}#g' server.xml"
+    eval "perl -p -i -e 's#\\@\\@keystore_password\\@\\@#${store_password}#g' server.xml"
 
+    #clean up the password immediately after it is done being used
+    unset store_password
 
     chown -R $tomcat_user $(readlink -f ${tomcat_install_dir})
     [ $? != 0 ] && " ERROR: Could not change ownership of tomcat to \"$tomcat_user\" user" && popd && checked_done 1
@@ -2609,7 +2634,7 @@ self_verify() {
             read -t $((1*60)) -p "Do you wish to Update and exit [u], continue anyway [c] or simply exit [x]? [u/C/x]: " choice
         fi
         
-        if [ "$choice" = "C" ] || [ "$choice" = "c" ]; then
+        if [ "$choice" = "C" ] || [ "$choice" = "c" ] || [ -z "$choice" ]; then
             echo 
             return 0
         elif [ "$choice" = "U" ] || [ "$choice" = "u" ]; then
@@ -3097,6 +3122,7 @@ esg_node_finally() {
     chown -R ${installer_uid}:${installer_gid} ${X509_CERT_DIR} >& /dev/null
     chown -R ${installer_uid}:${installer_gid} ${HOME}/.globus >& /dev/null
     chown -R ${installer_uid}:${installer_gid} ${HOME}/$(hostname --fqdn)-esg-node.csr >& /dev/null
+    reset
     exit 0
 }
 
