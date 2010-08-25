@@ -1337,6 +1337,7 @@ setup_tomcat() {
     echo "*"
 
     #clean up the password immediately after it is done being used
+    keystore_password=${store_password} #don't want to do this but it is used by the esg-security script that installs the ORP
     unset store_password
 
     chown -R $tomcat_user $(readlink -f ${tomcat_install_dir})
