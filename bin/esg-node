@@ -225,6 +225,7 @@ write_paths() {
     echo "export PATH=$myPATH:\$PATH" >> ${envfile}
     echo "export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:\$LD_LIBRARY_PATH" >> ${envfile}
     echo "export ESG_INSTALL_LOGFILE=${install_logfile}" >> ${envfile}
+    echo "export ESG_USER_HOME=${installer_home}" >> ${envfile}
     dedup ${envfile} && source ${envfile}
 }
 
@@ -246,9 +247,11 @@ check_prerequisites() {
     [ $? != 0 ] || [ -z "$installer_uid" ] && echo "installer_uid is not set" && exit 1
     installer_gid=$(id ${HOME##*/} | sed 's/.*gid=\([0-9]*\).*/\1/')
     [ $? != 0 ] || [ -z "$installer_gid" ] && echo "installer_gid is not set" && exit 1
+    installer_home=${HOME}
 
-    echo "installer uid = ${installer_uid}"
-    echo "installer gid = ${installer_gid}"
+    echo "installer uid  = ${installer_uid}"
+    echo "installer gid  = ${installer_gid}"
+    echo "installer home = ${installer_home}"
 
     #----------------------------------------
     echo "Checking requisites... "
