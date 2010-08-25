@@ -1375,7 +1375,6 @@ setup_tomcat() {
     [ $ret != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to contact top level tomcat page on this server" && popd && checked_done 1
     echo "[OK]"
     echo
-    
     popd >& /dev/null
     echo
     echo
@@ -1650,6 +1649,7 @@ setup_node() {
     popd >& /dev/null
     (( ! upgrade )) && configure_postgress
     write_node_install_log
+    set_redirect
     checked_done 0
 
 }
@@ -1657,6 +1657,31 @@ setup_node() {
 write_node_install_log() {
     echo "$(date ${date_format}) webapp:node_mgr=${node_version} ${node_app_home}" >> ${install_logfile}
     dedup ${install_logfile}
+    return 0
+}
+
+#setup the ROOT app's index.html to redirct to the esg-node's index page (BOOM!)
+set_redirect() {
+
+    local index_file=${tomcat_install_dir}/webapps/ROOT/index.html
+
+    [ ! -e ${index_file} ] && echo "Sorry, No \"ROOT\" application found!" && return 1
+
+    local redirect_content="<head><meta HTTP-EQUIV=\"REFRESH\" content=\"0; url=/esg-node\"></head>"
+
+    [ "${redirect_content}" = "$(cat ${index_file})" ] && echo "Redirect already setup" && return 0
+
+    local doit="Y"
+    read -p "Do you wish to setup the redirect to the esg-node's page? [Y/n]: " doit
+    [ "n" = "${doit}" ] || [ "N" = "${doit}" ] && return 0
+
+    mv ${index_file} ${index_file}.last
+
+    echo "${redirect_content}" > ${index_file}
+    chmod 644 ${index_file}
+    chown -R ${tomcat_user}  ${index_file}
+    chgrp -R ${tomcat_group} ${index_file}
+    echo "Redirect setup to /esg-node"
     return 0
 }
 
