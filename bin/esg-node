@@ -1974,11 +1974,19 @@ setup_tds() {
     chown -R ${installer_uid}:${installer_gid} ${tomcat_install_dir}/content/thredds/esgcet 
     [ $? != 0 ] && echo "WARNING: Could not change owner successfully - this will lead to unability to create new catalogs via the publisher!"
 
-    sleep 3
     echo "curl http://${node_host_ip_address}/thredds"
-    curl http://${node_host_ip_address}/thredds
+    local wait_time=5
+    local ret=1
+    while [[ $wait_time > 0 ]]; do
+        curl http://${node_host_ip_address}/thredds >& /dev/null
+        ret=$?
+        [ $ret == 0 ] && break
+        sleep 1
+        ((wait_time--))
+    done
+
     [ $? != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to contact thredds page on this server" && checked_done 1
-    echo "[PASSED]"    
+    echo "[OK]"
     write_tds_env
     write_tds_install_log
     checked_done 0
@@ -2016,7 +2024,7 @@ test_tds() {
     curl http://${node_host_ip_address}/thredds
     [ $? != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to contact thredds page on this server" && popd && checked_done 1
     
-    echo "[PASSED]"
+    echo "[OK]"
     popd >& /dev/null
     echo
     echo
@@ -2571,7 +2579,7 @@ checked_get() {
     fi
     wget --no-check-certificate -O ${local_file} ${remote_file}
     [ $? != 0 ] && echo " ERROR: Problem pulling down [${remote_file##*/}] from esg distribution site" && return 2
-    diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
+    diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl -s ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
     [ $? != 0 ] && echo " WARNING: Could not verify this file!" && return 3
     echo "[VERIFIED]"
     return 0
