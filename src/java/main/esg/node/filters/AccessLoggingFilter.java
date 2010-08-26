@@ -248,12 +248,12 @@ public class AccessLoggingFilter implements Filter {
                     fileID = "0A";
                     remoteAddress = req.getRemoteAddr();
                     userAgent = (String)req.getAttribute("userAgent");
-                    serviceType = "<THREDDS>";
+                    serviceType = "tds";
                     dateFetched = System.currentTimeMillis()/1000;
                     batchUpdateTime = dateFetched; //For the life of my I am not sure why this is there, something from the gridftp metrics collection. -gmb
                     
                     success = ((id = accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,serviceType,batchUpdateTime,dateFetched)) > 0);
-                    
+
                 }else {
                     log.debug("No match against: "+url);
                 }
