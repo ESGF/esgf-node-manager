@@ -15,13 +15,15 @@ Follow the instructions below describing how to run the update script.
 The update and install scripts is written in bash and is intended to
 be run on CentOS/RedHat Linux distributions as *root* or a root
 effective user via "sudo -s" (IMPORTANT: Do not run scripts directly
-with sudo.  Sudo filers out needed environment variables!).  I suggest
-taking all the defaults presented and reading and following the
-script's suggestions.
+with sudo.  Straight sudo filters out needed environment variables!).  
 
-(The entire process takes approximately a bit under an hour)
+I suggest taking all the defaults presented and reading and following
+the script's suggestions.
 
-Thank you for your participation.
+(The entire process takes approximately, a bit under, an hour)
+
+Thank you for your participation!
+
 
 *************
 Instructions:
@@ -31,59 +33,74 @@ gateway you intend to connect to:
         (ESG-PCMDI) http://pcmdi3.llnl.gov/esgcet/
 - Be sure the machine you are installing on is a CentOS/Redhat linux
 family distribution.
-- Be sure the machine has a fully qualified hostname that responds to
-both  hostname -s and hostname --domain.
+- Be sure the machine has a fully qualified hostname and responds to
+hostname -s, hostname --domain and hostname --fqdn.
 - The machine must have all development headers installed.
-- Must have root (or sudo) privileges.
+- The installation user must have root (or sudo) privileges.
 
-1) download the update script to /usr/local/bin on the target machine
-   % cd /usr/local/bin
-   % wget http://rainbow.llnl.gov/dist/esg-node/esg-update
 
-2) % chmod 755 esg-update
+0) We recommend creating a separate installation user account (Ex:
+   esg-user) and give that user the ability to use sudo (i.e. create
+   an appropriate entry in /etc/sudoers).
 
-     You only run esg-update initially to get the install scripts and
-then subsequently to get the latest revisions of install scripts.
 
-3) Become root or root equiv
+1) LOGIN as the installation user
+
+
+2) From the installation user become root or root equiv....
    
-   % sudo -s  (do not run directly from sudo because sudo filters env vars)
+   % sudo -s  
+   
+   (do not run the script directly from sudo because sudo filters env vars)
 
-4) Make sure you manually check the md5 checksum... 
+
+3) Download the "update" script to /usr/local/bin on the target machine
+   % cd /usr/local/bin
+   % wget http://198.128.245.140/dist/esg-node/esg-update
+
+
+4) MAKE SURE YOU MANUALLY CHECK THE MD5 CHECKSUM!
    (We don't want to run just any ol' script as root!!! :-)
 
-   % diff <(md5sum esg-update | tr -s " " | cut -d " " -f 1) <(curl http://rainbow.llnl.gov/dist/esg-node/esg-update.md5 | tr -s " " | cut -d " " -f 1)
+   % diff <(md5sum esg-update | tr -s " " | cut -d " " -f 1) <(curl -s http://198.128.245.140/dist/esg-node/esg-update.md5 | tr -s " " | cut -d " " -f 1)
    
-   (there should be NO difference!)
+   (there should be NO difference! i.e. the command returns you back to your prompt)
 
-   Besides the manual check the script is self verifying.
+   Besides the manual check the script is "self verifying".
    If the script has been tampered with in any way, it will indicate
    this and NOT RUN. At which point you must fetch the file from the
-   distribution site again. - step 1
+   distribution site again. - step 3
+
+
+5) % chmod 555 esg-update
+
+   You only run esg-update initially to get the supporting install
+scripts and then in the future to subsequently to get the latest
+revisions of install scripts.  
    
 
-5) Fetch the latest node installation script 
+6) Fetch the latest node installation script 
    
    (md5 verification is done within the scripts from now on, so make
    sure it always says "[VERIFIED]" after a file is fetched)
    
    % esg-update node
 
-6) Run the installation script (read carefully...)
+7) Run the installation script (read prompts and instructions carefully...)
    
+   Note on prompts...
+        [y/N] means "N" is the default, you may just hit return
+        Default values appear in "[]" brackets. hitting return uses them.
+
    % esg-node --install --verify
 
    With the --verify flag the last step of the installation will
-   perform a test publish to the chosen gateway (default ESG-PCMDI)
+   perform a test publish to the chosen gateway (default: ESG-PCMDI)
 
    After the initial installation you may subsequently perform test
    publications independently by using the --test-pub flag.
 
    % esg-node --test-pub
-
-7) Answer prompts...
-        [y/N] means "N" is the default, you may just hit return
-        Default values appear in [] brackets. hitting return uses them.
 
 8) Join the appropriate mailing list...
    End Users : esg-node-user@lists.llnl.gov
@@ -97,7 +114,10 @@ then subsequently to get the latest revisions of install scripts.
    and/or
    subscribe esg-node-dev
 
+:-)
+
 ********
+Note:
 Errant key strokes are picked up, so please be careful.
 
 As mentioned the script is in bash, so feel free to read it, however, do
