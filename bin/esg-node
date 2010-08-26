@@ -1067,6 +1067,8 @@ setup_esgcet() {
     echo "chown -R ${installer_uid}:${installer_gid} $HOME/.esgcet"
     chown -R ${installer_uid}:${installer_gid} $HOME/.esgcet 
     [ $? != 0 ] && echo "**WARNING**: Could not change owner successfully - this will lead to inability to use the publisher properly!"
+    chgrp ${tomcat_group} ${HOME}/.esgcet/esg.ini && chmod 640 ${HOME}/.esgcet/esg.ini && chmod 755 ${HOME}
+    [ $? != 0 ] && echo "**WARNING**: Could not change owner successfully - this will lead to inability to use the publisher properly!"
     start_postgress
 
     echo "$cdat_home/bin/esgsetup --db"
