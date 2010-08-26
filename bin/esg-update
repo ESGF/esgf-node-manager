@@ -32,13 +32,20 @@ get_latest() {
     #Get files
     local fetch_file=esg-${type}
 
-    echo "Updating install script from PCMDI's ESG distribution site at LLNL"
+    local ret
+    echo "Checking...."
     if [ "$type" = "node" ]; then
 	checked_get ${esg_dist_url}/esg-node/${fetch_file} 
+        ret=$?
+        ((ret == 1)) && echo "${type} install script already up-to-date"
+        ((ret == 0)) && echo "Updated ${type} install script from PCMDI's ESG distribution site at LLNL"
     else
 	checked_get ${esg_dist_url}/externals/bootstrap/${fetch_file} 
+        ret=$?
+        ((ret == 1)) && echo "${type} install script already up-to-date"
+        ((ret == 0)) && echo "Updated ${type} install script from PCMDI's ESG distribution site at LLNL"
     fi
-    (( $? > 1 )) && popd >& /dev/null && return 1
+    (( ret > 1 )) && popd >& /dev/null && return 1
     chmod 755 ${fetch_file}
     [ -e ${init_scripts_dir}/${fetch_file} ] && cp -v ${fetch_file} ${init_scripts_dir}/${fetch_file}
     popd >& /dev/null
@@ -63,7 +70,7 @@ check_for_update() {
     
     [ ! -e ${local_file} ] && echo " WARNING: Could not find local file ${local_file}" && return 0
     [ ! -x ${local_file} ] && echo " WARNING: local file ${local_file} not executible" && chmod 755 ${local_file}
-    diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
+    diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl -s ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
     (( $? != 0 )) && echo " Update Available @ ${remote_file}" && return 0
     return 1
 }
@@ -91,7 +98,7 @@ checked_get() {
     fi
     wget -O ${local_file} ${remote_file}
     [ $? != 0 ] && echo " ERROR: Problem pulling down [${remote_file##*/}] from esg distribution site" && return 2
-    diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
+    diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl -s ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
     [ $? != 0 ] && echo " WARNING: Could not verify this file!" && return 3
     echo "[VERIFIED]"
     return 0
@@ -99,7 +106,7 @@ checked_get() {
 
 self_verify() {
     #echo "diff <(md5sum ${0} | tr -s " " | cut -d " " -f 1) <(curl ${esg_dist_url}/esg-node/${0##*/}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null "
-    diff <(md5sum ${0} | tr -s " " | cut -d " " -f 1) <(curl ${esg_dist_url}/esg-node/${0##*/}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
+    diff <(md5sum ${0} | tr -s " " | cut -d " " -f 1) <(curl -s ${esg_dist_url}/esg-node/${0##*/}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
     [ $? != 0 ] && echo " WARNING: Could not verify myself!" && return 3
     echo "[VERIFIED]"
     return 0

@@ -1321,13 +1321,13 @@ setup_tomcat() {
     echo "Integrating keystore's certificate into truststore.... "
     echo -n "Extracting keystore's certificate... "
     keytool -export -alias ${keystore_alias} -file ${keystore_file}.cer -keystore ${keystore_file} -storepass ${store_password}
-    [ $? == 0 ] && echo "[OK]"
+    [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
     echo "Importing keystore's certificate into truststore... "
     keytool -import -v -trustcacerts -alias ${keystore_alias} -keypass ${store_password} -file ${keystore_file}.cer -keystore ${truststore_file} -storepass changeit
-    [ $? == 0 ] && echo "[OK]"
+    [ $? == 0 ] && echo "[OK]" || echo "[FAILED] - May already have this alias present"
     echo -n "cleaning up after ourselves... "
     rm -v ${keystore_file}.cer
-    [ $? == 0 ] && echo "[OK]"
+    [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
 
     #NOTE: The truststore uses the java default password: "changeit"
 
