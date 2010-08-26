@@ -1407,7 +1407,7 @@ start_tomcat() {
 
     echo "Starting Tomcat (jsvc)..."
     pushd $tomcat_install_dir >& /dev/null
-    jsvc_launch_command="JAVA_HOME=$java_install_dir ./bin/jsvc -Djava.endorsed.dirs=./endorsed -Djava.awt.headless=true -Dcatalina.home=${tomcat_install_dir} -pidfile $tomcat_pid_file -cp $(find $(readlink -f `pwd`/bin/) | grep jar | xargs | perl -pe 's/ /:/g') -outfile ./logs/catalina.out -errfile ./logs/catalina.err -user $tomcat_user $tomcat_opts $java_opts -Dsun.security.ssl.allowUnsafeRenegotiation=true org.apache.catalina.startup.Bootstrap"
+    jsvc_launch_command="JAVA_HOME=$java_install_dir ./bin/jsvc -Djava.endorsed.dirs=./endorsed -Djava.awt.headless=true -Dcatalina.home=${tomcat_install_dir} -pidfile $tomcat_pid_file -cp $(find $(readlink -f `pwd`/bin/) | grep jar | xargs | perl -pe 's/ /:/g') -outfile ./logs/catalina.out -errfile ./logs/catalina.err -user $tomcat_user $tomcat_opts $java_opts -Dsun.security.ssl.allowUnsafeRenegotiation=false org.apache.catalina.startup.Bootstrap"
     echo "$jsvc_launch_command"
     JAVA_HOME=${java_install_dir} ./bin/jsvc \
         -Djava.endorsed.dirs=./endorsed \
@@ -1419,7 +1419,7 @@ start_tomcat() {
         -errfile ./logs/catalina.err \
         -user $tomcat_user \
         ${tomcat_opts} \
-        $java_opts -Dsun.security.ssl.allowUnsafeRenegotiation=true \
+        $java_opts -Dsun.security.ssl.allowUnsafeRenegotiation=false \
         org.apache.catalina.startup.Bootstrap
     if [ $? != 0 ]; then 
         echo " ERROR: Could not start up tomcat"
