@@ -299,7 +299,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     //--------------------------------------------
 
     public void connect(String parentName, String childName) {
-	log.warn("Connecting: "+parentName+" -to-> "+childName);
+	log.info("Connecting: "+parentName+" -to-> "+childName);
 	try{
 	    //For the moment there is a 1:1 with name and component.
 	    getComponent(parentName).addESGQueueListener(getComponent(childName));
