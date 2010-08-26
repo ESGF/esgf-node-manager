@@ -9,7 +9,7 @@
 #uses: wget
 
 install_prefix=${prefix:-"/usr/local"}
-esg_dist_url=http://rainbow.llnl.gov/dist
+esg_dist_url=http://198.128.245.140/dist
 
 id_check() {
     id | grep root >& /dev/null
