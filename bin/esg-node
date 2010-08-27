@@ -2660,8 +2660,8 @@ insert_file_at_pattern() {
 # arg 1 - The environment file to dedup.
 dedup() {
     local infile=${1:-${envfile}}
-    tac ${infile} | awk 'BEGIN {FS="[ =]"} !($2 in a) {a[$2];print $0}' | cat | sort -k2,2 > ${infile}_tmp
-    mv ${infile}_tmp ${infile}
+    local tmp=$(tac ${infile} | awk 'BEGIN {FS="[ =]"} !($2 in a) {a[$2];print $0}' | sort -k2,2)
+    echo "$tmp" > ${infile}
 }
 
 #"private" function
