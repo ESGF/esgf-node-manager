@@ -207,7 +207,7 @@ init() {
     scripts_dir=${install_prefix}/bin
     no_globus=${no_globus:-0}
     keystore_file=${tomcat_install_dir}/conf/keystore-tomcat
-    keystore_alias=$(hostname --fqdn)
+    keystore_alias=tomcat
     keystore_password=changeit
     truststore_file=${tomcat_install_dir}/conf/jssecacerts
     globus_global_certs_dir=/etc/grid-security/certificates
@@ -1313,22 +1313,13 @@ setup_tomcat() {
         if (( $? > 1 )); then
             echo " Warning: Could not download certificates ${fetch_file} for tomcat - will copy local java certificat file"
             echo "(note - the truststore password will probably not match!)"
-            cp -v ${java_home}/jre/lib/security/cacerts ${truststore_file}
+            cp -v ${java_install_dir}/jre/lib/security/cacerts ${truststore_file}
             [ $? != 0 ] && echo " ERROR: Could not fetch or copy ${fetch_file} for tomcat!!" && popd && checked_done 1
         fi
     fi
 
-    #Re-integrate my public key (I mean, my "certificate") from my keystore into the truststore (the place housing all public keys I allow to talk to me)
-    echo "Integrating keystore's certificate into truststore.... "
-    echo -n "Extracting keystore's certificate... "
-    keytool -export -alias ${keystore_alias} -file ${keystore_file}.cer -keystore ${keystore_file} -storepass ${store_password}
-    [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
-    echo "Importing keystore's certificate into truststore... "
-    keytool -import -v -trustcacerts -alias ${keystore_alias} -keypass ${store_password} -file ${keystore_file}.cer -keystore ${truststore_file} -storepass changeit
-    [ $? == 0 ] && echo "[OK]" || echo "[FAILED] - May already have this alias present"
-    echo -n "cleaning up after ourselves... "
-    rm -v ${keystore_file}.cer
-    [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
+    add_my_cert_to_truststore ${store_password}
+
 
     #NOTE: The truststore uses the java default password: "changeit"
 
@@ -2205,7 +2196,7 @@ install_esg_certificates() {
     echo 
     echo "Installing ESG Federation Certificates..."
     #globus_global_certs_dir=/etc/grid-security/certificates
-    [ -e ${globus_global_certs_dir} ] && tar cvzf ${globus_global_certs_dir%/*}/${globus_global_certs_dir##*/}.bak.tgz ${globus_global_certs_dir} && rm ${globus_global_certs_dir}/*
+    [ -e ${globus_global_certs_dir} ] && tar czf ${globus_global_certs_dir%/*}/${globus_global_certs_dir##*/}.bak.tgz ${globus_global_certs_dir} >& /dev/null && rm ${globus_global_certs_dir}/*
     mkdir -p ${globus_global_certs_dir}
     local esg_trusted_certs_file=esg_trusted_certificates.tar.gz
     curl -s ${esg_dist_url}/externals/${esg_trusted_certs_file} | zcat | (cd ${globus_global_certs_dir}; pax -r -s ',.*/,,p')
@@ -2224,20 +2215,21 @@ rebuild_truststore() {
     echo
     echo "Rebuilding truststore from esg certificates..."
     if [ ! -d ${globus_global_certs_dir} ]; then
-        "Sorry, No esg certificates found... in ${globus_global_certs_dir}"
-        "So fetching fresh esg certificates :-)"
+        echo "Sorry, No esg certificates found... in ${globus_global_certs_dir}"
+        echo "So fetching fresh esg certificates :-)"
         install_esg_certificates
     fi
 
     #If you don't already have a truststore to build on....
     #Start building from a solid foundation i.e. Java's set of ca certs...
-    [ ! -e ${truststore_file} ] && cp -v ${java_home}/jre/lib/security/cacerts ${truststore_file}
+    [ ! -e ${truststore_file} ] && cp -v ${java_install_dir}/jre/lib/security/cacerts ${truststore_file}
 
     local tmp_dir=/tmp/esg_scratch
     mkdir -p ${tmp_dir}
 
     local cert_files=$(find ${globus_global_certs_dir} | egrep '^.*.0$')
-    for cert_file in $certfiles; do
+    for cert_file in $cert_files; do
+        echo -n "$cert_file -> "
         cert_hash=$(echo ${cert_file##*/} | awk -F'.' '{print $1}') ;
         der_file="${tmp_dir}/${cert_hash}.der" ;
 
@@ -2246,16 +2238,49 @@ rebuild_truststore() {
         if [ -f ${truststore_file} ]; then
             keytool -delete -alias ${cert_hash} -keystore ${truststore_file} \
                 -storepass changeit 2>&1 > /dev/null ;
+            [ $? == 0 ] && echo -n "- " || echo -n "  "
         fi
 
+        [ $? == 0 ] && echo -n "+ " || echo -n "  "
         keytool -import -alias ${cert_hash} -file ${der_file} -keystore ${truststore_file} \
             -storepass changeit -noprompt ;
+        [ $? != 0 ] && echo " [FAILED]"
+
         rm -f ${der_file} ;
     done
-    rm ${tmp_dir}
+    rmdir ${tmp_dir}
 
     chown ${tomcat_user}:${tomcat_group} ${truststore_file}
+    echo "...done"
+    return 0
+}
 
+#This takes our certificate from the keystore and adds it to the
+#truststore.  This is done for other services that use originating
+#from this server talking to another service on this same host.  This
+#is the interaction scenario with part of the ORP security mechanism.
+#The param here is the password of the *keystore*
+add_my_cert_to_truststore() {
+    local store_password=${1:changeit}
+    #----------------------------------------------------------------
+    #Re-integrate my public key (I mean, my "certificate") from my keystore into the truststore (the place housing all public keys I allow to talk to me)
+    #----------------------------------------------------------------
+    if [ -e ${truststore_file} ]; then
+        echo "Re-Integrating keystore's certificate into truststore.... "
+        echo -n "Extracting keystore's certificate... "
+        keytool -export -alias ${keystore_alias} -file ${keystore_file}.cer -keystore ${keystore_file} -storepass ${store_password}
+        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
+        echo "Making space for certificate... "
+        keytool -delete -alias ${keystore_alias} -keystore ${truststore_file}  -storepass changeit 2>&1 > /dev/null #for ORP
+        echo "Importing keystore's certificate into truststore... "
+        keytool -import -v -trustcacerts -alias ${keystore_alias} -keypass ${store_password} -file ${keystore_file}.cer -keystore ${truststore_file} -storepass changeit
+        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
+        echo -n "cleaning up after ourselves... "
+        rm -v ${keystore_file}.cer
+        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
+    fi
+    chown ${tomcat_user}:${tomcat_group} ${truststore_file}
+    #----------------------------------------------------------------
     return 0
 }
 
@@ -2266,7 +2291,7 @@ install_signed_certificate() {
 
     echo
     echo "Installing Signed Host Certificate: ${signed_cert_file} "
-
+    
     [ ! -e ${signed_cert_file} ] && echo "ERROR: Could not find signed cert file: ${signed_cert_file}" && return 1
     
     local store_password=${keystore_password}
@@ -2289,26 +2314,8 @@ install_signed_certificate() {
 
     chown ${tomcat_user}:${tomcat_group} ${keystore_file}
 
-    #----------------------------------------------------------------
-    #Re-integrate my public key (I mean, my "certificate") from my keystore into the truststore (the place housing all public keys I allow to talk to me)
-    #----------------------------------------------------------------
-    if [ -e ${truststore_file} ]; then
-        echo "Re-Integrating keystore's certificate into truststore.... "
-        echo -n "Extracting keystore's certificate... "
-        keytool -export -alias ${keystore_alias} -file ${keystore_file}.cer -keystore ${keystore_file} -storepass ${store_password}
-        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
-        echo "Making space for certificate... "
-        keytool -delete -alias ${keystore_alias} -keystore ${truststore_file}  -storepass changeit 2>&1 > /dev/null #for ORP
-        echo "Importing keystore's certificate into truststore... "
-        keytool -import -v -trustcacerts -alias ${keystore_alias} -keypass ${store_password} -file ${keystore_file}.cer -keystore ${truststore_file} -storepass changeit
-        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
-        echo -n "cleaning up after ourselves... "
-        rm -v ${keystore_file}.cer
-        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
-    fi
-    chown ${tomcat_user}:${tomcat_group} ${truststore_file}
-    #----------------------------------------------------------------
-
+    add_my_cert_to_truststore ${store_password}
+    
     unset store_password
     [ $ret == 0 ] && echo "[OK]" || echo "[FAILED]" && return $ret
 }
@@ -3013,7 +3020,7 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         --install-signed-hostcert - installs signed host certificate into keystore and truststore <signed PEM file>
         --export-keys-to-globus  - exports keystore certificates to globus host{cert,key}.pem files.
         --install-esg-certs - fetches and installs all current public esg federation certificates (used by globus)
-        --rebuild_truststore - converts globus' (public) ca certificates into a truststore.
+        --rebuild-truststore - converts globus' (public) ca certificates into a truststore.
         --clear-certs - removes the user-level public certificates' directory (used by myproxy)
 
         start   - start the data node's services
@@ -3194,6 +3201,7 @@ main() {
                 exit
                 ;;
             --register)
+                self_verify
                 init
                 #First arg is the server
                 #Second arg is the password (not required)
@@ -3202,6 +3210,7 @@ main() {
                 exit
                 ;;
             --install-esg-certs)
+                self_verify
                 shift
                 init
                 id | grep root >& /dev/null
@@ -3209,7 +3218,8 @@ main() {
                 install_esg_certificates
                 exit $?
                 ;;
-            --rebuild_truststore)
+            --rebuild-truststore)
+                self_verify
                 shift
                 init
                 id | grep root >& /dev/null
@@ -3218,6 +3228,7 @@ main() {
                 exit $?
                 ;;
             --install-signed-hostcert)
+                self_verify
                 shift
                 init
                 id | grep root >& /dev/null
