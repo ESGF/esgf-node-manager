@@ -2203,14 +2203,14 @@ install_esg_certificates() {
     echo 
     echo "Installing ESG Federation Certificates..."
     #globus_global_certs_dir=/etc/grid-security/certificates
-    [ -e ${globus_global_certs_dir} ] && tar cvzf ${globus_global_certs_dir%/*}/${globus_global_certs_dir}.bak.tgz ${globus_global_certs_dir} && rm ${globus_global_certs_dir}/*
+    [ -e ${globus_global_certs_dir} ] && tar cvzf ${globus_global_certs_dir%/*}/${globus_global_certs_dir##*/}.bak.tgz ${globus_global_certs_dir} && rm ${globus_global_certs_dir}/*
     mkdir -p ${globus_global_certs_dir}
     local esg_trusted_certs_file=esg_trusted_certificates.tar.gz
     curl -s ${esg_dist_url}/externals/${esg_trusted_certs_file} | zcat | (cd ${globus_global_certs_dir}; pax -r -s ',.*/,,p')
     local ret=$?
-    rmdir -v ${globus_global_certs_dir}/$(echo ${esg_trusted_certs_file} | awk 'gsub(/('$compress_extensions')/,"")')
-    if[ $ret == 0 ]; then
-        rm -v ${globus_global_certs_dir%/*}/${globus_global_certs_dir}.bak.tgz
+    rmdir ${globus_global_certs_dir}/$(echo ${esg_trusted_certs_file} | awk 'gsub(/('$compress_extensions')/,"")')
+    if [ $ret == 0 ]; then
+        [ -e ${globus_global_certs_dir%/*}/${globus_global_certs_dir##*/}.bak.tgz ] && rm ${globus_global_certs_dir%/*}/${globus_global_certs_dir##*/}.bak.tgz
     fi
     chmod 755 ${globus_global_certs_dir}
     chmod 644 ${globus_global_certs_dir}/*
@@ -2257,9 +2257,9 @@ export_keystore_as_globus_hostkeys() {
     popd >& /dev/null
 
     local CP=".:${workdir}"
-
-    if [ ! -e ${keystore_file} ] && echo "Cannot locate keystore \"${keystore_file}\"" && return 2
-
+    
+    [ ! -e ${keystore_file} ] && echo "Cannot locate keystore \"${keystore_file}\"" && return 2
+    
     local store_password=${keystore_password}
     local verify_password
     while [ 1 ]; do
