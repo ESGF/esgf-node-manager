@@ -65,7 +65,7 @@
 
 #uses: perl, awk, ifconfig, tar, wget, curl, su, useradd, groupadd,
 #      id, chmod, chown, chgrp, cut, svn, mkdir, killall, java, egrep,
-#      lsof, unlink, ln, pax
+#      lsof, unlink, ln, pax, keytool, openssl
 
 #note: usage of readlink not macosx friendly :-( usage of useradd /
 #      groupadd is RedHat/CentOS dependent :-(
@@ -207,7 +207,7 @@ init() {
     scripts_dir=${install_prefix}/bin
     no_globus=${no_globus:-0}
     keystore_file=${tomcat_install_dir}/conf/keystore-tomcat
-    keystore_alias=tomcat
+    keystore_alias=$(hostname --fqdn)
     keystore_password=changeit
     truststore_file=${tomcat_install_dir}/conf/jssecacerts
     globus_global_certs_dir=/etc/grid-security/certificates
@@ -2177,7 +2177,7 @@ show_summary() {
 
 write_env() {
     echo "Generating default ${envfile} file"
-    [ -e ${envfile} ] && cp ${envfile} ${envfile}.bak 
+    [ -e ${envfile} ] && cp ${envfile} ${envfile}.bak
     cat /dev/null > ${envfile}
     write_paths
     write_git_env
@@ -2199,6 +2199,8 @@ write_env() {
 # Utility Functions
 ############################################
 
+#Goes to ESG distribution server and pulls down all certificates for the federation.
+#(suitable for crontabbing)
 install_esg_certificates() {
     echo 
     echo "Installing ESG Federation Certificates..."
@@ -2216,7 +2218,49 @@ install_esg_certificates() {
     chmod 644 ${globus_global_certs_dir}/*
 }
 
-#Takes signed PEM format certificate file for arg (optional)
+#Converts ESG certificates (that can be fetch by above function) to a truststore
+#(original rendition by Philip Kershaw)
+rebuild_truststore() {
+    echo
+    echo "Rebuilding truststore from esg certificates..."
+    if [ ! -d ${globus_global_certs_dir} ]; then
+        "Sorry, No esg certificates found... in ${globus_global_certs_dir}"
+        "So fetching fresh esg certificates :-)"
+        install_esg_certificates
+    fi
+
+    #If you don't already have a truststore to build on....
+    #Start building from a solid foundation i.e. Java's set of ca certs...
+    [ ! -e ${truststore_file} ] && cp -v ${java_home}/jre/lib/security/cacerts ${truststore_file}
+
+    local tmp_dir=/tmp/esg_scratch
+    mkdir -p ${tmp_dir}
+
+    local cert_files=$(find ${globus_global_certs_dir} | egrep '^.*.0$')
+    for cert_file in $certfiles; do
+        cert_hash=$(echo ${cert_file##*/} | awk -F'.' '{print $1}') ;
+        der_file="${tmp_dir}/${cert_hash}.der" ;
+
+        # Convert to DER format for ingest into keystore
+        openssl x509 -inform pem -in ${cert_file} -outform der -out ${der_file}
+        if [ -f ${truststore_file} ]; then
+            keytool -delete -alias ${cert_hash} -keystore ${truststore_file} \
+                -storepass changeit 2>&1 > /dev/null ;
+        fi
+
+        keytool -import -alias ${cert_hash} -file ${der_file} -keystore ${truststore_file} \
+            -storepass changeit -noprompt ;
+        rm -f ${der_file} ;
+    done
+    rm ${tmp_dir}
+
+    chown ${tomcat_user}:${tomcat_group} ${truststore_file}
+
+    return 0
+}
+
+#Once the generated CSR has been submitted to a CA and signed... the returned
+#signed certificate needs to be imported into the keystore. (and to trust store: for ORP)
 install_signed_certificate() {
     local signed_cert_file=${1:-${HOME}/$(hostname --fqdn)-esg-node.pem}
 
@@ -2239,14 +2283,37 @@ install_signed_certificate() {
     unset verify_password
     echo
 
-    #keytool -delete -alias ${keystore_alias} -keystore ${keystore_file} -storepass ${store_password}
+    keytool -delete -alias ${keystore_alias} -keystore ${keystore_file} -storepass ${store_password} >& /dev/null
     keytool -import -trustcacerts -alias ${keystore_alias} -file ${signed_cert_file} -keystore ${keystore_file} -storepass ${store_password}
     local ret=$?
+
+    chown ${tomcat_user}:${tomcat_group} ${keystore_file}
+
+    #----------------------------------------------------------------
+    #Re-integrate my public key (I mean, my "certificate") from my keystore into the truststore (the place housing all public keys I allow to talk to me)
+    #----------------------------------------------------------------
+    if [ -e ${truststore_file} ]; then
+        echo "Re-Integrating keystore's certificate into truststore.... "
+        echo -n "Extracting keystore's certificate... "
+        keytool -export -alias ${keystore_alias} -file ${keystore_file}.cer -keystore ${keystore_file} -storepass ${store_password}
+        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
+        echo "Making space for certificate... "
+        keytool -delete -alias ${keystore_alias} -keystore ${truststore_file}  -storepass changeit 2>&1 > /dev/null #for ORP
+        echo "Importing keystore's certificate into truststore... "
+        keytool -import -v -trustcacerts -alias ${keystore_alias} -keypass ${store_password} -file ${keystore_file}.cer -keystore ${truststore_file} -storepass changeit
+        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
+        echo -n "cleaning up after ourselves... "
+        rm -v ${keystore_file}.cer
+        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
+    fi
+    chown ${tomcat_user}:${tomcat_group} ${truststore_file}
+    #----------------------------------------------------------------
+
     unset store_password
     [ $ret == 0 ] && echo "[OK]" || echo "[FAILED]" && return $ret
 }
 
-#This should only be run after your signed certificate has been already installed into the keystore!
+#This should only be run AFTER your signed certificate has been already installed into the keystore!
 export_keystore_as_globus_hostkeys() {
     mkdir -p ${workdir}
     pushd ${workdir} >& /dev/null
@@ -2293,6 +2360,16 @@ export_keystore_as_globus_hostkeys() {
     chmod 644 ${globus_global_certs_dir%/*}/hostcert.pem
     
     unset store_password
+
+    #for safe keeping post the truststore and keystore in /etc/grid-security/saved
+    if [ -d ${globus_global_certs_dir%/*} ]; then
+        mkdir -p ${globus_global_certs_dir%/*}/saved
+        chmod 700 ${globus_global_certs_dir%/*}/saved
+        rm ${globus_global_certs_dir%/*}/saved/*
+        cp ${truststore_file} ${globus_global_certs_dir%/*}/saved/${truststore_file##*/}.$(date ${date_format}).bak
+        cp ${keystore_file} ${globus_global_certs_dir%/*}/saved/${keystore_file##*/}.$(date ${date_format}).bak
+    fi
+
 }
 
 
@@ -2670,7 +2747,7 @@ checked_get() {
     fi                      
     
     if [ -e ${local_file} ]; then
-        cp -v ${local_file} ${local_file}.bak 
+        cp -v ${local_file} ${local_file}.bak
         chmod 600 ${local_file}.bak
     fi
     wget --no-check-certificate -O ${local_file} ${remote_file}
@@ -2925,17 +3002,19 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         --version     - indicates the version of this script
         --check       - checks if this script is the most up-to-date posted <u|c|N> (update|continue|nothing)
         --clear       - removes the file holding the enironment state of last install
-        --clear-certs - removes the prescribed certificate directory used with myproxy
         --test-pub    - performs the publication test directly (same publication called in last step of install)
         --info        - provides a brief explaination of the DataNode
         --upgrade     - upgrades the node manager
         --no-globus   - will not install any globus tools (for those with existing globus setups)
         --griftp-config - [ with-bdm-config | bdm-config-only ] without this arg uses default end-user config
 
-        --register    - connects to desired gateway, fetches and stores their certificate to enable SSL connection
-        --install-signed-hostcert - installs signed host certificate
-        --install-esg-certs - fetches and installs all current esg federation certificates (globus)
-        --export-keys-for-globus  - installs signed certificates used by globus
+        Key Management Flags:
+        --register    - connects to desired gateway, fetches and stores their certificate to enable ingress SSL connections
+        --install-signed-hostcert - installs signed host certificate into keystore and truststore <signed PEM file>
+        --export-keys-to-globus  - exports keystore certificates to globus host{cert,key}.pem files.
+        --install-esg-certs - fetches and installs all current public esg federation certificates (used by globus)
+        --rebuild_truststore - converts globus' (public) ca certificates into a truststore.
+        --clear-certs - removes the user-level public certificates' directory (used by myproxy)
 
         start   - start the data node's services
         stop    - stops the data node's services
@@ -3041,7 +3120,7 @@ main() {
                 check_prerequisites
                 [ $? != 0 ] && echo && exit 1
                 if [ -e ${envfile} ]; then 
-                    mv -v ${envfile} ${envfile}.bak 
+                    mv -v ${envfile} ${envfile}.bak
                     echo "Cleared envfile ${envfile}"
                 fi
                 exit 0
@@ -3130,6 +3209,14 @@ main() {
                 install_esg_certificates
                 exit $?
                 ;;
+            --rebuild_truststore)
+                shift
+                init
+                id | grep root >& /dev/null
+                [ $? != 0 ] && printf "[FAIL] \n\tMust be root for this option\n\n" && exit 1
+                rebuild_truststore
+                exit $?
+                ;;
             --install-signed-hostcert)
                 shift
                 init
@@ -3138,7 +3225,7 @@ main() {
                 install_signed_certificate $@
                 exit $?
                 ;;
-            --export-keys-for-globus)
+            --export-keys-to-globus)
                 shift
                 init
                 id | grep root >& /dev/null
