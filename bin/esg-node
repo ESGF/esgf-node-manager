@@ -2187,7 +2187,7 @@ write_env() {
 
 
 ############################################
-# Utility Functions
+# Certificate Management Utility Functions
 ############################################
 
 #Goes to ESG distribution server and pulls down all certificates for the federation.
@@ -2209,8 +2209,8 @@ install_esg_certificates() {
     chmod 644 ${globus_global_certs_dir}/*
 }
 
-#Converts ESG certificates (that can be fetch by above function) to a truststore
-#(original rendition by Philip Kershaw)
+#Converts ESG certificates (that can be fetch by above function) into a truststore
+#(adapted from original rendition by Philip Kershaw)
 rebuild_truststore() {
     echo
     echo "Rebuilding truststore from esg certificates..."
@@ -2230,8 +2230,8 @@ rebuild_truststore() {
     local cert_files=$(find ${globus_global_certs_dir} | egrep '^.*.0$')
     for cert_file in $cert_files; do
         echo -n "$cert_file -> "
-        cert_hash=$(echo ${cert_file##*/} | awk -F'.' '{print $1}') ;
-        der_file="${tmp_dir}/${cert_hash}.der" ;
+        local cert_hash=$(echo ${cert_file##*/} | awk -F'.' '{print $1}') ;
+        local der_file="${tmp_dir}/${cert_hash}.der" ;
 
         # Convert to DER format for ingest into keystore
         openssl x509 -inform pem -in ${cert_file} -outform der -out ${der_file}
@@ -2434,6 +2434,10 @@ register() {
     popd >& /dev/null
     return $ret
 }
+
+############################################
+# General - Utility Functions
+############################################
 
 #NOTE: This is another **RedHat/CentOS** specialty thing (sort of)
 #arg1 - min value of shmmax in MB (see: /etc/sysctl.conf)
