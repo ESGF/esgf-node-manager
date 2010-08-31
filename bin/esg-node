@@ -65,7 +65,7 @@
 
 #uses: perl, awk, ifconfig, tar, wget, curl, su, useradd, groupadd,
 #      id, chmod, chown, chgrp, cut, svn, mkdir, killall, java, egrep,
-#      lsof, unlink, ln
+#      lsof, unlink, ln, pax
 
 #note: usage of readlink not macosx friendly :-( usage of useradd /
 #      groupadd is RedHat/CentOS dependent :-(
@@ -210,6 +210,7 @@ init() {
     keystore_alias=tomcat
     keystore_password=changeit
     truststore_file=${tomcat_install_dir}/conf/jssecacerts
+    globus_global_certs_dir=/etc/grid-security/certificates
 
     mkdir -p ${esg_backup_dir}  && \
         mkdir -p ${esg_tools_dir} && \
@@ -2198,6 +2199,103 @@ write_env() {
 # Utility Functions
 ############################################
 
+install_esg_certificates() {
+    echo 
+    echo "Installing ESG Federation Certificates..."
+    #globus_global_certs_dir=/etc/grid-security/certificates
+    [ -e ${globus_global_certs_dir} ] && tar cvzf ${globus_global_certs_dir%/*}/${globus_global_certs_dir}.bak.tgz ${globus_global_certs_dir} && rm ${globus_global_certs_dir}/*
+    mkdir -p ${globus_global_certs_dir}
+    local esg_trusted_certs_file=esg_trusted_certificates.tar.gz
+    curl -s ${esg_dist_url}/externals/${esg_trusted_certs_file} | zcat | (cd ${globus_global_certs_dir}; pax -r -s ',.*/,,p')
+    local ret=$?
+    rmdir -v ${globus_global_certs_dir}/$(echo ${esg_trusted_certs_file} | awk 'gsub(/('$compress_extensions')/,"")')
+    if[ $ret == 0 ]; then
+        rm -v ${globus_global_certs_dir%/*}/${globus_global_certs_dir}.bak.tgz
+    fi
+}
+
+#Takes signed PEM format certificate file for arg (optional)
+install_signed_certificate() {
+    local signed_cert_file=${1:-${HOME}/$(hostname --fqdn)-esg-node.pem}
+
+    echo
+    echo "Installing Signed Host Certificate: ${signed_cert_file} "
+
+    [ ! -e ${signed_cert_file} ] && echo "ERROR: Could not find signed cert file: ${signed_cert_file}" && return 1
+    
+    local store_password=${keystore_password}
+    local verify_password
+    while [ 1 ]; do
+        echo
+        read -s -p "Please enter the password for this keystore   : " store_password
+        [ "${store_password}" = "changeit" ] && break
+        [ -z "${store_password}" ] && echo "Invalid password [${store_password}]" && continue
+        echo
+        read -s -p "Please re-enter the password for this keystore: " verify_password
+        [ "${store_password}" = "${verify_password}" ] && echo && break;
+    done
+    unset verify_password
+    echo
+
+    #keytool -delete -alias ${keystore_alias} -keystore ${keystore_file} -storepass ${store_password}
+    keytool -import -trustcacerts -alias ${keystore_alias} -file ${signed_cert_file} -keystore ${keystore_file} -storepass ${store_password}
+    local ret=$?
+    [ $ret == 0 ] && echo "[OK]" || echo "[FAILED]" && return $ret
+    chmod 755 ${globus_global_certs_dir}
+    chmod 644 ${globus_global_certs_dir}/*
+    unset store_password
+}
+
+#This should only be run after your signed certificate has been already installed into the keystore!
+export_keystore_as_globus_hostkeys() {
+    mkdir -p ${workdir}
+    pushd ${workdir} >& /dev/null
+    checked_get ${utils_url}/ExportPriv.class
+    (( $? > 1 )) && echo " ERROR: Could not download utility class(1) for exporting certificates" && popd && return 1
+    checked_get ${utils_url}/Base64Coder.class
+    (( $? > 1 )) && echo " ERROR: Could not download utility class(2) for exporting certificates" && popd && return 1
+    popd >& /dev/null
+
+    local CP=".:${workdir}"
+
+    if [ ! -e ${keystore_file} ] && echo "Cannot locate keystore \"${keystore_file}\"" && return 2
+
+    local store_password=${keystore_password}
+    local verify_password
+    while [ 1 ]; do
+        echo
+        read -s -p "Please enter the password for this keystore   : " store_password
+        [ "${store_password}" = "changeit" ] && break
+        [ -z "${store_password}" ] && echo "Invalid password [${store_password}]" && continue
+        echo
+        read -s -p "Please re-enter the password for this keystore: " verify_password
+        [ "${store_password}" = "${verify_password}" ] && echo && break;
+    done
+    unset verify_password
+    echo
+    
+    echo -n "Extracting keystore's key... (private) "
+    [ -e ${globus_global_certs_dir%/*}/hostkey.pem ] && cp ${globus_global_certs_dir%/*}/hostkey.pem ${globus_global_certs_dir%/*}/hostkey.pem.last
+    [ -e ${globus_global_certs_dir%/*} ] && mkdir -p ${globus_global_certs_dir%/*}
+    echo "${JAVA_HOME}/bin/java -classpath ${CP} ExportPriv ${keystore_file} ${keystore_alias} ************* > ${globus_global_certs_dir%/*}/hostkey.pem"
+    ${JAVA_HOME}/bin/java -classpath ${CP} ExportPriv ${keystore_file} ${keystore_alias} ${store_password} > ${globus_global_certs_dir%/*}/hostkey.pem
+    local ret=$?
+    [ $ret == 0 ] && echo "[OK]" || echo "[FAILED]"
+    chmod 600 ${globus_global_certs_dir%/*}/hostkey.pem
+    
+    
+    echo -n "Extracting keystore's certificate... (public) "
+    [ -e ${globus_global_certs_dir%/*}/hostcert.pem ] && cp ${globus_global_certs_dir%/*}/hostcert.pem ${globus_global_certs_dir%/*}/hostcert.pem.last
+    echo "keytool -export -alias ${keystore_alias} -file ${globus_global_certs_dir%/*}/hostcert.pem -keystore ${keystore_file} -storepass *************"
+    keytool -export -alias ${keystore_alias} -file ${globus_global_certs_dir%/*}/hostcert.pem -keystore ${keystore_file} -storepass ${store_password}
+    ret=$?
+    [ $ret == 0 ] && echo "[OK]" || echo "[FAILED]"
+    chmod 644 ${globus_global_certs_dir%/*}/hostcert.pem
+
+    unset store_password
+}
+
+
 #####
 # This function is for pulling in keys from hosts we wish to
 # communicate with over an encrypted ssl connection.  This function
@@ -2233,10 +2331,8 @@ register() {
     
     local CP=".:${workdir}"
 
-    echo "${JAVA_HOME}/bin/java -classpath ${CP} InstallCert \
-        ${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd}"
-    ${JAVA_HOME}/bin/java -classpath ${CP} InstallCert \
-        ${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd}
+    echo "${JAVA_HOME}/bin/java -classpath ${CP} InstallCert ${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd}"
+    ${JAVA_HOME}/bin/java -classpath ${CP} InstallCert ${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd}
     local ret=$?
 
     #------
@@ -2832,10 +2928,14 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         --clear-certs - removes the prescribed certificate directory used with myproxy
         --test-pub    - performs the publication test directly (same publication called in last step of install)
         --info        - provides a brief explaination of the DataNode
-        --register    - connects to desired gateway, fetches and stores their certificate to enable SSL connection
         --upgrade     - upgrades the node manager
         --no-globus   - will not install any globus tools (for those with existing globus setups)
         --griftp-config - [ with-bdm-config | bdm-config-only ] without this arg uses default end-user config
+
+        --register    - connects to desired gateway, fetches and stores their certificate to enable SSL connection
+        --install-signed-hostcert - installs signed host certificate
+        --install-esg-certs - fetches and installs all current esg federation certificates (globus)
+        --export-keys-for-globus  - installs signed certificates used by globus
 
         start   - start the data node's services
         stop    - stops the data node's services
@@ -3021,6 +3121,30 @@ main() {
                 shift
                 register $1 $2
                 exit
+                ;;
+            --install-esg-certs)
+                shift
+                init
+                id | grep root >& /dev/null
+                [ $? != 0 ] && printf "[FAIL] \n\tMust be root for this option\n\n" && exit 1
+                install_esg_certificates
+                exit $?
+                ;;
+            --install-signed-hostcert)
+                shift
+                init
+                id | grep root >& /dev/null
+                [ $? != 0 ] && printf "[FAIL] \n\tMust be root for this option\n\n" && exit 1
+                install_signed_certificate $@
+                exit $?
+                ;;
+            --export-keys-for-globus)
+                shift
+                init
+                id | grep root >& /dev/null
+                [ $? != 0 ] && printf "[FAIL] \n\tMust be root for this option\n\n" && exit 1
+                export_keystore_as_globus_hostkeys
+                exit $?
                 ;;
             --prefix)
                 local pvalue
