@@ -2405,7 +2405,11 @@ export_keystore_as_globus_hostkeys() {
     ret=$?
     [ $ret == 0 ] && echo "[OK]" || echo "[FAILED]"
 
+    echo -n "Converting DER cert ${globus_global_certs_dir%/*}/hostcert.der to PEM format "
     openssl x509 -in ${globus_global_certs_dir%/*}/hostcert.der -inform DER -out ${globus_global_certs_dir%/*}/hostcert.pem -outform PEM 
+    ret=$?
+    [ $ret == 0 ] && echo "[OK]" || echo "[FAILED]"
+    
     openssl x509 -noout -text -in ${globus_global_certs_dir%/*}/hostcert.pem
 
     chmod 644 ${globus_global_certs_dir%/*}/hostcert.pem
@@ -2416,8 +2420,8 @@ export_keystore_as_globus_hostkeys() {
     #for safe keeping post the truststore and keystore in /etc/grid-security/saved
     if [ -d ${globus_global_certs_dir%/*} ]; then
         mkdir -p ${globus_global_certs_dir%/*}/saved
-        chmod 700 ${globus_global_certs_dir%/*}/saved
-        rm ${globus_global_certs_dir%/*}/saved/*
+        chmod 700 ${globus_global_certs_dir%/*}/saved 
+        rm ${globus_global_certs_dir%/*}/saved/* >& /dev/null
         cp ${truststore_file} ${globus_global_certs_dir%/*}/saved/${truststore_file##*/}.$(date ${date_format}).bak
         cp ${keystore_file} ${globus_global_certs_dir%/*}/saved/${keystore_file##*/}.$(date ${date_format}).bak
     fi
