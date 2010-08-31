@@ -2212,6 +2212,8 @@ install_esg_certificates() {
     if[ $ret == 0 ]; then
         rm -v ${globus_global_certs_dir%/*}/${globus_global_certs_dir}.bak.tgz
     fi
+    chmod 755 ${globus_global_certs_dir}
+    chmod 644 ${globus_global_certs_dir}/*
 }
 
 #Takes signed PEM format certificate file for arg (optional)
@@ -2240,10 +2242,8 @@ install_signed_certificate() {
     #keytool -delete -alias ${keystore_alias} -keystore ${keystore_file} -storepass ${store_password}
     keytool -import -trustcacerts -alias ${keystore_alias} -file ${signed_cert_file} -keystore ${keystore_file} -storepass ${store_password}
     local ret=$?
-    [ $ret == 0 ] && echo "[OK]" || echo "[FAILED]" && return $ret
-    chmod 755 ${globus_global_certs_dir}
-    chmod 644 ${globus_global_certs_dir}/*
     unset store_password
+    [ $ret == 0 ] && echo "[OK]" || echo "[FAILED]" && return $ret
 }
 
 #This should only be run after your signed certificate has been already installed into the keystore!
@@ -2291,7 +2291,7 @@ export_keystore_as_globus_hostkeys() {
     ret=$?
     [ $ret == 0 ] && echo "[OK]" || echo "[FAILED]"
     chmod 644 ${globus_global_certs_dir%/*}/hostcert.pem
-
+    
     unset store_password
 }
 
