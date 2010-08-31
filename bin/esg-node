@@ -2233,8 +2233,11 @@ rebuild_truststore() {
         local cert_hash=$(echo ${cert_file##*/} | awk -F'.' '{print $1}') ;
         local der_file="${tmp_dir}/${cert_hash}.der" ;
 
-        # Convert to DER format for ingest into keystore
+        #--------------
+        # Convert from PEM format to DER format - for ingest into keystore
         openssl x509 -inform pem -in ${cert_file} -outform der -out ${der_file}
+        #--------------
+
         if [ -f ${truststore_file} ]; then
             keytool -delete -alias ${cert_hash} -keystore ${truststore_file} \
                 -storepass changeit 2>&1 > /dev/null ;
@@ -2269,12 +2272,12 @@ add_my_cert_to_truststore() {
         echo "Re-Integrating keystore's certificate into truststore.... "
         echo -n "Extracting keystore's certificate... "
         keytool -export -alias ${keystore_alias} -file ${keystore_file}.cer -keystore ${keystore_file} -storepass ${store_password}
-        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
+        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]" && exit 1
         echo "Making space for certificate... "
         keytool -delete -alias ${keystore_alias} -keystore ${truststore_file}  -storepass changeit 2>&1 > /dev/null #for ORP
         echo "Importing keystore's certificate into truststore... "
         keytool -import -v -trustcacerts -alias ${keystore_alias} -keypass ${store_password} -file ${keystore_file}.cer -keystore ${truststore_file} -storepass changeit
-        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
+        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]" && exit 1
         echo -n "cleaning up after ourselves... "
         rm -v ${keystore_file}.cer
         [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
@@ -2308,16 +2311,36 @@ install_signed_certificate() {
     unset verify_password
     echo
 
-    keytool -delete -alias ${keystore_alias} -keystore ${keystore_file} -storepass ${store_password} >& /dev/null
-    keytool -import -trustcacerts -alias ${keystore_alias} -file ${signed_cert_file} -keystore ${keystore_file} -storepass ${store_password}
+    
+    if [ "${signed_cert_file##*.}" != "der" ]; then
+        #--------------
+        #convert from PEM format to a DER format  - for ingeest into the keystores :-)
+        echo "converting certificate from PEM format to DER format..."
+        echo "openssl x509 -in ${signed_cert_file} -inform PEM -out ${signed_cert_file%.*}.der -outform DER"
+        openssl x509 -inform PEM -in ${signed_cert_file} -outform DER -out ${signed_cert_file%.*}.der 
+        [ $? == 0 ] && signed_cert_file=${signed_cert_file%.*}.der
+        #--------------
+    else
+        echo "Apparently (base on file extension) this file is already in DER format"
+    fi
+
+    [ -e ${keystore_file} ] && cp ${keystore_file} ${keystore_file}.bak
+
+    #--------------
+    echo "keytool -import -trustcacerts -alias root -file ${signed_cert_file} -keystore ${keystore_file} -storepass ${store_password}"
+    keytool -import -trustcacerts -alias root -file ${signed_cert_file} -keystore ${keystore_file} -storepass ${store_password}
     local ret=$?
 
     chown ${tomcat_user}:${tomcat_group} ${keystore_file}
+    #--------------
 
     add_my_cert_to_truststore ${store_password}
     
     unset store_password
     [ $ret == 0 ] && echo "[OK]" || echo "[FAILED]" && return $ret
+    
+    echo "(cleanup)"
+    
 }
 
 #This should only be run AFTER your signed certificate has been already installed into the keystore!
@@ -2348,6 +2371,12 @@ export_keystore_as_globus_hostkeys() {
     unset verify_password
     echo
     
+    #--------------
+    #NOTE: To extract the (private) key from the keystore we use a
+    #Java program called ExportPriv.  The result is a PEM formatted
+    #private key file that we can directly use.
+    #see: http://www.conshell.net/wiki/index.php/Keytool_to_OpenSSL_Conversion_tips
+
     echo -n "Extracting keystore's key... (private) "
     [ -e ${globus_global_certs_dir%/*}/hostkey.pem ] && cp ${globus_global_certs_dir%/*}/hostkey.pem ${globus_global_certs_dir%/*}/hostkey.pem.last
     [ -e ${globus_global_certs_dir%/*} ] && mkdir -p ${globus_global_certs_dir%/*}
@@ -2356,15 +2385,31 @@ export_keystore_as_globus_hostkeys() {
     local ret=$?
     [ $ret == 0 ] && echo "[OK]" || echo "[FAILED]"
     chmod 600 ${globus_global_certs_dir%/*}/hostkey.pem
+    #--------------
+
     
+    #--------------
+    #NOTE: To extract the (public) certificate we use the keytool.
+    #Keytool extracts everything (except cert requests) in DER format
+    #so, the exporting of this public certificate is no different - it
+    #is in DER format, so we must convert.  Hence the openssl calls
+    #subsequent to the export.  Also notice that the alias being used
+    #is *"root"* this is a special alias that was used when importing
+    #the signed certificate (once it was converted from PEM to DER for
+    #import)
     
     echo -n "Extracting keystore's certificate... (public) "
     [ -e ${globus_global_certs_dir%/*}/hostcert.pem ] && cp ${globus_global_certs_dir%/*}/hostcert.pem ${globus_global_certs_dir%/*}/hostcert.pem.last
-    echo "keytool -export -alias ${keystore_alias} -file ${globus_global_certs_dir%/*}/hostcert.pem -keystore ${keystore_file} -storepass *************"
-    keytool -export -alias ${keystore_alias} -file ${globus_global_certs_dir%/*}/hostcert.pem -keystore ${keystore_file} -storepass ${store_password}
+    echo "keytool -export -alias ${keystore_alias} -file ${globus_global_certs_dir%/*}/hostcert.der -keystore ${keystore_file} -storepass *************"
+    keytool -export -alias root -file ${globus_global_certs_dir%/*}/hostcert.der -keystore ${keystore_file} -storepass ${store_password}
     ret=$?
     [ $ret == 0 ] && echo "[OK]" || echo "[FAILED]"
+
+    openssl x509 -in ${globus_global_certs_dir%/*}/hostcert.der -inform DER -out ${globus_global_certs_dir%/*}/hostcert.pem -outform PEM 
+    openssl x509 -noout -text -in ${globus_global_certs_dir%/*}/hostcert.pem
+
     chmod 644 ${globus_global_certs_dir%/*}/hostcert.pem
+    #--------------
     
     unset store_password
 
@@ -2376,6 +2421,9 @@ export_keystore_as_globus_hostkeys() {
         cp ${truststore_file} ${globus_global_certs_dir%/*}/saved/${truststore_file##*/}.$(date ${date_format}).bak
         cp ${keystore_file} ${globus_global_certs_dir%/*}/saved/${keystore_file##*/}.$(date ${date_format}).bak
     fi
+
+    echo "(cleanup)"
+    rm -v ${globus_global_certs_dir%/*}/hostcert.der
 
 }
 
