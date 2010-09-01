@@ -2380,7 +2380,8 @@ export_keystore_as_globus_hostkeys() {
     echo -n "Extracting keystore's key... (private) "
     [ -e ${globus_global_certs_dir%/*}/hostkey.pem ] && cp ${globus_global_certs_dir%/*}/hostkey.pem ${globus_global_certs_dir%/*}/hostkey.pem.last
     [ -e ${globus_global_certs_dir%/*} ] && mkdir -p ${globus_global_certs_dir%/*}
-    echo "${JAVA_HOME}/bin/java -classpath ${CP} ExportPriv ${keystore_file} ${keystore_alias} ************* > ${globus_global_certs_dir%/*}/hostkey.pem"
+    (($DEBUG)) && \
+        printf "\n${JAVA_HOME}/bin/java -classpath ${CP} ExportPriv ${keystore_file} ${keystore_alias} ************* > ${globus_global_certs_dir%/*}/hostkey.pem\n"
     ${JAVA_HOME}/bin/java -classpath ${CP} ExportPriv ${keystore_file} ${keystore_alias} ${store_password} > ${globus_global_certs_dir%/*}/hostkey.pem
     local ret=$?
     [ $ret == 0 ] && echo "[OK]" || echo "[FAILED]"
@@ -2400,7 +2401,8 @@ export_keystore_as_globus_hostkeys() {
     
     echo -n "Extracting keystore's certificate... (public) "
     [ -e ${globus_global_certs_dir%/*}/hostcert.pem ] && cp ${globus_global_certs_dir%/*}/hostcert.pem ${globus_global_certs_dir%/*}/hostcert.pem.last
-    echo "keytool -export -alias ${keystore_alias} -file ${globus_global_certs_dir%/*}/hostcert.der -keystore ${keystore_file} -storepass *************"
+    (($DEBUG)) && \
+        printf "\nkeytool -export -alias ${keystore_alias} -file ${globus_global_certs_dir%/*}/hostcert.der -keystore ${keystore_file} -storepass *************\n"
     keytool -export -alias root -file ${globus_global_certs_dir%/*}/hostcert.der -keystore ${keystore_file} -storepass ${store_password}
     ret=$?
     [ $ret == 0 ] && echo "[OK]" || echo "[FAILED]"
@@ -2813,7 +2815,7 @@ checked_get() {
         cp -v ${local_file} ${local_file}.bak
         chmod 600 ${local_file}.bak
     fi
-    wget --no-check-certificate -O ${local_file} ${remote_file}
+    wget -q --no-check-certificate -O ${local_file} ${remote_file}
     [ $? != 0 ] && echo " ERROR: Problem pulling down [${remote_file##*/}] from esg distribution site" && return 2
     diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl -s ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
     [ $? != 0 ] && echo " WARNING: Could not verify this file!" && return 3
