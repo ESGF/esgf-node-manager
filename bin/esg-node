@@ -2264,6 +2264,7 @@ rebuild_truststore() {
 #is the interaction scenario with part of the ORP security mechanism.
 #The param here is the password of the *keystore*
 add_my_cert_to_truststore() {
+    echo 
     local store_password=${1:changeit}
     #----------------------------------------------------------------
     #Re-integrate my public key (I mean, my "certificate") from my keystore into the truststore (the place housing all public keys I allow to talk to me)
@@ -2272,12 +2273,12 @@ add_my_cert_to_truststore() {
         echo "Re-Integrating keystore's certificate into truststore.... "
         echo -n "Extracting keystore's certificate... "
         keytool -export -alias ${keystore_alias} -file ${keystore_file}.cer -keystore ${keystore_file} -storepass ${store_password}
-        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]" && exit 1
+        [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && exit 1)
         echo "Making space for certificate... "
         keytool -delete -alias ${keystore_alias} -keystore ${truststore_file}  -storepass changeit 2>&1 > /dev/null #for ORP
         echo "Importing keystore's certificate into truststore... "
         keytool -import -v -trustcacerts -alias ${keystore_alias} -keypass ${store_password} -file ${keystore_file}.cer -keystore ${truststore_file} -storepass changeit
-        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]" && exit 1
+        [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && exit 1)
         echo -n "cleaning up after ourselves... "
         rm -v ${keystore_file}.cer
         [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
@@ -2321,25 +2322,36 @@ install_signed_certificate() {
         [ $? == 0 ] && signed_cert_file=${signed_cert_file%.*}.der
         #--------------
     else
-        echo "Apparently (base on file extension) this file is already in DER format"
+        echo "Apparently (based on file extension) this file is already in DER format"
     fi
 
-    [ -e ${keystore_file} ] && cp ${keystore_file} ${keystore_file}.bak
+    [ -e ${keystore_file} ] && echo "(making backup copy of keystore)" && cp -v ${keystore_file} ${keystore_file}.bak
 
     #--------------
-    echo "keytool -import -trustcacerts -alias root -file ${signed_cert_file} -keystore ${keystore_file} -storepass ${store_password}"
+    keytool -v -list -keystore /usr/local/tomcat/conf/keystore-tomcat -storepass changeit | egrep -i '^Alias[ ]+name:[ ]+root$'
+    if [ $? == 0 ]; then
+        keytool -delete -alias root -keystore ${keystore_file} -storepass ${store_password}
+        [ $? == 0 ] && echo " ERROR: problem deleting root key from keystore!" && return 1
+    fi
+    
+    echo "keytool -import -trustcacerts -alias root -file ${signed_cert_file} -keystore ${keystore_file} -storepass *****"
     keytool -import -trustcacerts -alias root -file ${signed_cert_file} -keystore ${keystore_file} -storepass ${store_password}
     local ret=$?
-
+    if [ $ret == 0 ]; then 
+        echo "[OK]" 
+    else
+        echo "[FAILED]"
+        echo "(Restoring original keystore)"
+        cp -v ${keystore_file}.bak ${keystore_file}
+        return $ret
+    fi
+    
     chown ${tomcat_user}:${tomcat_group} ${keystore_file}
     #--------------
 
     add_my_cert_to_truststore ${store_password}
     
     unset store_password
-    [ $ret == 0 ] && echo "[OK]" || echo "[FAILED]" && return $ret
-    
-    echo "(cleanup)"
     
 }
 
