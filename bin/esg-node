@@ -2331,7 +2331,7 @@ install_signed_certificate() {
     keytool -v -list -keystore /usr/local/tomcat/conf/keystore-tomcat -storepass changeit | egrep -i '^Alias[ ]+name:[ ]+root$'
     if [ $? == 0 ]; then
         keytool -delete -alias root -keystore ${keystore_file} -storepass ${store_password}
-        [ $? == 0 ] && echo " ERROR: problem deleting root key from keystore!" && return 1
+        [ $? != 0 ] && echo " ERROR: problem deleting root key from keystore!" && return 1
     fi
     
     echo "keytool -import -trustcacerts -alias root -file ${signed_cert_file} -keystore ${keystore_file} -storepass *****"
