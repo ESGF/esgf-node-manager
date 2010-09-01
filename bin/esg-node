@@ -2274,8 +2274,15 @@ add_my_cert_to_truststore() {
         echo -n "Extracting keystore's certificate... "
         keytool -export -alias ${keystore_alias} -file ${keystore_file}.cer -keystore ${keystore_file} -storepass ${store_password}
         [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && exit 1)
-        echo "Making space for certificate... "
-        keytool -delete -alias ${keystore_alias} -keystore ${truststore_file}  -storepass changeit 2>&1 > /dev/null #for ORP
+
+        echo "keytool -v -list -keystore ${truststore_file} -storepass changeit | egrep -i '^Alias[ ]+name:[ ]+tomcat$'"
+        keytool -v -list -keystore ${truststore_file} -storepass changeit | egrep -i '^Alias[ ]+name:[ ]+tomcat$' #TODO howdo I put the var ${keystore_alias} here!!!
+        if [ $? == 0 ]; then
+            echo "Detected Alias \"${keystore_alias}\" Present... Removing... Making space for certificate... "
+            keytool -delete -alias ${keystore_alias} -keystore ${truststore_file}  -storepass changeit 2>&1 > /dev/null #for ORP
+            [ $? != 0 ] && echo " ERROR: problem deleting ${keystore_alias} key from keystore!" && return 1
+        fi
+
         echo "Importing keystore's certificate into truststore... "
         keytool -import -v -trustcacerts -alias ${keystore_alias} -keypass ${store_password} -file ${keystore_file}.cer -keystore ${truststore_file} -storepass changeit
         [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && exit 1)
@@ -3087,7 +3094,7 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
 
         Key Management Flags:
         --register    - connects to desired gateway, fetches and stores their certificate to enable ingress SSL connections
-        --install-signed-hostcert - installs signed host certificate into keystore and truststore <signed PEM file>
+        --install-signed-cert - installs signed host certificate into keystore and truststore <signed PEM file>
         --export-keys-to-globus  - exports keystore certificates to globus host{cert,key}.pem files.
         --install-esg-certs - fetches and installs all current public esg federation certificates (used by globus)
         --rebuild-truststore - converts globus' (public) ca certificates into a truststore.
@@ -3279,6 +3286,15 @@ main() {
                 register $1 $2
                 exit
                 ;;
+            --add-my-cert-to-truststore)
+                self_verify
+                shift
+                init
+                id | grep root >& /dev/null
+                [ $? != 0 ] && printf "[FAIL] \n\tMust be root for this option\n\n" && exit 1
+                add_my_cert_to_truststore $@
+                exit $?
+                ;;
             --install-esg-certs)
                 self_verify
                 shift
@@ -3297,7 +3313,7 @@ main() {
                 rebuild_truststore
                 exit $?
                 ;;
-            --install-signed-hostcert)
+            --install-signed-cert)
                 self_verify
                 shift
                 init
