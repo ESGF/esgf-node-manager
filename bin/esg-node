@@ -2997,6 +2997,7 @@ start() {
     echo "starting services with globus using config: ${gridftp_config_args}"
     start_postgress
     start_tomcat
+    checked_get ${scripts_dir}/esg-globus ${esg_dist_url}/externals/bootstrap/esg-globus
     source ${scripts_dir}/esg-globus >& /dev/null && \
         start_globus_services datanode ${gridftp_config_args}
     echo "please wait..." && sleep 3
@@ -3249,6 +3250,7 @@ main() {
                 setup_node 1
 
                 echo "starting services with globus using config: ${gridftp_config_args}"
+                checked_get ${scripts_dir}/esg-globus ${esg_dist_url}/externals/bootstrap/esg-globus
                 source ${scripts_dir}/esg-globus >& /dev/null && \
                     start_globus_services datanode ${gridftp_config_args}
                 start_postgress
