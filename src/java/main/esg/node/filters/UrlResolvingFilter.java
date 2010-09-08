@@ -95,6 +95,7 @@ package esg.node.filters;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.File;
 import java.util.Properties;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -189,14 +190,28 @@ public class UrlResolvingFilter implements Filter {
                 //This filter should only appy to specific requests
                 //in particular requests for data files (*.nc)
                 
-                HttpServletRequest req = (HttpServletRequest)request;
+                HttpServletResponse res = (HttpServletResponse)response;
+                HttpServletRequest  req = (HttpServletRequest)request;
                 String url = req.getRequestURL().toString().trim();
                 Matcher m = urlPattern.matcher(url);
                 
                 if(m.matches()) {
                     
                     log.debug("Executing Url Filter For: "+url);
-                    urlResolvingDAO.resolveUrl(url);
+                    String resourcePath = urlResolvingDAO.resolveDRSUrl(url);
+                    if(null != resourcePath) {
+                        File resolvedResource = new File(resourcePath);
+                        if(!resolvedResource.exists()) { 
+                            log.error("The resolved resource does not exist! ["+url+" -> "+resourcePath+"]");
+                            ((HttpServletResponse)response).sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, 
+                                                                      "Requested Resource Not Present! ["+url+"]");
+                            return;
+                        }
+                        String contentType = "application/x-netcdf";
+                        //ServletUtil.returnFile(req, res, resolvedResource, contentType);
+                        
+                    }
+                    //This would not work... threw IllegalStateException...
                     //filterConfig.getServletContext().getRequestDispatcher(urlResolvingDAO.resolveUrl(url)).forward(request,response);
                     
                 }else {

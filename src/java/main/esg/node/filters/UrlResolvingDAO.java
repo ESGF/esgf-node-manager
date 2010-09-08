@@ -54,12 +54,6 @@
 *   SUCH DAMAGE.                                                           *
 *                                                                          *
 ***************************************************************************/
-
-/**
-   Description:
-   Perform sql query to log visitors' access to data files
-   
-**/
 package esg.node.filters;
 
 import java.io.Serializable;
@@ -78,7 +72,18 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-public class UrlResolvingDAO implements Serializable {
+import esg.common.Resolver;
+
+//TODO: As a performance feature, perhaps put in a caching mechanism
+// you know, path -> targetResource
+// The tricky part is putting in the mechanism to invalidate cached items.
+// (hey maybe use the java interface to memcache!? :-) sexy...)
+// Could be nice use it with the access logging system to histogram access pattern on the fly!
+
+/**
+   Utility for Resolving URLs (that adhere to the DRS taxonomy) - to the local resource path, using sql database lookup.
+ */
+public class UrlResolvingDAO implements Resolver, Serializable {
 
     private static final String urlResolutionQuery = "select filename from access_logging where ? ? ? ? ? ? ? ? ? ? ?";
 
@@ -88,23 +93,29 @@ public class UrlResolvingDAO implements Serializable {
     private QueryRunner queryRunner = null;
     private ResultSetHandler<String> resolutionResultSetHandler = null;
     
-    private String resolveUrlRegex = "";
-    private Pattern resolveUrlPattern = null;
- 
+    private String urlTestRegex="(https?)://(.*)$";
+    private Pattern urlTestPattern = null;
+    
     private String splitPathRegex="/";
     private Pattern splitPathPattern = null;
-
+    
+    private String splitQueryRegex="&";
+    private Pattern splitQueryPattern= null;
+    
     public UrlResolvingDAO(DataSource dataSource) {
         this.setDataSource(dataSource);
-        resolveUrlPattern = Pattern.compile(resolveUrlRegex,Pattern.CASE_INSENSITIVE);
-        splitPathPattern  = Pattern.compile(splitPathRegex);
+        init();
     }
     
     //Not preferred constructor but here for serialization requirement.
-    public UrlResolvingDAO() { this(null); }
-
+    public UrlResolvingDAO() { init(); }
+    
     //Initialize result set handlers...
-    public void init() { }
+    public void init() { 
+        splitPathPattern  = Pattern.compile(splitPathRegex);
+        splitQueryPattern = Pattern.compile(splitQueryRegex);
+        urlTestPattern = Pattern.compile(urlTestRegex);
+    }
     
     public void setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -118,6 +129,11 @@ public class UrlResolvingDAO implements Serializable {
         
     }
 
+    /**
+       Resolves the property items to the file resource they represent on the "local" system.
+       @param drsProps Property object holding key/value pairs prescribed by the DRS syntax 
+       @return The string value referencing the resource the DRS syntax resolves to.
+     */
     public String resolveDRSProperties(Properties drsProps) {
         String targetResource = null;
         try{
@@ -144,8 +160,66 @@ public class UrlResolvingDAO implements Serializable {
         return targetResource;
     }
 
-    //Parses the path and turns it into a property object suitable for resolving
-    //NOTE: The expected path is intended to NOT begin with a "/"
+    /**
+       Resolves a given string for a (virtual) resource to the "local" resource location
+       @param input Path or Url to (virtual) resource (described by the DRS taxonomy)
+       @return Path to local resource referenced
+     */
+    public String resolve(String input) {
+        try{
+            return (urlTestPattern.matcher(input).matches()) ? resolveDRSUrl(input) : resolveDRSPath(input);
+        }catch(Throwable t) {
+            return null;
+        }
+    }
+
+    /**
+       Helper method for parsing a full cannonoical DRS URL (or the
+       query string version) and resolves it to it's "local" resource
+       location.
+       <p>
+       <code>
+       Taxonomy - http://product/institution/model/experiment/frequency/realm/ensemble/version/variable/table/file
+       </code>
+
+       @param inputUrlString Full cannonical DRS URL to resource (or URL query styled key/value)
+       @return The string value referencing the resource the DRS syntax resolves to.
+       @see UrlResolvingDAO#resolveDRSPath(String)
+    */
+    public String resolveDRSUrl(String inputUrlString) throws java.net.MalformedURLException {
+        URL inputURL = new URL(inputUrlString);
+        return resolveDRSUrl(inputURL);
+    }
+
+    /**
+       Resolves the given URL object described by the DRS Taxonomy to "local" resource location
+       @param inputUrl URL object to (virtual) resource
+       @return The string value referencing the resource the DRS syntax resolves to.
+     */
+    public String resolveDRSUrl(URL inputUrl) {
+        String urlQuery = null;
+        String result = null;
+        if(null == (urlQuery = inputUrl.getQuery())) {
+            result = resolveDRSPath(inputUrl.getPath());
+        }else {
+            result = resolveDRSQuery(urlQuery);
+        }
+        return result;
+    }
+
+    /**
+       Parses the path and turns it into a property object suitable for resolving.<br>
+       The spec on this can be found at the GO-ESSP wiki:<br>
+       <a href="http://proj.badc.rl.ac.uk/go-essp/wiki/CMIP5/Meetings/telco100907">http://proj.badc.rl.ac.uk/go-essp/wiki/CMIP5/Meetings/telco100907</a>
+       <p>
+       <code>
+       DRS Taxonomy: product/institution/model/experiment/frequency/realm/ensemble/version/variable/table/file
+       NOTE: The expected path is intended to NOT begin with a (/)
+       </code>
+       @param path DRS specified "cannonical" path to this data resource (file)
+       @return The string value referencing the resource the DRS syntax resolves to.<p>
+       @see  UrlResolvingDAO#resolveDRSProperties(Properties)
+    */
     public String resolveDRSPath(String path) {
         //make sure truncate starting "/"
         if((path.length() > 0) && path.startsWith("/")) {
@@ -172,24 +246,27 @@ public class UrlResolvingDAO implements Serializable {
         return resolveDRSProperties(drsProps);
     }
     
-    //URL related methods...
 
-    public String resolveUrl(String inputUrlString) throws java.net.MalformedURLException {
-        URL inputURL = new URL(inputUrlString);
-        String urlQuery = null;
-        if(null == (urlQuery = inputURL.getQuery())) {
-            return resolveDRSPath(inputURL.getPath());
-        }else {
-            return resolveDRSQuery(urlQuery);
+    /**
+       Helper method for parsing a full cannonoical DRS URL and resolves it to it's "local" resource location
+       @param inputUrlQuery URL Query values (Ex: ?product=foobar&institution=pcmdi&...)
+       @return The string value referencing the resource the DRS syntax resolves to.
+       @see UrlResolvingDAO#resolveDRSUrl(String)
+     */
+    public String resolveDRSQuery(String inputUrlQuery) {
+        if((inputUrlQuery.length() > 0) && inputUrlQuery.startsWith("?")) {
+            inputUrlQuery = inputUrlQuery.substring(1);
         }
-    }
 
-    //Knows how to parse query urls
-    //Ex: http://pcmdi3.llnl.gov/thredds/fileServer?product=foobar@institution=pcmdi....
-    public String resolveDRSQuery(String inputUrlStringQuery) {
         Properties drsProps = new Properties();
         //TODO
-        log.error("Implement me! passing in empty properties to be resolved!!!!");
+        String[] queryPairs = splitQueryPattern.split(inputUrlQuery);
+        int idx=0;
+        for(String drsPair : queryPairs) {
+            //Key=Value                          
+            drsProps.setProperty(drsPair.substring(0,(idx=drsPair.indexOf("="))), drsPair.substring(idx+1));
+            idx=0;
+        }
         return resolveDRSProperties(drsProps);
     }
 
