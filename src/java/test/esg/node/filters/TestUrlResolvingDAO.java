@@ -76,17 +76,30 @@ public class TestUrlResolvingDAO {
        Initialize *ONCE* static DAO instance...
     */
     @BeforeClass    
-    public static initTest() {
+    public static void initTest() {
         resolver = new UrlResolvingDAO(); //No database involved
     }
     
+
     @Test
     public void testUrls() {
+        String[] inputs = {"http://fauxserver.llnl.gov/fileService/root/one/two/three/four/five/six/seven/eight/nine/ten/eleven",
+                           "http://fauxserver.llnl.gov/fauxService?one=1&two=2&three=3&four=4&five=5&six=6&seven=7&eight=8&nine=9&ten=10&eleven=11",
+                           "one/two/three/four/five/six/seven/eight/nine/ten/eleven"};
+        String output = null;
+        for(String input : inputs) {
+            log.info(input+" -> "+(output = resolver.resolve(input)));
+            assertTrue(output.equals());
+        }
+    }
+
+    @Test
+    public void testPathUrls() {
         String[] inputs = {"http://one/two/three/four/five/six/seven/eight/nine/ten,eleven"};
         String output = null;
         for(String input : inputs) {
-            log.info(input+" -> "+resolver.resolveUrl());
-            assertTrue(input.equals());
+            log.info(input+" -> "+(output = resolver.resolveDRSUrl(input)));
+            assertTrue(output.equals());
         }
     }
 
@@ -96,7 +109,7 @@ public class TestUrlResolvingDAO {
         String output = null;
         for(String input : inputs) {
             log.info(input+" -> "+(output = resolver.resolveDRSPath()));
-            assertTrue(input.equals());
+            assertTrue(output.equals());
             
         }
 
@@ -104,11 +117,11 @@ public class TestUrlResolvingDAO {
 
     @Test
     public void testUrlQueries(String urlQuery) {
-        String[] inputs = {"http://foo?one=1&two=2&three=3&four=4&five=5&six=6&seven=7&eight=8&nine=9&ten=10&eleven=11"};
+        String[] inputs = {"?one=1&two=2&three=3&four=4&five=5&six=6&seven=7&eight=8&nine=9&ten=10&eleven=11"};
         String output = null;
         for(String input : inputs) {
-            log.info(input+" -> "+(output = resolver.resolveDRSQuery()));
-            assertTrue(input.equals());
+            log.info(input+" -> "+(output = resolver.resolveDRSQuery(input)));
+            assertTrue(output.equals());
         }
         
     }

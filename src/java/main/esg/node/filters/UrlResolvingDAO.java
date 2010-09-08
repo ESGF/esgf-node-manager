@@ -226,6 +226,8 @@ public class UrlResolvingDAO implements Resolver, Serializable {
             path = path.substring(1);
         }
         
+        //TODO: Do more scrubbing... no "/../" etc...
+
         log.debug("Resolving Input Path: "+path);
 
         Properties drsProps = new Properties();
@@ -253,7 +255,7 @@ public class UrlResolvingDAO implements Resolver, Serializable {
        @return The string value referencing the resource the DRS syntax resolves to.
        @see UrlResolvingDAO#resolveDRSUrl(String)
      */
-    public String resolveDRSQuery(String inputUrlQuery) {
+    String resolveDRSQuery(String inputUrlQuery) {
         if((inputUrlQuery.length() > 0) && inputUrlQuery.startsWith("?")) {
             inputUrlQuery = inputUrlQuery.substring(1);
         }
