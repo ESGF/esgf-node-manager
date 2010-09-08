@@ -64,6 +64,9 @@ package esg.node.filters;
 
 import java.io.Serializable;
 import java.util.Properties;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -77,7 +80,7 @@ import org.apache.commons.logging.impl.*;
 
 public class UrlResolvingDAO implements Serializable {
 
-    private static final String urlResolutionQuery = "select ? from access_logging";
+    private static final String urlResolutionQuery = "select filename from access_logging where ? ? ? ? ? ? ? ? ? ? ?";
 
     private static final Log log = LogFactory.getLog(UrlResolvingDAO.class);
     
@@ -85,8 +88,16 @@ public class UrlResolvingDAO implements Serializable {
     private QueryRunner queryRunner = null;
     private ResultSetHandler<String> resolutionResultSetHandler = null;
     
+    private String resolveUrlRegex = "";
+    private Pattern resolveUrlPattern = null;
+ 
+    private String splitPathRegex="/";
+    private Pattern splitPathPattern = null;
+
     public UrlResolvingDAO(DataSource dataSource) {
         this.setDataSource(dataSource);
+        resolveUrlPattern = Pattern.compile(resolveUrlRegex,Pattern.CASE_INSENSITIVE);
+        splitPathPattern  = Pattern.compile(splitPathRegex);
     }
     
     //Not preferred constructor but here for serialization requirement.
@@ -106,25 +117,80 @@ public class UrlResolvingDAO implements Serializable {
         };
         
     }
-    
-    public String resolveUrl(String inputUrl) {
-        String targetResource = "/esg_dataroot/test/sftlf.nc";
-        
-        //TODO: Parse the inputUrl appropriately...
-        
-        //try{
-        //    
-        //    //TODO:
-        //    //Issue query to resolve the parsed DRS parameters into where the target resource resides on this data-node
-        //    targetResource = queryRunner.query(urlResolutionQuery,resolutionResultSetHandler,"param_value");
-        //    
-              log.debug("Resolved url: "+inputUrl+" -> Resource: "+targetResource);
-        //    return targetResource; 
-        //    
-        //}catch(SQLException ex) {
-        //    log.error(ex);
-        //}
+
+    public String resolveDRSProperties(Properties drsProps) {
+        String targetResource = null;
+        try{
+            //Issue query to resolve the parsed DRS parameters into where the target resource resides on this data-node
+            targetResource = queryRunner.query(urlResolutionQuery,resolutionResultSetHandler,
+                                               drsProps.getProperty(DRSConstants.PRODUCT),
+                                               drsProps.getProperty(DRSConstants.INSTITUTION),
+                                               drsProps.getProperty(DRSConstants.MODEL),
+                                               drsProps.getProperty(DRSConstants.EXPERIMENT),
+                                               drsProps.getProperty(DRSConstants.FREQUENCY),
+                                               drsProps.getProperty(DRSConstants.REALM),
+                                               drsProps.getProperty(DRSConstants.ENSEMBLE),
+                                               drsProps.getProperty(DRSConstants.VERSION),
+                                               drsProps.getProperty(DRSConstants.VARIABLE),
+                                               drsProps.getProperty(DRSConstants.TABLE),
+                                               drsProps.getProperty(DRSConstants.FILE));
+            
+            log.debug("Resolved Resource: "+targetResource);
+            return targetResource; 
+            
+        }catch(SQLException ex) {
+            log.error(ex);
+        }     
         return targetResource;
+    }
+
+    //Parses the path and turns it into a property object suitable for resolving
+    //NOTE: The expected path is intended to NOT begin with a "/"
+    public String resolveDRSPath(String path) {
+        //make sure truncate starting "/"
+        if((path.length() > 0) && path.startsWith("/")) {
+            path = path.substring(1);
+        }
+        
+        log.debug("Resolving Input Path: "+path);
+
+        Properties drsProps = new Properties();
+        String[] drsPathElements = splitPathPattern.split(path);
+
+        drsProps.setProperty(DRSConstants.PRODUCT,drsPathElements[0]);
+        drsProps.setProperty(DRSConstants.INSTITUTION,drsPathElements[1]);
+        drsProps.setProperty(DRSConstants.MODEL,drsPathElements[2]);
+        drsProps.setProperty(DRSConstants.EXPERIMENT,drsPathElements[3]);
+        drsProps.setProperty(DRSConstants.FREQUENCY,drsPathElements[4]);
+        drsProps.setProperty(DRSConstants.REALM,drsPathElements[5]);
+        drsProps.setProperty(DRSConstants.ENSEMBLE,drsPathElements[6]);
+        drsProps.setProperty(DRSConstants.VERSION,drsPathElements[7]);
+        drsProps.setProperty(DRSConstants.VARIABLE,drsPathElements[8]);
+        drsProps.setProperty(DRSConstants.TABLE,drsPathElements[9]);
+        drsProps.setProperty(DRSConstants.FILE,drsPathElements[10]);
+        
+        return resolveDRSProperties(drsProps);
+    }
+    
+    //URL related methods...
+
+    public String resolveUrl(String inputUrlString) throws java.net.MalformedURLException {
+        URL inputURL = new URL(inputUrlString);
+        String urlQuery = null;
+        if(null == (urlQuery = inputURL.getQuery())) {
+            return resolveDRSPath(inputURL.getPath());
+        }else {
+            return resolveDRSQuery(urlQuery);
+        }
+    }
+
+    //Knows how to parse query urls
+    //Ex: http://pcmdi3.llnl.gov/thredds/fileServer?product=foobar@institution=pcmdi....
+    public String resolveDRSQuery(String inputUrlStringQuery) {
+        Properties drsProps = new Properties();
+        //TODO
+        log.error("Implement me! passing in empty properties to be resolved!!!!");
+        return resolveDRSProperties(drsProps);
     }
 
 }

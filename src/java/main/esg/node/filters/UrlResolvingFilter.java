@@ -97,7 +97,8 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.Map;
-import java.util.regex.*;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -195,9 +196,9 @@ public class UrlResolvingFilter implements Filter {
                 if(m.matches()) {
                     
                     log.debug("Executing Url Filter For: "+url);
+                    urlResolvingDAO.resolveUrl(url);
+                    //filterConfig.getServletContext().getRequestDispatcher(urlResolvingDAO.resolveUrl(url)).forward(request,response);
                     
-                    filterConfig.getServletContext().getRequestDispatcher(urlResolvingDAO.resolveUrl(url)).forward(request,response);
-
                 }else {
                     log.debug("No url resolving for: "+url);
                 }
