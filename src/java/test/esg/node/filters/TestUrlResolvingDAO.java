@@ -85,7 +85,21 @@ public class TestUrlResolvingDAO {
     public void testUrls() {
         String[] inputs = {"http://fauxserver.llnl.gov/fileService/root/one/two/three/four/five/six/seven/eight/nine/ten/eleven",
                            "http://fauxserver.llnl.gov/fauxService?one=1&two=2&three=3&four=4&five=5&six=6&seven=7&eight=8&nine=9&ten=10&eleven=11",
-                           "one/two/three/four/five/six/seven/eight/nine/ten/eleven"};
+                           "one/two/three/four/five/six/seven/eight/nine/ten/eleven",
+                           "/one/two/three/four/five/six/seven/eight/nine/ten/eleven"};
+        String output = null;
+        for(String input : inputs) {
+            log.info(input+" -> "+(output = resolver.resolve(input)));
+            assertTrue(output.equals());
+        }
+    }
+
+    @Test
+    public void testBadUrls() {
+        String[] inputs = {"http://fauxserver.llnl.gov/fileService/root/one/../two/three/four/five/six/seven/eight/nine/ten/eleven",
+                           "http://fauxserver.llnl.gov/fauxService?one=1&?two=2&three=3&four=4&five=5&six=6&seven=7&eight=8&nine=9&ten=10&eleven=11",
+                           "one/two/three/four/five/six/seven/eight/nine/ten/",
+                           "/one/two/../three/four/five/six/seven/eight/nine/ten/eleven"};
         String output = null;
         for(String input : inputs) {
             log.info(input+" -> "+(output = resolver.resolve(input)));
