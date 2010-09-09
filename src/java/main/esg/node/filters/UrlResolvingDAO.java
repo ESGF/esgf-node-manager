@@ -148,7 +148,7 @@ public class UrlResolvingDAO implements Resolver, Serializable {
                                                drsProps.getProperty(DRSConstants.ENSEMBLE),
                                                drsProps.getProperty(DRSConstants.VERSION),
                                                drsProps.getProperty(DRSConstants.VARIABLE),
-                                               drsProps.getProperty(DRSConstants.TABLE),
+                                               drsProps.getProperty(DRSConstants.TABLE,""),
                                                drsProps.getProperty(DRSConstants.FILE));
             
             log.debug("Resolved Resource: "+targetResource);
@@ -179,7 +179,7 @@ public class UrlResolvingDAO implements Resolver, Serializable {
        location.
        <p>
        <code>
-       Taxonomy - http://product/institution/model/experiment/frequency/realm/ensemble/version/variable/table/file
+       Taxonomy - http://product/institution/model/experiment/frequency/realm/ensemble/version/variable_table/file
        </code>
 
        @param inputUrlString Full cannonical DRS URL to resource (or URL query styled key/value)
@@ -213,7 +213,7 @@ public class UrlResolvingDAO implements Resolver, Serializable {
        <a href="http://proj.badc.rl.ac.uk/go-essp/wiki/CMIP5/Meetings/telco100907">http://proj.badc.rl.ac.uk/go-essp/wiki/CMIP5/Meetings/telco100907</a>
        <p>
        <code>
-       DRS Taxonomy: product/institution/model/experiment/frequency/realm/ensemble/version/variable/table/file
+       DRS Taxonomy: product/institution/model/experiment/frequency/realm/ensemble/version/variable_table/file
        NOTE: The expected path is intended to NOT begin with a (/)
        </code>
        @param path DRS specified "cannonical" path to this data resource (file)
@@ -241,9 +241,15 @@ public class UrlResolvingDAO implements Resolver, Serializable {
         drsProps.setProperty(DRSConstants.REALM,drsPathElements[5]);
         drsProps.setProperty(DRSConstants.ENSEMBLE,drsPathElements[6]);
         drsProps.setProperty(DRSConstants.VERSION,drsPathElements[7]);
-        drsProps.setProperty(DRSConstants.VARIABLE,drsPathElements[8]);
-        drsProps.setProperty(DRSConstants.TABLE,drsPathElements[9]);
-        drsProps.setProperty(DRSConstants.FILE,drsPathElements[10]);
+        int idx = drsPathElements[8].indexOf("_");
+        if(idx > 0) {
+            drsProps.setProperty(DRSConstants.VARIABLE,drsPathElements[8].substring(0,idx));
+            drsProps.setProperty(DRSConstants.TABLE,drsPathElements[8].substring(idx+1));
+        }else {
+            drsProps.setProperty(DRSConstants.VARIABLE,drsPathElements[8]);
+            drsProps.setProperty(DRSConstants.TABLE,"");
+        }
+        drsProps.setProperty(DRSConstants.FILE,drsPathElements[9]);
         
         return resolveDRSProperties(drsProps);
     }
@@ -251,7 +257,7 @@ public class UrlResolvingDAO implements Resolver, Serializable {
 
     /**
        Helper method for parsing a full cannonoical DRS URL and resolves it to it's "local" resource location
-       @param inputUrlQuery URL Query values (Ex: ?product=foobar&institution=pcmdi&...)
+       @param inputUrlQuery URL Query values (Ex: ?product=foobar&institution=pcmdi&variable=v&table=t...)
        @return The string value referencing the resource the DRS syntax resolves to.
        @see UrlResolvingDAO#resolveDRSUrl(String)
      */
@@ -265,7 +271,7 @@ public class UrlResolvingDAO implements Resolver, Serializable {
         String[] queryPairs = splitQueryPattern.split(inputUrlQuery);
         int idx=0;
         for(String drsPair : queryPairs) {
-            //Key=Value                          
+            //Key=Value
             drsProps.setProperty(drsPair.substring(0,(idx=drsPair.indexOf("="))), drsPair.substring(idx+1));
             idx=0;
         }
