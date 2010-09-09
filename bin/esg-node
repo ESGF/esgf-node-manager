@@ -101,7 +101,7 @@ init() {
     ant_version=${ant_version:-"1.8.1"}
     postgress_version=${postgress_version:-"8.4.4"}
     tomcat_version=${tomcat_version:-"6.0.26"}
-    tds_version=${tds_version:-"4.1.6"}
+    tds_version=${tds_version:-"4.2"}
 
     install_logfile=${ESG_INSTALL_LOGFILE:-"/etc/esg.install_log"}
     curl_install_dir=${CURL_HOME:-${install_prefix}/curl}
