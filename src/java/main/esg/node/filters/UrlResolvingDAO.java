@@ -208,14 +208,18 @@ public class UrlResolvingDAO implements Resolver, Serializable {
     }
 
     /**
-       Parses the path and turns it into a property object suitable for resolving.<br>
-       The spec on this can be found at the GO-ESSP wiki:<br>
-       <a href="http://proj.badc.rl.ac.uk/go-essp/wiki/CMIP5/Meetings/telco100907">http://proj.badc.rl.ac.uk/go-essp/wiki/CMIP5/Meetings/telco100907</a>
+       Parses the path and turns it into a property object suitable
+       for resolving. This is the only method that is sensitive to
+       field order!<br> The spec on this can be found at the GO-ESSP
+       wiki:<br>
+       
        <p>
+
        <code>
-       DRS Taxonomy: product/institution/model/experiment/frequency/realm/ensemble/version/variable_table/file
+       DRS Taxonomy: product/institution/model/experiment/frequency/realm/table/ensemble/version/variable/file
        NOTE: The expected path is intended to NOT begin with a (/)
        </code>
+
        @param path DRS specified "cannonical" path to this data resource (file)
        @return The string value referencing the resource the DRS syntax resolves to.<p>
        @see  UrlResolvingDAO#resolveDRSProperties(Properties)
@@ -232,24 +236,20 @@ public class UrlResolvingDAO implements Resolver, Serializable {
 
         Properties drsProps = new Properties();
         String[] drsPathElements = splitPathPattern.split(path);
+        if(drsPathElements.length != 11) { return null; } //TODO make an exception here and throw it!
 
-        drsProps.setProperty(DRSConstants.PRODUCT,drsPathElements[0]);
-        drsProps.setProperty(DRSConstants.INSTITUTION,drsPathElements[1]);
-        drsProps.setProperty(DRSConstants.MODEL,drsPathElements[2]);
-        drsProps.setProperty(DRSConstants.EXPERIMENT,drsPathElements[3]);
-        drsProps.setProperty(DRSConstants.FREQUENCY,drsPathElements[4]);
-        drsProps.setProperty(DRSConstants.REALM,drsPathElements[5]);
-        drsProps.setProperty(DRSConstants.ENSEMBLE,drsPathElements[6]);
-        drsProps.setProperty(DRSConstants.VERSION,drsPathElements[7]);
-        int idx = drsPathElements[8].indexOf("_");
-        if(idx > 0) {
-            drsProps.setProperty(DRSConstants.VARIABLE,drsPathElements[8].substring(0,idx));
-            drsProps.setProperty(DRSConstants.TABLE,drsPathElements[8].substring(idx+1));
-        }else {
-            drsProps.setProperty(DRSConstants.VARIABLE,drsPathElements[8]);
-            drsProps.setProperty(DRSConstants.TABLE,"");
-        }
-        drsProps.setProperty(DRSConstants.FILE,drsPathElements[9]);
+        int i = -1;
+        drsProps.setProperty(DRSConstants.PRODUCT,drsPathElements[++i]);
+        drsProps.setProperty(DRSConstants.INSTITUTION,drsPathElements[++i]);
+        drsProps.setProperty(DRSConstants.MODEL,drsPathElements[++i]);
+        drsProps.setProperty(DRSConstants.EXPERIMENT,drsPathElements[++i]);
+        drsProps.setProperty(DRSConstants.FREQUENCY,drsPathElements[++i]);
+        drsProps.setProperty(DRSConstants.REALM,drsPathElements[++i]);
+        drsProps.setProperty(DRSConstants.TABLE,drsPathElements[++i]);
+        drsProps.setProperty(DRSConstants.ENSEMBLE,drsPathElements[++i]);
+        drsProps.setProperty(DRSConstants.VERSION,drsPathElements[++i]);
+        drsProps.setProperty(DRSConstants.VARIABLE,drsPathElements[++i]);
+        drsProps.setProperty(DRSConstants.FILE,drsPathElements[++i]);
         
         return resolveDRSProperties(drsProps);
     }
@@ -267,7 +267,6 @@ public class UrlResolvingDAO implements Resolver, Serializable {
         }
 
         Properties drsProps = new Properties();
-        //TODO
         String[] queryPairs = splitQueryPattern.split(inputUrlQuery);
         int idx=0;
         for(String drsPair : queryPairs) {
