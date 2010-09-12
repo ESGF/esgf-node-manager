@@ -1288,21 +1288,33 @@ setup_tomcat() {
         unset verify_password
         echo
 
-        (($DEBUG)) && ${JAVA_HOME}/bin/keytool -list -keystore ${keystore_file}
-        $java_install_dir/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365 -storepass ${store_password}
-        [ $? != 0 ] && echo " ERROR: keytool genkey command failed" && popd && checked_done 1
-        genreq="Y"
+        #----------------------
+        #Use the key managment functions, defined below.
+        #----------------------
+        generate_ssl_keypair hostkey.pem $(hostname --fqdn)-esg-node.csr && \
+            convert_keys hostkey.pem $(hostname --fqdn)-esg-node.pem && \
+            create_keystore hostkey.der $(hostname --fqdn)-esg-node.der ${keystore_file} ${keystore_alias} ${store_password}
+        [ $? != 0 ] && echo "ERROR: Problem with key generation and/or keystore construction"
+        unlink hostcert.pem
+        [ -e hostcert.pem ] && mv hostcert.pem hostcert.pem_old
+        [ -e $(hostname --fqdn)-esg-node.pem ] && ln -s $(hostname --fqdn)-esg-node.pem hostcert.pem
+        #----------------------
+
+        #(($DEBUG)) && ${JAVA_HOME}/bin/keytool -list -keystore ${keystore_file}
+        #$java_install_dir/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365 -storepass ${store_password}
+        #[ $? != 0 ] && echo " ERROR: keytool genkey command failed" && popd && checked_done 1
+        #genreq="Y"
     else
         echo "Using existing keystore \"${keystore_file}\""
     fi
 
-    read -p "Do you wish to generate a Certificate Signing Request at this time? $([ $genreq = "Y" ] && echo "[Y/n]" || echo "[y/N]") " genreq
-    if [ "${genreq}" == "Y" ] || [ "${genreq}" == "y" ]; then
-        echo "Generating Certificate Signing Request..."
-        ${java_install_dir}/bin/keytool -certreq -alias ${keystore_alias} -keystore ${keystore_file} -file ${HOME}/$(hostname --fqdn)-esg-node.csr
-        [ $? != 0 ] && echo " ERROR: keytool certreq command failed"
-        chown -R ${installer_uid}:${installer_gid} ${HOME}/$(hostname --fqdn)-esg-node.csr
-    fi
+    #read -p "Do you wish to generate a Certificate Signing Request at this time? $([ $genreq = "Y" ] && echo "[Y/n]" || echo "[y/N]") " genreq
+    #if [ "${genreq}" == "Y" ] || [ "${genreq}" == "y" ]; then
+    #    echo "Generating Certificate Signing Request..."
+    #    ${java_install_dir}/bin/keytool -certreq -alias ${keystore_alias} -keystore ${keystore_file} -file ${HOME}/$(hostname --fqdn)-esg-node.csr
+    #    [ $? != 0 ] && echo " ERROR: keytool certreq command failed"
+    #    chown -R ${installer_uid}:${installer_gid} ${HOME}/$(hostname --fqdn)-esg-node.csr
+    #fi
     
 
     #Fetch/Copy truststore to $tomcat_install_dir/conf
@@ -1311,7 +1323,7 @@ setup_tomcat() {
         fetch_file=${truststore_file##*/} # i.e. jssecacerts
         checked_get ${truststore_file} ${esg_dist_url}/externals/${fetch_file}
         if (( $? > 1 )); then
-            echo " Warning: Could not download certificates ${fetch_file} for tomcat - will copy local java certificat file"
+            echo " Warning: Could not download certificates ${fetch_file} for tomcat - will copy local java certificate file"
             echo "(note - the truststore password will probably not match!)"
             cp -v ${java_install_dir}/jre/lib/security/cacerts ${truststore_file}
             [ $? != 0 ] && echo " ERROR: Could not fetch or copy ${fetch_file} for tomcat!!" && popd && checked_done 1
@@ -2294,6 +2306,82 @@ add_my_cert_to_truststore() {
     #----------------------------------------------------------------
     return 0
 }
+
+#---
+
+#arg 1 -> private key
+#arg 2 -> public cert
+generate_ssl_keypair() {
+    echo "Generating private host key... "
+    local private_key=${1:-"hostkey.pem"}
+    openssl genrsa -out ${private_key} 1024
+    [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 1)
+    chmod 400 ${private_key}
+
+    echo "Generating Certificate Signing Request (csr)... "
+    local public_cert_req=${2:-$(hostname --fqdn)-esg-node.csr}
+    openssl req -new -nodes -key ${private_key} -out ${public_cert_req}
+    [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 2)
+
+    echo "Generating temporary self-signed certificate... "
+    openssl x509 -req -days 30 -in ${public_cert_req} -signkey ${private_key} -out ${public_cert_req%.*}.pem
+    [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 3)
+
+    openssl x509 -noout -text -in ${public_cert_req%.*}.pem
+
+}
+
+#converts key pairs from PEM format to DER format
+#(DER format is amenable to Java's keystore mechanism)
+#arg 1 -> private key
+#arg 2 -> public cert
+convert_keys() {
+    echo -n "Converting private key from PEM -> DER format... "
+    local private_key=${1:-"hostkey.pem"}
+    [ ! -e ${private_key} ] && echo "Sorry, cannot find ${private_key}" && return 2
+    openssl pkcs8 -topk8 -nocrypt -in ${private_key} -inform PEM -out ${private_key%.*}.der -outform DER
+    [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 1)
+
+    echo -n "Converting public cert from PEM -> DER format... "
+    local public_cert=${2:-$(hostname --fqdn)-esg-node.pem}
+    [ ! -e ${public_cert} ] && echo "Sorry, cannot find ${public_cert}" && return 2
+    openssl x509 -in ${public_cert} -outform DER -out ${public_cert%.*}.der
+    [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 1)
+
+    echo
+    pwd
+    ls -l ${private_key%.*}.der ${public_cert%.*}.der
+    echo
+    return 0
+}
+
+#Creates a new keystore based on given keypair
+#arg 1 -> private key
+#arg 2 -> public cert
+#arg 3 -> keystore name*
+#arg 4 -> alias*
+#arg 5 -> password* (for keystore and priate key)
+#[*Have default values - non manditory]
+create_keystore() {
+    local private_key=${1:-"hostkey.der"}
+    local public_cert=${2:-$(hostname --fqdn)-esg-node.der}
+    local keystore_name=${3:-${keystore_file}}
+    local key_alias=${4:-${keystore_alias}}
+    local password=${5:-${keystore_password}}
+    checked_get ${utils_url}/ImportKey.class
+    [ $? != 0 ] && echo "Could not fetch keystore generator" && return 1
+
+    [ ! -e ${private_key} ] && echo "Sorry, cannot find ${private_key}" && return 2
+    [ ! -e ${public_cert} ] && echo "Sorry, cannot find ${public_cert}" && return 2
+
+    CLASSPATH=. java -Dkeystore=${keystore_name} ImportKey ${private_key} ${public_cert} ${key_alias} ${password}
+    [ $? != 0 ] && echo "[FAILED] Could not execute keystore generator" && return 1
+    echo
+    keytool -list -v -keystore ${keystore_name}
+    return 0
+}
+
+#---
 
 #Once the generated CSR has been submitted to a CA and signed... the returned
 #signed certificate needs to be imported into the keystore. (and to trust store: for ORP)
