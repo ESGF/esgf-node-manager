@@ -2308,9 +2308,10 @@ add_my_cert_to_truststore() {
 }
 
 #---
-
-#arg 1 -> private key
-#arg 2 -> public cert
+#Original command instructions can be found here:
+#http://www.sial.org/howto/openssl/csr/ 
+#arg 1 -> what we want to name the private key
+#arg 2 -> what we want to name the public cert
 generate_ssl_keypair() {
     echo "Generating private host key... "
     local private_key=${1:-"hostkey.pem"}
@@ -2333,6 +2334,8 @@ generate_ssl_keypair() {
 
 #converts key pairs from PEM format to DER format
 #(DER format is amenable to Java's keystore mechanism)
+#Original command instructions can be found here:
+#http://www.ci.uchicago.edu/wiki/bin/view/ESGProject/JarSigningNotes
 #arg 1 -> private key
 #arg 2 -> public cert
 convert_keys() {
@@ -2345,7 +2348,7 @@ convert_keys() {
     echo -n "Converting public cert from PEM -> DER format... "
     local public_cert=${2:-$(hostname --fqdn)-esg-node.pem}
     [ ! -e ${public_cert} ] && echo "Sorry, cannot find ${public_cert}" && return 2
-    openssl x509 -in ${public_cert} -outform DER -out ${public_cert%.*}.der
+    openssl x509 -in ${public_cert} -inform PEM -out ${public_cert%.*}.der -outform DER
     [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 1)
 
     echo
@@ -2356,6 +2359,8 @@ convert_keys() {
 }
 
 #Creates a new keystore based on given keypair
+#Original command instructions can be found here:
+#http://www.agentbob.info/agentbob/79-AB.html
 #arg 1 -> private key
 #arg 2 -> public cert
 #arg 3 -> keystore name*
@@ -2385,6 +2390,7 @@ create_keystore() {
 
 #Once the generated CSR has been submitted to a CA and signed... the returned
 #signed certificate needs to be imported into the keystore. (and to trust store: for ORP)
+#arg 1 -> signed certificate file returned to you by your CA
 install_signed_certificate() {
     local signed_cert_file=${1:-${HOME}/$(hostname --fqdn)-esg-node.pem}
 
