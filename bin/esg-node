@@ -3179,7 +3179,7 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         --verify      - runs the test code to verify installation
         --write-env   - writes the necessary env vars to file ${envfile}
         --version     - indicates the version of this script
-        --check       - checks if this script is the most up-to-date posted <u|c|N> (update|continue|nothing)
+        --check       - checks if this script is the most up-to-date posted <u|C|x> (Update|Continue|eXit)
         --clear       - removes the file holding the enironment state of last install
         --test-pub    - performs the publication test directly (same publication called in last step of install)
         --info        - provides a brief explaination of the DataNode
