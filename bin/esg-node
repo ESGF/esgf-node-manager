@@ -2444,6 +2444,9 @@ create_keystore() {
 
 #---
 
+#************
+#(DEPRECATED)
+#************
 #Once the generated CSR has been submitted to a CA and signed... the returned
 #signed certificate needs to be imported into the *existing* keystore. (and to trust store: for ORP)
 #arg 1 -> signed certificate file returned to you by your CA
@@ -2512,6 +2515,9 @@ install_signed_certificate() {
     
 }
 
+#************
+#(DEPRECATED)
+#************
 #This should only be run AFTER your signed certificate has been already installed into the keystore!
 export_keystore_as_globus_hostkeys() {
     mkdir -p ${workdir}
