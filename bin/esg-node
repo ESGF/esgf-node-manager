@@ -1288,33 +1288,22 @@ setup_tomcat() {
         unset verify_password
         echo
 
-        #----------------------
-        #Use the key managment functions, defined below.
-        #----------------------
-        generate_ssl_keypair hostkey.pem $(hostname --fqdn)-esg-node.csr && \
-            convert_keys hostkey.pem $(hostname --fqdn)-esg-node.pem && \
-            create_keystore hostkey.der $(hostname --fqdn)-esg-node.der ${keystore_file} ${keystore_alias} ${store_password}
-        [ $? != 0 ] && echo "ERROR: Problem with key generation and/or keystore construction"
-        unlink hostcert.pem
-        [ -e hostcert.pem ] && mv hostcert.pem hostcert.pem_old
-        [ -e $(hostname --fqdn)-esg-node.pem ] && ln -s $(hostname --fqdn)-esg-node.pem hostcert.pem
-        #----------------------
-
-        #(($DEBUG)) && ${JAVA_HOME}/bin/keytool -list -keystore ${keystore_file}
-        #$java_install_dir/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365 -storepass ${store_password}
-        #[ $? != 0 ] && echo " ERROR: keytool genkey command failed" && popd && checked_done 1
-        #genreq="Y"
+        $java_install_dir/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365 -storepass ${store_password}
+        [ $? != 0 ] && echo " ERROR: keytool genkey command failed" && popd && checked_done 1
+        genreq="Y"
     else
         echo "Using existing keystore \"${keystore_file}\""
     fi
 
-    #read -p "Do you wish to generate a Certificate Signing Request at this time? $([ $genreq = "Y" ] && echo "[Y/n]" || echo "[y/N]") " genreq
-    #if [ "${genreq}" == "Y" ] || [ "${genreq}" == "y" ]; then
-    #    echo "Generating Certificate Signing Request..."
-    #    ${java_install_dir}/bin/keytool -certreq -alias ${keystore_alias} -keystore ${keystore_file} -file ${HOME}/$(hostname --fqdn)-esg-node.csr
-    #    [ $? != 0 ] && echo " ERROR: keytool certreq command failed"
-    #    chown -R ${installer_uid}:${installer_gid} ${HOME}/$(hostname --fqdn)-esg-node.csr
-    #fi
+    read -p "Do you wish to generate a Certificate Signing Request at this time? $([ $genreq = "Y" ] && echo "[Y/n]" || echo "[y/N]") " genreq
+    if [ "${genreq}" == "Y" ] || [ "${genreq}" == "y" ]; then
+        echo "Generating Certificate Signing Request..."
+        #${java_install_dir}/bin/keytool -certreq -alias ${keystore_alias} -keystore ${keystore_file} -file ${HOME}/$(hostname --fqdn)-esg-node.csr
+        #[ $? != 0 ] && echo " ERROR: keytool certreq command failed"
+        generate_ssl_key_and_csr
+        [ $? != 0 ] && echo " ERROR: Unable to generate ssl key and csr! (you will have to run --generate-ssl-key-and-csr after installation)"
+        chown -R ${installer_uid}:${installer_gid} ${HOME}/$(hostname --fqdn)-esg-node.csr
+    fi
     
 
     #Fetch/Copy truststore to $tomcat_install_dir/conf
@@ -2204,9 +2193,9 @@ write_env() {
 
 #Goes to ESG distribution server and pulls down all certificates for the federation.
 #(suitable for crontabbing)
-install_esg_certificates() {
+fetch_esg_certificates() {
     echo 
-    echo "Installing ESG Federation Certificates..."
+    echo "Fetching Freshest ESG Federation Certificates..."
     #globus_global_certs_dir=/etc/grid-security/certificates
     [ -e ${globus_global_certs_dir} ] && tar czf ${globus_global_certs_dir%/*}/${globus_global_certs_dir##*/}.bak.tgz ${globus_global_certs_dir} >& /dev/null && rm ${globus_global_certs_dir}/*
     mkdir -p ${globus_global_certs_dir}
@@ -2229,7 +2218,7 @@ rebuild_truststore() {
     if [ ! -d ${globus_global_certs_dir} ]; then
         echo "Sorry, No esg certificates found... in ${globus_global_certs_dir}"
         echo "So fetching fresh esg certificates :-)"
-        install_esg_certificates
+        fetch_esg_certificates
     fi
 
     #If you don't already have a truststore to build on....
@@ -2312,26 +2301,90 @@ add_my_cert_to_truststore() {
 #http://www.sial.org/howto/openssl/csr/ 
 #arg 1 -> what we want to name the private key
 #arg 2 -> what we want to name the public cert
-generate_ssl_keypair() {
+generate_ssl_key_and_csr() {
     echo "Generating private host key... "
     local private_key=${1:-"hostkey.pem"}
     openssl genrsa -out ${private_key} 1024
     [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 1)
     chmod 400 ${private_key}
+    echo "[OK]"
 
     echo "Generating Certificate Signing Request (csr)... "
     local public_cert_req=${2:-$(hostname --fqdn)-esg-node.csr}
     openssl req -new -nodes -key ${private_key} -out ${public_cert_req}
     [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 2)
+    chmod 644 ${private_key}
+    echo "[OK]"
 
-    echo "Generating temporary self-signed certificate... "
-    openssl x509 -req -days 30 -in ${public_cert_req} -signkey ${private_key} -out ${public_cert_req%.*}.pem
-    [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 3)
-
-    openssl x509 -noout -text -in ${public_cert_req%.*}.pem
+    #echo "Generating temporary self-signed certificate... "
+    #openssl x509 -req -days 30 -in ${public_cert_req} -signkey ${private_key} -out ${public_cert_req%.*}.pem
+    #[ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 3)
+    #openssl x509 -noout -text -in ${public_cert_req%.*}.pem
 
 }
 
+#(Once you have submitted the CSR and have gotten it back *signed*; now install the keypair)
+#arg 1 -> private key
+#arg 2 -> public cert
+#arg 3 -> keystore name
+#arg 4 -> alias
+#arg 5 -> password (for keystore and private key)
+install_keypair() {
+    local private_key=${1:-"hostkey.pem"}
+    local public_cert=${2:-"$(hostname --fqdn)-esg-node.pem"}
+    local keystore_name=${3:-${keystore_file}}
+    local keystore_alias=${4:-${keystore_alias}}
+    local store_password=${5:-${store_password}}
+    
+    if [ -z "${store_password}" ]; then
+        local verify_password
+        while [ 1 ]; do
+            echo
+            read -s -p "Please enter the password for this keystore   : " store_password
+            [ "${store_password}" = "changeit" ] && break
+            [ -z "${store_password}" ] && echo "Invalid password [${store_password}]" && continue
+            echo
+            read -s -p "Please re-enter the password for this keystore: " verify_password
+            [ "${store_password}" = "${verify_password}" ] && echo && break;
+        done
+        unset verify_password
+        echo
+    fi
+
+    #Transform the keypair into the DER format understood by Java's keystore
+    #And generate a new keystore from that pair.
+    [ -e "${keystore_name}" ] && mv ${keystore_name} ${keystore_name}.bak
+    convert_keys ${private_key} ${public_cert} && \
+        create_keystore ${private_key%.*}.der ${public_cert%.*}.der ${keystore_name} ${keystore_alias} ${store_password}
+    [ $? != 0 ] && echo "ERROR: Problem with key generation and/or keystore construction" && mv ${keystore_name}.bak ${keystore_name} && exit 5
+
+    #(In order for ORP or any other local service to trust eachother put your own cert into the truststore)
+    [ -e "${truststore_file}" ] && mv ${truststore_file} ${truststore_file}.bak
+    rebuild_truststore && add_my_cert_to_truststore ${store_password}
+    [ $? != 0 ] && echo "ERROR: Problem with truststore generation" && mv ${truststore_file}.bak ${truststore_file} && exit 6
+    
+    #--------------------------------------------------
+    #Copy the files to where they need to go for GLOBUS 
+    #--------------------------------------------------
+    local globus_grid_security_dir=${globus_global_certs_dir%/*}
+    [ ! -d  ${globus_grid_security_dir} ] && echo "ERROR: Could not locate target globus key location:[${globus_grid_security_dir}]" && exit 6
+
+    [ -e ${globus_grid_security_dir}/hostkey.pem ] && mv ${globus_grid_security_dir}/hostkey.pem ${globus_grid_security_dir}/hostkey.pem.old
+    cp -v ${private_key} ${globus_grid_security_dir}/hostkey.pem && \
+        chmod 600 ${globus_grid_security_dir}/hostkey.pem
+
+    [ -e ${globus_grid_security_dir}/hostcert.pem ] && mv ${globus_grid_security_dir}/hostcert.pem ${globus_grid_security_dir}/hostcert.pem.old
+    cp -v ${public_cert} ${globus_grid_security_dir}/hostcert.pem && \
+        chmod 644 ${globus_grid_security_dir}/hostcert.pem && \
+        openssl x509 -noout -text -in ${globus_grid_security_dir}/hostcert.pem
+
+    echo "Please restart this data-node for keys to take effect: \"$0 restart\""
+    echo
+}
+
+#------
+#HELPER FUNCTION (aka private)
+#------
 #converts key pairs from PEM format to DER format
 #(DER format is amenable to Java's keystore mechanism)
 #Original command instructions can be found here:
@@ -2358,6 +2411,9 @@ convert_keys() {
     return 0
 }
 
+#------
+#HELPER FUNCTION (aka private)
+#------
 #Creates a new keystore based on given keypair
 #Original command instructions can be found here:
 #http://www.agentbob.info/agentbob/79-AB.html
@@ -2365,7 +2421,7 @@ convert_keys() {
 #arg 2 -> public cert
 #arg 3 -> keystore name*
 #arg 4 -> alias*
-#arg 5 -> password* (for keystore and priate key)
+#arg 5 -> password* (for keystore and private key)
 #[*Have default values - non manditory]
 create_keystore() {
     local private_key=${1:-"hostkey.der"}
@@ -2389,7 +2445,7 @@ create_keystore() {
 #---
 
 #Once the generated CSR has been submitted to a CA and signed... the returned
-#signed certificate needs to be imported into the keystore. (and to trust store: for ORP)
+#signed certificate needs to be imported into the *existing* keystore. (and to trust store: for ORP)
 #arg 1 -> signed certificate file returned to you by your CA
 install_signed_certificate() {
     local signed_cert_file=${1:-${HOME}/$(hostname --fqdn)-esg-node.pem}
@@ -2556,7 +2612,7 @@ export_keystore_as_globus_hostkeys() {
 #arg1 - hostname of the machine with the cert you want to get
 #(arg2 - password to truststore where cert will be inserted)
 register() {
-    echo "Installing Certificate From Gateway...( -> MyProxy endpoint)"
+    echo "Installing Public Certificate of Target Gateway...( -> MyProxy endpoint)"
     
     local certfile=jssecacerts
 
@@ -3189,9 +3245,10 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
 
         Key Management Flags:
         --register    - connects to desired gateway, fetches and stores their certificate to enable ingress SSL connections
-        --install-signed-cert - installs signed host certificate into keystore and truststore <signed PEM file>
-        --export-keys-to-globus  - exports keystore certificates to globus host{cert,key}.pem files.
-        --install-esg-certs - fetches and installs all current public esg federation certificates (used by globus)
+        --install-keypair - takes as input private key and public cert files and installs them. <key> <cert> [<keystore> <alias> <password>]
+        (deprecated) --install-signed-cert - installs signed host certificate into keystore and truststore <signed PEM file>
+        (deprecated) --export-keys-to-globus  - exports keystore certificates to globus host{cert,key}.pem files.
+        --fetch-esg-certs - fetches and installs all current public esg federation certificates (used by globus)
         --rebuild-truststore - converts globus' (public) ca certificates into a truststore.
         --clear-certs - removes the user-level public certificates' directory (used by myproxy)
 
@@ -3228,6 +3285,14 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
       *After a full install there will be a file created ($envfile) that has the environment
       *vars that were used and set during the installation - this should be sourced by users
       *of this application stack.
+
+      Typical usage:
+
+      Installation > esg-node --install --verify
+      Credentials  > esg-node --install-keypair <key> <cert>
+      Test Publish > esg-node --test-pub
+      Life Cycle   > esg-node [start|stop|status|restart]
+
     " | more
     exit 0
 }
@@ -3382,22 +3447,13 @@ main() {
                 register $1 $2
                 exit
                 ;;
-            --add-my-cert-to-truststore)
+            --fetch-esg-certs)
                 self_verify
                 shift
                 init
                 id | grep root >& /dev/null
                 [ $? != 0 ] && printf "[FAIL] \n\tMust be root for this option\n\n" && exit 1
-                add_my_cert_to_truststore $@
-                exit $?
-                ;;
-            --install-esg-certs)
-                self_verify
-                shift
-                init
-                id | grep root >& /dev/null
-                [ $? != 0 ] && printf "[FAIL] \n\tMust be root for this option\n\n" && exit 1
-                install_esg_certificates
+                fetch_esg_certificates
                 exit $?
                 ;;
             --rebuild-truststore)
@@ -3407,6 +3463,36 @@ main() {
                 id | grep root >& /dev/null
                 [ $? != 0 ] && printf "[FAIL] \n\tMust be root for this option\n\n" && exit 1
                 rebuild_truststore
+                exit $?
+                ;;
+            --add-my-cert-to-truststore)
+                self_verify
+                shift
+                init
+                id | grep root >& /dev/null
+                [ $? != 0 ] && printf "[FAIL] \n\tMust be root for this option\n\n" && exit 1
+                add_my_cert_to_truststore $@
+                exit $?
+                ;;
+            --generate-ssl-key-and-csr)
+                self_verify
+                shift
+                init
+                id | grep root >& /dev/null
+                [ $? != 0 ] && printf "[FAIL] \n\tMust be root for this option\n\n" && exit 1
+                #arg 1 -> what we want to name the private key
+                #arg 2 -> what we want to name the public cert
+                #(no args necessary, has defaults)
+                generate_ssl_key_and_csr $@
+                exit $?
+                ;;
+            --install-keypair)
+                self_verify
+                shift
+                init
+                id | grep root >& /dev/null
+                [ $? != 0 ] && printf "[FAIL] \n\tMust be root for this option\n\n" && exit 1
+                install_keypair $@
                 exit $?
                 ;;
             --install-signed-cert)
