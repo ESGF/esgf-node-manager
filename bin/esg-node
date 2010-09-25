@@ -194,7 +194,7 @@ init() {
     thredds_esg_dist_url=${esg_dist_url}/thredds/${tds_version}/thredds.war
     #NOTE: This root dir should match a root set in the thredds setup 
     thredds_root_dir=${esg_root_dir}/data
-    thredds_replica_dir=${esg_root_dir}/data.replica
+    thredds_replica_dir=${thredds_root_dir}/replica
     node_dist_url=${esg_dist_url}/esg-node/esg-node.${node_version}.tar.gz
     node_db_name=esgcet
     node_app_context_root=esg-node
@@ -1295,7 +1295,11 @@ setup_tomcat() {
         echo "Using existing keystore \"${keystore_file}\""
     fi
 
-    read -p "Do you wish to generate a Certificate Signing Request at this time? $([ $genreq = "Y" ] && echo "[Y/n]" || echo "[y/N]") " genreq
+    local answer
+    read -p "Do you wish to generate a Certificate Signing Request at this time? $([ $genreq = "Y" ] && echo "[Y/n]" || echo "[y/N]") " answer
+    [ -n "${answer}" ] && genreq=${answer}
+    unset anser
+    echo " -> [${genreq}]"
     if [ "${genreq}" == "Y" ] || [ "${genreq}" == "y" ]; then
         echo "Generating Certificate Signing Request..."
         #${java_install_dir}/bin/keytool -certreq -alias ${keystore_alias} -keystore ${keystore_file} -file ${HOME}/$(hostname --fqdn)-esg-node.csr
@@ -2334,7 +2338,7 @@ install_keypair() {
     local public_cert=${2:-"$(hostname --fqdn)-esg-node.pem"}
     local keystore_name=${3:-${keystore_file}}
     local keystore_alias=${4:-${keystore_alias}}
-    local store_password=${5:-${store_password}}
+    local store_password=${5:-${keystore_password}}
     
     if [ -z "${store_password}" ]; then
         local verify_password
