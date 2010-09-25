@@ -3505,6 +3505,9 @@ main() {
                 install_keypair $@
                 exit $?
                 ;;
+            #*************
+            #(deprecated)
+            #*************
             --install-signed-cert)
                 self_verify
                 shift
@@ -3514,6 +3517,9 @@ main() {
                 install_signed_certificate $@
                 exit $?
                 ;;
+            #*************
+            #(deprecated)
+            #*************
             --export-keys-to-globus)
                 shift
                 init
