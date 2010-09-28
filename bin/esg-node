@@ -2348,15 +2348,15 @@ generate_ssl_key_and_csr() {
     #So then we run the regular request generation that will ask you a series of questions to build the DN
     if [ -z "${public_cert_dn}" ]; then
         openssl req -new -nodes -key ${private_key} -out ${public_cert_req}
-        [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 2)
+        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]" && return 2
     else
         #Or, there was indeed an extraction of the DN from the keytool or I manually provided the DN
         #So then generate the request with the DN...
         echo "openssl req -new -nodes -subj '"${public_cert_dn}"' -key ${private_key} -out ${public_cert_req}"
-        openssl req -new -nodes -subj '"${public_cert_dn}"' -key ${private_key} -out ${public_cert_req}
-        [ $? == 0 ] && echo "[OK]*" || (echo "[FAILED]*" && return 2)
+        openssl req -new -nodes -subj "${public_cert_dn}" -key ${private_key} -out ${public_cert_req}
+        [ $? == 0 ] && echo "[OK]*" || echo "[FAILED]*" && return 2
     fi
-    chmod 644 ${public_cert_req}
+    chmod 644 ${public_cert_req} >& /dev/null
     echo "[OK]"
 
     #echo "Generating temporary self-signed certificate... "
@@ -2385,9 +2385,9 @@ extract_keystore_dn() {
         #this is a bit of defensive coding so we don't run into the problem of not having the password and running a broken arg sequence
         [ -n "${storepass}" ] && storepass_switch="-storepass ${storepass}"
         #Note: I apologize for this horribile hacking of regex (this should be more cleanly accomplished with sed or perl using a capture group or a simple look behind)
-        dn=$(keytool -list -v -keystore ${keystore_file} ${storepass_switch} | egrep -e '^Owner:[ ]*?*' | tr -s " " | sed -e '#^Owner: ##' | sed -e s#', '#/#g )
+        dn=$(keytool -list -v -keystore ${keystore_file} ${storepass_switch} | egrep -e '^Owner:[ ]*?*' | tr -s " " | sed -e 's#^Owner: ##' | sed -e s#', '#/#g)
     fi
-    echo ${dn}
+    echo "/${dn}"
 }
 
 #(Once you have submitted the CSR and have gotten it back *signed*; now install the keypair)
