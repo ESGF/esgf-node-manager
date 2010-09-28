@@ -1373,7 +1373,6 @@ configure_tomcat() {
 
         #Now we generate the key and cert externally, but maintaining the DN specified in the, just built, keystore
         local dn=$(extract_keystore_dn ${keystore_file} ${store_password})
-        echo "Using DN: ${dn}"
         generate_ssl_key_and_csr hostkey.pem $(hostname --fqdn)-esg-node.csr ${dn}
         [ $? != 0 ] && echo " ERROR: Unable to generate ssl key and csr! (you will have to run --generate-ssl-key-and-csr after installation)"
 
