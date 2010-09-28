@@ -1253,11 +1253,74 @@ setup_tomcat() {
     popd >& /dev/null
     #----------
 
+    configure_tomcat
+    
+    chown -R $tomcat_user $(readlink -f ${tomcat_install_dir})
+    [ $? != 0 ] && " ERROR: Could not change ownership of tomcat to \"$tomcat_user\" user" && popd && checked_done 1
+    chgrp -R $tomcat_group $(readlink -f ${tomcat_install_dir})
+    [ $? != 0 ] && " ERROR: Could not change group of tomcat to \"$tomcat_user\" user" && popd && checked_done 1
+    
+    #-------------------------------
+    # For Security Reasons...
+    #-------------------------------
 
+    if [ -d ${tomcat_install_dir}/webapps/examples ]; then
+        local dodel="Y"
+        echo "For security reasons we recommend removing the examples web app"
+        readlink -f ${tomcat_install_dir}/webapps/examples
+        read -p "Is the directory show above correct? [Y/n] " dodel
+        if [ "${dodel}" = "Y" ] || [ "${dodel}" = "y" ] || [ -z "${dodel}" ]; then
+            rm -rf ${tomcat_install_dir}/webapps/examples && echo "removed the examples webapp..."
+        fi
+    fi
 
+    start_tomcat
+
+    echo -n "curl http://localhost:80 "
+    local wait_time=5
+    local ret=1
+    while [[ $wait_time > 0 ]]; do
+        curl http://localhost:80 >& /dev/null
+        ret=$?
+        [ $ret == 0 ] && break
+        sleep 1
+        ((wait_time--))
+    done
+
+    [ $ret != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to contact top level tomcat page on this server" && popd && checked_done 1
+    echo "[OK]"
+    echo
+    popd >& /dev/null
+    echo
+    echo
+    write_tomcat_env
+    write_tomcat_install_log
+    return 0
+}
+
+write_tomcat_env() {
+    ((show_summary_latch++))
+    echo "export CATALINA_HOME=${CATALINA_HOME}" >> ${envfile}
+    dedup ${envfile} && source ${envfile}
+    return 0
+}
+
+write_tomcat_install_log() {
+    echo "$(date ${date_format}) tomcat=${tomcat_version} $(readlink -f ${tomcat_install_dir})" >> ${install_logfile}
+    dedup ${install_logfile}
+    return 0
+}
+
+configure_tomcat() {
     #----------------------------
     # TOMCAT Configuration...
     #----------------------------
+
+    echo
+    echo "*******************************"
+    echo "Configuring Tomcat... (for Data Node Manager)"
+    echo "*******************************"
+    echo
 
     cd $tomcat_install_dir/conf
     
@@ -1274,7 +1337,7 @@ setup_tomcat() {
     local store_password=${keystore_password}
     if [ ! -e ${keystore_file} ]; then
         echo "Launching Java's keytool:"
-
+        
         local verify_password
         while [ 1 ]; do
             echo
@@ -1346,56 +1409,7 @@ setup_tomcat() {
     [ $? != 0 ] && " ERROR: Could not change ownership of tomcat to \"$tomcat_user\" user" && popd && checked_done 1
     chgrp -R $tomcat_group $(readlink -f ${tomcat_install_dir})
     [ $? != 0 ] && " ERROR: Could not change group of tomcat to \"$tomcat_user\" user" && popd && checked_done 1
-    
-    #-------------------------------
-    # For Security Reasons...
-    #-------------------------------
 
-    if [ -d ${tomcat_install_dir}/webapps/examples ]; then
-        local dodel="Y"
-        echo "For security reasons we recommend removing the examples web app"
-        readlink -f ${tomcat_install_dir}/webapps/examples
-        read -p "Is the directory show above correct? [Y/n] " dodel
-        if [ "${dodel}" = "Y" ] || [ "${dodel}" = "y" ] || [ -z "${dodel}" ]; then
-            rm -rf ${tomcat_install_dir}/webapps/examples && echo "removed the examples webapp..."
-        fi
-    fi
-
-    start_tomcat
-
-    echo -n "curl http://localhost:80 "
-    local wait_time=5
-    local ret=1
-    while [[ $wait_time > 0 ]]; do
-        curl http://localhost:80 >& /dev/null
-        ret=$?
-        [ $ret == 0 ] && break
-        sleep 1
-        ((wait_time--))
-    done
-
-    [ $ret != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to contact top level tomcat page on this server" && popd && checked_done 1
-    echo "[OK]"
-    echo
-    popd >& /dev/null
-    echo
-    echo
-    write_tomcat_env
-    write_tomcat_install_log
-    return 0
-}
-
-write_tomcat_env() {
-    ((show_summary_latch++))
-    echo "export CATALINA_HOME=${CATALINA_HOME}" >> ${envfile}
-    dedup ${envfile} && source ${envfile}
-    return 0
-}
-
-write_tomcat_install_log() {
-    echo "$(date ${date_format}) tomcat=${tomcat_version} $(readlink -f ${tomcat_install_dir})" >> ${install_logfile}
-    dedup ${install_logfile}
-    return 0
 }
 
 
@@ -2305,6 +2319,7 @@ add_my_cert_to_truststore() {
 #http://www.sial.org/howto/openssl/csr/ 
 #arg 1 -> what we want to name the private key
 #arg 2 -> what we want to name the public cert
+#arg 3 -> what we want the DN to be for public cert
 generate_ssl_key_and_csr() {
     echo "Generating private host key... "
     local private_key=${1:-"hostkey.pem"}
@@ -2313,10 +2328,18 @@ generate_ssl_key_and_csr() {
     chmod 400 ${private_key}
     echo "[OK]"
 
+    #NOTE: to include DN at the command line
+    #openssl req -new -nodes -subj '/O=Grid/OU=GlobusTest/OU=simpleCA-pcmdi3.llnl.gov/CN=esg-test1.llnl.gov' -key testkey.pem -out testcert.csr
     echo "Generating Certificate Signing Request (csr)... "
     local public_cert_req=${2:-$(hostname --fqdn)-esg-node.csr}
-    openssl req -new -nodes -key ${private_key} -out ${public_cert_req}
-    [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 2)
+    local public_cert_dn=${3:-"/O=Grid/OU=ESG-DATA-NODE/CN=$(hostname --fqdn)"}
+    if [ -z ${public_cert_dn} ]; then
+        openssl req -new -nodes -key ${private_key} -out ${public_cert_req}
+        [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 2)
+    else
+        openssl req -new -nodes -subj '"${public_cert_dn}"' -key ${private_key} -out ${public_cert_req}
+        [ $? == 0 ] && echo "[OK]*" || (echo "[FAILED]*" && return 2)
+    fi
     chmod 644 ${private_key}
     echo "[OK]"
 
@@ -2442,7 +2465,7 @@ create_keystore() {
     CLASSPATH=. java -Dkeystore=${keystore_name} ImportKey ${private_key} ${public_cert} ${key_alias} ${password}
     [ $? != 0 ] && echo "[FAILED] Could not execute keystore generator" && return 1
     echo
-    keytool -list -v -keystore ${keystore_name}
+    keytool -list -v -keystore ${keystore_name} -storepass ${password}
     return 0
 }
 
@@ -3255,12 +3278,16 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
 
         Key Management Flags:
         --register    - connects to desired gateway, fetches and stores their certificate to enable ingress SSL connections
+        --generate-ssl-key-and-csr - generate a new key and cert request <key> <cer> [<dn>] 
+                                     (The 'dn' value is of the form - Ex:'/O=ESG/OU=ESG-DATA-NODE/CN=<fqdn>')
         --install-keypair - takes as input private key and public cert files and installs them. <key> <cert> [<keystore> <alias> <password>]
-        (deprecated) --install-signed-cert - installs signed host certificate into keystore and truststore <signed PEM file>
-        (deprecated) --export-keys-to-globus  - exports keystore certificates to globus host{cert,key}.pem files.
         --fetch-esg-certs - fetches and installs all current public esg federation certificates (used by globus)
         --rebuild-truststore - converts globus' (public) ca certificates into a truststore.
         --clear-certs - removes the user-level public certificates' directory (used by myproxy)
+
+        (deprecated) --install-signed-cert - installs signed host certificate into keystore and truststore <signed PEM file>
+        (deprecated) --export-keys-to-globus  - exports keystore certificates to globus host{cert,key}.pem files.
+
 
         start   - start the data node's services
         stop    - stops the data node's services
@@ -3490,8 +3517,9 @@ main() {
                 init
                 id | grep root >& /dev/null
                 [ $? != 0 ] && printf "[FAIL] \n\tMust be root for this option\n\n" && exit 1
-                #arg 1 -> what we want to name the private key
-                #arg 2 -> what we want to name the public cert
+                #arg 1  -> what we want to name the private key
+                #arg 2  -> what we want to name the public cert
+                #arg 3* -> what we want to DN to be for the public cert
                 #(no args necessary, has defaults)
                 generate_ssl_key_and_csr $@
                 exit $?
