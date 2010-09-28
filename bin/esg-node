@@ -1372,7 +1372,9 @@ configure_tomcat() {
         #-------------------------------------------------
 
         #Now we generate the key and cert externally, but maintaining the DN specified in the, just built, keystore
-        generate_ssl_key_and_csr hostkey.pem $(hostname --fqdn)-esg-node.csr $(extract_keystore_dn ${keystore_file}) ${store_password}
+        local dn=$(extract_keystore_dn ${keystore_file} ${store_password})
+        echo "Using DN: ${dn}"
+        generate_ssl_key_and_csr hostkey.pem $(hostname --fqdn)-esg-node.csr ${dn}
         [ $? != 0 ] && echo " ERROR: Unable to generate ssl key and csr! (you will have to run --generate-ssl-key-and-csr after installation)"
 
         chown -R ${installer_uid}:${installer_gid} ${HOME}/$(hostname --fqdn)-esg-node.csr
@@ -2326,7 +2328,6 @@ add_my_cert_to_truststore() {
 #arg 1 -> what we want to name the private key
 #arg 2 -> what we want to name the public cert
 #arg 3 -> what we want the DN to be for public cert
-#arg 4 -> (keystore password)
 generate_ssl_key_and_csr() {
     echo "Generating private host key... "
     local private_key=${1:-"hostkey.pem"}
@@ -2339,7 +2340,7 @@ generate_ssl_key_and_csr() {
     #openssl req -new -nodes -subj '/O=ESG/OU=ESG-PCMDI/CN=esg-test1.llnl.gov' -key hostkey.pem -out esg-test1.llnl.gov-esg-node.csr
     echo "Generating Certificate Signing Request (csr)... "
     local public_cert_req=${2:-$(hostname --fqdn)-esg-node.csr}    
-    local public_cert_dn=${3:-$(extract_keystore_dn ${keystore_file} $4)}
+    local public_cert_dn=${3:-$(extract_keystore_dn ${keystore_file})}
 
     #At this point public_cert_dn is empty if extract_keystore_dn was unable to perform successfully
     #So then we run the regular request generation that will ask you a series of questions to build the DN
@@ -2376,7 +2377,7 @@ extract_keystore_dn() {
     local dn=""
     local keystore_file=${1:-${keystore_file}}
     if [ -e ${keystore_file} ]; then 
-        local storepass=${2:-${keystore_password}}
+        local storepass=${2}
         local storepass_switch=""
         #If no password is provided then we want to at least make sure the command line is clean such that keytool will ask you for a password
         #this is a bit of defensive coding so we don't run into the problem of not having the password and running a broken arg sequence
