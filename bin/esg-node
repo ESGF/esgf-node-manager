@@ -185,6 +185,7 @@ init() {
     pg_sys_acct_group=${pg_sys_acct_group:-$pg_sys_acct}
     postgress_dist_url=http://ftp9.us.postgresql.org/pub/mirrors/postgresql/source/v${postgress_version}/postgresql-${postgress_version}.tar.gz
     cdat_repo=git://esg-repo.llnl.gov/cdat.git
+    cdat_repo_http=http://esg-repo.llnl.gov/git/cdat.git
     esgcet_egg_file=esgcet-${esgcet_version}-py${esgcet_python_version}.egg
     esg_testdir=${workdir}/../esg_test
     tomcat_dist_url=http://download.filehat.com/apache/tomcat/tomcat-6/v${tomcat_version}/bin/apache-tomcat-${tomcat_version}.tar.gz
@@ -952,6 +953,10 @@ setup_cdat() {
     if [ ! -d ${workdir}/cdat ]; then
         echo "Fetching the cdat project from GIT Repo..."
         git clone ${cdat_repo}
+        [ $? != 0 ] && \
+            echo "Could not fetch from GIT repo using git protocol... trying http protocol..." && \
+            git clone ${cdat_repo_http}
+        [ $? != 0 ] && echo "Could not fetch from cdat's repo" && checked_done 1
     fi
     cd cdat >& /dev/null
     git checkout ${cdat_version}
