@@ -2342,9 +2342,11 @@ generate_ssl_key_and_csr() {
     local public_cert_req=${2:-$(hostname --fqdn)-esg-node.csr}    
     local public_cert_dn=${3:-$(extract_keystore_dn ${keystore_file})}
 
+    echo "Using DN = [${public_cert_dn}]"
+
     #At this point public_cert_dn is empty if extract_keystore_dn was unable to perform successfully
     #So then we run the regular request generation that will ask you a series of questions to build the DN
-    if [ -z ${public_cert_dn} ]; then
+    if [ -z "${public_cert_dn}" ]; then
         openssl req -new -nodes -key ${private_key} -out ${public_cert_req}
         [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 2)
     else
@@ -2381,9 +2383,9 @@ extract_keystore_dn() {
         local storepass_switch=""
         #If no password is provided then we want to at least make sure the command line is clean such that keytool will ask you for a password
         #this is a bit of defensive coding so we don't run into the problem of not having the password and running a broken arg sequence
-        [ -n ${storepass} ] && storepass_switch="-storepass ${storepass}"
+        [ -n "${storepass}" ] && storepass_switch="-storepass ${storepass}"
         #Note: I apologize for this horribile hacking of regex (this should be more cleanly accomplished with sed or perl using a capture group or a simple look behind)
-        dn=$(keytool -list -v -keystore ${keystore_file} ${storepass_switch} | egrep -e '^Owner:[ ]*?(*)' | tr -s " " | sed -e '/^Owner: //' | sed -e s#', '#/#g )
+        dn=$(keytool -list -v -keystore ${keystore_file} ${storepass_switch} | egrep -e '^Owner:[ ]*?*' | tr -s " " | sed -e '#^Owner: ##' | sed -e s#', '#/#g )
     fi
     echo ${dn}
 }
@@ -3316,7 +3318,7 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
 
         Key Management Flags:
         --register    - connects to desired gateway, fetches and stores their certificate to enable ingress SSL connections
-        --generate-ssl-key-and-csr - generate a new key and cert request <key> <cer> [<dn>] 
+        --generate-ssl-key-and-csr - generate new key and cert request files <key file> <cert file> [<dn>]
                                      (The 'dn' value is of the form - Ex:'/O=ESG/OU=ESG-DATA-NODE/CN=<fqdn>')
         --install-keypair - takes as input private key and public cert files and installs them. <key> <cert> [<keystore> <alias> <password>]
         --fetch-esg-certs - fetches and installs all current public esg federation certificates (used by globus)
