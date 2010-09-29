@@ -1378,6 +1378,7 @@ configure_tomcat() {
 
         #Now we generate the key and cert externally, but maintaining the DN specified in the, just built, keystore
         local dn=$(extract_keystore_dn ${keystore_file} ${store_password})
+        sleep 1
         generate_ssl_key_and_csr hostkey.pem $(hostname --fqdn)-esg-node.csr ${dn}
         [ $? != 0 ] && echo " ERROR: Unable to generate ssl key and csr! (you will have to run --generate-ssl-key-and-csr after installation)"
 
@@ -1980,6 +1981,12 @@ setup_tds() {
     start_tomcat
     start_postgress
 
+    #--------
+    #hack - prerequiset for esgsetup... should be done in esgsetup code :-\
+    mkdir -p ${tomcat_install_dir}/content/thredds
+    chown -R ${tomcat_user}:${tomcat_group} ${tomcat_install_dir}/content
+    #--------
+
     #set in cdms setup (prerequisite)
     $cdat_home/bin/esgsetup --thredds --publish --gateway ${myproxy_endpoint}
 
@@ -2352,17 +2359,23 @@ generate_ssl_key_and_csr() {
     #So then we run the regular request generation that will ask you a series of questions to build the DN
     if [ -z "${public_cert_dn}" ]; then
         openssl req -new -nodes -key ${private_key} -out ${public_cert_req}
-        [ $? == 0 ] && echo "[OK]" || echo "[FAILED]" && return 2
+        [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 2)
     else
         #Or, there was indeed an extraction of the DN from the keytool or I manually provided the DN
         #So then generate the request with the DN...
-        echo "openssl req -new -nodes -subj '"${public_cert_dn}"' -key ${private_key} -out ${public_cert_req}"
+        echo "openssl req -new -nodes -subj "${public_cert_dn}" -key ${private_key} -out ${public_cert_req}"
         openssl req -new -nodes -subj "${public_cert_dn}" -key ${private_key} -out ${public_cert_req}
-        [ $? == 0 ] && echo "[OK]*" || echo "[FAILED]*" && return 2
+        [ $? == 0 ] && echo "[OK]*" || (echo "[FAILED]*" && return 2)
     fi
     chmod 644 ${public_cert_req} >& /dev/null
     echo "[OK]"
-
+    echo
+    echo "--------------------------------------------------------"
+    echo "Generated private key: $(ls ${private_key})"
+    echo "Generated certificate: $(ls ${public_cert_req})"
+    echo "Please submit the certificate request to your Certificate Authority:"
+    echo "--------------------------------------------------------"
+    echo
     #echo "Generating temporary self-signed certificate... "
     #openssl x509 -req -days 30 -in ${public_cert_req} -signkey ${private_key} -out ${public_cert_req%.*}.pem
     #[ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 3)
@@ -3765,3 +3778,4 @@ main $@
 trap - INT TERM
 esg_node_finally
 echo "end time: `date`" >> ${logfile}
+reset
