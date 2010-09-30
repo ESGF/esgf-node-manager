@@ -100,7 +100,7 @@ init() {
     java_version=${java_version:-"1.6.0_20"}
     ant_version=${ant_version:-"1.8.1"}
     postgress_version=${postgress_version:-"8.4.4"}
-    tomcat_version=${tomcat_version:-"6.0.26"}
+    tomcat_version=${tomcat_version:-"6.0.29"}
     tds_version=${tds_version:-"4.2"}
 
     install_logfile=${ESG_INSTALL_LOGFILE:-"/etc/esg.install_log"}
@@ -1239,9 +1239,9 @@ setup_tomcat() {
         if [ -e commons-daemon-native.tar.gz ]; then
             tar xvzf commons-daemon-native.tar.gz
             cd commons-daemon-*-native-src/unix
-            #It turns out they shipped with .o files in there (oops) so I have to clean out manually.
-            rm -v $(find . | egrep '*.o$' | xargs)
-            make clean all
+            #It turns out they shipped with a conflicting .o file in there (oops) so I have to remove it manually.
+            rm -f ./native/libservice.a
+            make clean
         elif [ -e jsvc.tar.gz ]; then
             tar xzf jsvc.tar.gz
             cd jsvc-src
