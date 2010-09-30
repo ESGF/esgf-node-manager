@@ -1366,7 +1366,7 @@ configure_tomcat() {
     local answer
     read -p "Do you wish to generate a Certificate Signing Request at this time? $([ $genreq = "Y" ] && echo "[Y/n]" || echo "[y/N]") " answer
     [ -n "${answer}" ] && genreq=${answer}
-    unset anser
+    unset answer
     echo " -> [${genreq}]"
     if [ "${genreq}" == "Y" ] || [ "${genreq}" == "y" ]; then
         echo "Generating Certificate Signing Request..."
@@ -1382,7 +1382,7 @@ configure_tomcat() {
         generate_ssl_key_and_csr hostkey.pem $(hostname --fqdn)-esg-node.csr ${dn}
         [ $? != 0 ] && echo " ERROR: Unable to generate ssl key and csr! (you will have to run --generate-ssl-key-and-csr after installation)"
 
-        chown -R ${installer_uid}:${installer_gid} ${HOME}/$(hostname --fqdn)-esg-node.csr
+        chown -R ${installer_uid}:${installer_gid} $(hostname --fqdn)-esg-node.csr
     fi
     
 
@@ -1988,6 +1988,7 @@ setup_tds() {
     #--------
 
     #set in cdms setup (prerequisite)
+    echo "$cdat_home/bin/esgsetup --thredds --publish --gateway ${myproxy_endpoint}"
     $cdat_home/bin/esgsetup --thredds --publish --gateway ${myproxy_endpoint}
 
     popd >& /dev/null
@@ -2309,7 +2310,7 @@ add_my_cert_to_truststore() {
     #----------------------------------------------------------------
     if [ -e ${truststore_file} ]; then
         echo "Re-Integrating keystore's certificate into truststore.... "
-        echo -n "Extracting keystore's certificate... "
+        echo "Extracting keystore's certificate... "
         keytool -export -alias ${keystore_alias} -file ${keystore_file}.cer -keystore ${keystore_file} -storepass ${store_password}
         [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && exit 1)
 
@@ -2345,7 +2346,6 @@ generate_ssl_key_and_csr() {
     openssl genrsa -out ${private_key} 1024
     [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 1)
     chmod 400 ${private_key}
-    echo "[OK]"
 
     #NOTE: To include DN at the command line
     #openssl req -new -nodes -subj '/O=ESG/OU=ESG-PCMDI/CN=esg-test1.llnl.gov' -key hostkey.pem -out esg-test1.llnl.gov-esg-node.csr
@@ -2368,12 +2368,13 @@ generate_ssl_key_and_csr() {
         [ $? == 0 ] && echo "[OK]*" || (echo "[FAILED]*" && return 2)
     fi
     chmod 644 ${public_cert_req} >& /dev/null
-    echo "[OK]"
     echo
     echo "--------------------------------------------------------"
+    echo "In Directory: $(pwd)"
     echo "Generated private key: $(ls ${private_key})"
     echo "Generated certificate: $(ls ${public_cert_req})"
     echo "Please submit the certificate request to your Certificate Authority:"
+    echo "Then run %> esg-node --install-keypair <private key> <signed cert> (use --help for details)"
     echo "--------------------------------------------------------"
     echo
     #echo "Generating temporary self-signed certificate... "
@@ -3074,7 +3075,7 @@ checked_get() {
         cp -v ${local_file} ${local_file}.bak
         chmod 600 ${local_file}.bak
     fi
-    wget -q --no-check-certificate -O ${local_file} ${remote_file}
+    wget --no-check-certificate -O ${local_file} ${remote_file}
     [ $? != 0 ] && echo " ERROR: Problem pulling down [${remote_file##*/}] from esg distribution site" && return 2
     diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl -s ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
     [ $? != 0 ] && echo " WARNING: Could not verify this file!" && return 3
