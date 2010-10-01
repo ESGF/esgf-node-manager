@@ -219,7 +219,7 @@ init() {
         mkdir -p ${esg_config_dir}
     [ $? != 0 ] && echo "ERROR: could not create ${esg_root_dir} dir and/or subdirectories" && checked_done 1
 
-    write_paths
+    [ -w "${envfile}" ] && write_paths
 }
 
 write_paths() {
@@ -2366,7 +2366,7 @@ generate_ssl_key_and_csr() {
     else
         #Or, there was indeed an extraction of the DN from the keytool or I manually provided the DN
         #So then generate the request with the DN...
-        echo "openssl req -new -nodes -subj "${public_cert_dn}" -key ${private_key} -out ${public_cert_req}"
+        echo "openssl req -new -nodes -subj ${public_cert_dn} -key ${private_key} -out ${public_cert_req}"
         openssl req -new -nodes -subj "${public_cert_dn}" -key ${private_key} -out ${public_cert_req}
         [ $? == 0 ] && echo "[OK]*" || (echo "[FAILED]*" && return 2)
     fi
@@ -3161,6 +3161,7 @@ insert_file_at_pattern() {
 # arg 1 - The environment file to dedup.
 dedup() {
     local infile=${1:-${envfile}}
+    [ ! -w "${infile}" ] && echo "WARNING: dedup() - unable to write to ${infile}" && return 1
     local tmp=$(tac ${infile} | awk 'BEGIN {FS="[ =]"} !($2 in a) {a[$2];print $0}' | sort -k2,2)
     echo "$tmp" > ${infile}
 }
@@ -3777,9 +3778,9 @@ esg_node_finally() {
 #Set system traps
 trap esg_node_finally INT TERM
 
-echo "start time: `date`" >> ${logfile}
+[ -w "{$logfile}" ] && echo "start time: `date`" >> ${logfile}
 main $@
 trap - INT TERM
 esg_node_finally
-echo "end time: `date`" >> ${logfile}
+[ -w "{$logfile}" ] && echo "end time: `date`" >> ${logfile}
 reset
