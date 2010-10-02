@@ -101,7 +101,7 @@ init() {
     ant_version=${ant_version:-"1.8.1"}
     postgress_version=${postgress_version:-"8.4.4"}
     tomcat_version=${tomcat_version:-"6.0.29"}
-    tds_version=${tds_version:-"4.2"}
+    tds_version=${tds_version:-"4.1.6"}
 
     install_logfile=${ESG_INSTALL_LOGFILE:-"/etc/esg.install_log"}
     curl_install_dir=${CURL_HOME:-${install_prefix}/curl}
@@ -1237,7 +1237,8 @@ setup_tomcat() {
         echo "Building jsvc... (JAVA_HOME=$java_install_dir)"
 
         if [ -e commons-daemon-native.tar.gz ]; then
-            tar xvzf commons-daemon-native.tar.gz
+            echo "unpacking commons-daemon-native.tar.gz..."
+            tar xzf commons-daemon-native.tar.gz
             cd commons-daemon-*-native-src/unix
             #It turns out they shipped with a conflicting .o file in there (oops) so I have to remove it manually.
             rm -f ./native/libservice.a
@@ -1281,19 +1282,36 @@ setup_tomcat() {
 
     start_tomcat
 
-    echo -n "curl http://localhost:80 "
-    local wait_time=5
-    local ret=1
-    while [[ $wait_time > 0 ]]; do
-        curl http://localhost:80 >& /dev/null
-        ret=$?
-        [ $ret == 0 ] && break
-        sleep 1
-        ((wait_time--))
-    done
+    #---
+    #port testing for http and https
+    #---
+    local ret_all=0
+    local ports=$(sed -n 's/.*Connector.*port="\([0-9]*\)".*/\1/p' $tomcat_install_dir/conf/server.xml)
+    echo "checking connection at all ports described in server.xml: "${ports}
+    for port in ${ports[@]}; do
+        echo -n "checking http://localhost:${port} "
+        local wait_time=5
+        local ret=1
+        while [[ $wait_time > 0 ]]; do
+            curl http://localhost:${port} >& /dev/null
+            ret=$?
+            [ $ret == 0 ] && break
+            sleep 1
+            ((wait_time--))
+            echo -n "."
+        done
+        [ $ret == 0 ] && echo " [OK]" || echo " [FAIL]"
 
-    [ $ret != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to contact top level tomcat page on this server" && popd && checked_done 1
+        #We only care about reporting a failure for ports below 1024 
+        #specifically 80 (http) and 443 (https)
+        (($port < 1024)) && ((ret_all+=ret))
+
+    done
+    
+    [ $ret_all != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to contact top level tomcat page on this server" && popd && checked_done 1
     echo "[OK]"
+    #---
+
     echo
     popd >& /dev/null
     echo
