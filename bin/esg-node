@@ -1949,6 +1949,13 @@ setup_tds() {
     start_tomcat
     start_postgress
 
+    #--------
+    #hack - prerequiset for esgsetup... should be done in esgsetup code :-\
+    mkdir -p ${tomcat_install_dir}/content
+    chown -R ${tomcat_user}:${tomcat_group} ${tomcat_install_dir}/content
+    chmod -R 755 ${tomcat_install_dir}/content
+    #--------
+
     #set in cdms setup (prerequisite)
     $cdat_home/bin/esgsetup --thredds --publish --gateway ${myproxy_endpoint}
 
