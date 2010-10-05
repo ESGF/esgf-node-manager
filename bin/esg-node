@@ -1237,6 +1237,7 @@ setup_tomcat() {
         echo "Building jsvc... (JAVA_HOME=$java_install_dir)"
 
         if [ -e commons-daemon-native.tar.gz ]; then
+<<<<<<< HEAD:bin/esg-node
             echo "unpacking commons-daemon-native.tar.gz..."
             tar xzf commons-daemon-native.tar.gz
             cd commons-daemon-*-native-src/unix
@@ -1702,7 +1703,7 @@ setup_node() {
 }
 
 write_node_install_log() {
-    echo "$(date ${date_format}) webapp:node_mgr=${node_version} ${node_app_home}" >> ${install_logfile}
+    echo "$(date ${date_format}) webapp:esg-node=${node_version} ${node_app_home}" >> ${install_logfile}
     dedup ${install_logfile}
     return 0
 }
@@ -2054,7 +2055,7 @@ write_tds_env() {
 }
 
 write_tds_install_log() {
-    echo "$(date ${date_format}) webapp:tds=${tds_version} ${tomcat_install_dir}/webapps/${thredds_dist_file}" >> ${install_logfile}
+    echo "$(date ${date_format}) webapp:thredds=${tds_version} ${tomcat_install_dir}/webapps/${thredds_dist_file%.*}" >> ${install_logfile}
     dedup ${install_logfile}
     return 0
 }
