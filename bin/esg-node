@@ -1237,7 +1237,6 @@ setup_tomcat() {
         echo "Building jsvc... (JAVA_HOME=$java_install_dir)"
 
         if [ -e commons-daemon-native.tar.gz ]; then
-<<<<<<< HEAD:bin/esg-node
             echo "unpacking commons-daemon-native.tar.gz..."
             tar xzf commons-daemon-native.tar.gz
             cd commons-daemon-*-native-src/unix
