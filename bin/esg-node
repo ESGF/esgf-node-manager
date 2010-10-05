@@ -90,7 +90,7 @@ init() {
 
     #internal data-node code versions
     cdat_version=${cdat_version:-"eb8b668"}
-    esgcet_version=${esgcet_version:-"2.5.5"}
+    esgcet_version=${esgcet_version:-"2.6.3"}
     esgcet_python_version=${esgcet_python_version:-"2.6"}
     node_version=${node_version:-"1.0.0.4"}
     
@@ -1232,7 +1232,7 @@ setup_tomcat() {
         echo "Building jsvc... (JAVA_HOME=$java_install_dir)"
 
         if [ -e commons-daemon-native.tar.gz ]; then
-            tar xvzf commons-daemon-native.tar.gz
+            tar xzf commons-daemon-native.tar.gz
             cd commons-daemon-*-native-src/unix
             #It turns out they shipped with a conflicting .o file in there (oops) so I have to remove it manually.
 	    rm -f ./native/libservice.a
