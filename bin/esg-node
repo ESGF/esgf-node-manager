@@ -78,7 +78,7 @@ DEBUG=${DEBUG:-0}
 progname=esg-node
 version="0.4.0"
 
-envfile=${envfile:-"/etc/esg.env"}
+envfile=${"/etc/esg.env"}
 t=${0%.*}
 logfile=${logfile:-"/var/tmp/${t##*/}.out"}
 install_prefix=${install_prefix:-"/usr/local"}
