@@ -193,6 +193,7 @@ init() {
     utils_url=${esg_dist_url}/utils
     thredds_dist_url=ftp://ftp.unidata.ucar.edu/pub/thredds/${tds_version}/thredds.war
     thredds_esg_dist_url=${esg_dist_url}/thredds/${tds_version}/thredds.war
+    thredds_content_dir=${thredds_content_dir:-${esg_root_dir}/content}
     #NOTE: This root dir should match a root set in the thredds setup 
     thredds_root_dir=${esg_root_dir}/data
     thredds_replica_dir=${thredds_root_dir}/replica
@@ -1994,23 +1995,41 @@ setup_tds() {
     register ${myproxy_endpoint}
     #----------------------
 
+    #See thredds_content_dir set in init() - default value is ${esg_root_dir}/content
+
+    #--------
+    #hack - prerequiset for esgsetup... should be done in esgsetup code :-\
+    mkdir -p ${thredds_content_dir}
+    chown -R ${tomcat_user}:${tomcat_group} ${thredds_content_dir}
+    chmod -R 755 ${thredds_content_dir}
+    #--------
+
+    #--------
+    #EDIT the thredds property file: ${tomcat_install_dir}/webapps/thredds/WEB-INF/classes/thredds/server/tds.properties
+    #replace the value for token "tds..content.root.path" with ${thredds_content_dir}
+    local thredds_property_file=${tomcat_install_dir}/webapps/thredds/WEB-INF/classes/thredds/server/tds.properties
+    if [ -e ${thredds_property_file} ]; then
+        echo "$(sed -e 's#tds.content.root.path=.*#tds.content.root.path='${thredds_content_dir}'#' ${thredds_property_file} )" > ${thredds_property_file}
+        chown -R ${tomcat_user}:${tomcat_group} ${thredds_property_file}
+        chmod 644 ${thredds_property_file}
+        echo "configured thredds content root -> $(egrep -e 'tds.content.root.path=.*' ${thredds_property_file})"
+    else
+        echo "WARNING: Could not file thredds' property file: ${thredds_property_file}"
+    fi
+    
+    echo "Please set the thredds content directory to: ${thredds_content_dir} in the following setup"
+    #--------
+
     #restart tomcat to put modifications in effect.
     stop_tomcat 
     start_tomcat
     start_postgress
 
-    #--------
-    #hack - prerequiset for esgsetup... should be done in esgsetup code :-\
-    mkdir -p ${tomcat_install_dir}/content
-    chown -R ${tomcat_user}:${tomcat_group} ${tomcat_install_dir}/content
-    chmod -R 755 ${tomcat_install_dir}/content
-    #--------
-
     #set in cdms setup (prerequisite)
     echo "$cdat_home/bin/esgsetup --thredds --publish --gateway ${myproxy_endpoint}"
     $cdat_home/bin/esgsetup --thredds --publish --gateway ${myproxy_endpoint}
 
-    chown -R ${tomcat_user}:${tomcat_group} ${tomcat_install_dir}/content
+    chown -R ${tomcat_user}:${tomcat_group} ${thredds_content_dir}
 
     popd >& /dev/null
     echo
@@ -2021,9 +2040,9 @@ setup_tds() {
     echo
 
     #Set ownership of esgcet "thredds content" directory to installation owner
-    mkdir -p ${tomcat_install_dir}/content/thredds/esgcet
-    echo "chown -R ${installer_uid}:${installer_gid} ${tomcat_install_dir}/content/thredds/esgcet"
-    chown -R ${installer_uid}:${installer_gid} ${tomcat_install_dir}/content/thredds/esgcet 
+    mkdir -p ${thredds_content_dir}/thredds/esgcet
+    echo "chown -R ${installer_uid}:${installer_gid} ${thredds_content_dir}/thredds/esgcet"
+    chown -R ${installer_uid}:${installer_gid} ${thredds_content_dir}/thredds/esgcet 
     [ $? != 0 ] && echo "WARNING: Could not change owner successfully - this will lead to unability to create new catalogs via the publisher!"
 
     echo "curl http://${node_host_ip_address}/thredds"
