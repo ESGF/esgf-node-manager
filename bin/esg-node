@@ -3394,9 +3394,17 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         restart - restarts the data node's services (calls stop then start :-/)
             (notice, no \"--\" to make rc friendly also chkconfig-able ;-)
 
+        -------------------------------
+        To add this script to the linux boot sequence: (as root)
+        %>cd /etc/init.d
+        %>cp /usr/local/bin/esg-node .
+        %>chkconfig --add esg-node
+        %>chkconfig --list esg-node
+        -------------------------------
+
     
       \"stop\" | \"start\" | \"status\" are meant to be run independent of other flags (and put last if other flags are used)
-      \"--install\" may be used with \"--verify\" but niether are not intended for use
+      \"--install\" may be used with \"--verify\" but neither are not intended for use
       with stop or start or status
       Ex:
          ${progname} --install OR
