@@ -510,7 +510,7 @@ setup_java() {
     
     local java_dist_file=${java_dist_url##*/}
     #strip off -(32|64).tar.gz at the end
-    java_dist_dir=$(echo ${java_dist_file} | awk 'gsub(/(-(34|64)('$compress_extensions')/,"")')
+    java_dist_dir=$(echo ${java_dist_file} | awk 'gsub(/-(32|64)('$compress_extensions')/,"")')
 
     #Check to see if we have an Java distribution directory
     if [ ! -e ${java_install_dir%/*}/${java_dist_dir} ]; then
