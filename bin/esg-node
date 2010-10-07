@@ -78,7 +78,7 @@ DEBUG=${DEBUG:-0}
 progname=esg-node
 version="0.4.0"
 
-envfile=${"/etc/esg.env"}
+envfile="/etc/esg.env"
 t=${0%.*}
 logfile=${logfile:-"/var/tmp/${t##*/}.out"}
 install_prefix=${install_prefix:-"/usr/local"}
@@ -86,7 +86,7 @@ esg_root_dir=${esg_root_dir:-"/esg"}
 workdir=${workdir:-~/workbench/esg}
 
 init() {
-    [ -e ${envfile} ] && source ${envfile} && printf "sourcing environment from: ${envfile} \n\n"
+    [ -e "${envfile}" ] && source ${envfile} && printf "sourcing environment from: ${envfile} \n\n"
 
     #internal data-node code versions
     cdat_version=${cdat_version:-"eb8b668"}
@@ -209,9 +209,9 @@ init() {
     scripts_dir=${install_prefix}/bin
     no_globus=${no_globus:-0}
     keystore_file=${tomcat_install_dir}/conf/keystore-tomcat
-    keystore_alias=tomcat
+    keystore_alias=my_esgf_node
     keystore_password=changeit
-    truststore_file=${tomcat_install_dir}/conf/jssecacerts
+    truststore_file=${tomcat_install_dir}/conf/esg-truststore.ts
     globus_global_certs_dir=/etc/grid-security/certificates
 
     mkdir -p ${esg_backup_dir}  && \
@@ -1422,7 +1422,7 @@ configure_tomcat() {
     #(first try getting it from distribution server otherwise copy Java's)
     if [ ! -e ${truststore_file} ]; then
         fetch_file=${truststore_file##*/} # i.e. jssecacerts
-        checked_get ${truststore_file} ${esg_dist_url}/externals/${fetch_file}
+        checked_get ${truststore_file} ${esg_dist_url}/certs/${fetch_file}
         if (( $? > 1 )); then
             echo " Warning: Could not download certificates ${fetch_file} for tomcat - will copy local java certificate file"
             echo "(note - the truststore password will probably not match!)"
@@ -2292,7 +2292,8 @@ fetch_esg_certificates() {
     [ -e ${globus_global_certs_dir} ] && tar czf ${globus_global_certs_dir%/*}/${globus_global_certs_dir##*/}.bak.tgz ${globus_global_certs_dir} >& /dev/null && rm ${globus_global_certs_dir}/*
     mkdir -p ${globus_global_certs_dir}
     local esg_trusted_certs_file=esg_trusted_certificates.tar.gz
-    curl -s ${esg_dist_url}/externals/${esg_trusted_certs_file} | zcat | (cd ${globus_global_certs_dir}; pax -r -s ',.*/,,p')
+    (($DEBUG)) && echo "curl -s -L --insecure ${esg_dist_url}/certs/${esg_trusted_certs_file} | zcat | (cd ${globus_global_certs_dir}; pax -r -s ',.*/,,p')"
+    curl -s -L --insecure ${esg_dist_url}/certs/${esg_trusted_certs_file} | zcat | (cd ${globus_global_certs_dir}; pax -r -s ',.*/,,p')
     local ret=$?
     rmdir ${globus_global_certs_dir}/$(echo ${esg_trusted_certs_file} | awk 'gsub(/('$compress_extensions')/,"")')
     if [ $ret == 0 ]; then
