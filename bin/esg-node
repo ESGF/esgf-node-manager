@@ -157,7 +157,23 @@ init() {
     export CFLAGS="-I$CURL_HOME/include $CFLAGS"
     export LDFLAGS="-L$CURL_HOME/lib"
     
-    
+    #--------------
+    #ID Setting
+    #--------------
+    #Yes, I could make this more cleaver and not call id twice but use
+    #a single sed expression with two capture groups and then assign
+    #them accordingly... but sadly I have to brush up on my sed'ing
+    #:-\ But this works... Basically the installer id is based on the
+    #$HOME directory of this user
+
+    installer_uid=$(id ${HOME##*/} | sed 's/.*uid=\([0-9]*\).*/\1/')
+    [ $? != 0 ] || [ -z "$installer_uid" ] && echo "installer_uid is not set" && exit 1
+    installer_gid=$(id ${HOME##*/} | sed 's/.*gid=\([0-9]*\).*/\1/')
+    [ $? != 0 ] || [ -z "$installer_gid" ] && echo "installer_gid is not set" && exit 1
+    installer_home=${HOME}
+
+    echo "${installer_uid}:${installer_gid}:${installer_home}"
+
     #--------------
     #Script vars (internal)
     #--------------
@@ -239,22 +255,6 @@ check_prerequisites() {
     id | grep root >& /dev/null
     [ $? != 0 ] && printf "[FAIL] \n\tMust run this program with root's effective UID\n\n" && return 1
     echo "[OK]"
-
-    #Yes, I could make this more cleaver and not call id twice but use
-    #a single sed expression with two capture groups and then assign
-    #them accordingly... but sadly I have to brush up on my sed'ing
-    #:-\ But this works... Basically it installer id is based on the
-    #$HOME directory.
-
-    installer_uid=$(id ${HOME##*/} | sed 's/.*uid=\([0-9]*\).*/\1/')
-    [ $? != 0 ] || [ -z "$installer_uid" ] && echo "installer_uid is not set" && exit 1
-    installer_gid=$(id ${HOME##*/} | sed 's/.*gid=\([0-9]*\).*/\1/')
-    [ $? != 0 ] || [ -z "$installer_gid" ] && echo "installer_gid is not set" && exit 1
-    installer_home=${HOME}
-
-    echo "installer uid  = ${installer_uid}"
-    echo "installer gid  = ${installer_gid}"
-    echo "installer home = ${installer_home}"
 
     #----------------------------------------
     echo "Checking requisites... "
@@ -1346,7 +1346,7 @@ configure_tomcat() {
     echo "*******************************"
     echo
 
-    cd $tomcat_install_dir/conf
+    pushd $tomcat_install_dir/conf #>& /dev/null
     
     local fetch_file
     local genreq=N
@@ -1408,10 +1408,10 @@ configure_tomcat() {
     #Fetch/Copy truststore to $tomcat_install_dir/conf
     #(first try getting it from distribution server otherwise copy Java's)
     if [ ! -e ${truststore_file} ]; then
-        fetch_file=${truststore_file##*/} # i.e. jssecacerts
+        fetch_file=${truststore_file##*/} # i.e. esg-truststore.ts
         checked_get ${truststore_file} ${esg_dist_url}/certs/${fetch_file}
         if (( $? > 1 )); then
-            echo " Warning: Could not download certificates ${fetch_file} for tomcat - will copy local java certificate file"
+            echo " INFO: Could not download certificates ${fetch_file} for tomcat - will copy local java certificate file"
             echo "(note - the truststore password will probably not match!)"
             cp -v ${java_install_dir}/jre/lib/security/cacerts ${truststore_file}
             [ $? != 0 ] && echo " ERROR: Could not fetch or copy ${fetch_file} for tomcat!!" && popd && checked_done 1
@@ -1442,6 +1442,7 @@ configure_tomcat() {
     chgrp -R $tomcat_group $(readlink -f ${tomcat_install_dir})
     [ $? != 0 ] && " ERROR: Could not change group of tomcat to \"$tomcat_user\" user" && popd && checked_done 1
 
+    popd #>& /dev/null
 }
 
 
@@ -2355,8 +2356,8 @@ add_my_cert_to_truststore() {
         keytool -export -alias ${keystore_alias} -file ${keystore_file}.cer -keystore ${keystore_file} -storepass ${store_password}
         [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && exit 1)
 
-        echo "keytool -v -list -keystore ${truststore_file} -storepass changeit | egrep -i '^Alias[ ]+name:[ ]+tomcat$'"
-        keytool -v -list -keystore ${truststore_file} -storepass changeit | egrep -i '^Alias[ ]+name:[ ]+tomcat$' #TODO howdo I put the var ${keystore_alias} here!!!
+        echo "keytool -v -list -keystore ${truststore_file} -storepass changeit | egrep -i '^Alias[ ]+name:[ ]+my_esgf_node$'"
+        keytool -v -list -keystore ${truststore_file} -storepass changeit | egrep -i '^Alias[ ]+name:[ ]+my_esgf_node$' #TODO howdo I put the var ${keystore_alias} here!!!
         if [ $? == 0 ]; then
             echo "Detected Alias \"${keystore_alias}\" Present... Removing... Making space for certificate... "
             keytool -delete -alias ${keystore_alias} -keystore ${truststore_file}  -storepass changeit 2>&1 > /dev/null #for ORP
@@ -2758,8 +2759,6 @@ register() {
     popd # >& /dev/null
 
     pushd $tomcat_install_dir/conf >& /dev/null
-
-    [ -e ${certfile} ] && cp ${certfile} ${certfile}.bak
     
     local input=${1:-${ESG_GATEWAY_SVC_ROOT%%/*}}
     [ -z "${input}" ] && popd && echo "Could not register: No endpoint specified" && return 1
@@ -2780,12 +2779,17 @@ register() {
     [ -e ${certfile} ] && cp ${certfile} ${certfile}.bak
     cp ${there}/${certfile} ${certfile}
     chmod 644 ${certfile}
+    chown -R ${installer_uid}:${installer_gid} ${certfile}*
     popd >& /dev/null
     #------
 
     chmod 644 ${certfile}
     chown $tomcat_user ${certfile}
     chgrp $tomcat_group ${certfile}    
+    
+    [ -e ${truststore_file} ] && cp ${truststore_file} ${truststore_file}.bak
+    mv ${certfile} ${truststore_file}
+
     popd >& /dev/null
     return $ret
 }
@@ -3075,7 +3079,7 @@ check_for_update() {
     
     [ ! -e ${local_file} ] && echo " WARNING: Could not find local file ${local_file}" && return 0
     [ ! -x ${local_file} ] && echo " WARNING: local file ${local_file} not executible" && chmod 755 ${local_file}
-    diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
+    diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl -s -L --insecure ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
     [ $? != 0 ] && echo " Update Available @ ${remote_file}" && return 0
     echo " ==> ${local_file} is up to date"
     return 1
@@ -3118,8 +3122,8 @@ checked_get() {
     fi
     wget --no-check-certificate -O ${local_file} ${remote_file}
     [ $? != 0 ] && echo " ERROR: Problem pulling down [${remote_file##*/}] from esg distribution site" && return 2
-    diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl -s ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
-    [ $? != 0 ] && echo " WARNING: Could not verify this file!" && return 3
+    diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl -s -L --insecure ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
+    [ $? != 0 ] && echo " WARNING: Could not verify file! ${local_file}" && return 3
     echo "[VERIFIED]"
     return 0
 }
@@ -3207,7 +3211,7 @@ dedup() {
 #"private" function
 _verify() {
     echo "diff <(md5sum ${0} | tr -s " " | cut -d " " -f 1) <(curl ${1}/esg-node/${0##*/}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null "
-    diff <(md5sum ${0} | tr -s " " | cut -d " " -f 1) <(curl ${1}/esg-node/${0##*/}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
+    diff <(md5sum ${0} | tr -s " " | cut -d " " -f 1) <(curl -s -L --insecure ${1}/esg-node/${0##*/}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
     [ $? != 0 ] && return 3
     echo "[VERIFIED]"
     return 0
@@ -3824,9 +3828,9 @@ esg_node_finally() {
 #Set system traps
 trap esg_node_finally INT TERM
 
-[ -w "{$logfile}" ] && echo "start time: `date`" >> ${logfile}
+[ -w "${logfile}" ] && echo "start time: `date`" >> ${logfile}
 main $@
 trap - INT TERM
 esg_node_finally
-[ -w "{$logfile}" ] && echo "end time: `date`" >> ${logfile}
+[ -w "${logfile}" ] && echo "end time: `date`" >> ${logfile}
 reset
