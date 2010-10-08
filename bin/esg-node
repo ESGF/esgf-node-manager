@@ -551,7 +551,7 @@ setup_java() {
             echo " ERROR*: Could not create sym link ${java_install_dir%/*}/${java_dist_dir} -> ${java_install_dir}" && popd && checked_done 1
     fi
     (($DEBUG)) && echo "chown -R ${installer_uid}:${installer_gid} ${java_install_dir}"
-    chown    ${installer_uid}:${installer_gid} ${java_install_dir)
+    chown    ${installer_uid}:${installer_gid} ${java_install_dir}
     chown -R ${installer_uid}:${installer_gid} $(readlink -f ${java_install_dir})
 
     popd >& /dev/null
@@ -3842,7 +3842,6 @@ esg_node_finally() {
     echo "(esg_datanode: cleaning up etc...)"
     chown -R ${installer_uid}:${installer_gid} ${X509_CERT_DIR} >& /dev/null
     chown -R ${installer_uid}:${installer_gid} ${HOME}/.globus >& /dev/null
-    chown -R ${installer_uid}:${installer_gid} ${HOME}/$(hostname --fqdn)-esg-node.csr >& /dev/null
     reset
     exit 0
 }
@@ -3855,4 +3854,3 @@ main $@
 trap - INT TERM
 esg_node_finally
 [ -w "${logfile}" ] && echo "end time: `date`" >> ${logfile}
-reset
