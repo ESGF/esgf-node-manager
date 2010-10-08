@@ -550,6 +550,7 @@ setup_java() {
         [ $? != 0 ] && \
             echo " ERROR*: Could not create sym link ${java_install_dir%/*}/${java_dist_dir} -> ${java_install_dir}" && popd && checked_done 1
     fi
+    (($DEBUG)) && echo "chown -R ${installer_uid}:${installer_gid} ${java_install_dir}"
     chown -R ${installer_uid}:${installer_gid} ${java_install_dir}
 
     popd >& /dev/null
@@ -2360,7 +2361,8 @@ rebuild_truststore() {
 #The param here is the password of the *keystore*
 add_my_cert_to_truststore() {
     echo 
-    local store_password=${1:changeit}
+    (($DEBUG)) echo "add_my_cert_to_truststore() "
+    local store_password=${1:-changeit}
     #----------------------------------------------------------------
     #Re-integrate my public key (I mean, my "certificate") from my keystore into the truststore (the place housing all public keys I allow to talk to me)
     #----------------------------------------------------------------
@@ -2381,6 +2383,7 @@ add_my_cert_to_truststore() {
         echo "Importing keystore's certificate into truststore... "
         keytool -import -v -trustcacerts -alias ${keystore_alias} -keypass ${store_password} -file ${keystore_file}.cer -keystore ${truststore_file} -storepass changeit
         [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && exit 1)
+        sync_with_java_truststore ${truststore_file}
         echo -n "cleaning up after ourselves... "
         rm -v ${keystore_file}.cer
         [ $? == 0 ] && echo "[OK]" || echo "[FAILED]"
@@ -2414,6 +2417,7 @@ generate_ssl_key_and_csr() {
     #At this point public_cert_dn is empty if extract_keystore_dn was unable to perform successfully
     #So then we run the regular request generation that will ask you a series of questions to build the DN
     if [ -z "${public_cert_dn}" ]; then
+        echo "openssl req -new -nodes -key ${private_key} -out ${public_cert_req}"
         openssl req -new -nodes -key ${private_key} -out ${public_cert_req}
         [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 2)
     else
@@ -2759,10 +2763,8 @@ export_keystore_as_globus_hostkeys() {
 #arg1 - hostname of the machine with the cert you want to get
 #(arg2 - password to truststore where cert will be inserted)
 register() {
-    echo "Installing Public Certificate of Target Gateway...( -> MyProxy endpoint)"
+    echo "Installing Public Certificate of Target Gateway Node...( -> MyProxy endpoint: $1)"
     
-    local certfile=jssecacerts
-
     mkdir -p ${workdir} # >& /dev/null
     pushd ${workdir} # >& /dev/null
     #Download the Java code used for certificate installation (into $workdir)
@@ -2784,28 +2786,33 @@ register() {
     local CP=".:${workdir}"
 
     echo "${JAVA_HOME}/bin/java -classpath ${CP} InstallCert ${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd}"
-    ${JAVA_HOME}/bin/java -classpath ${CP} InstallCert ${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd}
+    ${JAVA_HOME}/bin/java -classpath ${CP} InstallCert ${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd} ${truststore_file}
     local ret=$?
 
-    #------
-    local there=$(pwd)
-    pushd ${JAVA_HOME}/jre/lib/security >& /dev/null
-    [ -e ${certfile} ] && cp ${certfile} ${certfile}.bak
-    cp ${there}/${certfile} ${certfile}
-    chmod 644 ${certfile}
-    chown -R ${installer_uid}:${installer_gid} ${certfile}*
-    popd >& /dev/null
-    #------
-
-    chmod 644 ${certfile}
-    chown $tomcat_user ${certfile}
-    chgrp $tomcat_group ${certfile}    
+    #NOTE: The InstallCert code fetches Java's jssecacerts file (if
+    #not there then uses the cacerts file) from java's jre and then adds the target's cert to it.
+    #The output of the program is a new file named jssecacerts!  So here we get the output and rename it.
     
-    [ -e ${truststore_file} ] && cp ${truststore_file} ${truststore_file}.bak
-    mv ${certfile} ${truststore_file}
+    chmod 644 ${truststore_file}
+    chown ${tomcat_user}:${tomcat_group} ${truststore_file}
+    
+    sync_with_java_truststore ${truststore_file}
 
     popd >& /dev/null
     return $ret
+}
+
+#arg 1 - The truststore file to sync with Java's
+sync_with_java_truststore() {
+    local java_truststore=${JAVA_HOME}/jre/lib/security/jssecacerts
+    local external_truststore=${1:-$(readlink -f ${truststore_file})}
+    echo -n "Sync'ing ${external_truststore} with ${java_truststore} ... "
+    [ ! -e "${external_truststore}" ] && echo "[FAIL]: Cannot locate ${external_truststore}" && return 1
+    [ -e "${java_truststore}" ] && cp ${java_truststore} ${java_truststore}.bak
+    cp ${external_truststore} ${java_truststore}
+    chmod 644 ${java_truststore}
+    chown -R ${installer_uid}:${installer_gid} ${java_truststore}*
+    echo "[OK]"
 }
 
 ############################################
