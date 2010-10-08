@@ -2010,6 +2010,7 @@ setup_tds() {
     #----------------------
     #Fetch and Insert the Certificate for parent gateway
     register ${myproxy_endpoint}
+    [ $? != 0 ] && echo " Error: could not import gateway certificate!" && checked_done 1
     #----------------------
 
     #See thredds_content_dir set in init() - default value is ${esg_root_dir}/content
@@ -2786,7 +2787,7 @@ register() {
     
     local CP=".:${workdir}"
 
-    echo "${JAVA_HOME}/bin/java -classpath ${CP} InstallCert ${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd}"
+    echo "${JAVA_HOME}/bin/java -classpath ${CP} InstallCert ${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd} ${truststore_file}"
     ${JAVA_HOME}/bin/java -classpath ${CP} InstallCert ${ssl_endpoint}:${ssl_port} ${ssl_endpoint_passwd} ${truststore_file}
     local ret=$?
 
