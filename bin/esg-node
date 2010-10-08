@@ -551,7 +551,8 @@ setup_java() {
             echo " ERROR*: Could not create sym link ${java_install_dir%/*}/${java_dist_dir} -> ${java_install_dir}" && popd && checked_done 1
     fi
     (($DEBUG)) && echo "chown -R ${installer_uid}:${installer_gid} ${java_install_dir}"
-    chown -R ${installer_uid}:${installer_gid} ${java_install_dir}
+    chown    ${installer_uid}:${installer_gid} ${java_install_dir)
+    chown -R ${installer_uid}:${installer_gid} $(readlink -f ${java_install_dir})
 
     popd >& /dev/null
 
@@ -2361,7 +2362,7 @@ rebuild_truststore() {
 #The param here is the password of the *keystore*
 add_my_cert_to_truststore() {
     echo 
-    (($DEBUG)) echo "add_my_cert_to_truststore() "
+    (($DEBUG)) && echo "add_my_cert_to_truststore() "
     local store_password=${1:-changeit}
     #----------------------------------------------------------------
     #Re-integrate my public key (I mean, my "certificate") from my keystore into the truststore (the place housing all public keys I allow to talk to me)
