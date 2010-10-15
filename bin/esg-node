@@ -2479,10 +2479,15 @@ extract_keystore_dn() {
 install_keypair() {
     local private_key=${1:-"hostkey.pem"}
     local public_cert=${2:-"$(hostname --fqdn)-esg-node.pem"}
-    local keystore_name=${3:-${keystore_file}}
-    local keystore_alias=${4:-${keystore_alias}}
-    local store_password=${5:-${keystore_password}}
-    
+    local store_password=${3}
+    local keystore_name=${4:-${keystore_file}}
+    local keystore_alias=${5:-${keystore_alias}}
+
+    echo "private key = ${private_key}"
+    echo "public cert = ${public_cert}"
+    echo "keystore name  = ${keystore_file}"
+    echo "keystore alias = ${keystore_alias}"
+
     if [ -z "${store_password}" ]; then
         local verify_password
         while [ 1 ]; do
@@ -2496,13 +2501,15 @@ install_keypair() {
         done
         unset verify_password
         echo
+    else 
+        echo "store_password = ******"
     fi
 
     #Transform the keypair into the DER format understood by Java's keystore
     #And generate a new keystore from that pair.
     [ -e "${keystore_name}" ] && mv ${keystore_name} ${keystore_name}.bak
     convert_keys ${private_key} ${public_cert} && \
-        create_keystore ${private_key%.*}.der ${public_cert%.*}.der ${keystore_name} ${keystore_alias} ${store_password}
+        create_keystore ${private_key%.*}.der ${public_cert%.*}.der ${store_password} ${keystore_name} ${keystore_alias}
     [ $? != 0 ] && echo "ERROR: Problem with key generation and/or keystore construction" && mv ${keystore_name}.bak ${keystore_name} && exit 5
 
     #(In order for ORP or any other local service to trust eachother put your own cert into the truststore)
@@ -2573,9 +2580,10 @@ convert_keys() {
 create_keystore() {
     local private_key=${1:-"hostkey.der"}
     local public_cert=${2:-$(hostname --fqdn)-esg-node.der}
-    local keystore_name=${3:-${keystore_file}}
-    local key_alias=${4:-${keystore_alias}}
-    local password=${5:-${keystore_password}}
+    local password=${3}
+    local keystore_name=${4:-${keystore_file}}
+    local key_alias=${5:-${keystore_alias}}
+    
     checked_get ${utils_url}/ImportKey.class
     [ $? != 0 ] && echo "Could not fetch keystore generator" && return 1
 
@@ -3407,7 +3415,7 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         --register    - connects to desired gateway, fetches and stores their certificate to enable ingress SSL connections
         --generate-ssl-key-and-csr - generate new key and cert request files <key file> <cert file> [<dn>]
                                      (The 'dn' value is of the form - Ex:'/O=ESG/OU=ESG-DATA-NODE/CN=<fqdn>')
-        --install-keypair - takes as input private key and public cert files and installs them. <key> <cert> [<keystore> <alias> <password>]
+        --install-keypair - takes as input private key and public cert files and installs them. <key> <cert> <password> [<keystore> <alias>]
         --fetch-esg-certs - fetches and installs all current public esg federation certificates (used by globus)
         --rebuild-truststore - converts globus' (public) ca certificates into a truststore.
         --clear-certs - removes the user-level public certificates' directory (used by myproxy)
@@ -3461,7 +3469,7 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
       Typical usage:
 
       Installation > esg-node --install --verify
-      Credentials  > esg-node --install-keypair <key> <cert>
+      Credentials  > esg-node --install-keypair <key file> <cert file> <keystore password> [<keystore file> <keystore_alias>]
       Test Publish > esg-node --test-pub
       Life Cycle   > esg-node [start|stop|status|restart]
 
