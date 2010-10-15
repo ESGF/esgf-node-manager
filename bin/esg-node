@@ -3432,10 +3432,10 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
 
         -------------------------------
         To add this script to the linux boot sequence: (as root)
-        %>cd /etc/init.d
-        %>cp /usr/local/bin/esg-node .
-        %>chkconfig --add esg-node
-        %>chkconfig --list esg-node
+        > cd /etc/init.d
+        > cp /usr/local/bin/esg-node
+        > chkconfig --add esg-node
+        > chkconfig --list esg-node
         -------------------------------
 
     
@@ -3468,10 +3468,10 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
 
       Typical usage:
 
-      Installation > esg-node --install --verify
-      Credentials  > esg-node --install-keypair <key file> <cert file> <keystore password> [<keystore file> <keystore_alias>]
-      Test Publish > esg-node --test-pub
-      Life Cycle   > esg-node [start|stop|status|restart]
+      Installation : esg-node --install --verify
+      Credentials  : esg-node --install-keypair <key> <cert>
+      Test Publish : esg-node --test-pub
+      Life Cycle   : esg-node [start|stop|status|restart]
 
     " | more
     exit 0
