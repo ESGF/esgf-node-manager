@@ -1381,7 +1381,13 @@ configure_tomcat() {
             [ -z "${store_password}" ] && echo "Invalid password [${store_password}]" && continue
             echo
             read -s -p "Please re-enter the password for this keystore: " verify_password
-            [ "${store_password}" = "${verify_password}" ] && echo && break;
+            if [ "${store_password}" = "${verify_password}" ] ; then
+                echo
+                break
+            else
+                echo "Sorry, values did not match"
+                echo
+            fi
         done
         unset verify_password
         echo
@@ -2478,9 +2484,9 @@ extract_keystore_dn() {
 install_keypair() {
     local private_key=${1:-"hostkey.pem"}
     local public_cert=${2:-"$(hostname --fqdn)-esg-node.pem"}
-    local store_password=${3}
-    local keystore_name=${4:-${keystore_file}}
-    local keystore_alias=${5:-${keystore_alias}}
+    local keystore_name=${3:-${keystore_file}}
+    local keystore_alias=${4:-${keystore_alias}}
+    local store_password=${5}
 
     echo "private key = ${private_key}"
     echo "public cert = ${public_cert}"
@@ -2496,7 +2502,13 @@ install_keypair() {
             [ -z "${store_password}" ] && echo "Invalid password [${store_password}]" && continue
             echo
             read -s -p "Please re-enter the password for this keystore: " verify_password
-            [ "${store_password}" = "${verify_password}" ] && echo && break;
+            if [ "${store_password}" = "${verify_password}" ] ; then
+                echo
+                break
+            else
+                echo "Sorry, values did not match"
+                echo
+            fi
         done
         unset verify_password
         echo
@@ -2508,7 +2520,7 @@ install_keypair() {
     #And generate a new keystore from that pair.
     [ -e "${keystore_name}" ] && mv ${keystore_name} ${keystore_name}.bak
     convert_keys ${private_key} ${public_cert} && \
-        create_keystore ${private_key%.*}.der ${public_cert%.*}.der ${store_password} ${keystore_name} ${keystore_alias}
+        create_keystore ${private_key%.*}.der ${public_cert%.*}.der ${keystore_name} ${keystore_alias} ${store_password} 
     [ $? != 0 ] && echo "ERROR: Problem with key generation and/or keystore construction" && mv ${keystore_name}.bak ${keystore_name} && exit 5
 
     #(In order for ORP or any other local service to trust eachother put your own cert into the truststore)
@@ -2579,9 +2591,9 @@ convert_keys() {
 create_keystore() {
     local private_key=${1:-"hostkey.der"}
     local public_cert=${2:-$(hostname --fqdn)-esg-node.der}
-    local password=${3}
-    local keystore_name=${4:-${keystore_file}}
-    local key_alias=${5:-${keystore_alias}}
+    local keystore_name=${3:-${keystore_file}}
+    local key_alias=${4:-${keystore_alias}}
+    local password=${5:-${keystore_password}}
     
     checked_get ${utils_url}/ImportKey.class
     [ $? != 0 ] && echo "Could not fetch keystore generator" && return 1
@@ -2621,7 +2633,13 @@ install_signed_certificate() {
         [ -z "${store_password}" ] && echo "Invalid password [${store_password}]" && continue
         echo
         read -s -p "Please re-enter the password for this keystore: " verify_password
-        [ "${store_password}" = "${verify_password}" ] && echo && break;
+        if [ "${store_password}" = "${verify_password}" ] ; then
+            echo
+            break
+        else
+            echo "Sorry, values did not match"
+            echo
+        fi
     done
     unset verify_password
     echo
@@ -2695,7 +2713,13 @@ export_keystore_as_globus_hostkeys() {
         [ -z "${store_password}" ] && echo "Invalid password [${store_password}]" && continue
         echo
         read -s -p "Please re-enter the password for this keystore: " verify_password
-        [ "${store_password}" = "${verify_password}" ] && echo && break;
+        if [ "${store_password}" = "${verify_password}" ] ; then
+            echo
+            break
+        else
+            echo "Sorry, values did not match"
+            echo
+        fi
     done
     unset verify_password
     echo
