@@ -90,7 +90,7 @@ init() {
 
     #internal data-node code versions
     cdat_version=${cdat_version:-"eb8b668"}
-    esgcet_version=${esgcet_version:-"2.6.3"}
+    esgcet_version=${esgcet_version:-"2.7.0"}
     esgcet_python_version=${esgcet_python_version:-"2.6"}
     node_version=${node_version:-"1.0.0.4"}
     
@@ -789,7 +789,7 @@ setup_postgress() {
 
     chown -R $pg_sys_acct $postgress_install_dir
     chgrp -R $pg_sys_acct_group $postgress_install_dir
-
+    
 
     #Create the database:
     mkdir -p ${postgress_install_dir}/data
