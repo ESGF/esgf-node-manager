@@ -224,6 +224,7 @@ init() {
     node_host_ip_address=${my_ip_address}
     scripts_dir=${install_prefix}/bin
     no_globus=${no_globus:-0}
+    force_install=${force_install:-0}
     keystore_file=${tomcat_install_dir}/conf/keystore-tomcat
     keystore_alias=my_esgf_node
     keystore_password=changeit
@@ -284,7 +285,7 @@ setup_curl() {
 
     echo -n "Checking for curl ${curl_version} "
     check_version curl ${curl_version}
-    [ $? == 0 ] && echo " [OK]" && return 0
+    [ $? == 0 ] && (( ! force_install )) && echo " [OK]" && return 0
     
     echo
     echo "*******************************"
@@ -315,8 +316,7 @@ setup_curl() {
     #There is this pesky case of having a zero sized dist file... WTF!?
     if [ -e ${curl_dist_file} ]; then
         ls -l ${curl_dist_file}
-        #NOTE: I know there must be a cleaner way to get this, maybe stat?
-        local size=$(ls -l | grep ${curl_dist_file} | tr -s " " | cut -d " " -f 5)
+        local size=$(stat -c%s ${curl_dist_file})
         (( size == 0 )) && rm -v ${curl_dist_file}
     fi
 
@@ -385,7 +385,7 @@ setup_git() {
 
     echo -n "Checking for git ${git_version}"
     check_version git ${git_version}
-    [ $? == 0 ] && echo " [OK]" && return 0
+    [ $? == 0 ] && (( ! force_install )) && echo " [OK]" && return 0
     
     echo
     echo "*******************************"
@@ -416,8 +416,7 @@ setup_git() {
     #There is this pesky case of having a zero sized dist file... WTF!?
     if [ -e ${git_dist_file} ]; then
         ls -l ${git_dist_file}
-        #NOTE: I know there must be a cleaner way to get this, maybe stat?
-        local size=$(ls -l | grep ${git_dist_file} | tr -s " " | cut -d " " -f 5)
+        local size=$(stat -c%s ${git_dist_file})
         (( size == 0 )) && rm -v ${git_dist_file}
     fi
 
@@ -486,7 +485,7 @@ setup_java() {
 
     echo -n "Checking for java ${java_version} and valid JAVA_HOME... "
     [ -e ${java_install_dir} ] && check_version $java_install_dir/bin/java ${java_version}
-    [ $? == 0 ] && echo " [OK]" && return 0
+    [ $? == 0 ] && (( ! force_install )) && echo " [OK]" && return 0
 
     echo
     echo "*******************************"
@@ -598,7 +597,7 @@ setup_ant() {
 
     echo -n "Checking for ant ${ant_version}"
     [ -e ${ant_install_dir} ] &&  check_version ${ant_install_dir}/bin/ant ${ant_version}
-    [ $? == 0 ] && echo " [OK]" && return 0
+    [ $? == 0 ] && (( ! force_install )) && echo " [OK]" && return 0
 
     echo
     echo "*******************************"
@@ -628,8 +627,7 @@ setup_ant() {
     #There is this pesky case of having a zero sized dist file... WTF!?
     if [ -e ${ant_dist_file} ]; then
         ls -l ${ant_dist_file}
-        #NOTE: I know there must be a cleaner way to get this, maybe stat?
-        local size=$(ls -l | grep ${ant_dist_file} | tr -s " " | cut -d " " -f 5)
+        local size=$(stat -c%s ${ant_dist_file})
         (( size == 0 )) && rm -v ${ant_dist_file}
     fi
 
@@ -696,7 +694,7 @@ setup_postgress() {
 
     echo -n "Checking for postgresql ${postgress_version}"
     check_version psql ${postgress_version}
-    [ $? == 0 ] && echo " [OK]" && return 0
+    [ $? == 0 ] && (( ! force_install )) && echo " [OK]" && return 0
 
     echo
     echo "*******************************"
@@ -727,8 +725,7 @@ setup_postgress() {
     #There is this pesky case of having a zero sized dist file... WTF!?
     if [ -e ${postgress_dist_file} ]; then
         ls -l ${postgress_dist_file}
-        #NOTE: I know there must be a cleaner way to get this, maybe stat?
-        local size=$(ls -l | grep ${postgress_dist_file} | tr -s " " | cut -d " " -f 5)
+        local size=$(stat -c%s ${postgress_dist_file})
         (( size == 0 )) && rm -v ${postgress_dist_file}
     fi
 
@@ -1186,8 +1183,7 @@ setup_tomcat() {
     #There is this pesky case of having a zero sized dist file... WTF!?                                                                            
     if [ -e ${tomcat_dist_file} ]; then
         ls -l ${tomcat_dist_file}
-        #NOTE: I know there must be a cleaner way to get this, maybe stat?
-        local size=$(ls -l | grep ${tomcat_dist_file} | tr -s " " | cut -d " " -f 5)
+        local size=$(stat -c%s ${tomcat_dist_file})
         (( size == 0 )) && rm -v ${tomcat_dist_file}
     fi
 
@@ -1836,8 +1832,7 @@ setup_tds() {
     #There is this pesky case of having a zero sized dist file... WTF!?                                                                            
     if [ -e ${thredds_dist_file} ]; then
         ls -l ${thredds_dist_file}
-        #NOTE: I know there must be a cleaner way to get this, maybe stat?
-        local size=$(ls -l | grep ${thredds_dist_file} | tr -s " " | cut -d " " -f 5)
+        local size=$(stat -c%s ${thredds_dist_file} >& /dev/null)
         (( size == 0 )) && rm -v ${thredds_dist_file}
     fi
 
@@ -1979,11 +1974,15 @@ setup_tds() {
                 myproxy_port=2119 #hack till we open the right port
                 ;;
             c | C)
+                local input
                 gateway_name=${ESG_GATEWAY_NAME:-"ESG-PCMDI"}
                 gateway_service_root=${ESG_GATEWAY_SVC_ROOT:-"pcmdi3.llnl.gov/esgcet"}
-                read -p "Please enter the Gateway name [${ESG_GATEWAY_NAME}] " gateway_name
-                read -p "Please enter the Gateway Service Root [${ESG_GATEWAY_SVC_ROOT}] " gateway_service_root
-                gateway_name=$(echo ${gateway_name} | tr 'a-z' 'A-Z')
+                read -p "Please enter the Gateway name [${ESG_GATEWAY_NAME}] " input
+                [ -n "${input}" ] && gateway_name=$input
+                unset input
+                read -p "Please enter the Gateway Service Root [${ESG_GATEWAY_SVC_ROOT}] " input
+                [ -n "${input}" ] && gateway_service_root=$(echo ${input} | tr 'a-z' 'A-Z')
+                unset input
                 choice="(Manual Entry)"
                 ;;
             *)  echo "Invalid selection [${choice}]"
@@ -3409,7 +3408,7 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         --info        - provides a brief explaination of the DataNode
         --upgrade     - upgrades the node manager
         --no-globus   - will not install any globus tools (for those with existing globus setups)
-        --griftp-config - [ with-bdm-config | bdm-config-only ] without this arg uses default end-user config
+        --gridftp-config - [ with-bdm-config | bdm-config-only ] without this arg uses default end-user config
 
         Key Management Flags:
         --register    - connects to desired gateway, fetches and stores their certificate to enable ingress SSL connections
@@ -3727,6 +3726,9 @@ main() {
             --no-globus)
                 no_globus=1
                 ;;
+            --force)
+                force_install=1
+                ;;
             --gridftp-config)
                 #acceptable args:  "with-bdm-config" | "bdm-config-only"
                 #Gather up tokens after this switch as long as the
@@ -3781,6 +3783,8 @@ main() {
     fi    
 
     init
+
+    (( force_install )) && echo "(force install is ON)"
 
     #---------------------------------------
     #Installation of basic system components.
