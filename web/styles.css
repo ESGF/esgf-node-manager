@@ -2,7 +2,7 @@ html, body{
 	font-family:Arial,sans-serif;
 	margin: 0px;
 	padding: 0px;
-	background-color: #fff;
+	background-color: #f4f3f1;
 	color: #222;
 	line-height: 150%;
 	font-size: 11pt; 
@@ -119,4 +119,11 @@ a:hover {
 	font-style: normal;
 	font-size: 10pt;
 	color: #8b0000;
+}
+
+#logo a {
+	/*text-decoration:none;
+	border:none;
+	list-style:none;*/
+	outline:none;
 }
