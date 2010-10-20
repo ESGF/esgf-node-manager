@@ -295,7 +295,7 @@ setup_curl() {
 
     local dosetup
     if [ -x ${curl_install_dir}/bin/curl ]; then 
-        echo "Detected an existing (older) CURL installation..."
+        echo "Detected an existing CURL installation..."
         read -p "Do you want to continue with CURL installation and setup? [y/N] " dosetup
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping CURL installation and setup - will assume CURL is setup properly"
@@ -395,7 +395,7 @@ setup_git() {
 
     local dosetup
     if [ -x ${git_install_dir}/bin/git ]; then 
-        echo "Detected an existing (older) GIT installation..."
+        echo "Detected an existing GIT installation..."
         read -p "Do you want to continue with GIT installation and setup? [y/N] " dosetup
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping GIT installation and setup - will assume GIT is setup properly"
@@ -497,7 +497,7 @@ setup_java() {
 
     local dosetup
     if [ -x ${java_install_dir}/bin/java ]; then 
-        echo "Detected an existing (older) java installation..."
+        echo "Detected an existing java installation..."
         read -p "Do you want to continue with Java installation and setup? [y/N] " dosetup
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping Java installation and setup - will assume Java is setup properly"
@@ -607,7 +607,7 @@ setup_ant() {
 
     local dosetup
     if [ -x ${ant_install_dir}/bin/ant ]; then 
-        echo "Detected an existing (older) ant installation..."
+        echo "Detected an existing ant installation..."
         read -p "Do you want to continue with Ant installation and setup? [y/N] " dosetup
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping Ant installation and setup - will assume ant is setup properly"
@@ -704,7 +704,7 @@ setup_postgress() {
 
     local dosetup
     if [ -x ${postgress_install_dir}/bin/psql ]; then 
-        echo "Detected an existing (older) postgress installation..."
+        echo "Detected an existing postgress installation..."
         read -p "Do you want to continue with postgress installation and setup? [y/N] " dosetup
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping postgres installation and setup - will assume postgres is setup properly"
