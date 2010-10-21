@@ -2298,7 +2298,7 @@ fetch_esg_certificates() {
     echo 
     echo "Fetching Freshest ESG Federation Certificates..."
     #globus_global_certs_dir=/etc/grid-security/certificates
-    [ -e ${globus_global_certs_dir} ] && tar czf ${globus_global_certs_dir%/*}/${globus_global_certs_dir##*/}.bak.tgz ${globus_global_certs_dir} >& /dev/null && rm ${globus_global_certs_dir}/*
+    [ -d ${globus_global_certs_dir} ] && tar czf ${globus_global_certs_dir%/*}/${globus_global_certs_dir##*/}.bak.tgz ${globus_global_certs_dir} >& /dev/null && rm ${globus_global_certs_dir}/*
     mkdir -p ${globus_global_certs_dir}
     local esg_trusted_certs_file=esg_trusted_certificates.tar.gz
     (($DEBUG)) && echo "curl -s -L --insecure ${esg_dist_url}/certs/${esg_trusted_certs_file} | zcat | (cd ${globus_global_certs_dir}; pax -r -s ',.*/,,p')"
@@ -2317,8 +2317,8 @@ fetch_esg_certificates() {
 rebuild_truststore() {
     echo
     echo "Rebuilding truststore from esg certificates..."
-    if [ ! -d ${globus_global_certs_dir} ]; then
-        echo "Sorry, No esg certificates found... in ${globus_global_certs_dir}"
+    if [ ! -d ${globus_global_certs_dir} ] || (( force_install )) ; then
+        [ ! -d ${globus_global_certs_dir} ] && echo "Sorry, No esg certificates found... in ${globus_global_certs_dir}" || echo "(forcing fresh rebuild)"
         echo "So fetching fresh esg certificates :-)"
         fetch_esg_certificates
     fi
@@ -2369,7 +2369,35 @@ rebuild_truststore() {
 add_my_cert_to_truststore() {
     echo 
     (($DEBUG)) && echo "add_my_cert_to_truststore() "
-    local store_password=${1:-changeit}
+    local store_password=${1}
+
+    if [ -z "${store_password}" ]; then
+        local verify_password
+        while [ 1 ]; do
+            echo
+            read -s -p "Please enter the password for this keystore   : " store_password
+            [ "${store_password}" = "changeit" ] && break
+            [ -z "${store_password}" ] && echo "Invalid password [${store_password}]" && continue
+            echo
+            read -s -p "Please re-enter the password for this keystore: " verify_password
+            if [ "${store_password}" = "${verify_password}" ] ; then
+                echo
+                break
+            else
+                echo "Sorry, values did not match"
+                echo
+            fi
+        done
+        unset verify_password
+        echo
+    else 
+        echo "store_password = ******"
+    fi
+
+    #only making this call to test password
+    keytool -v -list -keystore ${keystore_file} -storepass ${store_password} >& /dev/null
+    [ $? != 0 ] && echo "Could not access private keystore ${keystore_file}" && return 1;
+
     #----------------------------------------------------------------
     #Re-integrate my public key (I mean, my "certificate") from my keystore into the truststore (the place housing all public keys I allow to talk to me)
     #----------------------------------------------------------------
@@ -3438,9 +3466,10 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         --register    - connects to desired gateway, fetches and stores their certificate to enable ingress SSL connections
         --generate-ssl-key-and-csr - generate new key and cert request files <key file> <cert file> [<dn>]
                                      (The 'dn' value is of the form - Ex:'/O=ESG/OU=ESG-DATA-NODE/CN=<fqdn>')
-        --install-keypair - takes as input private key and public cert files and installs them. <key> <cert> <password> [<keystore> <alias>]
+        --install-keypair - takes as input private key and public cert files and installs them. <key> <cert> [<keystore> <alias> <password>]
         --fetch-esg-certs - fetches and installs all current public esg federation certificates (used by globus)
         --rebuild-truststore - converts globus' (public) ca certificates into a truststore.
+        --add-my-cert-to-truststore - adds public cert from keystore to truststore: <keystore password>
         --clear-certs - removes the user-level public certificates' directory (used by myproxy)
 
         (deprecated) --install-signed-cert - installs signed host certificate into keystore and truststore <signed PEM file>
@@ -3494,6 +3523,7 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
       Installation : esg-node --install --verify
       Credentials  : esg-node --install-keypair <key> <cert>
       Test Publish : esg-node --test-pub
+      Update Certs : esg-node --rebuild-truststore
       Life Cycle   : esg-node [start|stop|status|restart]
 
     " | more
