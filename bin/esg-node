@@ -1153,6 +1153,7 @@ test_esgcet() {
 
 #####
 # Apache Tomcat
+# arg 1 -> The password for the current keystore
 #####
 setup_tomcat() {
     echo
@@ -1270,8 +1271,9 @@ setup_tomcat() {
     fi
     popd >& /dev/null
     #----------
-
-    configure_tomcat
+    
+    local store_password=${1}
+    configure_tomcat ${store_password}
     
     chown -R $tomcat_user $(readlink -f ${tomcat_install_dir})
     [ $? != 0 ] && " ERROR: Could not change ownership of tomcat to \"$tomcat_user\" user" && popd && checked_done 1
@@ -1369,31 +1371,41 @@ configure_tomcat() {
 
     #Create a keystore in $tomcat_install_dir/conf
     echo "Keystore setup: "
-    local store_password=${keystore_password}
+    local store_password=${1}
     if [ ! -e ${keystore_file} ]; then
         echo "Launching Java's keytool:"
         
-        local verify_password
-        while [ 1 ]; do
-            echo
-            read -s -p "Please enter the password for this keystore   : " store_password
-            [ "${store_password}" = "changeit" ] && break
-            [ -z "${store_password}" ] && echo "Invalid password [${store_password}]" && continue
-            echo
-            read -s -p "Please re-enter the password for this keystore: " verify_password
-            if [ "${store_password}" = "${verify_password}" ] ; then
+        if [ -z "${store_password}" ]; then
+            local verify_password
+            while [ 1 ]; do
                 echo
-                break
-            else
-                echo "Sorry, values did not match"
+                read -s -p "Please enter the password for this keystore   : " store_password
+                [ "${store_password}" = "changeit" ] && break
+                [ -z "${store_password}" ] && echo "Invalid password [${store_password}]" && continue
                 echo
-            fi
-        done
-        unset verify_password
-        echo
+                read -s -p "Please re-enter the password for this keystore: " verify_password
+                if [ "${store_password}" = "${verify_password}" ] ; then
+                    echo
+                    break
+                else
+                    echo "Sorry, values did not match"
+                    echo
+                fi
+            done
+            unset verify_password
+            echo
+        else 
+            echo "store_password = ******"
+        fi
 
-        $java_install_dir/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365 -storepass ${store_password}
-        [ $? != 0 ] && echo " ERROR: keytool genkey command failed" && popd && checked_done 1
+        if [ -z "${dname}" ]; then
+            $java_install_dir/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365 -storepass ${store_password}
+            [ $? != 0 ] && echo " ERROR: keytool genkey command failed" && popd && checked_done 1
+        else
+            $java_install_dir/bin/keytool -genkey -dname ${dname} -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365 -storepass ${store_password}
+            [ $? != 0 ] && echo " ERROR*: keytool genkey command failed" && popd && checked_done 1
+        fi
+        
         genreq="Y"
     else
         echo "Using existing keystore \"${keystore_file}\""
@@ -2508,7 +2520,7 @@ extract_keystore_dn() {
 #arg 2 -> public cert
 #arg 3 -> keystore name
 #arg 4 -> alias
-#arg 5 -> password (for keystore and private key)
+#arg 5 -> password (The value you want *set* for the keystore and internal private key)
 install_keypair() {
     local private_key=${1:-"hostkey.pem"}
     local public_cert=${2:-"$(hostname --fqdn)-esg-node.pem"}
@@ -3853,7 +3865,7 @@ main() {
     [ $((sel & 1)) != 0 ] && setup_cdat 
     [ $((sel & 1)) != 0 ] && setup_esgcet 
     [ $((sel & 2)) != 0 ] && test_esgcet 
-    [ $((sel & 1)) != 0 ] && setup_tomcat 
+    [ $((sel & 1)) != 0 ] && setup_tomcat ${keystore_password}
     [ $((sel & 2)) != 0 ] && test_tomcat
     [ $((sel & 1)) != 0 ] && setup_tds 
     [ $((sel & 2)) != 0 ] && test_tds 
