@@ -90,7 +90,7 @@ init() {
 
     #internal data-node code versions
     cdat_version=${cdat_version:-"eb8b668"}
-    esgcet_version=${esgcet_version:-"2.7.0"}
+    esgcet_version=${esgcet_version:-"2.7.1"}
     esgcet_python_version=${esgcet_python_version:-"2.6"}
     node_version=${node_version:-"1.0.0.4"}
     
@@ -1398,11 +1398,17 @@ configure_tomcat() {
             echo "store_password = ******"
         fi
 
+        #testing
+        local dname="O=Grid, OU=GlobusTest, OU=simpleCA-pcmdi3.llnl.gov"
+
         if [ -z "${dname}" ]; then
             $java_install_dir/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365 -storepass ${store_password}
             [ $? != 0 ] && echo " ERROR: keytool genkey command failed" && popd && checked_done 1
         else
-            $java_install_dir/bin/keytool -genkey -dname ${dname} -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365 -storepass ${store_password}
+            echo "${dname}" | grep -i cn
+            [ $? != 0 ] && dname="${dname}, CN=$(hostname --fqdn)"
+            echo "Using keystore DN = ${dname}"
+            $java_install_dir/bin/keytool -genkey -dname "${dname}" -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365 -storepass ${store_password}
             [ $? != 0 ] && echo " ERROR*: keytool genkey command failed" && popd && checked_done 1
         fi
         
