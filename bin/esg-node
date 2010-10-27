@@ -1399,14 +1399,14 @@ configure_tomcat() {
         fi
 
         #testing
-        local dname="O=Grid, OU=GlobusTest, OU=simpleCA-pcmdi3.llnl.gov"
+        local dname="OU=simpleCA-pcmdi3.llnl.gov, OU=GlobusTest, O=Grid"
 
         if [ -z "${dname}" ]; then
             $java_install_dir/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365 -storepass ${store_password}
             [ $? != 0 ] && echo " ERROR: keytool genkey command failed" && popd && checked_done 1
         else
             echo "${dname}" | grep -i cn
-            [ $? != 0 ] && dname="${dname}, CN=$(hostname --fqdn)"
+            [ $? != 0 ] && dname="CN=$(hostname --fqdn), ${dname}"
             echo "Using keystore DN = ${dname}"
             $java_install_dir/bin/keytool -genkey -dname "${dname}" -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365 -storepass ${store_password}
             [ $? != 0 ] && echo " ERROR*: keytool genkey command failed" && popd && checked_done 1
