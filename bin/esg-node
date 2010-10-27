@@ -99,7 +99,7 @@ init() {
     git_version=${git_version:="1.7.1"}
     java_version=${java_version:-"1.6.0_20"}
     ant_version=${ant_version:-"1.8.1"}
-    postgress_version=${postgress_version:-"8.4.4"}
+    postgress_version=${postgress_version:-"8.4.5"}
     tomcat_version=${tomcat_version:-"6.0.29"}
     tds_version=${tds_version:-"4.2"}
 
