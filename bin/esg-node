@@ -1288,7 +1288,7 @@ setup_tomcat() {
         local dodel="Y"
         echo "For security reasons we recommend removing the examples web app"
         readlink -f ${tomcat_install_dir}/webapps/examples
-        read -p "Is the directory show above correct? [Y/n] " dodel
+        read -p "Is the directory shown above correct? [Y/n] " dodel
         if [ "${dodel}" = "Y" ] || [ "${dodel}" = "y" ] || [ -z "${dodel}" ]; then
             rm -rf ${tomcat_install_dir}/webapps/examples && echo "removed the examples webapp..."
         fi
@@ -2516,7 +2516,7 @@ extract_keystore_dn() {
         #this is a bit of defensive coding so we don't run into the problem of not having the password and running a broken arg sequence
         [ -n "${storepass}" ] && storepass_switch="-storepass ${storepass}"
         #Note: I apologize for this horribile hacking of regex (this should be more cleanly accomplished with sed or perl using a capture group or a simple look behind)
-        dn=$(keytool -list -v -keystore ${keystore_file} ${storepass_switch} | egrep -e '^Owner:[ ]*?*' | tr -s " " | sed -e 's#^Owner: ##' | sed -e s#', '#/#g)
+        dn=$(keytool -list -v -keystore ${keystore_file} ${storepass_switch} | egrep -e '^Owner:[ ]*?*' | tr -s " " | sed -e 's#^Owner: ##' | sed -e s#", "#" "#g | tac -s " " | xargs | sed -e 's# #/#g')
     fi
     echo "/${dn}"
 }
@@ -3601,9 +3601,9 @@ main() {
                 let sel+=16
                 echo
                 ;;
-            --version)
+            -v | --version)
                 echo "Version: $version"
-                echo "Earth Systems Grid"
+                echo "Earth Systems Grid Federation (http://esgf.org)"
                 echo "Data Node Installation Script"
                 echo "Lawrence Livermore National Laboratory"
                 echo ""
