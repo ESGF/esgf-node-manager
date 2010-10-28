@@ -2465,7 +2465,7 @@ generate_ssl_key_and_csr() {
     chmod 400 ${private_key}
 
     #NOTE: To include DN at the command line
-    #openssl req -new -nodes -subj '/O=ESG/OU=ESG-PCMDI/CN=esg-test1.llnl.gov' -key hostkey.pem -out esg-test1.llnl.gov-esg-node.csr
+    #openssl req -new -nodes -subj '/O=Grid/OU=GlobusTest/OU=simpleCA-pcmdi3.llnl.gov/CN=esg-test1.llnl.gov' -key hostkey.pem -out esg-test1.llnl.gov-esg-node.csr
     echo "Generating Certificate Signing Request (csr)... "
     local public_cert_req=${2:-$(hostname --fqdn)-esg-node.csr}    
     local public_cert_dn=${3:-$(extract_keystore_dn ${keystore_file})}
