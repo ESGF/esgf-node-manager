@@ -3336,6 +3336,7 @@ self_verify() {
         fi
         
         if [ "$choice" = "C" ] || [ "$choice" = "c" ] || [ -z "$choice" ]; then
+            echo "Continuing..."
             echo 
             return 0
         elif [ "$choice" = "U" ] || [ "$choice" = "u" ]; then
@@ -3345,6 +3346,7 @@ self_verify() {
             echo
             exit 1
         else
+            echo "Exiting..."
             echo
             exit 1
         fi
