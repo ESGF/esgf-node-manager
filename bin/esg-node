@@ -230,6 +230,8 @@ init() {
     keystore_password=changeit
     truststore_file=${tomcat_install_dir}/conf/esg-truststore.ts
     globus_global_certs_dir=/etc/grid-security/certificates
+    #NOTE: java keystore style DN...
+    dname=${dname:-"OU=simpleCA-pcmdi3.llnl.gov, OU=GlobusTest, O=Grid"}
 
     mkdir -p ${esg_backup_dir}  && \
         mkdir -p ${esg_tools_dir} && \
@@ -1398,8 +1400,11 @@ configure_tomcat() {
             echo "store_password = ******"
         fi
 
-        #testing
-        local dname="OU=simpleCA-pcmdi3.llnl.gov, OU=GlobusTest, O=Grid"
+        #NOTE:
+        #As Reference on Distingueshed Names (DNs)
+        #http://download.oracle.com/javase/1.4.2/docs/tooldocs/windows/keytool.html
+        #According to that document, case does not matter but ORDER DOES!
+        #See script scope declaration of this variable (dname="OU=simpleCA-pcmdi3.llnl.gov, OU=GlobusTest, O=Grid")
 
         if [ -z "${dname}" ]; then
             $java_install_dir/bin/keytool -genkey -alias ${keystore_alias} -keyalg RSA -keystore ${keystore_file} -validity 365 -storepass ${store_password}
