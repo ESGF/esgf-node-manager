@@ -3327,12 +3327,15 @@ self_verify() {
     if (( $? == 3 )); then 
         printf "WARNING: $0 could not be verified!! \n(This file, ${0}, may have been tampered with or there is a newer version posted at the distribution server.\nPlease update this script.)\n\n"
         
-        local choice="c"
+        local choice="x"
         if [ "$#" == 1 ]; then
             (($DEBUG)) && echo "Operation $1 was chosen"
             choice=$1
         else
-            read -t $((1*60)) -p "Do you wish to Update and exit [u], continue anyway [c] or simply exit [x]? [u/C/x]: " choice
+            local input=""
+            read -t $((1*60)) -p "Do you wish to Update and exit [u], continue anyway [c] or simply exit [x]? [u/c/X]: " input
+            [ -n "${input}" ] && choice=${input}
+            unset input
         fi
         
         if [ "$choice" = "C" ] || [ "$choice" = "c" ] || [ -z "$choice" ]; then
