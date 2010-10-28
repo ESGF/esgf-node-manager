@@ -65,7 +65,7 @@ hostname -s, hostname --domain and hostname --fqdn.
 
 3) Download the "update" script to /usr/local/bin on the target machine
    % cd /usr/local/bin
-   % wget http://198.128.245.140/dist/esg-node/esg-update
+   % wget -O esg-update http://198.128.245.140/dist/esg-node/esg-update
 
 
 4) MAKE SURE YOU MANUALLY CHECK THE MD5 CHECKSUM!
