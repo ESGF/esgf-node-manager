@@ -4,7 +4,11 @@ Welcome to the Earth Systems Grid!!!
 #####################################
 
 This is a quick note on what to do to set up an installation of an ESG
-Data Node.  Here is what you need to do.
+Data Node.  Here is what you need to do.  
+
+Please make sure that you have read the HOWTO document
+(http://rainbow.llnl.gov/dist/esg-node/HOWTO) that provides more
+detailed directions, the following is the abridged content.
 
 At the command line:
 % sudo -s
