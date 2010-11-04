@@ -3572,18 +3572,34 @@ done_remark() {
 }
 
 main() {
-    let sel=0
+    let sel=4 #default to "node" type
     while [ -n "$1" ]; do
     #echo "arg ${i} = $1"
         local unshift=0
         case $1 in
             --install | -i)
                 (($DEBUG)) && echo "INSTALL SERVICES"
-                let sel+=1
+                (( (sel & 1) == 0 )) && ((sel+=1))
                 ;;
             --verify | --test)
                 #echo "VERIFY SERVICES"
-                let sel+=2
+                (( (sel & 2) == 0 )) && ((sel+=2))
+                ;;
+            --type | -t)
+                #TODO: look for next arg if node or if gway set the selection bit accordingly
+                #This also means that I can nott use 1 for basic install will have to use 1 for prerequisite
+                #and then another bit for node vs gway
+                local tvalue
+                shift
+                until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
+                    tvalue="$1"
+                    #turn on the proper bit when string is detected
+                    (($DEBUG)) && echo "node type selected is: $1"
+                    [ "node" = "${tvalue}" ] && (( (sel & 4) == 0 )) && ((sel+=4))
+                    [ "gway" = "${tvalue}" ] && (( (sel & 8) == 0 )) && ((sel+=8))
+                    shift
+                done
+                unshift=1
                 ;;
             start | --start)
                 check_prerequisites
@@ -3608,7 +3624,7 @@ main() {
                 exit 0
                 ;;
             --write-env)
-                let sel+=16
+                (( (sel & 16) == 0 )) && ((sel+=16))
                 echo
                 ;;
             -v | --version)
@@ -3865,8 +3881,9 @@ main() {
 
     init
 
-    (( force_install )) && echo "(force install is ON)"
-
+    (( force_install ))  && echo "(force install is ON)"
+    (( (sel & 4 ) != 0)) && echo "(node type selected)"
+    (( (sel & 8 ) != 0)) && echo "(gway type selected)"
     #---------------------------------------
     #Installation of basic system components.
     # (Only when one setup in the sequence is okay can we move to the next)
@@ -3884,7 +3901,7 @@ main() {
     [ $((sel & 2)) != 0 ] && test_tomcat
     [ $((sel & 1)) != 0 ] && setup_tds 
     [ $((sel & 2)) != 0 ] && test_tds 
-    [ $((sel & 1)) != 0 ] && setup_node #(tomcat off)
+    [ $((sel & 4)) != 0 ] && setup_node #(tomcat off)
 
     #---------------------------------------
     #Installation of "plugin" subsystems... & filters
@@ -3894,7 +3911,6 @@ main() {
     [ $((sel & 1)) != 0 ] && echo "security filters subsystem (SAML/ORP)"  && setup_subsystem security-tokenless-filters filters $@
     #---subsystems--- 
     [ $((sel & 1)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
-    #[ $((sel & 1)) != 0 ] && echo "search  subsystem" && setup_subsystem search esg-search $@
     #[ $((sel & 1)) != 0 ] && echo "drslib subsystem"  && setup_subsystem drslib esgf-drslib $@
 
 
@@ -3905,6 +3921,11 @@ main() {
     [ $((sel & 2)) != 0 ] && (( ! no_globus )) && echo "test_globus" && source ${scripts_dir}/esg-globus >& /dev/null \
         && test_globus_services datanode
 
+
+    #---------------------------------------
+    # Gateway type install...
+    #---------------------------------------
+    #[ $((sel & 8)) != 0 ] && echo "search  subsystem" && setup_subsystem search esg-search $@
 
     #---------------------------------------
     # Publishing Test...
