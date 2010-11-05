@@ -2259,7 +2259,7 @@ setup_subsystem() {
     checked_get ./${fetch_file} ${esg_dist_url}/${server_dir}/${fetch_file}
     (( $? > 1 )) && popd && return 1
     chmod 755 ${fetch_file}
-    popd # >& /dev/null
+    popd >& /dev/null
 
     #source subsystem file and go!
     shift && echo "-->>> "
@@ -3391,13 +3391,14 @@ show_svc_list() {
 #Starts the esg node
 start() {
     init
-    echo "starting services with globus using config: ${gridftp_config_args}"
+    echo "starting services... "
     start_postgress
     start_tomcat
-    source ${scripts_dir}/esg-globus >& /dev/null && \
+    (( ! no_globus )) && source ${scripts_dir}/esg-globus >& /dev/null && \
         start_globus_services datanode ${gridftp_config_args}
     echo "please wait..." && sleep 3
     show_svc_list
+    echo
 }
 
 #Stops the esg node
@@ -3580,7 +3581,7 @@ GWAY_BIT=8
 WRITE_ENV_BIT=16
 
 main() {
-    let sel=NODE_BIT #default to "node" type
+    let sel=0
     while [ -n "$1" ]; do
     #echo "arg ${i} = $1"
         local unshift=0
@@ -3694,7 +3695,7 @@ main() {
 
                 echo "starting services with globus using config: ${gridftp_config_args}"
                 checked_get ${scripts_dir}/esg-globus ${esg_dist_url}/externals/bootstrap/esg-globus
-                source ${scripts_dir}/esg-globus >& /dev/null && \
+                (( ! no_globus )) && source ${scripts_dir}/esg-globus >& /dev/null && \
                     start_globus_services datanode ${gridftp_config_args}
                 start_postgress
                 start_tomcat
@@ -3909,7 +3910,7 @@ main() {
     [ $((sel & TEST_BIT))    != 0 ] && test_tomcat
     [ $((sel & INSTALL_BIT)) != 0 ] && setup_tds 
     [ $((sel & TEST_BIT))    != 0 ] && test_tds 
-    [ $((sel & NODE_BIT))    != 0 ] && setup_node #(tomcat off)
+    [ $((sel & (NODE_BIT+INSTALL_BIT)))    != 0 ] && setup_node #(tomcat off)
 
     #---------------------------------------
     #Installation of "plugin" subsystems... & filters
@@ -3933,7 +3934,7 @@ main() {
     #---------------------------------------
     # Gateway type install...
     #---------------------------------------
-    [ $((sel & GWAY_BIT)) != 0 ] && echo "search  subsystem" && setup_subsystem search esg-search $@
+    [ $((sel & GWAY_BIT)) != 0 ] && echo "search subsystem" && setup_subsystem search esg-search $@
 
     #---------------------------------------
     # Publishing Test...
@@ -3951,13 +3952,7 @@ main() {
     #---------------------------------------
     #System Launch...
     #---------------------------------------
-    (( ! no_globus )) && start_globus_services datanode ${gridftp_config_args}
-    start_postgress
-    start_tomcat
-    
-    echo
-    show_svc_list
-    echo
+    start
     done_remark
     echo 
 }
