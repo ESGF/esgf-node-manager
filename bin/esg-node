@@ -3489,6 +3489,8 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         --no-globus   - will not install any globus tools (for those with existing globus setups)
         --gridftp-config - [ with-bdm-config | bdm-config-only ] without this arg uses default end-user config
 
+        --type | -t <node|gway> - Select type of mode: gway or node (node is default)
+
         Key Management Flags:
         --register    - connects to desired gateway, fetches and stores their certificate to enable ingress SSL connections
         --generate-ssl-key-and-csr - generate new key and cert request files <key file> <cert file> [<dn>]
@@ -3571,19 +3573,25 @@ done_remark() {
     echo ""
 }
 
+INSTALL_BIT=1
+TEST_BIT=2
+NODE_BIT=4
+GWAY_BIT=8
+WRITE_ENV_BIT=16
+
 main() {
-    let sel=4 #default to "node" type
+    let sel=NODE_BIT #default to "node" type
     while [ -n "$1" ]; do
     #echo "arg ${i} = $1"
         local unshift=0
         case $1 in
             --install | -i)
                 (($DEBUG)) && echo "INSTALL SERVICES"
-                (( (sel & 1) == 0 )) && ((sel+=1))
+                (( (sel & INSTALL_BIT) == 0 )) && ((sel+=INSTALL_BIT))
                 ;;
             --verify | --test)
                 #echo "VERIFY SERVICES"
-                (( (sel & 2) == 0 )) && ((sel+=2))
+                (( (sel & TEST_BIT) == 0 )) && ((sel+=TEST_BIT))
                 ;;
             --type | -t)
                 #TODO: look for next arg if node or if gway set the selection bit accordingly
@@ -3592,11 +3600,11 @@ main() {
                 local tvalue
                 shift
                 until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
-                    tvalue="$1"
+                    tvalue=$(echo "$1" | tr 'A-Z' 'a-z')
                     #turn on the proper bit when string is detected
                     (($DEBUG)) && echo "node type selected is: $1"
-                    [ "node" = "${tvalue}" ] && (( (sel & 4) == 0 )) && ((sel+=4))
-                    [ "gway" = "${tvalue}" ] && (( (sel & 8) == 0 )) && ((sel+=8))
+                    [ "node" = "${tvalue}" ] && (( (sel & NODE_BIT) == 0 )) && ((sel+=NODE_BIT))
+                    [ "gway" = "${tvalue}" ] && (( (sel & GWAY_BIT) == 0 )) && ((sel+=GWAY_BIT))
                     shift
                 done
                 unshift=1
@@ -3624,7 +3632,7 @@ main() {
                 exit 0
                 ;;
             --write-env)
-                (( (sel & 16) == 0 )) && ((sel+=16))
+                (( (sel & WRITE_ENV_BIT) == 0 )) && ((sel+=WRITE_ENV_BIT))
                 echo
                 ;;
             -v | --version)
@@ -3882,62 +3890,62 @@ main() {
     init
 
     (( force_install ))  && echo "(force install is ON)"
-    (( (sel & 4 ) != 0)) && echo "(node type selected)"
-    (( (sel & 8 ) != 0)) && echo "(gway type selected)"
+    (( (sel & NODE_BIT ) != 0)) && echo "(node type selected)"
+    (( (sel & GWAY_BIT ) != 0)) && echo "(gway type selected)"
     #---------------------------------------
     #Installation of basic system components.
     # (Only when one setup in the sequence is okay can we move to the next)
     #---------------------------------------
-    [ $((sel & 1)) != 0 ] && setup_curl
-    [ $((sel & 1)) != 0 ] && setup_git
-    [ $((sel & 1)) != 0 ] && setup_java
-    [ $((sel & 1)) != 0 ] && setup_ant
-    [ $((sel & 1)) != 0 ] && setup_postgress
-    [ $((sel & 2)) != 0 ] && test_postgress 
-    [ $((sel & 1)) != 0 ] && setup_cdat 
-    [ $((sel & 1)) != 0 ] && setup_esgcet 
-    [ $((sel & 2)) != 0 ] && test_esgcet 
-    [ $((sel & 1)) != 0 ] && setup_tomcat ${keystore_password}
-    [ $((sel & 2)) != 0 ] && test_tomcat
-    [ $((sel & 1)) != 0 ] && setup_tds 
-    [ $((sel & 2)) != 0 ] && test_tds 
-    [ $((sel & 4)) != 0 ] && setup_node #(tomcat off)
+    [ $((sel & INSTALL_BIT)) != 0 ] && setup_curl
+    [ $((sel & INSTALL_BIT)) != 0 ] && setup_git
+    [ $((sel & INSTALL_BIT)) != 0 ] && setup_java
+    [ $((sel & INSTALL_BIT)) != 0 ] && setup_ant
+    [ $((sel & INSTALL_BIT)) != 0 ] && setup_postgress
+    [ $((sel & TEST_BIT))    != 0 ] && test_postgress 
+    [ $((sel & INSTALL_BIT)) != 0 ] && setup_cdat 
+    [ $((sel & INSTALL_BIT)) != 0 ] && setup_esgcet 
+    [ $((sel & TEST_BIT))    != 0 ] && test_esgcet 
+    [ $((sel & INSTALL_BIT)) != 0 ] && setup_tomcat ${keystore_password}
+    [ $((sel & TEST_BIT))    != 0 ] && test_tomcat
+    [ $((sel & INSTALL_BIT)) != 0 ] && setup_tds 
+    [ $((sel & TEST_BIT))    != 0 ] && test_tds 
+    [ $((sel & NODE_BIT))    != 0 ] && setup_node #(tomcat off)
 
     #---------------------------------------
     #Installation of "plugin" subsystems... & filters
     #---------------------------------------
     #---filters------
-    [ $((sel & 1)) != 0 ] && echo "security filters subsystem (TOKEN)" && setup_subsystem security-token-filters filters $@
-    [ $((sel & 1)) != 0 ] && echo "security filters subsystem (SAML/ORP)"  && setup_subsystem security-tokenless-filters filters $@
+    [ $((sel & INSTALL_BIT)) != 0 ] && echo "security filters subsystem (TOKEN)" && setup_subsystem security-token-filters filters $@
+    [ $((sel & INSTALL_BIT)) != 0 ] && echo "security filters subsystem (SAML/ORP)"  && setup_subsystem security-tokenless-filters filters $@
     #---subsystems--- 
-    [ $((sel & 1)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
-    #[ $((sel & 1)) != 0 ] && echo "drslib subsystem"  && setup_subsystem drslib esgf-drslib $@
+    [ $((sel & INSTALL_BIT)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
+   #[ $((sel & INSTALL_BIT)) != 0 ] && echo "drslib subsystem"  && setup_subsystem drslib esgf-drslib $@
 
 
     #---------------------------------------
     # Globus Installation...
     #---------------------------------------
-    [ $((sel & 1)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${gridftp_config_args}
-    [ $((sel & 2)) != 0 ] && (( ! no_globus )) && echo "test_globus" && source ${scripts_dir}/esg-globus >& /dev/null \
+    [ $((sel & INSTALL_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${gridftp_config_args}
+    [ $((sel & TEST_BIT))    != 0 ] && (( ! no_globus )) && echo "test_globus" && source ${scripts_dir}/esg-globus >& /dev/null \
         && test_globus_services datanode
 
 
     #---------------------------------------
     # Gateway type install...
     #---------------------------------------
-    #[ $((sel & 8)) != 0 ] && echo "search  subsystem" && setup_subsystem search esg-search $@
+    [ $((sel & GWAY_BIT)) != 0 ] && echo "search  subsystem" && setup_subsystem search esg-search $@
 
     #---------------------------------------
     # Publishing Test...
     #---------------------------------------
-    [ $((sel & 2)) != 0 ] && echo "test_publication" && test_publication 
+    [ $((sel & TEST_BIT)) != 0 ] && echo "test_publication" && test_publication 
 
 
     #---------------------------------------
     #Summary and Installation Housekeeping...
     #---------------------------------------
-    [ $((sel & 1)) != 0 ] && echo "show_summary" && show_summary 
-    [ $((sel & 16)) != 0 ] && echo "write_env" && write_env && exit 0
+    [ $((sel & INSTALL_BIT))   != 0 ] && echo "show_summary" && show_summary 
+    [ $((sel & WRITE_ENV_BIT)) != 0 ] && echo "write_env" && write_env && exit 0
     
 
     #---------------------------------------
