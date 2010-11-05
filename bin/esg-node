@@ -3382,7 +3382,7 @@ show_svc_list() {
     echo "---------------------------"
     echo "Running Node Services..."
     echo "---------------------------"
-    lsof -i |egrep  'postgres|jsvc|globus-gr'
+    lsof -i |egrep  'postgres|jsvc|globus-gr|java'
     echo "---------------------------"
     echo
     return 0
@@ -3397,7 +3397,7 @@ start() {
     (( ! no_globus )) && source ${scripts_dir}/esg-globus >& /dev/null && \
         start_globus_services datanode ${gridftp_config_args}
     echo "please wait..." && sleep 3
-    (( (sel & GWAY_BIT ) != 0)) && source $scripts_dir}/esg-search >& /dev/null && start_search_services
+    source ${scripts_dir}/esg-search >& /dev/null && start_search_services
     show_svc_list
     echo
 }
@@ -3405,7 +3405,7 @@ start() {
 #Stops the esg node
 stop() {
     init
-    source $scripts_dir}/esg-search >& /dev/null && stop_search_services
+    source ${scripts_dir}/esg-search >& /dev/null && stop_search_services
     source ${scripts_dir}/esg-globus >& /dev/null && \
         stop_globus_services datanode ${gridftp_config_args}
     stop_tomcat 
@@ -3704,7 +3704,7 @@ main() {
                     start_globus_services datanode ${gridftp_config_args}
 
                 (( (sel & GWAY_BIT ) != 0)) && checked_get ${scripts_dir}/esg-search ${esg_dist_url}/esg-search/esg-search
-                (( (sel & GWAY_BIT ) != 0)) && source $scripts_dir}/esg-search >& /dev/null && start_search_services
+                (( (sel & GWAY_BIT ) != 0)) && source ${scripts_dir}/esg-search >& /dev/null && start_search_services
 
                 show_svc_list
                 exit 0
