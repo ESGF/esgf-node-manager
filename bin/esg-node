@@ -71,19 +71,21 @@
 #      groupadd is RedHat/CentOS dependent :-(
 
 DEBUG=${DEBUG:-0}
+progname=esg-node
+version="1.0.4.0"
+envfile="/etc/esg.env"
 
 #--------------
 #User Defined / Settable (public)
 #--------------
-progname=esg-node
-version="1.0.4.0"
-
-envfile="/etc/esg.env"
 t=${0%.*}
 logfile=${logfile:-"/var/tmp/${t##*/}.out"}
 install_prefix=${install_prefix:-"/usr/local"}
 esg_root_dir=${esg_root_dir:-"/esg"}
 workdir=${workdir:-~/workbench/esg}
+install_logfile=${install_logfile:-"/etc/esg.install_log"}
+#--------------
+
 
 init() {
     [ -e "${envfile}" ] && source ${envfile} && printf "sourcing environment from: ${envfile} \n\n"
@@ -103,7 +105,6 @@ init() {
     tomcat_version=${tomcat_version:-"6.0.29"}
     tds_version=${tds_version:-"4.2"}
 
-    install_logfile=${ESG_INSTALL_LOGFILE:-"/etc/esg.install_log"}
     curl_install_dir=${CURL_HOME:-${install_prefix}/curl}
     git_install_dir=${GIT_HOME:-${install_prefix}/git}
     postgress_install_dir=${PGHOME:-${install_prefix}/pgsql}
@@ -246,7 +247,7 @@ write_paths() {
     ((show_summary_latch++))
     echo "export PATH=$myPATH:\$PATH" >> ${envfile}
     echo "export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:\$LD_LIBRARY_PATH" >> ${envfile}
-    echo "export ESG_INSTALL_LOGFILE=${install_logfile}" >> ${envfile}
+    #echo "export ESG_INSTALL_LOGFILE=${install_logfile}" >> ${envfile}
     echo "export ESG_USER_HOME=${installer_home}" >> ${envfile}
     dedup ${envfile} && source ${envfile}
 }
