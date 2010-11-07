@@ -2255,7 +2255,7 @@ setup_subsystem() {
     [ $? != 0 ] && checked_done 1
     pushd ${workdir} >& /dev/null
 
-    pushd ${scripts_dir} # >& /dev/null
+    pushd ${scripts_dir} >& /dev/null
     local fetch_file=esg-${subsystem}
     checked_get ./${fetch_file} ${esg_dist_url}/${server_dir}/${fetch_file}
     (( $? > 1 )) && popd && return 1
