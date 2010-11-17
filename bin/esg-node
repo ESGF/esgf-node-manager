@@ -776,7 +776,7 @@ setup_postgress() {
     ########
     id $pg_sys_acct
     if [ $? != 0 ]; then
-        echo " WARNING: There is no postgres system account user \"$pg_sys_acct\" present on system"
+        echo " Hmmm...: There is no postgres system account user \"$pg_sys_acct\" present on system, making one..."
         #NOTE: "useradd/groupadd" are a RedHat/CentOS thing... to make this cross distro compatible clean this up.
         /usr/sbin/groupadd -r -f ${pg_sys_acct_group}
         [ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add postgres system group: ${pg_sys_acct_group}" && popd && checked_done 1
@@ -973,7 +973,7 @@ setup_cdat() {
     fi
     cd cdat >& /dev/null
     git checkout ${cdat_version}
-    [ $? != 0 ] && echo " WARNING: Problem with cdat repository"
+    [ $? != 0 ] && echo " WARNING: Problem with checking out cdat revision [${cdat_version}] from repository :-("
 
     echo "cleaning things out" 
     ./clean_script
@@ -1526,7 +1526,7 @@ start_tomcat() {
         echo "[OK]"
         ps -elf | grep jsvc  | grep -v grep
         date
-        popd
+        popd >$ /dev/null
         checked_done 0
     else 
         echo "Tomcat couldn't be started."
@@ -3240,8 +3240,8 @@ check_for_update() {
         exit 1
     fi                      
     
-    [ ! -e ${local_file} ] && echo " WARNING: Could not find local file ${local_file}" && return 0
-    [ ! -x ${local_file} ] && echo " WARNING: local file ${local_file} not executible" && chmod 755 ${local_file}
+    [ ! -e ${local_file} ] && echo " Hmmm... Could not find local file ${local_file}" && return 0
+    [ ! -x ${local_file} ] && echo " Hmmm... local file ${local_file} not executible" && chmod 755 ${local_file}
     diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl -s -L --insecure ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
     [ $? != 0 ] && echo " Update Available @ ${remote_file}" && return 0
     echo " ==> ${local_file} is up to date"
