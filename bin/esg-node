@@ -1488,7 +1488,10 @@ configure_tomcat() {
 
 
 start_tomcat() {
-    check_tomcat_process && return 1
+    check_tomcat_process
+    local ret=$? 
+    ((ret == 0)) && return 1
+    ((ret == 3)) && echo "Please resolve this issue before starting tomcat!" && checked_done $ret
 
     echo "Starting Tomcat (jsvc)..."
     pushd $tomcat_install_dir >& /dev/null
@@ -3068,18 +3071,33 @@ set_classpath() {
     return 0;
 }
 
-#This function "succeeds" (is true)  if there *are* running processes found
+#This function "succeeds" (is true; returns 0)  if there *are* running processes found running
 check_postgress_process() {
-    val=$(ps -elf | grep postgres | grep -v grep | awk ' END { print NR }')
+    local val=$(ps -elf | grep postgres | grep -v grep | awk ' END { print NR }')
     [ $(($val > 0 )) == 1 ] && echo "Postgres process is running..." && return 0
     return 1
 }
 
-#This function "succeeds" (is true)  if there *are* running processes found
+#This function "succeeds" (is true; returns 0)  if there *are* running processes found running
 check_tomcat_process() {
-    val=$(ps -elf | grep jsvc | grep -v grep | awk ' END { print NR }')
-    [ $(($val > 0 )) == 1 ] && echo "Tomcat (jsvc) process is running..." && return 0
-    return 1
+    if [ -f ${tomcat_install_dir}/conf/server.xml ]; then
+        local ports=$(sed -n 's/.*Connector.*port="\([0-9]*\)".*/\1/p' ${tomcat_install_dir}/conf/server.xml | xargs | sed 's/[ ]/|/gp' | uniq)
+        local procs="$(lsof -Pni | egrep '\*:('${ports}')\s+' | awk '{print $1}' | uniq | xargs)"
+        [ -z "${procs}" ] && return 1 #No process running on ports
+        if [ jsvc = "${procs}" ]; then
+            echo "Tomcat (jsvc) process is running... " && return 0
+        else
+            echo " WARNING: There is another process running on expected Tomcat (jsvc) ports!!!! [${procs}] ?? "
+            return 3
+        fi
+    else
+        echo " Warning Cannot find ${tomcat_install_dir}/conf/server.xml file!"
+        echo " Using alternative method for checking on tomcat process..."
+        local val=$(ps -elf | grep jsvc | grep -v grep | awk ' END { print NR }')
+        [ $(($val > 0 )) == 1 ] && echo "Tomcat (jsvc) process is running..." && return 0
+        echo " No Tomcat (jsvc) processes detected"
+        return 2
+    fi
 }
 
 #--------------------------------------------------------------------------
