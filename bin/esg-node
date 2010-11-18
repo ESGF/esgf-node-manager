@@ -927,7 +927,11 @@ stop_postgress() {
 }
 
 test_postgress() {
+    echo
+    echo "----------------------------"
     echo -n "Postgress Test...  "
+    echo "----------------------------"
+    echo 
     start_postgress
 
     ${postgress_install_dir}/bin/psql --version
@@ -1117,7 +1121,11 @@ write_esgcet_install_log() {
 
 
 test_esgcet() {
+    echo
+    echo "----------------------------"
     echo -n "ESGCET Test... "
+    echo "----------------------------"
+    echo
     pushd $workdir >& /dev/null
 
     start_postgress
@@ -1571,7 +1579,11 @@ stop_tomcat() {
 
 test_tomcat() {
 
+    echo
+    echo "----------------------------"
     echo -n "Tomcat Test...  "
+    echo "----------------------------"
+    echo
     start_tomcat
     
     echo "giving tomcat some time to wake up"
@@ -2129,8 +2141,9 @@ write_tds_install_log() {
 }
 
 test_tds() {
+    echo
     echo "----------------------------"
-    echo "Thredds Data Server Test... "
+    echo "Thredds Data Server Test... (publisher catalog gen)"
     echo "----------------------------"
     echo
     mkdir -p ${workdir}
@@ -2200,7 +2213,11 @@ write_globus_env() {
 #####
 
 test_publication() {
+    echo
+    echo "----------------------------"
     echo "Publication test... $@"
+    echo "----------------------------"
+    echo
     [ -z "${myproxy_user}" ] && read -p "Enter your myproxy username: " myproxy_user
 
     local personal_credential_repo="$HOME/.globus"
