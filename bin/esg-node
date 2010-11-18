@@ -2443,7 +2443,7 @@ add_my_cert_to_truststore() {
         fi
 
         echo "Importing keystore's certificate into truststore... "
-        keytool -import -v -trustcacerts -alias ${keystore_alias} -keypass ${store_password} -file ${keystore_file}.cer -keystore ${truststore_file} -storepass changeit
+        keytool -import -v -trustcacerts -alias ${keystore_alias} -keypass ${store_password} -file ${keystore_file}.cer -keystore ${truststore_file} -storepass changeit -noprompt
         [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && exit 1)
         sync_with_java_truststore ${truststore_file}
         echo -n "cleaning up after ourselves... "
