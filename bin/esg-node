@@ -109,7 +109,8 @@ init() {
     git_install_dir=${GIT_HOME:-${install_prefix}/git}
     postgress_install_dir=${PGHOME:-${install_prefix}/pgsql}
     postgress_user=${PGUSER:-dbsuper}
-    pg_sys_acct_passwd=${pg_sys_acct_passwd:=changeme}
+    local psecret=$(cat ${HOME}/.esg_pgpass 2> /dev/null)
+    pg_sys_acct_passwd=${pg_sys_acct_passwd:=${psecret:=changeme}}
     postgress_host=${PGHOST:-localhost}
     postgress_port=${PGPORT:-5432}
     cdat_home=${CDAT_HOME:-${install_prefix}/cdat}
@@ -780,9 +781,21 @@ setup_postgress() {
         #NOTE: "useradd/groupadd" are a RedHat/CentOS thing... to make this cross distro compatible clean this up.
         /usr/sbin/groupadd -r -f ${pg_sys_acct_group}
         [ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add postgres system group: ${pg_sys_acct_group}" && popd && checked_done 1
+        
+        #set the password for the system user...
+        while [ 1 ]; do 
+            local input
+            read -s -p "Create password for postgress system account: " input
+            [ -n "${input}" ] && pg_sys_acct_passwd=${input}  && unset input && break
+        done
+        echo "Creating account..."
         /usr/sbin/useradd -r -c"PostgreSQL Service" -g $pg_sys_acct_group -p $pg_sys_acct_passwd -s /bin/bash $pg_sys_acct
         [ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add postgres system account user" && popd && checked_done 1
+        echo "${pg_sys_acct_passwd}" > ${HOME}/.esg_pgpass
+        chmod 600 ${HOME}/.esg_pgpass
+        chown ${installer_uid}:${installer_gid} ${HOME}/.esg_pgpass
     fi
+
     ########
     sleep 3
     #double check that the account is really there!
@@ -861,8 +874,9 @@ setup_postgress() {
     eval "perl -p -i -e 's#\\@\\@postgress_install_dir\\@\\@#${postgress_install_dir}#g' ${fetch_file}"    
     [ $? == 0 ] && printf "[OK]\n" || printf "[FAIL]\n"
 
-    chown -R postgres.postgres ${postgress_install_dir}
-
+    chown -R $pg_sys_acct $postgress_install_dir
+    chgrp -R $pg_sys_acct_group $postgress_install_dir
+    
     popd >& /dev/null
     echo
     check_shmmax
