@@ -3537,15 +3537,27 @@ show_svc_list() {
 #Starts the esg node
 start() {
     init
-    echo "starting services... ($1)"
-    local sel=${1}
-    ((sel == 0)) && printf "ERROR: No node type selected! \n Consult usage with --help flag... look for the \"--type\" flag must come BEFORE \"start\" arg\n\n" && exit 1
+    (($DEBUG)) && echo "starting services... ($1)"
+    if ((sel == 0)); then
+        local last_config_type=$(cat ${esg_root_dir}/config/config_type 2> /dev/null)
+        (($DEBUG)) && echo "(last_config_type = ${last_config_type})"
+        let sel=${last_config_type:-0}
+        ((!sel)) && \
+            printf "ERROR: No node type selected! \n Consult usage with --help flag... look for the \"--type\" flag must come BEFORE \"start\" arg\n\n" && exit 1
+    fi
 
+    echo "starting services... ($sel)"
+    
     start_postgress
     start_tomcat
-    (( ! no_globus )) && source ${scripts_dir}/esg-globus >& /dev/null && \
-        start_globus_services datanode ${gridftp_config_args} 
+
+    if [ $((sel & DNODE_BIT)) != 0 ]; then 
+        (( ! no_globus )) && source ${scripts_dir}/esg-globus >& /dev/null && \
+            start_globus_services datanode ${gridftp_config_args} 
+    fi
+
     [ $((sel & INDEX_BIT)) != 0 ] && source ${scripts_dir}/esg-search >& /dev/null && start_search_services
+    
     show_svc_list
 
     echo "${sel}" > ${esg_root_dir}/config/config_type
@@ -3735,10 +3747,7 @@ WRITE_ENV_BIT=16
 
 main() {
 
-    local last_config_type=$(cat ${esg_root_dir}/config/config_type 2> /dev/null)
-    (($DEBUG)) && echo "last_config_type = ${last_config_type}"
-
-    let sel=${last_config_type:-0}
+    let sel=0
     while [ -n "$1" ]; do
     #echo "arg ${i} = $1"
         local unshift=0
