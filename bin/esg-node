@@ -113,7 +113,7 @@ init() {
     postgress_host=${PGHOST:-localhost}
     postgress_port=${PGPORT:-5432}
     cdat_home=${CDAT_HOME:-${install_prefix}/cdat}
-    java_opts=${JAVA_OPTS:-"-Xmx2048m -Xms1024m"}
+    java_opts=${JAVA_OPTS:-"-Xmx2048m -Xms1024m -XX:MaxPermSize=128m"}
     java_install_dir=${JAVA_HOME:-${install_prefix}/java}
     ant_install_dir=${ANT_HOME:-${install_prefix}/ant}
     tomcat_install_dir=${CATALINA_HOME:-${install_prefix}/tomcat}
@@ -708,7 +708,7 @@ setup_postgress() {
     local dosetup
     if [ -x ${postgress_install_dir}/bin/psql ]; then 
         echo "Detected an existing postgress installation..."
-        read -p "Do you want to continue with postgress installation and setup? [y/N] " dosetup
+        read -p "Do you want to continue with Postgres installation and setup? [y/N] " dosetup
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping postgres installation and setup - will assume postgres is setup properly"
             return 0
@@ -1029,13 +1029,22 @@ write_cdat_install_log() {
 # ESGCET Package
 #####
 setup_esgcet() {
-    echo
-    echo "*******************************"
-    echo "Setting up ESGCET Package...(${esgcet_egg_file})"
-    echo "*******************************"
-    echo
 
-    local upgrade=${1:-0}    
+    echo -n "Checking for esgcet [publisher] ${esgcet_version}"
+    check_module_version esgcet ${esgcet_version}
+    local ret=$?
+    ((ret == 0)) && (( ! force_install )) && echo " [OK]" && return 0
+    
+    local upgrade=${1:-${ret}}
+
+    local mode="I"
+    ( ((upgrade < 2)) && (( ! force_install )) ) && mode="U" || mode="I"
+    
+    echo
+    echo "*******************************"
+    echo "Setting up ESGCET Package...(${esgcet_egg_file}) [${mode}]"
+    echo "*******************************"
+    echo
     
     local dosetup
     if [ -e ${HOME}/.esgcet/esg.ini ]; then 
@@ -1055,8 +1064,9 @@ setup_esgcet() {
     #Gives you 30 seconds to make a choice or will choose "I" by default
     local choice
     while [ 1 ]; do
-        read -p "Is this an install or update of the esgcet module? [I/u]: " choice
-        if [ "${choice}" = "i" ] || [ "${choice}" = "I" ] || [ -z "${choice}" ]; then
+        read -t $((1*60)) -p "Is this an install or update of the esgcet module? $([ "${mode}" = "I" ] && echo "[I/u]" || echo "[i/U]"): " choice
+        [ -z "${choice}" ] && choice=$(echo "${mode}" | tr [a-z] [A-Z])
+        if [ "${choice}" = "i" ] || [ "${choice}" = "I" ]; then
             #echo "$cdat_home/bin/easy_install -f ${esg_dist_url}/externals esgcet"
             #$cdat_home/bin/easy_install -f ${esg_dist_url}/externals esgcet
             checked_get ${esg_dist_url}/externals/${esgcet_egg_file}
@@ -1071,13 +1081,13 @@ setup_esgcet() {
             $cdat_home/bin/easy_install --upgrade ${esgcet_egg_file}
             [ $? != 0 ] && checked_done 1
         else
-            echo "Not a valid selection..."
+            echo "Not a valid selection... [${choice}] try again"
             continue
         fi
         break
     done
 
-    if((!upgrade)); then
+    if [ "${mode}" = "I" ]; then
         local input=""
         read -p "What is your organization's id? [${esg_root_id}]: " input
         [ ! -z "${input}" ] && esg_root_id=${input}
@@ -1101,7 +1111,7 @@ setup_esgcet() {
     popd >& /dev/null
     echo
     echo
-    if((!upgrade)); then
+    if [ "${mode}" = "I" ]; then
         write_esgcet_env
     fi
     checked_done 0
@@ -1176,7 +1186,7 @@ setup_tomcat() {
     local dosetup
     if [ -x ${tomcat_install_dir}/bin/jsvc ]; then 
         echo "Detected an existing tomcat installation..."
-        read -p "Do you want to continue with tomcat installation and setup? [y/N] " dosetup
+        read -p "Do you want to continue with Tomcat installation and setup? [y/N] " dosetup
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping tomcat installation and setup - will assume tomcat is setup properly"
             return 0
@@ -3233,7 +3243,7 @@ check_version() {
     current_version=$(cat /tmp/f 2>&1 | perl -ne '/(\d+\.+\d*\.*\d*[.-_@+#]*\d*).*/, print "$1 "' | tr -d "\""  | cut -d " " -f1,1)
     (($DEBUG)) && echo "current_version = [$current_version]"
     
-    (($DEBUG)) && echo "calling helper, check_version_helper ${current_version} >= ${target_version}"
+    (($DEBUG)) && echo "Calling helper, check_version_helper ${current_version} >= ${target_version}"
     check_version_helper "${current_version}" ">=" "${target_version}" # note: bug found (needed to quote the operation ">=")
     local ret=$?
     (($DEBUG)) && echo "The return value from the call to helper function check_version_ is $ret"
@@ -3242,6 +3252,26 @@ check_version() {
     printf "\nSorry, the detected version of $1 [${current_version}] is older than required minimum version [$2] \n"
     cat /tmp/f
     rm /tmp/f >& /dev/null
+    return 1
+}
+
+#For python module version checking
+#Looking for __version__ var
+check_module_version() {
+    local module_name=$1
+    local target_version=$2
+    
+    local current_version=$(${cdat_home}/bin/python -c "import ${module_name}; print ${module_name}.__version__" >& /dev/null)
+    [ $? != 0 ] && echo " WARNING:(2) Could not detect version of ${module_name}" && return 2
+    [ -z "${current_version}" ] && echo " WARNING:(1) Could not detect version of ${module_name}" && return 3
+
+    (($DEBUG)) && echo " calling helper, check_version_helper ${current_version} >= ${target_version}"
+    check_version_helper "${current_version}" ">=" "${target_version}" # note: bug found (needed to quote the operation ">=")
+    local ret=$?
+    (($DEBUG)) && echo " The return value from the call to helper function check_version_ is $ret"
+    [ $ret == 0 ] && return 0
+
+    printf "\nSorry, the detected version of $1 [${current_version}] is older than required minimum version [$2] \n"
     return 1
 }
 #--------------------------------------------------------------------------
@@ -3787,7 +3817,7 @@ main() {
                 setup_postgress
 
                 #The arg "1" indicates an upgrade (see functions)
-                setup_esgcet 1
+                setup_esgcet
                 setup_node 1
 
                 start_postgress
