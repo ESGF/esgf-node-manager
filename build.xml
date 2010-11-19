@@ -488,8 +488,8 @@ Builds the project via ant (obviously).
       </manifest>
     </war>
     <delete dir="${dist_dir}/tmplib"/>
+    <delete file="${web_dir}/index.html"/>
   </target>
-
 
   <target name="make_dist" depends="make_war,make_all_jars"
 	  description="(Creates full software distribution)">
