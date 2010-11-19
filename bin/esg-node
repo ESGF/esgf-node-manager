@@ -3532,11 +3532,12 @@ show_svc_list() {
 start() {
     init
     echo "starting services... "
+    local sel=${1:-${DNODE_BIT}}
     start_postgress
     start_tomcat
     (( ! no_globus )) && source ${scripts_dir}/esg-globus >& /dev/null && \
         start_globus_services datanode ${gridftp_config_args} 
-    source ${scripts_dir}/esg-search >& /dev/null && start_search_services
+    [ $((sel & INDEX_BIT)) != 0 ] && source ${scripts_dir}/esg-search >& /dev/null && start_search_services
     show_svc_list
     echo
 }
@@ -3631,7 +3632,7 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         --no-globus   - will not install any globus tools (for those with existing globus setups)
         --gridftp-config - [ with-bdm-config | bdm-config-only ] without this arg uses default end-user config
 
-        --type | -t <node|gway> - Select type of mode: gway or node (node is default)
+        --type | -t <data|index> - Select type of node: \"data node\" or \"index node\" (data is default)
 
         Key Management Flags:
         --register    - connects to desired gateway, fetches and stores their certificate to enable ingress SSL connections
@@ -3647,10 +3648,10 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         (deprecated) --export-keys-to-globus  - exports keystore certificates to globus host{cert,key}.pem files.
 
 
-        start   - start the data node's services
-        stop    - stops the data node's services
-        status  - status on data node's services
-        restart - restarts the data node's services (calls stop then start :-/)
+        start   - start the node's services
+        stop    - stops the node's services
+        status  - status on node's services
+        restart - restarts the node's services (calls stop then start :-/)
             (notice, no \"--\" to make rc friendly also chkconfig-able ;-)
 
         -------------------------------
@@ -3717,8 +3718,8 @@ done_remark() {
 
 INSTALL_BIT=1
 TEST_BIT=2
-NODE_BIT=4
-GWAY_BIT=8
+DNODE_BIT=4
+INDEX_BIT=8
 WRITE_ENV_BIT=16
 
 main() {
@@ -3736,17 +3737,17 @@ main() {
                 (( (sel & TEST_BIT) == 0 )) && ((sel+=TEST_BIT))
                 ;;
             --type | -t)
-                #TODO: look for next arg if node or if gway set the selection bit accordingly
+                #TODO: look for next arg if data node or if index node set the selection bit accordingly
                 #This also means that I can nott use 1 for basic install will have to use 1 for prerequisite
-                #and then another bit for node vs gway
+                #and then another bit for data node vs index node
                 local tvalue
                 shift
                 until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
                     tvalue=$(echo "$1" | tr 'A-Z' 'a-z')
                     #turn on the proper bit when string is detected
                     (($DEBUG)) && echo "node type selected is: $1"
-                    [ "node" = "${tvalue}" ] && (( (sel & NODE_BIT) == 0 )) && ((sel+=NODE_BIT))
-                    [ "gway" = "${tvalue}" ] && (( (sel & GWAY_BIT) == 0 )) && ((sel+=GWAY_BIT))
+                    [ "data"  = "${tvalue}" ] && (( (sel & DNODE_BIT) == 0 )) && ((sel+=DNODE_BIT))
+                    [ "index" = "${tvalue}" ] && (( (sel & INDEX_BIT) == 0 )) && ((sel+=INDEX_BIT))
                     shift
                 done
                 unshift=1
@@ -3780,7 +3781,7 @@ main() {
             -v | --version)
                 echo "Version: $version"
                 echo "Earth Systems Grid Federation (http://esgf.org)"
-                echo "Data Node Installation Script"
+                echo "ESGF Node Installation Script"
                 echo "Lawrence Livermore National Laboratory"
                 echo ""
                 exit 0
@@ -3842,8 +3843,8 @@ main() {
                 (( ! no_globus )) && source ${scripts_dir}/esg-globus >& /dev/null && \
                     start_globus_services datanode ${gridftp_config_args}
 
-                (( (sel & GWAY_BIT ) != 0)) && checked_get ${scripts_dir}/esg-search ${esg_dist_url}/esg-search/esg-search
-                (( (sel & GWAY_BIT ) != 0)) && source ${scripts_dir}/esg-search >& /dev/null && start_search_services
+                (( (sel & INDEX_BIT ) != 0)) && checked_get ${scripts_dir}/esg-search ${esg_dist_url}/esg-search/esg-search
+                (( (sel & INDEX_BIT ) != 0)) && source ${scripts_dir}/esg-search >& /dev/null && start_search_services
 
                 show_svc_list
                 exit 0
@@ -4022,7 +4023,7 @@ main() {
 
     echo
     echo "-----------------------------------"
-    echo "ESG Data Node Installation Program"
+    echo "ESGF Node Installation Program"
     echo "-----------------------------------"
     echo 
 
@@ -4037,8 +4038,8 @@ main() {
     init
 
     (( force_install ))  && echo "(force install is ON)"
-    (( (sel & NODE_BIT ) != 0)) && echo "(node type selected)"
-    (( (sel & GWAY_BIT ) != 0)) && echo "(gway type selected)"
+    (( (sel & DNODE_BIT ) != 0)) && echo  "(data node type selected)"
+    (( (sel & INDEX_BIT ) != 0)) && echo "(index node type selected)"
     #---------------------------------------
     #Installation of basic system components.
     # (Only when one setup in the sequence is okay can we move to the next)
@@ -4048,25 +4049,25 @@ main() {
     [ $((sel & INSTALL_BIT)) != 0 ] && setup_java
     [ $((sel & INSTALL_BIT)) != 0 ] && setup_ant
     [ $((sel & INSTALL_BIT)) != 0 ] && setup_postgress
-    [ $((sel & TEST_BIT))    != 0 ] && test_postgress 
-    [ $((sel & INSTALL_BIT)) != 0 ] && setup_cdat 
-    [ $((sel & INSTALL_BIT)) != 0 ] && setup_esgcet 
-    [ $((sel & TEST_BIT))    != 0 ] && test_esgcet 
+    [ $((sel & TEST_BIT))    != 0 ] && test_postgress
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && setup_cdat
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && setup_esgcet
+    [ $((sel & TEST_BIT))    != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && test_esgcet
     [ $((sel & INSTALL_BIT)) != 0 ] && setup_tomcat ${keystore_password}
     [ $((sel & TEST_BIT))    != 0 ] && test_tomcat
-    [ $((sel & INSTALL_BIT)) != 0 ] && setup_tds 
-    [ $((sel & TEST_BIT))    != 0 ] && test_tds 
-    [ $((sel & (NODE_BIT+INSTALL_BIT)))    != 0 ] && setup_node #(tomcat off)
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && setup_tds 
+    [ $((sel & TEST_BIT))    != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && test_tds 
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && setup_node #(tomcat off)
 
     #---------------------------------------
     #Installation of "plugin" subsystems... & filters
     #---------------------------------------
     #---filters------
-    [ $((sel & INSTALL_BIT)) != 0 ] && echo "security filters subsystem (TOKEN)" && setup_subsystem security-token-filters filters $@
-    [ $((sel & INSTALL_BIT)) != 0 ] && echo "security filters subsystem (SAML/ORP)"  && setup_subsystem security-tokenless-filters filters $@
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && echo "security filters subsystem (TOKEN)" && setup_subsystem security-token-filters filters $@
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && echo "security filters subsystem (SAML/ORP)"  && setup_subsystem security-tokenless-filters filters $@
     #---subsystems--- 
-    [ $((sel & INSTALL_BIT)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
-   #[ $((sel & INSTALL_BIT)) != 0 ] && echo "drslib subsystem"  && setup_subsystem drslib esgf-drslib $@
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
+   #[ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && echo "drslib subsystem"  && setup_subsystem drslib esgf-drslib $@
 
 
     #---------------------------------------
@@ -4080,13 +4081,14 @@ main() {
     #---------------------------------------
     # Gateway type install...
     #---------------------------------------
-    [ $((sel & GWAY_BIT)) != 0 ] && echo "search subsystem" && setup_subsystem search esg-search $@
-    [ $((sel & TEST_BIT)) != 0 ] && echo "test search subsystem" && source ${scripts_dir}/esg-search >& /dev/null && test_search_services
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & INDEX_BIT)) != 0 ] && echo "search subsystem" && setup_subsystem search esg-search $@
+    [ $((sel & TEST_BIT)) != 0 ]    && [ $((sel & INDEX_BIT)) != 0 ] && echo "test search subsystem" && \
+        source ${scripts_dir}/esg-search >& /dev/null && test_search_services
 
     #---------------------------------------
     # Publishing Test...
     #---------------------------------------
-    [ $((sel & TEST_BIT)) != 0 ] && echo "test_publication" && test_publication 
+    [ $((sel & TEST_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && echo "test_publication" && test_publication 
 
 
     #---------------------------------------
@@ -4099,7 +4101,7 @@ main() {
     #---------------------------------------
     #System Launch...
     #---------------------------------------
-    start
+    start sel
     done_remark
     echo 
 }
