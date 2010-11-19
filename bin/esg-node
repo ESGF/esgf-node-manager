@@ -3577,7 +3577,7 @@ start() {
     start_postgress
     start_tomcat
 
-    if [ $((sel & DNODE_BIT)) != 0 ]; then 
+    if [ $((sel & DATA_BIT)) != 0 ]; then 
         (( ! no_globus )) && source ${scripts_dir}/esg-globus >& /dev/null && \
             start_globus_services datanode ${gridftp_config_args} 
     fi
@@ -3767,7 +3767,7 @@ done_remark() {
 
 INSTALL_BIT=1
 TEST_BIT=2
-DNODE_BIT=4
+DATA_BIT=4
 INDEX_BIT=8
 WRITE_ENV_BIT=16
 
@@ -3796,7 +3796,7 @@ main() {
                     tvalue=$(echo "$1" | tr 'A-Z' 'a-z')
                     #turn on the proper bit when string is detected
                     echo "node type selected is: $1"
-                    [ "data"  = "${tvalue}" ] && (( (sel & DNODE_BIT) == 0 )) && ((sel+=DNODE_BIT))
+                    [ "data"  = "${tvalue}" ] && (( (sel & DATA_BIT) == 0 )) && ((sel+=DATA_BIT))
                     [ "index" = "${tvalue}" ] && (( (sel & INDEX_BIT) == 0 )) && ((sel+=INDEX_BIT))
                     shift
                 done
@@ -4088,7 +4088,7 @@ main() {
     init
 
     (( force_install ))  && echo "(force install is ON)"
-    (( (sel & DNODE_BIT ) != 0)) && echo  "(data node type selected)"
+    (( (sel & DATA_BIT ) != 0)) && echo  "(data node type selected)"
     (( (sel & INDEX_BIT ) != 0)) && echo "(index node type selected)"
     #---------------------------------------
     #Installation of basic system components.
@@ -4100,24 +4100,24 @@ main() {
     [ $((sel & INSTALL_BIT)) != 0 ] && setup_ant
     [ $((sel & INSTALL_BIT)) != 0 ] && setup_postgress
     [ $((sel & TEST_BIT))    != 0 ] && test_postgress
-    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && setup_cdat
-    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && setup_esgcet
-    [ $((sel & TEST_BIT))    != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && test_esgcet
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && setup_cdat
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && setup_esgcet
+    [ $((sel & TEST_BIT))    != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && test_esgcet
     [ $((sel & INSTALL_BIT)) != 0 ] && setup_tomcat ${keystore_password}
     [ $((sel & TEST_BIT))    != 0 ] && test_tomcat
-    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && setup_tds 
-    [ $((sel & TEST_BIT))    != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && test_tds 
-    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && setup_node #(tomcat off)
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && setup_tds 
+    [ $((sel & TEST_BIT))    != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && test_tds 
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && setup_node #(tomcat off)
 
     #---------------------------------------
     #Installation of "plugin" subsystems... & filters
     #---------------------------------------
     #---filters------
-    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && echo "security filters subsystem (TOKEN)" && setup_subsystem security-token-filters filters $@
-    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && echo "security filters subsystem (SAML/ORP)"  && setup_subsystem security-tokenless-filters filters $@
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "security filters subsystem (TOKEN)" && setup_subsystem security-token-filters filters $@
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "security filters subsystem (SAML/ORP)"  && setup_subsystem security-tokenless-filters filters $@
     #---subsystems--- 
-    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
-   #[ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && echo "drslib subsystem"  && setup_subsystem drslib esgf-drslib $@
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
+   #[ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "drslib subsystem"  && setup_subsystem drslib esgf-drslib $@
 
 
     #---------------------------------------
@@ -4138,7 +4138,7 @@ main() {
     #---------------------------------------
     # Publishing Test...
     #---------------------------------------
-    [ $((sel & TEST_BIT)) != 0 ] && [ $((sel & DNODE_BIT)) != 0 ] && echo "test_publication" && test_publication 
+    [ $((sel & TEST_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "test_publication" && test_publication 
 
 
     #---------------------------------------
