@@ -2214,23 +2214,33 @@ test_tds() {
 #####
 # Globus Toolkit ->  MyProxy (client) & GridFTP (server)
 #####
-# Takes arg ["with-bdm-config"|"bdm-config-only"] see esg-globus script
+# Takes arg <selection bit vector> ["with-bdm-config"|"bdm-config-only"] see esg-globus script
 setup_globus() {
-    echo -n "Globus Setup for Data-Node... (GridFTP server)"
+    local sel=${1:-0}
+    ((sel ==0)) && echo "test_globus: no selection set, returning (1)" && return 1
+    shift
+    local directive="notype"
+    
+    if [ $((sel & DATA_BIT))  != 0 ]; then
+        echo -n "Globus Setup for Data-Node... (GridFTP server)"
+        directive="datanode"
+    fi
+    
+    if [ $((sel & INDEX_BIT)) != 0 ]; then
+        echo -n "Globus Setup for Index-Node... (MyProxy server)"
+        directive="gateway"
+    fi
+    
     mkdir -p ${workdir}
     [ $? != 0 ] && checked_done 1
     pushd ${workdir} >& /dev/null
-
+    
     pushd ${scripts_dir} >& /dev/null
     local fetch_file=esg-globus
     checked_get ./${fetch_file} ${esg_dist_url}/externals/bootstrap/${fetch_file}
     (( $? > 1 )) && popd && return 1
     chmod 755 ${fetch_file}
     popd >& /dev/null
-
-    local directive="notype"
-    [ $((sel & DATA_BIT))  != 0 ] && directive="datanode"
-    [ $((sel & INDEX_BIT)) != 0 ] && directive="gateway"
 
     source ${scripts_dir}/${fetch_file} && setup_globus_services "${directive}" $@
     local ret=$?
@@ -2247,6 +2257,30 @@ write_globus_env() {
     #echo "export gridftp_config_args=$gridftp_config_args" >> ${envfile}
     dedup ${envfile} && source ${envfile}
     return 0
+}
+
+test_globus() {
+    local sel=${1:-0}
+    ((sel ==0)) && echo "test_globus: no selection set, returning (1)" && return 1
+    local directive="notype"
+    if [ $((sel & DATA_BIT))  != 0 ]; then
+        echo -n "Globus Test for Data-Node... (GridFTP server)"
+        directive="datanode"
+    fi
+    
+    if [ $((sel & INDEX_BIT)) != 0 ]; then
+        echo -n "Globus Test for Index-Node... (MyProxy server)"
+        directive="gateway"
+    fi
+    
+    mkdir -p ${workdir}
+    [ $? != 0 ] && checked_done 1
+    pushd ${workdir} >& /dev/null
+
+    source ${scripts_dir}/esg_globus && test_globus_services "${directive}"
+    local ret=$?
+    popd >& /dev/null
+    checked_done 0
 }
 
 
@@ -4129,9 +4163,8 @@ main() {
     #---------------------------------------
     # Globus Installation...
     #---------------------------------------
-    [ $((sel & INSTALL_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${gridftp_config_args}
-    [ $((sel & TEST_BIT))    != 0 ] && (( ! no_globus )) && echo "test_globus" && source ${scripts_dir}/esg-globus >& /dev/null \
-        && test_globus_services datanode
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT+INDEX_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus $sel ${gridftp_config_args}
+    [ $((sel & TEST_BIT))    != 0 ] && [ $((sel & DATA_BIT+INDEX_BIT)) != 0 ] && (( ! no_globus )) && echo "test_globus" && test_globus $sel
 
 
     #---------------------------------------
