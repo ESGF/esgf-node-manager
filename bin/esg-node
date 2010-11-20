@@ -2216,7 +2216,7 @@ test_tds() {
 #####
 # Takes arg <selection bit vector> ["with-bdm-config"|"bdm-config-only"] see esg-globus script
 setup_globus() {
-    local sel=${1:-0}
+    local sel=${1:-${sel:-0}}
     ((sel ==0)) && echo "test_globus: no selection set, returning (1)" && return 1
     shift
     local directive="notype"
@@ -2260,8 +2260,9 @@ write_globus_env() {
 }
 
 test_globus() {
-    local sel=${1:-0}
+    local sel=${1:-${sel:-0}}
     ((sel ==0)) && echo "test_globus: no selection set, returning (1)" && return 1
+    shift
     local directive="notype"
     if [ $((sel & DATA_BIT))  != 0 ]; then
         echo -n "Globus Test for Data-Node... (GridFTP server)"
@@ -2283,6 +2284,56 @@ test_globus() {
     checked_done 0
 }
 
+start_globus() {
+   local sel=${1:-0}
+    ((sel ==0)) && echo "test_globus: no selection set, returning (1)" && return 1
+    shift
+    local directive="notype"
+    if [ $((sel & DATA_BIT))  != 0 ]; then
+        echo -n "Start Globus Services for Data-Node... (GridFTP server(s))"
+        directive="datanode"
+    fi
+    
+    if [ $((sel & INDEX_BIT)) != 0 ]; then
+        echo -n "Start Globus Services for Index-Node... (MyProxy server)"
+        directive="gateway"
+    fi
+    
+    mkdir -p ${workdir}
+    [ $? != 0 ] && checked_done 1
+    pushd ${workdir} >& /dev/null
+
+    source ${scripts_dir}/esg_globus && start_globus_services "${directive}" $@
+    local ret=$?
+    popd >& /dev/null
+    checked_done 0
+
+}
+
+stop_globus() {
+   local sel=${1:-0}
+    ((sel ==0)) && echo "test_globus: no selection set, returning (1)" && return 1
+    shift
+    local directive="notype"
+    if [ $((sel & DATA_BIT))  != 0 ]; then
+        echo -n "Stop Globus Services for Data-Node... (GridFTP server(s))"
+        directive="datanode"
+    fi
+    
+    if [ $((sel & INDEX_BIT)) != 0 ]; then
+        echo -n "Stop Globus Services for Index-Node... (MyProxy server)"
+        directive="gateway"
+    fi
+    
+    mkdir -p ${workdir}
+    [ $? != 0 ] && checked_done 1
+    pushd ${workdir} >& /dev/null
+
+    source ${scripts_dir}/esg_globus && stop_globus_services "${directive}" $@
+    local ret=$?
+    popd >& /dev/null
+    checked_done 0
+}
 
 #####
 # Test Publication
@@ -3600,6 +3651,7 @@ show_svc_list() {
 
 #Starts the esg node
 start() {
+    local sel=${1:-${sel:-0}}
     init
     (($DEBUG)) && echo "starting services... ($1)"
     if ((sel == 0)); then
@@ -3614,11 +3666,7 @@ start() {
     
     start_postgress
     start_tomcat
-
-    if [ $((sel & DATA_BIT)) != 0 ]; then 
-        (( ! no_globus )) && source ${scripts_dir}/esg-globus >& /dev/null && \
-            start_globus_services datanode ${gridftp_config_args} 
-    fi
+    (( ! no_globus )) && start_globus ${sel} ${gridftp_config_args} 
 
     [ $((sel & INDEX_BIT)) != 0 ] && source ${scripts_dir}/esg-search >& /dev/null && start_search_services
     
@@ -3631,10 +3679,10 @@ start() {
 
 #Stops the esg node
 stop() {
+    local sel=${1:-${sel:-0}}
     init
     source ${scripts_dir}/esg-search >& /dev/null && stop_search_services
-    source ${scripts_dir}/esg-globus >& /dev/null && \
-        stop_globus_services datanode ${gridftp_config_args}
+    stop_globus ${sel} ${gridftp_config_args}
     stop_tomcat 
     stop_postgress 
     show_svc_list
@@ -3844,7 +3892,7 @@ main() {
                 check_prerequisites
                 [ $? != 0 ] && echo && exit 1
                 (($DEBUG)) && echo "START SERVICES (${sel})"
-                start $sel
+                start ${sel}
                 exit 0
                 ;;
             stop | --stop)
@@ -3857,9 +3905,9 @@ main() {
             restart)
                 check_prerequisites
                 [ $? != 0 ] && echo && exit 1
-                stop
+                stop ${sel}
                 sleep 2
-                start
+                start ${sel}
                 exit 0
                 ;;
             --write-env)
