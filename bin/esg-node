@@ -96,7 +96,7 @@ init() {
     cdat_version=${cdat_version:-"eb8b668"}
     esgcet_version=${esgcet_version:-"2.7.3"}
     esgcet_python_version=${esgcet_python_version:-"2.6"}
-    node_version=${node_version:-"1.0.0.4"}
+    node_version=${node_version:-"1.0.4.0"}
     
     #external programs' versions
     curl_version=${curl_version:="7.20.1"}
@@ -154,7 +154,7 @@ init() {
     export X509_CERT_DIR=${X509_CERT_DIR:-${HOME}/.globus/certificates-esg}
     export ESG_ROOT_ID=${esg_root_id}
     
-    myPATH=$CURL_HOME/bin:$GIT_HOME/bin:$JAVA_HOME/bin:$ANT_HOME/bin:$PGHOME/bin:$CDAT_HOME/bin:$CDAT_HOME/Externals/bin:$CATALINA_HOME/bin:$GLOBUS_LOCATION/bin:/bin:/sbin:/usr/bin:${install_prefix}/bin
+    myPATH=${install_prefix}/bin:$CURL_HOME/bin:$GIT_HOME/bin:$JAVA_HOME/bin:$ANT_HOME/bin:$PGHOME/bin:$CDAT_HOME/bin:$CDAT_HOME/Externals/bin:$CATALINA_HOME/bin:$GLOBUS_LOCATION/bin:/bin:/sbin:/usr/bin:/usr/sbin
     myLD_LIBRARY_PATH=$CURL_HOME/lib:$PGHOME/lib:$CDAT_HOME/Externals/lib:$GLOBUS_LOCATION/lib
     export PATH=$myPATH:$PATH
     export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:$LD_LIBRARY_PATH
