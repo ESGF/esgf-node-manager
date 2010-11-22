@@ -90,7 +90,7 @@ init() {
 
     #internal data-node code versions
     cdat_version=${cdat_version:-"eb8b668"}
-    esgcet_version=${esgcet_version:-"2.7.2"}
+    esgcet_version=${esgcet_version:-"2.7.3"}
     esgcet_python_version=${esgcet_python_version:-"2.6"}
     node_version=${node_version:-"1.0.0.4"}
     
@@ -233,6 +233,7 @@ init() {
     #NOTE: java keystore style DN...
     dname=${dname:-"OU=simpleCA-pcmdi3.llnl.gov, OU=GlobusTest, O=Grid"}
 
+    mkdir -p ${scripts_dir}
     mkdir -p ${esg_backup_dir}  && \
         mkdir -p ${esg_tools_dir} && \
         mkdir -p ${esg_log_dir} && \
