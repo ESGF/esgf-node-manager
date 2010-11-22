@@ -237,6 +237,7 @@ init() {
     #NOTE: java keystore style DN...
     dname=${dname:-"OU=simpleCA-pcmdi3.llnl.gov, OU=GlobusTest, O=Grid"}
 
+    mkdir -p ${scripts_dir}
     mkdir -p ${esg_backup_dir}  && \
         mkdir -p ${esg_tools_dir} && \
         mkdir -p ${esg_log_dir} && \
