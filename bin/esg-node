@@ -100,7 +100,7 @@ init() {
     
     #external programs' versions
     curl_version=${curl_version:="7.20.1"}
-    git_version=${git_version:="1.7.1"}
+    git_version=${git_version:="1.7.3"}
     java_version=${java_version:-"1.6.0_20"}
     ant_version=${ant_version:-"1.8.1"}
     postgress_version=${postgress_version:-"8.4.4"}
@@ -297,11 +297,14 @@ setup_curl() {
     echo "Setting up Curl/Libcurl ${curl_version}"
     echo "*******************************"
     echo
-
+    
+    local default="Y"
+    ((force_install)) && default="N"
     local dosetup
     if [ -x ${curl_install_dir}/bin/curl ]; then 
         echo "Detected an existing CURL installation..."
-        read -p "Do you want to continue with CURL installation and setup? [y/N] " dosetup
+        read -p "Do you want to continue with CURL installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
+        [ -z ${dosetup} ] && dosetup=${default}        
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping CURL installation and setup - will assume CURL is setup properly"
             return 0
@@ -398,10 +401,13 @@ setup_git() {
     echo "*******************************"
     echo
 
+    local default="Y"
+    ((force_install)) && default="N"
     local dosetup
     if [ -x ${git_install_dir}/bin/git ]; then 
         echo "Detected an existing GIT installation..."
-        read -p "Do you want to continue with GIT installation and setup? [y/N] " dosetup
+        read -p "Do you want to continue with GIT installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
+        [ -z ${dosetup} ] && dosetup=${default}
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping GIT installation and setup - will assume GIT is setup properly"
             return 0
@@ -500,10 +506,13 @@ setup_java() {
 
     local last_java_truststore_file
 
+    local default="Y"
+    ((force_install)) && default="N"
     local dosetup
     if [ -x ${java_install_dir}/bin/java ]; then 
         echo "Detected an existing java installation..."
-        read -p "Do you want to continue with Java installation and setup? [y/N] " dosetup
+        read -p "Do you want to continue with Java installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
+        [ -z ${dosetup} ] && dosetup=${default}
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping Java installation and setup - will assume Java is setup properly"
             return 0
@@ -611,10 +620,11 @@ setup_ant() {
     echo
 
     local default="Y"
+    ((force_install)) && default="N"
     local dosetup
     if [ -x ${ant_install_dir}/bin/ant ]; then 
         echo "Detected an existing ant installation..."
-        read -p "Do you want to continue with Ant installation and setup? [y/N] " dosetup
+        read -p "Do you want to continue with Ant installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
         [ -z ${dosetup} ] && dosetup=${default}
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping Ant installation and setup - will assume ant is setup properly"
@@ -710,10 +720,11 @@ setup_postgress() {
     echo
 
     local default="Y"
+    ((force_install)) && default="N"
     local dosetup
     if [ -x ${postgress_install_dir}/bin/psql ]; then 
         echo "Detected an existing postgress installation..."
-        read -p "Do you want to continue with Postgres installation and setup? [Y/n] " dosetup
+        read -p "Do you want to continue with Postgres installation and setup? $([ "$default_val" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
         [ -z ${dosetup} ] && dosetup=${default}
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping postgres installation and setup - will assume postgres is setup properly"
@@ -1066,10 +1077,11 @@ setup_esgcet() {
     echo
     
     local default="Y"
+    ((force_install)) && default="N"
     local dosetup
     if [ -e ${HOME}/.esgcet/esg.ini ]; then 
         echo "Detected an existing esgcet installation..."
-        read -p "Do you want to continue with esgcet installation and setup? [Y/n] " dosetup
+        read -p "Do you want to continue with esgcet installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
         [ -z ${dosetup} ] && dosetup=${default}
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping esgcet installation and setup - will assume esgcet is setup properly"
@@ -1198,16 +1210,27 @@ test_esgcet() {
 # arg 1 -> The password for the current keystore
 #####
 setup_tomcat() {
+    echo -n "Checking for esgcet tomcat ${tomcat_version}"
+    check_app_version ${tomcat_install_dir} ${tomcat_version}
+    local ret=$?
+    ((ret == 0)) && (( ! force_install )) && echo " [OK]" && return 0
+
     echo
     echo "*******************************"
     echo "Setting up Apache Tomcat...(v${tomcat_version})"
     echo "*******************************"
     echo 
 
+    local upgrade=${1:-0}
+    local last_install=$(readlink -f ${tomcat_install_dir})
+
+    local default="Y"
+    ((force_install)) && default="N"
     local dosetup
     if [ -x ${tomcat_install_dir}/bin/jsvc ]; then 
         echo "Detected an existing tomcat installation..."
-        read -p "Do you want to continue with Tomcat installation and setup? [y/N] " dosetup
+        read -p "Do you want to continue with Tomcat installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
+        [ -z "${dosetup}" ] && dosetup=${default}
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping tomcat installation and setup - will assume tomcat is setup properly"
             return 0
@@ -1264,6 +1287,29 @@ setup_tomcat() {
         [ $? != 0 ] && \
             echo " ERROR: Could not create sym link ${tomcat_install_dir%/*}/${tomcat_dist_dir} -> ${tomcat_install_dir}" && popd && checked_done 1
     fi
+    
+    #----------------------------------
+    # Upgrade logic...
+    #----------------------------------
+    if ((upgrade)) ; then
+        stop_tomcat
+        echo "Upgrading tomcat installation from $(readlink -f ${last_install} | sed -ne 's/.*-\(.*\)$/\1/p') to $(readlink - f ${tomcat_install_dir} | sed -ne 's/.*-\(.*\)$/\1/p')"
+
+        echo -n "copying webapps... "
+        cp -R ${last_install}/webapps ${tomcat_install_dir}/
+        [ $? == 0 ] && echo "[OK]" || echo "[FAIL]"
+
+        echo -n "copying endorsed jars... "
+        cp -R ${last_install}/endorsed ${tomcat_install_dir}/
+        [ $? == 0 ] && echo "[OK]" || echo "[FAIL]"
+
+        echo -n "copying logs... "
+        cp -R ${last_install}/logs ${tomcat_install_dir}/
+        [ $? == 0 ] && echo "[OK]" || echo "[FAIL]"
+
+        echo "upgrade migration complete"
+    fi
+    #----------------------------------
     
     #If there is no tomcat user on the system create one (double check that usradd does the right thing)
     id $tomcat_user
@@ -1653,10 +1699,11 @@ setup_node() {
     local upgrade=${1:-0}
 
     local default="Y"
+    ((force_install)) && default="N"
     local dosetup
     if [ -d ${node_app_home} ]; then 
         echo "Detected an existing node manager installation..."
-        read -p "Do you want to continue with node manager installation and setup? [Y/n] " dosetup
+        read -p "Do you want to continue with node manager installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
         [ -z "${dosetup}" ] && dosetup=${default}
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping node manager installation and setup - will assume it's setup properly"
@@ -3436,6 +3483,27 @@ check_webapp_version() {
     printf "\nSorry, the detected version of $1 [${current_version}] is older than required minimum version [$2] \n"
     return 1
 }
+
+#0ne-off version checking mechanism for applications where version number is in the name of the directory
+#of the form "app_dir-<version_num>"
+check_app_version() {
+    local app_dir=$1
+    local target_version=$2
+    
+    local current_version=$(readlink -f ${tomcat_install_dir} | sed -ne 's/.*-\(.*\)$/\1/p')
+    [ $? != 0 ] && echo " WARNING:(2) Could not detect version of ${app_dir##*/}" && return 2
+    [ -z "${current_version}" ] && echo " WARNING:(1) Could not detect version of ${app_dir##*/}" && return 3
+
+    (($DEBUG)) && echo " calling helper, check_version_helper ${current_version} >= ${target_version}"
+    check_version_helper "${current_version}" ">=" "${target_version}" # note: bug found (needed to quote the operation ">=")
+    local ret=$?
+    (($DEBUG)) && echo " The return value from the call to helper function check_version_ is $ret"
+    [ $ret == 0 ] && return 0
+
+    printf "\nSorry, the detected version of ${app_dir##*/} [${current_version}] is older than required minimum version [$2] \n"
+    return 1
+}
+
 #--------------------------------------------------------------------------
 
 
@@ -4023,11 +4091,14 @@ main() {
                 setup_ant
                 setup_postgress
                 setup_esgcet
+
+                #The arg "1" indicates an upgrade (see functions)
+                setup_tomcat 1
                 
                 [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${sel} ${gridftp_config_args}
                 [ $((sel & INDEX_BIT)) != 0 ] && setup_subsystem search esg-search 1
 
-                #The arg "1" indicates an upgrade (see functions)
+                #The arg "1" indicates an upgrade (see function)
                 setup_node 1
                 
                 #---
