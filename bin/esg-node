@@ -238,6 +238,8 @@ init() {
     dname=${dname:-"OU=simpleCA-pcmdi3.llnl.gov, OU=GlobusTest, O=Grid"}
 
     mkdir -p ${scripts_dir}
+    [ $? != 0 ] && echo "ERROR: could not create ${scripts_dir}... required for installation" && checked_done 1
+
     mkdir -p ${esg_backup_dir}  && \
         mkdir -p ${esg_tools_dir} && \
         mkdir -p ${esg_log_dir} && \
