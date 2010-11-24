@@ -1302,10 +1302,6 @@ setup_tomcat() {
         cp -R ${last_install}/webapps ${tomcat_install_dir}/
         [ $? == 0 ] && echo "[OK]" || echo "[FAIL]"
 
-        echo -n "copying endorsed jars... "
-        cp -R ${last_install}/endorsed ${tomcat_install_dir}/
-        [ $? == 0 ] && echo "[OK]" || echo "[FAIL]"
-
         echo -n "copying logs... "
         cp -R ${last_install}/logs ${tomcat_install_dir}/
         [ $? == 0 ] && echo "[OK]" || echo "[FAIL]"
@@ -1583,7 +1579,7 @@ start_tomcat() {
 
     echo "Starting Tomcat (jsvc)..."
     pushd $tomcat_install_dir >& /dev/null
-    jsvc_launch_command="JAVA_HOME=$java_install_dir ./bin/jsvc -Djava.endorsed.dirs=./endorsed -Djava.awt.headless=true -Dcatalina.home=${tomcat_install_dir} -pidfile $tomcat_pid_file -cp $(find $(readlink -f `pwd`/bin/) | grep jar | xargs | perl -pe 's/ /:/g') -outfile ./logs/catalina.out -errfile ./logs/catalina.err -user $tomcat_user $tomcat_opts $java_opts -Dsun.security.ssl.allowUnsafeRenegotiation=false org.apache.catalina.startup.Bootstrap"
+    jsvc_launch_command="JAVA_HOME=$java_install_dir ./bin/jsvc -Djava.awt.headless=true -Dcatalina.home=${tomcat_install_dir} -pidfile $tomcat_pid_file -cp $(find $(readlink -f `pwd`/bin/) | grep jar | xargs | perl -pe 's/ /:/g') -outfile ./logs/catalina.out -errfile ./logs/catalina.err -user $tomcat_user $tomcat_opts $java_opts -Dsun.security.ssl.allowUnsafeRenegotiation=false org.apache.catalina.startup.Bootstrap"
     echo "$jsvc_launch_command"
     JAVA_HOME=${java_install_dir} ./bin/jsvc \
         -Djava.endorsed.dirs=./endorsed \
@@ -4318,7 +4314,7 @@ main() {
     [ $((sel & TEST_BIT))    != 0 ] && test_tomcat
     [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && setup_tds 
     [ $((sel & TEST_BIT))    != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && test_tds 
-    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && setup_node #(tomcat off)
+    [ $((sel & INSTALL_BIT)) != 0 ] && setup_node #(tomcat off)
 
     #---------------------------------------
     #Installation of "plugin" subsystems... & filters
