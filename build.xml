@@ -264,6 +264,18 @@ Builds the project via ant (obviously).
     <echo message="--------------------------------"/> 
   </target>
 
+  <target name="publish" depends="init-ivy">
+    <ivy:publish resolver="esgf_library" 
+                 organisation="org.esgf"
+                 module="${module}"
+                 revision="${version_num}"
+                 overwrite="true" publishivy="false" haltonmissing="false">
+      <artifacts pattern="dist/[module].[revision].jar"/>
+      <artifacts pattern="dist/[module]-common.[revision].jar"/>
+      <artifacts pattern="dist/[module]-filters.[revision].jar"/>
+    </ivy:publish>
+  </target>
+
   <target name="dep_report" depends="deps" description="(Generates a report of library dependencies)">
     <mkdir dir="${lib_deps_reports_dir}"/>
     <ivy:report todir="${lib_deps_reports_dir}"/>

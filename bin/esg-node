@@ -2743,7 +2743,7 @@ extract_keystore_dn() {
 
 #(Once you have submitted the CSR and have gotten it back *signed*; now install the keypair)
 #arg 1 -> private key
-#arg 2 -> public cert
+#arg 2 -> public cert (the returned signed CSR)
 #arg 3 -> keystore name
 #arg 4 -> alias
 #arg 5 -> password (The value you want *set* for the keystore and internal private key)
@@ -4088,6 +4088,7 @@ main() {
                 setup_java
                 setup_ant
                 setup_postgress
+                #TODO: no check for cdat yet :-(
                 setup_esgcet
 
                 #The arg "1" indicates an upgrade (see functions)
