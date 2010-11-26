@@ -270,7 +270,7 @@ Builds the project via ant (obviously).
                  module="${module}"
                  revision="${version_num}"
                  overwrite="true" publishivy="false" haltonmissing="false">
-      <artifacts pattern="dist/[artifact].[revision].[ext]"/>
+      <artifacts pattern="dist/[artifact].[revision].jar"/>
     </ivy:publish>
   </target>
 
