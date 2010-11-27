@@ -238,7 +238,7 @@ Builds the project via ant (obviously).
     <property name="ivy_version" value="2.1.0" />
     <taskdef resource="org/apache/ivy/ant/antlib.xml"
              uri="antlib:org.apache.ivy.ant" classpath="${lib_dir}/ivy-${ivy_version}.jar"/>
-    <ivy:settings file="./ivysettings.xml" />
+    <ivy:settings file="./ivysettings.xml"/>
   </target>
   
   <target name="deps" depends="init-ivy" description="(Sets up library dependencies: Ivy)">
@@ -262,6 +262,16 @@ Builds the project via ant (obviously).
     <pathconvert property="_cp" refid="main_classpath" pathsep="${line.separator}"/>
     <echo>${_cp}</echo>
     <echo message="--------------------------------"/> 
+  </target>
+
+  <target name="publish" depends="init-ivy">
+    <ivy:publish resolver="esgf_library" 
+                 organisation="org.esgf"
+                 module="${module}"
+                 revision="${version_num}"
+                 overwrite="true" publishivy="false" haltonmissing="false">
+      <artifacts pattern="dist/[artifact].[revision].jar"/>
+    </ivy:publish>
   </target>
 
   <target name="dep_report" depends="deps" description="(Generates a report of library dependencies)">
@@ -467,10 +477,12 @@ Builds the project via ant (obviously).
     <copy todir="${dist_dir}/tmplib" overwrite="true" flatten="yes">
       <fileset dir="${lib_dir}" includes="**/*.jar" excludes="servlet-api*.jar,**/junit*.jar,**/*sources.jar,**/*javadoc.jar"/>
     </copy>
-    
+
+    <copy file="${web_dir}/index.tmpl.html" tofile="${web_dir}/index.html" filtering="true"/>
+
     <delete file="${dist_dir}/${module}.war"/>
     <war destfile="${dist_dir}/${module}.war" webxml="${conf_dir}/${module}-web.xml">
-      <fileset dir="${web_dir}" excludes="WEB-INF/**/web.xml/**,**semantic.cache**"/>
+      <fileset dir="${web_dir}" excludes="WEB-INF/**/web.xml/**,**semantic.cache**,index.tmpl.html"/>
       <lib dir="${dist_dir}/tmplib">
 	<include name="**/*.jar"/>
 	<exclude name="**/*-test*.jar,**/*-common*.jar"/>
@@ -486,8 +498,8 @@ Builds the project via ant (obviously).
       </manifest>
     </war>
     <delete dir="${dist_dir}/tmplib"/>
+    <delete file="${web_dir}/index.html"/>
   </target>
-
 
   <target name="make_dist" depends="make_war,make_all_jars"
 	  description="(Creates full software distribution)">

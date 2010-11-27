@@ -71,6 +71,7 @@
 #      groupadd is RedHat/CentOS dependent :-(
 
 DEBUG=${DEBUG:-0}
+VERBOSE=${VERBOSE:-0}
 progname=esg-node
 version="1.0.4.0"
 envfile="/etc/esg.env"
@@ -82,23 +83,24 @@ t=${0%.*}
 logfile=${logfile:-"/var/tmp/${t##*/}.out"}
 install_prefix=${install_prefix:-"/usr/local"}
 esg_root_dir=${esg_root_dir:-"/esg"}
+esg_config_type_file=${esg_root_dir}/config/config_type
 workdir=${workdir:-~/workbench/esg}
 install_logfile=${install_logfile:-"/etc/esg.install_log"}
 #--------------
 
 
 init() {
-    [ -e "${envfile}" ] && source ${envfile} && printf "sourcing environment from: ${envfile} \n\n"
+    [ -e "${envfile}" ] && source ${envfile} && ((VERBOSE)) && printf "sourcing environment from: ${envfile} \n"
 
     #internal data-node code versions
     cdat_version=${cdat_version:-"eb8b668"}
     esgcet_version=${esgcet_version:-"2.7.3"}
     esgcet_python_version=${esgcet_python_version:-"2.6"}
-    node_version=${node_version:-"1.0.0.4"}
+    node_version=${node_version:-"1.0.4.0"}
     
     #external programs' versions
     curl_version=${curl_version:="7.20.1"}
-    git_version=${git_version:="1.7.1"}
+    git_version=${git_version:="1.7.3"}
     java_version=${java_version:-"1.6.0_20"}
     ant_version=${ant_version:-"1.8.1"}
     postgress_version=${postgress_version:-"8.4.5"}
@@ -114,7 +116,7 @@ init() {
     postgress_host=${PGHOST:-localhost}
     postgress_port=${PGPORT:-5432}
     cdat_home=${CDAT_HOME:-${install_prefix}/cdat}
-    java_opts=${JAVA_OPTS:-"-Xmx2048m -Xms1024m -XX:MaxPermSize=128m"}
+    java_opts=${JAVA_OPTS:-"-Xmx2048m -Xms1024m"}
     java_install_dir=${JAVA_HOME:-${install_prefix}/java}
     ant_install_dir=${ANT_HOME:-${install_prefix}/ant}
     tomcat_install_dir=${CATALINA_HOME:-${install_prefix}/tomcat}
@@ -152,7 +154,7 @@ init() {
     export X509_CERT_DIR=${X509_CERT_DIR:-${HOME}/.globus/certificates-esg}
     export ESG_ROOT_ID=${esg_root_id}
     
-    myPATH=$CURL_HOME/bin:$GIT_HOME/bin:$JAVA_HOME/bin:$ANT_HOME/bin:$PGHOME/bin:$CDAT_HOME/bin:$CDAT_HOME/Externals/bin:$CATALINA_HOME/bin:$GLOBUS_LOCATION/bin:/bin:/sbin:/usr/bin
+    myPATH=${install_prefix}/bin:$CURL_HOME/bin:$GIT_HOME/bin:$JAVA_HOME/bin:$ANT_HOME/bin:$PGHOME/bin:$CDAT_HOME/bin:$CDAT_HOME/Externals/bin:$CATALINA_HOME/bin:$GLOBUS_LOCATION/bin:/bin:/sbin:/usr/bin:/usr/sbin
     myLD_LIBRARY_PATH=$CURL_HOME/lib:$PGHOME/lib:$CDAT_HOME/Externals/lib:$GLOBUS_LOCATION/lib
     export PATH=$myPATH:$PATH
     export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:$LD_LIBRARY_PATH
@@ -174,7 +176,7 @@ init() {
     [ $? != 0 ] || [ -z "$installer_gid" ] && echo "installer_gid is not set" && exit 1
     installer_home=${HOME}
 
-    echo "${installer_uid}:${installer_gid}:${installer_home}"
+    ((VERBOSE)) && echo "${installer_uid}:${installer_gid}:${installer_home}"
 
     #--------------
     #Script vars (internal)
@@ -236,6 +238,8 @@ init() {
     dname=${dname:-"OU=simpleCA-pcmdi3.llnl.gov, OU=GlobusTest, O=Grid"}
 
     mkdir -p ${scripts_dir}
+    [ $? != 0 ] && echo "ERROR: could not create ${scripts_dir}... required for installation" && checked_done 1
+
     mkdir -p ${esg_backup_dir}  && \
         mkdir -p ${esg_tools_dir} && \
         mkdir -p ${esg_log_dir} && \
@@ -249,7 +253,6 @@ write_paths() {
     ((show_summary_latch++))
     echo "export PATH=$myPATH:\$PATH" >> ${envfile}
     echo "export LD_LIBRARY_PATH=$myLD_LIBRARY_PATH:\$LD_LIBRARY_PATH" >> ${envfile}
-    #echo "export ESG_INSTALL_LOGFILE=${install_logfile}" >> ${envfile}
     echo "export ESG_USER_HOME=${installer_home}" >> ${envfile}
     dedup ${envfile} && source ${envfile}
 }
@@ -257,7 +260,7 @@ write_paths() {
 #checking for what we expect to be on the system a-priori
 #that we are not going to install or be responsible for
 check_prerequisites() {
-    printf "Checking that you are root@${my_ip_address}... " 
+    printf "Checking that you have root privs on $(hostname)... " 
     id | grep root >& /dev/null
     [ $? != 0 ] && printf "[FAIL] \n\tMust run this program with root's effective UID\n\n" && return 1
     echo "[OK]"
@@ -297,11 +300,14 @@ setup_curl() {
     echo "Setting up Curl/Libcurl ${curl_version}"
     echo "*******************************"
     echo
-
+    
+    local default="Y"
+    ((force_install)) && default="N"
     local dosetup
     if [ -x ${curl_install_dir}/bin/curl ]; then 
         echo "Detected an existing CURL installation..."
-        read -p "Do you want to continue with CURL installation and setup? [y/N] " dosetup
+        read -p "Do you want to continue with CURL installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
+        [ -z ${dosetup} ] && dosetup=${default}        
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping CURL installation and setup - will assume CURL is setup properly"
             return 0
@@ -398,10 +404,13 @@ setup_git() {
     echo "*******************************"
     echo
 
+    local default="Y"
+    ((force_install)) && default="N"
     local dosetup
     if [ -x ${git_install_dir}/bin/git ]; then 
         echo "Detected an existing GIT installation..."
-        read -p "Do you want to continue with GIT installation and setup? [y/N] " dosetup
+        read -p "Do you want to continue with GIT installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
+        [ -z ${dosetup} ] && dosetup=${default}
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping GIT installation and setup - will assume GIT is setup properly"
             return 0
@@ -500,10 +509,13 @@ setup_java() {
 
     local last_java_truststore_file
 
+    local default="Y"
+    ((force_install)) && default="N"
     local dosetup
     if [ -x ${java_install_dir}/bin/java ]; then 
         echo "Detected an existing java installation..."
-        read -p "Do you want to continue with Java installation and setup? [y/N] " dosetup
+        read -p "Do you want to continue with Java installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
+        [ -z ${dosetup} ] && dosetup=${default}
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping Java installation and setup - will assume Java is setup properly"
             return 0
@@ -610,10 +622,13 @@ setup_ant() {
     echo "*******************************"
     echo
 
+    local default="Y"
+    ((force_install)) && default="N"
     local dosetup
     if [ -x ${ant_install_dir}/bin/ant ]; then 
         echo "Detected an existing ant installation..."
-        read -p "Do you want to continue with Ant installation and setup? [y/N] " dosetup
+        read -p "Do you want to continue with Ant installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
+        [ -z ${dosetup} ] && dosetup=${default}
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping Ant installation and setup - will assume ant is setup properly"
             return 0
@@ -707,10 +722,13 @@ setup_postgress() {
     echo "*******************************"
     echo
 
+    local default="Y"
+    ((force_install)) && default="N"
     local dosetup
     if [ -x ${postgress_install_dir}/bin/psql ]; then 
         echo "Detected an existing postgress installation..."
-        read -p "Do you want to continue with Postgres installation and setup? [y/N] " dosetup
+        read -p "Do you want to continue with Postgres installation and setup? $([ "$default_val" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
+        [ -z ${dosetup} ] && dosetup=${default}
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping postgres installation and setup - will assume postgres is setup properly"
             return 0
@@ -1061,10 +1079,13 @@ setup_esgcet() {
     echo "*******************************"
     echo
     
+    local default="Y"
+    ((force_install)) && default="N"
     local dosetup
     if [ -e ${HOME}/.esgcet/esg.ini ]; then 
         echo "Detected an existing esgcet installation..."
-        read -p "Do you want to continue with esgcet installation and setup? [y/N] " dosetup
+        read -p "Do you want to continue with esgcet installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
+        [ -z ${dosetup} ] && dosetup=${default}
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping esgcet installation and setup - will assume esgcet is setup properly"
             return 0
@@ -1192,16 +1213,27 @@ test_esgcet() {
 # arg 1 -> The password for the current keystore
 #####
 setup_tomcat() {
+    echo -n "Checking for esgcet tomcat ${tomcat_version}"
+    check_app_version ${tomcat_install_dir} ${tomcat_version}
+    local ret=$?
+    ((ret == 0)) && (( ! force_install )) && echo " [OK]" && return 0
+
     echo
     echo "*******************************"
     echo "Setting up Apache Tomcat...(v${tomcat_version})"
     echo "*******************************"
     echo 
 
+    local upgrade=${1:-0}
+    local last_install=$(readlink -f ${tomcat_install_dir})
+
+    local default="Y"
+    ((force_install)) && default="N"
     local dosetup
     if [ -x ${tomcat_install_dir}/bin/jsvc ]; then 
         echo "Detected an existing tomcat installation..."
-        read -p "Do you want to continue with Tomcat installation and setup? [y/N] " dosetup
+        read -p "Do you want to continue with Tomcat installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
+        [ -z "${dosetup}" ] && dosetup=${default}
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping tomcat installation and setup - will assume tomcat is setup properly"
             return 0
@@ -1258,6 +1290,25 @@ setup_tomcat() {
         [ $? != 0 ] && \
             echo " ERROR: Could not create sym link ${tomcat_install_dir%/*}/${tomcat_dist_dir} -> ${tomcat_install_dir}" && popd && checked_done 1
     fi
+    
+    #----------------------------------
+    # Upgrade logic...
+    #----------------------------------
+    if ((upgrade)) ; then
+        stop_tomcat
+        echo "Upgrading tomcat installation from $(readlink -f ${last_install} | sed -ne 's/.*-\(.*\)$/\1/p') to $(readlink - f ${tomcat_install_dir} | sed -ne 's/.*-\(.*\)$/\1/p')"
+
+        echo -n "copying webapps... "
+        cp -R ${last_install}/webapps ${tomcat_install_dir}/
+        [ $? == 0 ] && echo "[OK]" || echo "[FAIL]"
+
+        echo -n "copying logs... "
+        cp -R ${last_install}/logs ${tomcat_install_dir}/
+        [ $? == 0 ] && echo "[OK]" || echo "[FAIL]"
+
+        echo "upgrade migration complete"
+    fi
+    #----------------------------------
     
     #If there is no tomcat user on the system create one (double check that usradd does the right thing)
     id $tomcat_user
@@ -1528,10 +1579,9 @@ start_tomcat() {
 
     echo "Starting Tomcat (jsvc)..."
     pushd $tomcat_install_dir >& /dev/null
-    jsvc_launch_command="JAVA_HOME=$java_install_dir ./bin/jsvc -Djava.endorsed.dirs=./endorsed -Djava.awt.headless=true -Dcatalina.home=${tomcat_install_dir} -pidfile $tomcat_pid_file -cp $(find $(readlink -f `pwd`/bin/) | grep jar | xargs | perl -pe 's/ /:/g') -outfile ./logs/catalina.out -errfile ./logs/catalina.err -user $tomcat_user $tomcat_opts $java_opts -Dsun.security.ssl.allowUnsafeRenegotiation=false org.apache.catalina.startup.Bootstrap"
+    jsvc_launch_command="JAVA_HOME=$java_install_dir ./bin/jsvc -Djava.awt.headless=true -Dcatalina.home=${tomcat_install_dir} -pidfile $tomcat_pid_file -cp $(find $(readlink -f `pwd`/bin/) | grep jar | xargs | perl -pe 's/ /:/g') -outfile ./logs/catalina.out -errfile ./logs/catalina.err -user $tomcat_user $tomcat_opts $java_opts -Dsun.security.ssl.allowUnsafeRenegotiation=false org.apache.catalina.startup.Bootstrap"
     echo "$jsvc_launch_command"
     JAVA_HOME=${java_install_dir} ./bin/jsvc \
-        -Djava.endorsed.dirs=./endorsed \
         -Djava.awt.headless=true \
         -Dcatalina.home=${tomcat_install_dir} \
         -pidfile ${tomcat_pid_file} \
@@ -1550,24 +1600,8 @@ start_tomcat() {
     fi
     
     #Don't wait forever, but give tomcat some time before it starts
-    local wait_time=5
-    while [[ $wait_time > 0 ]]; do
-        check_tomcat_process && break
-        sleep 1
-        $((wait_time--))
-    done
-
-    #check last time
-    if check_tomcat_process; then
-        echo "[OK]"
-        ps -elf | grep jsvc  | grep -v grep
-        date
-        popd >$ /dev/null
-        checked_done 0
-    else 
-        echo "Tomcat couldn't be started."
-        checked_done 1
-    fi
+    pcheck 5 2 1 -- check_tomcat_process
+    [ $? != 0 ] && echo "Tomcat couldn't be started."
 
 }
 
@@ -1649,6 +1683,11 @@ test_tomcat() {
 # In update mode it will always pull down latest after archiving old
 #
 setup_node() {
+    echo -n "Checking for node manager ${node_version}"
+    check_webapp_version "esg-node" ${node_version}
+    local ret=$?
+    ((ret == 0)) && (( ! force_install )) && echo " [OK]" && return 0
+
     echo
     echo "*******************************"
     echo "Setting up The ESG Node Manager..."
@@ -1657,17 +1696,21 @@ setup_node() {
 
     local upgrade=${1:-0}
 
+    local default="Y"
+    ((force_install)) && default="N"
     local dosetup
     if [ -d ${node_app_home} ]; then 
         echo "Detected an existing node manager installation..."
-        read -p "Do you want to continue with node manager installation and setup? [y/N] " dosetup
+        read -p "Do you want to continue with node manager installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
+        [ -z "${dosetup}" ] && dosetup=${default}
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping node manager installation and setup - will assume it's setup properly"
             return 0
         fi
         
-        local dobackup="N"
-        read -p "Do you want to make a back up of the existing distribution?? [y/N] " dobackup
+        local dobackup="Y"
+        read -p "Do you want to make a back up of the existing distribution?? [Y/n] " dobackup
+        [ -z "${dobackup}" ] && dobackup=${default}
         if [ "${dobackup}" = "Y" ] || [ "${dobackup}" = "y" ]; then
             echo "Creating a backup archive of this web application $node_app_home"
             backup ${node_app_home}
@@ -1693,13 +1736,7 @@ setup_node() {
     if((upgrade)); then
         ((no_new_update == 1)) && echo "nothing more to do, you are up2date" && return 1
         echo "Upgrading the ESG Node Manager..."
-        if [ -e ${node_dist_dir} ]; then
-            local archive=${node_dist_dir}.arch.$(date ${date_format}).tgz
-            echo "...archiving... ${node_dist_dir} -> ${archive} ${node_dist_dir}"
-            tar czf ${archive} ${node_dist_dir}
-            echo "...removing... ${node_dist_dir}"
-            rm -rf ${node_dist_dir}
-        fi
+        rm -rf ${node_dist_dir}
     fi
     
     echo "unpacking ${node_dist_file}..."
@@ -2201,37 +2238,166 @@ test_tds() {
 #####
 # Globus Toolkit ->  MyProxy (client) & GridFTP (server)
 #####
-# Takes arg ["with-bdm-config"|"bdm-config-only"] see esg-globus script
+# Takes arg <selection bit vector> for data-node configuration: ["with-bdm-config"|"bdm-config-only"] see esg-globus script
 setup_globus() {
-    echo -n "Globus Setup for Data-Node... (GridFTP server)"
+    local sel=${1:-${sel:-0}}
+    read_sel
+    ((sel ==0)) && echo "setup_globus: no selection set, returning (1)" && return 1
+    shift
+    
     mkdir -p ${workdir}
     [ $? != 0 ] && checked_done 1
     pushd ${workdir} >& /dev/null
-
+    
     pushd ${scripts_dir} >& /dev/null
     local fetch_file=esg-globus
     checked_get ./${fetch_file} ${esg_dist_url}/externals/bootstrap/${fetch_file}
     (( $? > 1 )) && popd && return 1
     chmod 755 ${fetch_file}
     popd >& /dev/null
+    
+    local directive="notype"
+    local ret=1
+    
+    if [ $((sel & DATA_BIT))  != 0 ]; then
+        echo -n "Globus Setup for Data-Node... (GridFTP server) "
+        directive="datanode"
+        pushd ${workdir} >& /dev/null
+        source ${scripts_dir}/${fetch_file} && setup_globus_services "${directive}" $@
+        ret=$?
+        popd >& /dev/null
+        [ ${ret} = 0 ] && write_globus_env || checked_done 1
+        touch ${globus_location}/esg_${progname}_installed
+    fi
 
-    source ${scripts_dir}/${fetch_file} && setup_globus_services datanode $@
-    local ret=$?
-    popd >& /dev/null
-    [ ${ret} = 0 ] && write_globus_env || checked_done 1
-    touch ${globus_location}/esg_${progname}_installed
-    checked_done 0
+    ((ret)) && checked_done $ret
+
+    if [ $((sel & IDP_BIT)) != 0 ]; then
+        echo -n "Globus Setup for Index-Node... (MyProxy server) "
+        directive="gateway"
+        pushd ${workdir} >& /dev/null
+        source ${scripts_dir}/${fetch_file} && setup_globus_services "${directive}" $@
+        local ret=$?
+        popd >& /dev/null
+        [ ${ret} = 0 ] && write_globus_env || checked_done 1
+        touch ${globus_location}/esg_${progname}_installed
+    fi
+    checked_done $ret
 }
 
 write_globus_env() {
     ((show_summary_latch++))
     echo "export GLOBUS_LOCATION=$GLOBUS_LOCATION" >> ${envfile}
     echo "export X509_CERT_DIR=$X509_CERT_DIR" >>  ${envfile}
-    #echo "export gridftp_config_args=$gridftp_config_args" >> ${envfile}
+    echo "export gridftp_config_args=$gridftp_config_args" >> ${envfile}
     dedup ${envfile} && source ${envfile}
     return 0
 }
 
+test_globus() {
+    local sel=${1:-${sel:-0}}
+    ((sel ==0)) && echo "test_globus: no selection set, returning (1)" && return 1
+    shift
+
+    local ret=1
+
+    local directive="notype"
+    if [ $((sel & DATA_BIT))  != 0 ]; then
+        echo "Testinging Globus Services for Data-Node... (GridFTP server(s)) : [$@]"
+        directive="datanode"
+        mkdir -p ${workdir}
+        [ $? != 0 ] && checked_done 1
+        pushd ${workdir} >& /dev/null
+        source ${scripts_dir}/esg-globus && test_globus_services "${directive}" $@
+        ret=$?
+        popd >& /dev/null
+    fi
+
+    ((ret)) && checked_done $ret
+    
+    if [ $((sel & IDP_BIT)) != 0 ]; then
+        echo "Testing Globus Services for Index-Node... (MyProxy server)"
+        directive="gateway"
+        mkdir -p ${workdir}
+        [ $? != 0 ] && checked_done 1
+        pushd ${workdir} >& /dev/null
+        source ${scripts_dir}/esg-globus && test_globus_services "${directive}" $@
+        ret=$?
+        popd >& /dev/null
+    fi
+    checked_done $ret
+}
+
+# Starts the globus services by delegating out to esg-globus script
+# arg1 selection bit vector ($sel)
+# args* (in the context of data node ->  ["with-bdm-config"|"bdm-config-only"])
+start_globus() {
+    local sel=${1:-${sel:-0}}
+    ((sel ==0)) && echo "start_globus: no selection set, returning (1)" && return 1
+    shift
+
+    local ret=1
+
+    local directive="notype"
+    if [ $((sel & DATA_BIT))  != 0 ]; then
+        echo "Starting Globus Services for Data-Node... (GridFTP server(s)) : [$@]"
+        directive="datanode"
+        mkdir -p ${workdir}
+        [ $? != 0 ] && checked_done 1
+        pushd ${workdir} >& /dev/null
+        source ${scripts_dir}/esg-globus && start_globus_services "${directive}" $@
+        ret=$?
+        popd >& /dev/null
+    fi
+
+    ((ret)) && checked_done $ret
+    
+    if [ $((sel & IDP_BIT)) != 0 ]; then
+        echo "Starting Globus Services for Index-Node... (MyProxy server)"
+        directive="gateway"
+        mkdir -p ${workdir}
+        [ $? != 0 ] && checked_done 1
+        pushd ${workdir} >& /dev/null
+        source ${scripts_dir}/esg-globus && start_globus_services "${directive}" $@
+        ret=$?
+        popd >& /dev/null
+    fi
+    checked_done $ret
+}
+
+# Stops the globus services by delegating out to esg-globus script
+# arg1 selection bit vector ($sel)
+stop_globus() {
+   local sel=${1:-0}
+    ((sel ==0)) && echo "stop_globus: no selection set, returning (1)" && return 1
+    shift
+    
+    local ret=1
+
+    local directive="notype"
+    if [ $((sel & DATA_BIT))  != 0 ]; then
+        echo -n "Stopping Globus Services for Data-Node... (GridFTP) "
+        directive="datanode"
+        mkdir -p ${workdir}
+        [ $? != 0 ] && checked_done 1
+        pushd ${workdir} >& /dev/null
+        source ${scripts_dir}/esg-globus && stop_globus_services "${directive}" $@
+        ret=$?
+        popd >& /dev/null
+    fi
+    
+    if [ $((sel & IDP_BIT)) != 0 ]; then
+        echo "Stopping Globus Services for Index-Node... (MyProxy server)"
+        directive="gateway"
+        mkdir -p ${workdir}
+        [ $? != 0 ] && checked_done 1
+        pushd ${workdir} >& /dev/null
+        source ${scripts_dir}/esg-globus && stop_globus_services "${directive}" $@
+        ret=$?
+        popd >& /dev/null
+    fi
+
+}
 
 #####
 # Test Publication
@@ -2577,7 +2743,7 @@ extract_keystore_dn() {
 
 #(Once you have submitted the CSR and have gotten it back *signed*; now install the keypair)
 #arg 1 -> private key
-#arg 2 -> public cert
+#arg 2 -> public cert (the returned signed CSR)
 #arg 3 -> keystore name
 #arg 4 -> alias
 #arg 5 -> password (The value you want *set* for the keystore and internal private key)
@@ -2760,7 +2926,7 @@ install_signed_certificate() {
     [ -e ${keystore_file} ] && echo "(making backup copy of keystore)" && cp -v ${keystore_file} ${keystore_file}.bak
 
     #--------------
-    keytool -v -list -keystore /usr/local/tomcat/conf/keystore-tomcat -storepass changeit | egrep -i '^Alias[ ]+name:[ ]+root$'
+    keytool -v -list -keystore ${tomcat_install_dir}/conf/keystore-tomcat -storepass changeit | egrep -i '^Alias[ ]+name:[ ]+root$'
     if [ $? == 0 ]; then
         keytool -delete -alias root -keystore ${keystore_file} -storepass ${store_password}
         [ $? != 0 ] && echo " ERROR: problem deleting root key from keystore!" && return 1
@@ -3116,6 +3282,10 @@ set_classpath() {
     return 0;
 }
 
+#-------------------------------
+# Process checking utility functions
+#-------------------------------
+
 #This function "succeeds" (is true; returns 0)  if there *are* running processes found running
 check_postgress_process() {
     local val=$(ps -elf | grep postgres | grep -v grep | awk ' END { print NR }')
@@ -3145,8 +3315,12 @@ check_tomcat_process() {
     fi
 }
 
+#-------------------------------
+# Version Checking Utility Functions
+#-------------------------------
+
 #--------------------------------------------------------------------------
-# Donated code from Estanislao (thanks!)
+# Donated function from Estanislao (thanks!)
 # To do a bit more robust version checking... See the "check_version" function 
 #-----
 compare_versions_() {
@@ -3276,7 +3450,7 @@ check_module_version() {
     local module_name=$1
     local target_version=$2
     
-    local current_version=$(${cdat_home}/bin/python -c "import ${module_name}; print ${module_name}.__version__" >& /dev/null)
+    local current_version=$(${cdat_home}/bin/python -c "import ${module_name}; print ${module_name}.__version__" 2> /dev/null)
     [ $? != 0 ] && echo " WARNING:(2) Could not detect version of ${module_name}" && return 2
     [ -z "${current_version}" ] && echo " WARNING:(1) Could not detect version of ${module_name}" && return 3
 
@@ -3289,6 +3463,45 @@ check_module_version() {
     printf "\nSorry, the detected version of $1 [${current_version}] is older than required minimum version [$2] \n"
     return 1
 }
+
+check_webapp_version() {
+    local webapp_name=$1
+    local target_version=$2
+    
+    local current_version=$(sed -n '/^Version:[ ]*\(.*\)/p' ${tomcat_install_dir}/webapps/${webapp_name}/META-INF/MANIFEST.MF | awk '{print $2}' | xargs)
+    [ $? != 0 ] && echo " WARNING:(2) Could not detect version of ${webapp_name}" && return 2
+    [ -z "${current_version}" ] && echo " WARNING:(1) Could not detect version of ${webapp_name}" && return 3
+
+    (($DEBUG)) && echo " calling helper, check_version_helper ${current_version} >= ${target_version}"
+    check_version_helper "${current_version}" ">=" "${target_version}" # note: bug found (needed to quote the operation ">=")
+    local ret=$?
+    (($DEBUG)) && echo " The return value from the call to helper function check_version_ is $ret"
+    [ $ret == 0 ] && return 0
+
+    printf "\nSorry, the detected version of $1 [${current_version}] is older than required minimum version [$2] \n"
+    return 1
+}
+
+#0ne-off version checking mechanism for applications where version number is in the name of the directory
+#of the form "app_dir-<version_num>"
+check_app_version() {
+    local app_dir=$1
+    local target_version=$2
+    
+    local current_version=$(readlink -f ${tomcat_install_dir} | sed -ne 's/.*-\(.*\)$/\1/p')
+    [ $? != 0 ] && echo " WARNING:(2) Could not detect version of ${app_dir##*/}" && return 2
+    [ -z "${current_version}" ] && echo " WARNING:(1) Could not detect version of ${app_dir##*/}" && return 3
+
+    (($DEBUG)) && echo " calling helper, check_version_helper ${current_version} >= ${target_version}"
+    check_version_helper "${current_version}" ">=" "${target_version}" # note: bug found (needed to quote the operation ">=")
+    local ret=$?
+    (($DEBUG)) && echo " The return value from the call to helper function check_version_ is $ret"
+    [ $ret == 0 ] && return 0
+
+    printf "\nSorry, the detected version of ${app_dir##*/} [${current_version}] is older than required minimum version [$2] \n"
+    return 1
+}
+
 #--------------------------------------------------------------------------
 
 
@@ -3377,6 +3590,7 @@ checked_get() {
 #arg1 - a filesystem path
 backup() {
     [ -z "$1" ] && echo "backup - source must be provided as arg1" && return 1
+    [ -d "$1" ] && echo "backup - must take a directory! $1 not a directory" && return 1
     local source="$(readlink -f $1)"
     echo "Backup - Creating a backup archive of ${source}"
     pushd ${source%/*} >& /dev/null
@@ -3500,20 +3714,18 @@ self_verify() {
     return 0
 }
 
-#Displays the status of the node...
-status() {
-    #TODO conditionally reflect the status of globus (gridftp) process
-    local ret=1
-    if check_postgress_process && check_tomcat_process; then
-        echo "Node Running..."
-        ret=0
-    else
-        echo "Stopped: No running processes detected"
-        ret=1
+#Helper method for reading the last state of node type config from config dir file "config_type"
+#Every successful, explicit call to --type|-t gets recorded in the "config_type" file
+#If the configuration type is not explicity set the value is read from this file.
+read_sel() {
+    if ((sel == 0)); then
+        local last_config_type=$(cat ${esg_config_type_file} 2> /dev/null)
+        (($DEBUG)) && echo "(last_config_type = ${last_config_type})"
+        sel=${last_config_type:-0}
+        ((sel == 0)) && \
+            printf "ERROR: No node type selected nor available! \n Consult usage with --help flag... look for the \"--type\" flag \n(must come BEFORE \"[start|stop|restart|--update]\" args)\n\n" && exit 1
     fi
-    #This is here for sanity checking...
-    show_svc_list
-    return ${ret}
+    ((VERBOSE)) && echo ${sel}
 }
 
 show_svc_list() {
@@ -3529,29 +3741,65 @@ show_svc_list() {
     return 0
 }
 
+#-------------------------------
+# ESG Node Life Cycle Functions (start/stop/status)
+#-------------------------------
+
 #Starts the esg node
 start() {
+    local sel=${1:-${sel:-0}}
     init
-    echo "starting services... "
+    (($DEBUG)) && echo "starting services... ($1)"
+    read_sel
+
+    echo "starting services... ($sel)"
+    
     start_postgress
     start_tomcat
-    (( ! no_globus )) && source ${scripts_dir}/esg-globus >& /dev/null && \
-        start_globus_services datanode ${gridftp_config_args} 
-    source ${scripts_dir}/esg-search >& /dev/null && start_search_services
+
+    (( ! no_globus )) && start_globus ${sel} ${gridftp_config_args}
+    [ $((sel & INDEX_BIT)) != 0 ] && source ${scripts_dir}/esg-search >& /dev/null && start_search_services
+
+    sleep 3
     show_svc_list
+
+    echo "${sel}" > ${esg_config_type_file}
+    ((DEBUG)) && cat ${esg_config_type_file}
     echo
 }
 
 #Stops the esg node
 stop() {
+    local sel=${1:-${sel:-0}}
     init
+    read_sel
     source ${scripts_dir}/esg-search >& /dev/null && stop_search_services
-    source ${scripts_dir}/esg-globus >& /dev/null && \
-        stop_globus_services datanode ${gridftp_config_args}
+    stop_globus ${sel} ${gridftp_config_args}
     stop_tomcat 
     stop_postgress 
     show_svc_list
 }
+
+#Displays the status of the node...
+status() {
+    #TODO conditionally reflect the status of globus (gridftp) process
+    init
+    read_sel
+    local ret=1
+    if check_postgress_process && check_tomcat_process; then
+        echo
+        echo "Node Running... (${sel})"
+        ret=0
+    else
+        echo
+        echo "Stopped: No running processes detected"
+        ret=1
+    fi
+    #This is here for sanity checking...
+    show_svc_list
+    return ${ret}
+}
+
 
 ############################################
 # Main
@@ -3615,7 +3863,7 @@ usage() {
 usage:
 (as root)
 ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
-    --prefix      - specify the top level directory for this entire installation
+        --prefix      - specify the top level directory for this entire installation's \"external\" tools
                         (default:/usr/local - currently:$install_prefix)
         --workdir     - specify the directory used by the installation to download and build esg artifacts for installation
                         (default:~/workbench/esg - currently:$workdir)
@@ -3628,11 +3876,12 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         --clear       - removes the file holding the enironment state of last install
         --test-pub    - performs the publication test directly (same publication called in last step of install)
         --info        - provides a brief explaination of the DataNode
-        --upgrade     - upgrades the node manager
-        --no-globus   - will not install any globus tools (for those with existing globus setups)
-        --gridftp-config - [ with-bdm-config | bdm-config-only ] without this arg uses default end-user config
+        --upgrade|--update - upgrades/updates the node manager
 
-        --type | -t <node|gway> - Select type of mode: gway or node (node is default)
+        --no-globus   - will not perform any operations affecting globus tools (for those with existing globus setups)
+        --gridftp-config - [ with-bdm-config | bdm-config-only ] without this arg uses default end-user config only
+
+        --type | -t <data|index|idp> - Select type of node: \"data node\", \"index node\" and/or \"identity provider node\" (\"data\" is default)
 
         Key Management Flags:
         --register    - connects to desired gateway, fetches and stores their certificate to enable ingress SSL connections
@@ -3647,23 +3896,23 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         (deprecated) --install-signed-cert - installs signed host certificate into keystore and truststore <signed PEM file>
         (deprecated) --export-keys-to-globus  - exports keystore certificates to globus host{cert,key}.pem files.
 
-
-        start   - start the data node's services
-        stop    - stops the data node's services
-        status  - status on data node's services
-        restart - restarts the data node's services (calls stop then start :-/)
+        Node Life Cycle Flags:
+        start   - start the node's services
+        stop    - stops the node's services
+        status  - status on node's services
+        restart - restarts the node's services (calls stop then start :-/)
             (notice, no \"--\" to make rc friendly also chkconfig-able ;-)
 
         -------------------------------
         To add this script to the linux boot sequence: (as root)
         > cd /etc/init.d
-        > cp /usr/local/bin/esg-node
+        > cp ${install_prefix}/bin/esg-node
         > chkconfig --add esg-node
         > chkconfig --list esg-node
         -------------------------------
 
     
-      \"stop\" | \"start\" | \"status\" are meant to be run independent of other flags (and put last if other flags are used)
+      \"stop\" | \"start\" | \"status\" are meant to be run independent of other flags (and put LAST if other flags are used)
       \"--install\" may be used with \"--verify\" but neither are not intended for use
       with stop or start or status
       Ex:
@@ -3683,12 +3932,16 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
          ${progname} status OR
     
       NOTE:
-      *You must be root to run this program, sudo will not allow the use of needed
-      *environment variables!!!! if you must use sudo do so only to become root proper
-      *then source your user's .[bash]rc file so that root has it's envronment set accordingly!
-      *After a full install there will be a file created ($envfile) that has the environment
-      *vars that were used and set during the installation - this should be sourced by users
-      *of this application stack.
+
+      *You must be root to run this program, sudo will not allow the
+      *use of needed environment variables!!!! If you must use sudo do
+      *so only to become root proper then source your user's .[bash]rc
+      *file so that root has it's envronment set accordingly!  Or you
+      *can more simply become root using sudo's \"-s\" flag.  After a
+      *full install there will be a file created ($envfile) that has
+      *the environment vars that were used and set during the
+      *installation - this should be sourced by users of this
+      *application stack.
 
       Typical usage:
 
@@ -3718,11 +3971,13 @@ done_remark() {
 
 INSTALL_BIT=1
 TEST_BIT=2
-NODE_BIT=4
-GWAY_BIT=8
-WRITE_ENV_BIT=16
+DATA_BIT=4
+INDEX_BIT=8
+IDP_BIT=16
+WRITE_ENV_BIT=32
 
 main() {
+
     let sel=0
     while [ -n "$1" ]; do
     #echo "arg ${i} = $1"
@@ -3737,17 +3992,18 @@ main() {
                 (( (sel & TEST_BIT) == 0 )) && ((sel+=TEST_BIT))
                 ;;
             --type | -t)
-                #TODO: look for next arg if node or if gway set the selection bit accordingly
+                #TODO: look for next arg if data node or if index node set the selection bit accordingly
                 #This also means that I can nott use 1 for basic install will have to use 1 for prerequisite
-                #and then another bit for node vs gway
+                #and then another bit for data node vs index node
                 local tvalue
                 shift
                 until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
                     tvalue=$(echo "$1" | tr 'A-Z' 'a-z')
                     #turn on the proper bit when string is detected
-                    (($DEBUG)) && echo "node type selected is: $1"
-                    [ "node" = "${tvalue}" ] && (( (sel & NODE_BIT) == 0 )) && ((sel+=NODE_BIT))
-                    [ "gway" = "${tvalue}" ] && (( (sel & GWAY_BIT) == 0 )) && ((sel+=GWAY_BIT))
+                    echo "node type selected is: $1"
+                    [ "data"  = "${tvalue}" ] && (( (sel & DATA_BIT) == 0 )) && ((sel+=DATA_BIT))
+                    [ "index" = "${tvalue}" ] && (( (sel & INDEX_BIT) == 0 )) && ((sel+=INDEX_BIT))
+                    [ "idp"   = "${tvalue}" ] && (( (sel & IDP_BIT) == 0 )) && ((sel+=IDP_BIT))
                     shift
                 done
                 unshift=1
@@ -3755,23 +4011,23 @@ main() {
             start | --start)
                 check_prerequisites
                 [ $? != 0 ] && echo && exit 1
-                (($DEBUG)) && echo "START SERVICES"
-                start
+                (($DEBUG)) && echo "START SERVICES (${sel})"
+                start ${sel}
                 exit 0
                 ;;
             stop | --stop)
                 check_prerequisites
                 [ $? != 0 ] && echo && exit 1
                 (($DEBUG)) && echo "STOP SERVICES"
-                stop
+                stop ${sel}
                 exit 0
                 ;;
             restart)
                 check_prerequisites
                 [ $? != 0 ] && echo && exit 1
-                stop
+                stop ${sel}
                 sleep 2
-                start
+                start ${sel}
                 exit 0
                 ;;
             --write-env)
@@ -3781,7 +4037,7 @@ main() {
             -v | --version)
                 echo "Version: $version"
                 echo "Earth Systems Grid Federation (http://esgf.org)"
-                echo "Data Node Installation Script"
+                echo "ESGF Node Installation Script"
                 echo "Lawrence Livermore National Laboratory"
                 echo ""
                 exit 0
@@ -3822,6 +4078,8 @@ main() {
                 check_prerequisites
                 [ $? != 0 ] && echo && exit 1
                 
+                #read_sel
+                
                 #---------------
                 #version checking...
                 #---------------
@@ -3830,23 +4088,21 @@ main() {
                 setup_java
                 setup_ant
                 setup_postgress
+                #TODO: no check for cdat yet :-(
+                setup_esgcet
 
                 #The arg "1" indicates an upgrade (see functions)
-                setup_esgcet
+                setup_tomcat 1
+                
+                [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${sel} ${gridftp_config_args}
+                [ $((sel & INDEX_BIT)) != 0 ] && setup_subsystem search esg-search 1
+
+                #The arg "1" indicates an upgrade (see function)
                 setup_node 1
+                
+                #---
+                start ${sel}
 
-                start_postgress
-                start_tomcat
-
-                echo "starting services with globus using config: ${gridftp_config_args}"
-                checked_get ${scripts_dir}/esg-globus ${esg_dist_url}/externals/bootstrap/esg-globus
-                (( ! no_globus )) && source ${scripts_dir}/esg-globus >& /dev/null && \
-                    start_globus_services datanode ${gridftp_config_args}
-
-                (( (sel & GWAY_BIT ) != 0)) && checked_get ${scripts_dir}/esg-search ${esg_dist_url}/esg-search/esg-search
-                (( (sel & GWAY_BIT ) != 0)) && source ${scripts_dir}/esg-search >& /dev/null && start_search_services
-
-                show_svc_list
                 exit 0
                 ;;
             --check)
@@ -4023,7 +4279,7 @@ main() {
 
     echo
     echo "-----------------------------------"
-    echo "ESG Data Node Installation Program"
+    echo "ESGF Node Installation Program"
     echo "-----------------------------------"
     echo 
 
@@ -4038,8 +4294,9 @@ main() {
     init
 
     (( force_install ))  && echo "(force install is ON)"
-    (( (sel & NODE_BIT ) != 0)) && echo "(node type selected)"
-    (( (sel & GWAY_BIT ) != 0)) && echo "(gway type selected)"
+    (( (sel & DATA_BIT ) != 0)) && echo  "(data node type selected)"
+    (( (sel & INDEX_BIT ) != 0)) && echo "(index node type selected)"
+    (( (sel & IDP_BIT ) != 0)) && echo "(idp node type selected)"
     #---------------------------------------
     #Installation of basic system components.
     # (Only when one setup in the sequence is okay can we move to the next)
@@ -4049,45 +4306,45 @@ main() {
     [ $((sel & INSTALL_BIT)) != 0 ] && setup_java
     [ $((sel & INSTALL_BIT)) != 0 ] && setup_ant
     [ $((sel & INSTALL_BIT)) != 0 ] && setup_postgress
-    [ $((sel & TEST_BIT))    != 0 ] && test_postgress 
-    [ $((sel & INSTALL_BIT)) != 0 ] && setup_cdat 
-    [ $((sel & INSTALL_BIT)) != 0 ] && setup_esgcet 
-    [ $((sel & TEST_BIT))    != 0 ] && test_esgcet 
+    [ $((sel & TEST_BIT))    != 0 ] && test_postgress
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && setup_cdat
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && setup_esgcet
+    [ $((sel & TEST_BIT))    != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && test_esgcet
     [ $((sel & INSTALL_BIT)) != 0 ] && setup_tomcat ${keystore_password}
     [ $((sel & TEST_BIT))    != 0 ] && test_tomcat
-    [ $((sel & INSTALL_BIT)) != 0 ] && setup_tds 
-    [ $((sel & TEST_BIT))    != 0 ] && test_tds 
-    [ $((sel & (NODE_BIT+INSTALL_BIT)))    != 0 ] && setup_node #(tomcat off)
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && setup_tds 
+    [ $((sel & TEST_BIT))    != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && test_tds 
+    [ $((sel & INSTALL_BIT)) != 0 ] && setup_node #(tomcat off)
 
     #---------------------------------------
     #Installation of "plugin" subsystems... & filters
     #---------------------------------------
     #---filters------
-    [ $((sel & INSTALL_BIT)) != 0 ] && echo "security filters subsystem (TOKEN)" && setup_subsystem security-token-filters filters $@
-    [ $((sel & INSTALL_BIT)) != 0 ] && echo "security filters subsystem (SAML/ORP)"  && setup_subsystem security-tokenless-filters filters $@
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "security filters subsystem (TOKEN)" && setup_subsystem security-token-filters filters $@
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "security filters subsystem (SAML/ORP)"  && setup_subsystem security-tokenless-filters filters $@
     #---subsystems--- 
-    [ $((sel & INSTALL_BIT)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
-   #[ $((sel & INSTALL_BIT)) != 0 ] && echo "drslib subsystem"  && setup_subsystem drslib esgf-drslib $@
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
+   #[ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "drslib subsystem"  && setup_subsystem drslib esgf-drslib $@
 
 
     #---------------------------------------
     # Globus Installation...
     #---------------------------------------
-    [ $((sel & INSTALL_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${gridftp_config_args}
-    [ $((sel & TEST_BIT))    != 0 ] && (( ! no_globus )) && echo "test_globus" && source ${scripts_dir}/esg-globus >& /dev/null \
-        && test_globus_services datanode
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT+IDP_BIT))   != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus $sel ${gridftp_config_args}
+    [ $((sel & TEST_BIT))    != 0 ] && [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "test_globus" && test_globus $sel
 
 
     #---------------------------------------
     # Gateway type install...
     #---------------------------------------
-    [ $((sel & GWAY_BIT)) != 0 ] && echo "search subsystem" && setup_subsystem search esg-search $@
-    [ $((sel & TEST_BIT)) != 0 ] && echo "test search subsystem" && source ${scripts_dir}/esg-search >& /dev/null && test_search_services
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & INDEX_BIT)) != 0 ] && echo "search subsystem" && setup_subsystem search esg-search $@
+    [ $((sel & TEST_BIT)) != 0 ]    && [ $((sel & INDEX_BIT)) != 0 ] && echo "test search subsystem" && \
+        source ${scripts_dir}/esg-search >& /dev/null && test_search_services
 
     #---------------------------------------
     # Publishing Test...
     #---------------------------------------
-    [ $((sel & TEST_BIT)) != 0 ] && echo "test_publication" && test_publication 
+    [ $((sel & TEST_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "test_publication" && test_publication 
 
 
     #---------------------------------------
@@ -4100,7 +4357,7 @@ main() {
     #---------------------------------------
     #System Launch...
     #---------------------------------------
-    start
+    start sel
     done_remark
     echo 
 }
