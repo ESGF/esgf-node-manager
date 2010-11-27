@@ -2314,7 +2314,7 @@ test_globus() {
     fi
 
     ((ret)) && checked_done $ret
-    
+
     if [ $((sel & IDP_BIT)) != 0 ]; then
         echo "Testing Globus Services for Index-Node... (MyProxy server)"
         directive="gateway"
@@ -2351,7 +2351,7 @@ start_globus() {
     fi
 
     ((ret)) && checked_done $ret
-    
+
     if [ $((sel & IDP_BIT)) != 0 ]; then
         echo "Starting Globus Services for Index-Node... (MyProxy server)"
         directive="gateway"
@@ -2371,7 +2371,7 @@ stop_globus() {
    local sel=${1:-0}
     ((sel ==0)) && echo "stop_globus: no selection set, returning (1)" && return 1
     shift
-    
+
     local ret=1
 
     local directive="notype"
@@ -2385,7 +2385,7 @@ stop_globus() {
         ret=$?
         popd >& /dev/null
     fi
-    
+
     if [ $((sel & IDP_BIT)) != 0 ]; then
         echo "Stopping Globus Services for Index-Node... (MyProxy server)"
         directive="gateway"
@@ -3467,7 +3467,7 @@ check_module_version() {
 check_webapp_version() {
     local webapp_name=$1
     local target_version=$2
-    
+
     local current_version=$(sed -n '/^Version:[ ]*\(.*\)/p' ${tomcat_install_dir}/webapps/${webapp_name}/META-INF/MANIFEST.MF | awk '{print $2}' | xargs)
     [ $? != 0 ] && echo " WARNING:(2) Could not detect version of ${webapp_name}" && return 2
     [ -z "${current_version}" ] && echo " WARNING:(1) Could not detect version of ${webapp_name}" && return 3
@@ -3487,7 +3487,7 @@ check_webapp_version() {
 check_app_version() {
     local app_dir=$1
     local target_version=$2
-    
+
     local current_version=$(readlink -f ${tomcat_install_dir} | sed -ne 's/.*-\(.*\)$/\1/p')
     [ $? != 0 ] && echo " WARNING:(2) Could not detect version of ${app_dir##*/}" && return 2
     [ -z "${current_version}" ] && echo " WARNING:(1) Could not detect version of ${app_dir##*/}" && return 3
@@ -3901,6 +3901,7 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         stop    - stops the node's services
         status  - status on node's services
         restart - restarts the node's services (calls stop then start :-/)
+        update  - update's the node's software stack to prescribed versions
             (notice, no \"--\" to make rc friendly also chkconfig-able ;-)
 
         -------------------------------
@@ -3933,23 +3934,24 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
     
       NOTE:
 
-      *You must be root to run this program, sudo will not allow the
-      *use of needed environment variables!!!! If you must use sudo do
-      *so only to become root proper then source your user's .[bash]rc
-      *file so that root has it's envronment set accordingly!  Or you
-      *can more simply become root using sudo's \"-s\" flag.  After a
-      *full install there will be a file created ($envfile) that has
-      *the environment vars that were used and set during the
-      *installation - this should be sourced by users of this
-      *application stack.
+      *You must be root to run this program, prefixing the command
+      *with sudo will not allow the use of needed environment
+      *variables!!!! If you must use sudo, do so only to become root
+      *proper then source your user's .[bash]rc file so that root has
+      *it's envronment set accordingly!  Or you can more simply become
+      *root using sudo's \"-s\" flag.  After a full install there will
+      *be a file created ($envfile) that has the environment vars that
+      *were used and set during the installation - this should be
+      *sourced by users of this application stack.
 
       Typical usage:
 
       Installation : esg-node --install --verify
+          (submit csr and get back returned cert)
       Credentials  : esg-node --install-keypair <key> <cert>
       Test Publish : esg-node --test-pub
       Update Certs : esg-node --rebuild-truststore
-      Life Cycle   : esg-node [start|stop|status|restart]
+      Life Cycle   : esg-node [start|stop|status|restart|update]
 
     " | more
     exit 0
@@ -3997,7 +3999,7 @@ main() {
                 #and then another bit for data node vs index node
                 local tvalue
                 shift
-                until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
+                until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ] || [ "$1" = "update" ]; do
                     tvalue=$(echo "$1" | tr 'A-Z' 'a-z')
                     #turn on the proper bit when string is detected
                     echo "node type selected is: $1"
@@ -4072,14 +4074,14 @@ main() {
                 info
                 exit
                 ;;
-            --upgrade | --update)
+            update | --update | --upgrade )
                 self_verify
                 init
                 check_prerequisites
                 [ $? != 0 ] && echo && exit 1
                 
                 #read_sel
-                
+
                 #---------------
                 #version checking...
                 #---------------
@@ -4093,13 +4095,13 @@ main() {
 
                 #The arg "1" indicates an upgrade (see functions)
                 setup_tomcat 1
-                
+
                 [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${sel} ${gridftp_config_args}
                 [ $((sel & INDEX_BIT)) != 0 ] && setup_subsystem search esg-search 1
 
                 #The arg "1" indicates an upgrade (see function)
                 setup_node 1
-                
+
                 #---
                 start ${sel}
 
@@ -4211,7 +4213,7 @@ main() {
             --prefix)
                 local pvalue
                 shift
-                until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
+                until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ] || [ "$1" = "update" ]; do
                     pvalue="$1"
                     (($DEBUG)) && echo "prefix value is: $1"
                     shift
@@ -4223,7 +4225,7 @@ main() {
             --workdir)
                 local wvalue
                 shift
-                until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
+                until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]  || [ "$1" = "update" ]; do
                     wvalue="$1"
                     (($DEBUG)) && echo "workdir value is: $1"
                     shift
@@ -4245,7 +4247,7 @@ main() {
                 local tmpargs #array to store args for this switch.
                 local let index=0
                 shift
-                until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ]; do
+                until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ] || [ "$1" = "update" ]; do
                     tmpargs[((index++))]=$1
                     (($DEBUG)) && echo "added $1 to args list: ${tmpargs[@]}"
                     shift
@@ -4344,7 +4346,7 @@ main() {
     #---------------------------------------
     # Publishing Test...
     #---------------------------------------
-    [ $((sel & TEST_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "test_publication" && test_publication 
+    [ $((sel & TEST_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "test_publication" && test_publication
 
 
     #---------------------------------------
