@@ -73,7 +73,7 @@
 DEBUG=${DEBUG:-0}
 VERBOSE=${VERBOSE:-0}
 progname=esg-node
-version="1.0.4.0"
+version="0.9.0"
 envfile="/etc/esg.env"
 
 #--------------
@@ -96,7 +96,7 @@ init() {
     cdat_version=${cdat_version:-"eb8b668"}
     esgcet_version=${esgcet_version:-"2.7.3"}
     esgcet_python_version=${esgcet_python_version:-"2.6"}
-    node_version=${node_version:-"1.0.4.0"}
+    node_version=${node_version:-"0.9.0"}
     
     #external programs' versions
     curl_version=${curl_version:="7.20.1"}
@@ -105,7 +105,7 @@ init() {
     ant_version=${ant_version:-"1.8.1"}
     postgress_version=${postgress_version:-"8.4.5"}
     tomcat_version=${tomcat_version:-"6.0.29"}
-    tds_version=${tds_version:-"4.2"}
+    tds_version=${tds_version:-"4.1.6"}
 
     curl_install_dir=${CURL_HOME:-${install_prefix}/curl}
     git_install_dir=${GIT_HOME:-${install_prefix}/git}
@@ -1746,7 +1746,7 @@ setup_node() {
 
     local node_dist_file=${node_dist_url##*/}
     #strip off .tar.gz at the end
-    #(Ex: esg-node.1.0.0.4.tar.gz -> esg-node.1.0.0.4)
+    #(Ex: esg-node.0.9.0.tar.gz -> esg-node.0.9.0)
     node_dist_dir=$(echo ${node_dist_file} | awk 'gsub(/('$compress_extensions')/,"")')
 
     checked_get ${node_dist_file} ${node_dist_url}
@@ -1766,8 +1766,8 @@ setup_node() {
 
     stop_tomcat
 
-    #strip the version number off(.#.#.#.#) the dir and append .war to get the name of war file
-    #(Ex: esg-node.1.0.0.4 -> esg-node.war) 
+    #strip the version number off(#.#.#) the dir and append .war to get the name of war file
+    #(Ex: esg-node.0.9.0 -> esg-node.war) 
     local trimmed_name=$(pwd)/${node_dist_dir%%.*}
     node_war_file=${trimmed_name}.war
     echo "node_war_file = "${node_war_file}
@@ -3794,7 +3794,7 @@ show_svc_list() {
 
 #Starts the esg node
 start() {
-    local sel=${1:-${sel:-0}}
+    local let sel=${1:-${sel:-0}}
     init
     (($DEBUG)) && echo "starting services... ($1)"
     read_sel
