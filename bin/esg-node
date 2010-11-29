@@ -4083,6 +4083,7 @@ main() {
                     [ "idp"   = "${tvalue}" ] && ((sel+=IDP_BIT))   && selection_string+="${tvalue} "
                     shift
                 done
+                [ -z "${selection_string}" ] && echo "Unknown Node Type: [${tvalue}], Sorry :-(" && exit 1;
                 echo "node type set to: [ $selection_string] (${sel}) "
                 set_sel ${sel}
                 exit 0
