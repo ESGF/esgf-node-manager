@@ -92,7 +92,7 @@ init() {
     cdat_version=${cdat_version:-"eb8b668"}
     esgcet_version=${esgcet_version:-"2.7.3"}
     esgcet_python_version=${esgcet_python_version:-"2.6"}
-    node_version=${node_version:-"1.0.0.4"}
+    node_version=${node_version:-"1.0.4.0"}
     
     #external programs' versions
     curl_version=${curl_version:="7.20.1"}
