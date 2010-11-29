@@ -3804,7 +3804,7 @@ start() {
     start_postgress
     start_tomcat
 
-    (( ! no_globus )) && start_globus ${sel} ${gridftp_config_args}
+    (( ! no_globus )) && [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && start_globus ${sel} ${gridftp_config_args}
     [ $((sel & INDEX_BIT)) != 0 ] && source ${scripts_dir}/esg-search >& /dev/null && start_search_services
 
     sleep 3
