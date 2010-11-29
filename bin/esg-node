@@ -714,7 +714,10 @@ setup_postgress() {
 
     echo -n "Checking for postgresql ${postgress_version}"
     check_version psql ${postgress_version}
-    [ $? == 0 ] && (( ! force_install )) && echo " [OK]" && return 0
+    local ret=$?
+    (($ret == 0)) && (( ! force_install )) && echo " [OK]" && return 0
+
+    local upgrade=${1:-${ret}}
 
     echo
     echo "*******************************"
@@ -727,7 +730,7 @@ setup_postgress() {
     local dosetup
     if [ -x ${postgress_install_dir}/bin/psql ]; then 
         echo "Detected an existing postgress installation..."
-        read -p "Do you want to continue with Postgres installation and setup? $([ "$default_val" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
+        read -p "Do you want to continue with Postgres installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
         [ -z ${dosetup} ] && dosetup=${default}
         if [ "${dosetup}" != "Y" ] && [ "${dosetup}" != "y" ]; then
             echo "Skipping postgres installation and setup - will assume postgres is setup properly"
@@ -790,7 +793,19 @@ setup_postgress() {
     fi
 
     popd >& /dev/null
-    
+
+    if ((upgrade)); then 
+        echo "Upgrade of postgress to ${postgress_version} completed"
+        echo "It is recommended to restart the entire node as to not leave"
+        echo "orphaned db connections that have been created by the rest of"
+        echo "the application stack"
+
+        echo "Restarting Database..."
+        stop_postgress
+        start_postgress
+        checked_done $?
+    fi
+
     ########
     #Create the system account for postgress to run as.
     ########
@@ -962,7 +977,7 @@ stop_postgress() {
 test_postgress() {
     echo
     echo "----------------------------"
-    echo -n "Postgress Test...  "
+    echo "Postgress Test...  "
     echo "----------------------------"
     echo 
     start_postgress
@@ -1063,7 +1078,7 @@ write_cdat_install_log() {
 #####
 setup_esgcet() {
 
-    echo -n "Checking for esgcet [publisher] ${esgcet_version}"
+    echo -n "Checking for esgcet (the publisher) ${esgcet_version}"
     check_module_version esgcet ${esgcet_version}
     local ret=$?
     ((ret == 0)) && (( ! force_install )) && echo " [OK]" && return 0
@@ -1169,7 +1184,7 @@ write_esgcet_install_log() {
 test_esgcet() {
     echo
     echo "----------------------------"
-    echo -n "ESGCET Test... "
+    echo "ESGCET Test... "
     echo "----------------------------"
     echo
     pushd $workdir >& /dev/null
@@ -1213,7 +1228,7 @@ test_esgcet() {
 # arg 1 -> The password for the current keystore
 #####
 setup_tomcat() {
-    echo -n "Checking for esgcet tomcat ${tomcat_version}"
+    echo -n "Checking for tomcat ${tomcat_version}"
     check_app_version ${tomcat_install_dir} ${tomcat_version}
     local ret=$?
     ((ret == 0)) && (( ! force_install )) && echo " [OK]" && return 0
@@ -1290,26 +1305,7 @@ setup_tomcat() {
         [ $? != 0 ] && \
             echo " ERROR: Could not create sym link ${tomcat_install_dir%/*}/${tomcat_dist_dir} -> ${tomcat_install_dir}" && popd && checked_done 1
     fi
-    
-    #----------------------------------
-    # Upgrade logic...
-    #----------------------------------
-    if ((upgrade)) ; then
-        stop_tomcat
-        echo "Upgrading tomcat installation from $(readlink -f ${last_install} | sed -ne 's/.*-\(.*\)$/\1/p') to $(readlink - f ${tomcat_install_dir} | sed -ne 's/.*-\(.*\)$/\1/p')"
 
-        echo -n "copying webapps... "
-        cp -R ${last_install}/webapps ${tomcat_install_dir}/
-        [ $? == 0 ] && echo "[OK]" || echo "[FAIL]"
-
-        echo -n "copying logs... "
-        cp -R ${last_install}/logs ${tomcat_install_dir}/
-        [ $? == 0 ] && echo "[OK]" || echo "[FAIL]"
-
-        echo "upgrade migration complete"
-    fi
-    #----------------------------------
-    
     #If there is no tomcat user on the system create one (double check that usradd does the right thing)
     id $tomcat_user
     if [ $? != 0 ]; then 
@@ -1359,9 +1355,32 @@ setup_tomcat() {
     popd >& /dev/null
     #----------
     
-    local store_password=${1}
-    configure_tomcat ${store_password}
-    
+    #----------------------------------
+    # Upgrade logic...
+    #----------------------------------
+    if ((upgrade)) ; then
+        stop_tomcat
+        echo "Upgrading tomcat installation from $(readlink -f ${last_install} | sed -ne 's/.*-\(.*\)$/\1/p') to $(readlink - f ${tomcat_install_dir} | sed -ne 's/.*-\(.*\)$/\1/p')"
+
+        echo -n "copying webapps... "
+        cp -R ${last_install}/webapps ${tomcat_install_dir}/
+        [ $? == 0 ] && echo "[OK]" || echo "[FAIL]"
+
+        echo -n "copying configuration... "
+        cp -R ${last_install}/conf ${tomcat_install_dir}/
+        [ $? == 0 ] && echo "[OK]" || echo "[FAIL]"
+
+        echo -n "copying logs... "
+        cp -R ${last_install}/logs ${tomcat_install_dir}/
+        [ $? == 0 ] && echo "[OK]" || echo "[FAIL]"
+
+        echo "upgrade migration complete"
+    else
+        local store_password=${1}
+        configure_tomcat ${store_password}
+    fi
+    #----------------------------------
+        
     chown -R $tomcat_user $(readlink -f ${tomcat_install_dir})
     [ $? != 0 ] && " ERROR: Could not change ownership of tomcat to \"$tomcat_user\" user" && popd && checked_done 1
     chgrp -R $tomcat_group $(readlink -f ${tomcat_install_dir})
@@ -1640,7 +1659,7 @@ test_tomcat() {
 
     echo
     echo "----------------------------"
-    echo -n "Tomcat Test...  "
+    echo "Tomcat Test...  "
     echo "----------------------------"
     echo
     start_tomcat
@@ -2242,7 +2261,7 @@ test_tds() {
 setup_globus() {
     local sel=${1:-${sel:-0}}
     read_sel
-    ((sel ==0)) && echo "setup_globus: no selection set, returning (1)" && return 1
+    ((sel == 0)) && echo "setup_globus: no selection set, returning (1)" && return 1
     shift
     
     mkdir -p ${workdir}
@@ -2333,7 +2352,7 @@ test_globus() {
 # args* (in the context of data node ->  ["with-bdm-config"|"bdm-config-only"])
 start_globus() {
     local sel=${1:-${sel:-0}}
-    ((sel ==0)) && echo "start_globus: no selection set, returning (1)" && return 1
+    ((sel == 0)) && echo "start_globus: no selection set, returning (1)" && return 1
     shift
 
     local ret=1
@@ -3537,7 +3556,7 @@ check_for_update() {
     fi                      
     
     [ ! -e ${local_file} ] && echo " Hmmm... Could not find local file ${local_file}" && return 0
-    [ ! -x ${local_file} ] && echo " Hmmm... local file ${local_file} not executible" && chmod 755 ${local_file}
+   #[ ! -x ${local_file} ] && echo " Hmmm... local file ${local_file} not executible" && chmod 755 ${local_file}
     diff <(md5sum ${local_file} | tr -s " " | cut -d " " -f 1) <(curl -s -L --insecure ${remote_file}.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
     [ $? != 0 ] && echo " Update Available @ ${remote_file}" && return 0
     echo " ==> ${local_file} is up to date"
@@ -3728,12 +3747,40 @@ read_sel() {
     ((VERBOSE)) && echo ${sel}
 }
 
+#Write the node type numeric value to file
+#(Yes... gratuitous error and bounds checking)
+set_sel() {
+    local new_sel=${1}
+    ((DEBUG)) && echo "new_sel = $new_sel"
+    local type_bits=0
+    local hit_bits=0
+    
+    #valididty check for type... in range power of 2
+    #MIN and MAX BIT range... if so then valid and an be written down.
+    if ((new_sel > $MAX_BIT || new_sel < $MIN_BIT)); then
+        ((DEBUG)) && echo "WARNING: Selection [$1] is out of range $MIN_BIT - $MAX_BIT"
+    fi
+
+    #Check if the new sel has any bits turned on in the range of our type bits
+    for ((type_bit=$MIN_BIT;type_bit<=$MAX_BIT;type_bit*=2)) ; do
+        (( (new_sel & type_bit) != 0 )) && ((hit_bits+=type_bit))
+    done
+
+
+    ((DEBUG)) && echo "[hit_bits = $hit_bits] =? [new_sel = $new_sel]"
+
+    if((hit_bits)); then
+        echo "${hit_bits}" > ${esg_config_type_file}
+        ((DEBUG)) && cat ${esg_config_type_file}
+    fi
+}
+
 show_svc_list() {
     id | grep root >& /dev/null
     [ $? != 0 ] && echo "(display of node process list limited to root)" && return 0
     echo
     echo "---------------------------"
-    echo "Running Node Services..."
+    echo -n "Running Node Services... "; ((sel != 0)) && echo "[type code=$sel]" || echo ""
     echo "---------------------------"
     lsof -i |egrep  'postgres|jsvc|globus-gr|java'
     echo "---------------------------"
@@ -3763,18 +3810,17 @@ start() {
     sleep 3
     show_svc_list
 
-    echo "${sel}" > ${esg_config_type_file}
-    ((DEBUG)) && cat ${esg_config_type_file}
+    set_sel "${sel}"
     echo
 }
 
 #Stops the esg node
 stop() {
-    local sel=${1:-${sel:-0}}
+    local sel=${1:-${sel:-ALL}}
     init
     read_sel
     source ${scripts_dir}/esg-search >& /dev/null && stop_search_services
-    stop_globus ${sel} ${gridftp_config_args}
+    stop_globus $(( sel == 0 ? ALL_BIT : sel)) ${gridftp_config_args}
     stop_tomcat 
     stop_postgress 
     show_svc_list
@@ -3822,13 +3868,12 @@ info() {
      this installation.  The security impact with regards to the
      visibility and accessibility of the constituent components of the
      stack depends on other factors to be addressed by your
-     organization.  (It is for this reason why it would be
-     advantageous to install on a virtual machine and manage security
-     from a system wide level.:-)
+     organization.
 
-     Please be sure that you have gotten your Gateway (my proxy)
-     credentials from:
+     Please be sure that you have gotten your Gateway (IdP)
+     credentials from your configured Gateway.
 
+     The primary/central Gateway for ESGF is:
      http://pcmdi3.llnl.gov/esgcet/home.htm -> \"create account\"
 
      This is required for publication.
@@ -3881,7 +3926,9 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         --no-globus   - will not perform any operations affecting globus tools (for those with existing globus setups)
         --gridftp-config - [ with-bdm-config | bdm-config-only ] without this arg uses default end-user config only
 
-        --type | -t <data|index|idp> - Select type of node: \"data node\", \"index node\" and/or \"identity provider node\" (\"data\" is default)
+        --type | -t <data &| index &| idp> - Select type of node: \"data node\", \"index node\" and/or \"identity provider node\" (\"data\" is default)
+        --set-type  <data &| index &| idp> - Sets the type value to be used at next start up
+        --get-type - returns the last stored type code value of the last run node configuration (data=4 +| index=8 +| idp=16)
 
         Key Management Flags:
         --register    - connects to desired gateway, fetches and stores their certificate to enable ingress SSL connections
@@ -3934,15 +3981,16 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
     
       NOTE:
 
-      *You must be root to run this program, prefixing the command
-      *with sudo will not allow the use of needed environment
-      *variables!!!! If you must use sudo, do so only to become root
-      *proper then source your user's .[bash]rc file so that root has
-      *it's envronment set accordingly!  Or you can more simply become
-      *root using sudo's \"-s\" flag.  After a full install there will
-      *be a file created ($envfile) that has the environment vars that
-      *were used and set during the installation - this should be
-      *sourced by users of this application stack.
+      *You must be root or effectively root to run this program,
+      *prefixing the command with sudo will not allow the use of
+      *needed environment variables!!!! If you must use sudo, do so
+      *only to become root proper then source your user's .[bash]rc
+      *file so that root has it's envronment set accordingly!  Or you
+      *can more simply become root using sudo's \"-s\" flag.  After a
+      *full install there will be a file created ($envfile) that has
+      *the basic environment vars that were used and set during the
+      *installation - this should be sourced by users of this
+      *application stack.
 
       Typical usage:
 
@@ -3971,6 +4019,9 @@ done_remark() {
     echo ""
 }
 
+#---------------
+# s'all about the bits... :-)
+#---------------
 INSTALL_BIT=1
 TEST_BIT=2
 DATA_BIT=4
@@ -3978,9 +4029,16 @@ INDEX_BIT=8
 IDP_BIT=16
 WRITE_ENV_BIT=32
 
+#NOTE: remember to adjust (below) when adding new bits!!
+MIN_BIT=4
+MAX_BIT=32
+ALL_BIT=$((DATA_BIT+INDEX_BIT+IDP_BIT))
+#---------------
+
 main() {
 
     let sel=0
+    local selection_string
     while [ -n "$1" ]; do
     #echo "arg ${i} = $1"
         local unshift=0
@@ -4002,15 +4060,41 @@ main() {
                 until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ] || [ "$1" = "update" ]; do
                     tvalue=$(echo "$1" | tr 'A-Z' 'a-z')
                     #turn on the proper bit when string is detected
-                    echo "node type selected is: $1"
-                    [ "data"  = "${tvalue}" ] && (( (sel & DATA_BIT) == 0 )) && ((sel+=DATA_BIT))
-                    [ "index" = "${tvalue}" ] && (( (sel & INDEX_BIT) == 0 )) && ((sel+=INDEX_BIT))
-                    [ "idp"   = "${tvalue}" ] && (( (sel & IDP_BIT) == 0 )) && ((sel+=IDP_BIT))
+                    [ "all"   = "${tvalue}" ] && sel=$ALL_BIT && selection_string="all " && shift && break
+                    [ "data"  = "${tvalue}" ] && (( (sel & DATA_BIT) == 0 )) && ((sel+=DATA_BIT)) && selection_string+="${tvalue} "
+                    [ "index" = "${tvalue}" ] && (( (sel & INDEX_BIT) == 0 )) && ((sel+=INDEX_BIT)) && selection_string+="${tvalue} "
+                    [ "idp"   = "${tvalue}" ] && (( (sel & IDP_BIT) == 0 )) && ((sel+=IDP_BIT)) && selection_string+="${tvalue} "
                     shift
                 done
+                [ -z "${selection_string}" ] && echo "Unknown Node Type: [${tvalue}], Sorry :-(" && exit 1;
+                echo "node type set to: [ $selection_string] (${sel}) "
                 unshift=1
                 ;;
+            --set-type)
+                let sel=0
+                local tvalue
+                shift
+                until [ -z "$1" ]; do
+                    tvalue=$(echo "$1" | tr 'A-Z' 'a-z')
+                    #turn on the proper bit when string is detected
+                    [ "all"   = "${tvalue}" ] && sel=$ALL_BIT && selection_string="all " && shift && break
+                    [ "data"  = "${tvalue}" ] && ((sel+=DATA_BIT))  && selection_string+="${tvalue} "
+                    [ "index" = "${tvalue}" ] && ((sel+=INDEX_BIT)) && selection_string+="${tvalue} "
+                    [ "idp"   = "${tvalue}" ] && ((sel+=IDP_BIT))   && selection_string+="${tvalue} "
+                    shift
+                done
+                echo "node type set to: [ $selection_string] (${sel}) "
+                set_sel ${sel}
+                exit 0
+                ;;
+            --get-type)
+                read_sel
+                echo "node type: [${sel}]"
+                exit 0
+                ;;
             start | --start)
+                shift
+                (( $# != 0 ))  && echo "error: \"start\" must be the last argument in the arg sequence, Sorry :-(" && exit 1
                 check_prerequisites
                 [ $? != 0 ] && echo && exit 1
                 (($DEBUG)) && echo "START SERVICES (${sel})"
@@ -4018,6 +4102,8 @@ main() {
                 exit 0
                 ;;
             stop | --stop)
+                shift
+                (( $# != 0 )) && echo "error: \"stop\" must be the last argument in the arg sequence, Sorry :-(" && exit 1
                 check_prerequisites
                 [ $? != 0 ] && echo && exit 1
                 (($DEBUG)) && echo "STOP SERVICES"
@@ -4025,11 +4111,48 @@ main() {
                 exit 0
                 ;;
             restart)
+                shift
+                (( $# != 0 )) && echo "error: \"restart\" must be the last argument in the arg sequence, Sorry :-(" && exit 1
                 check_prerequisites
                 [ $? != 0 ] && echo && exit 1
                 stop ${sel}
                 sleep 2
                 start ${sel}
+                exit 0
+                ;;
+            update | --update | upgrade | --upgrade )
+                shift
+                (( $# != 0 )) && echo "error: \"update\" must be the last argument in the arg sequence, Sorry :-(" && exit 1
+                self_verify
+                init
+                check_prerequisites
+                [ $? != 0 ] && echo && exit 1
+                
+                read_sel
+
+                #---------------
+                #version checking...
+                #---------------
+                setup_curl
+                setup_git
+                setup_java
+                setup_ant
+                setup_postgress 1
+                #TODO: no check for cdat yet :-(
+                setup_esgcet
+
+                #The arg "1" indicates an upgrade (see functions)
+                setup_tomcat 1
+
+                [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${sel} ${gridftp_config_args}
+                [ $((sel & INDEX_BIT)) != 0 ] && setup_subsystem search esg-search 1
+
+                #The arg "1" indicates an upgrade (see function)
+                setup_node 1
+
+                #---
+                start ${sel}
+
                 exit 0
                 ;;
             --write-env)
@@ -4074,39 +4197,6 @@ main() {
                 info
                 exit
                 ;;
-            update | --update | --upgrade )
-                self_verify
-                init
-                check_prerequisites
-                [ $? != 0 ] && echo && exit 1
-                
-                #read_sel
-
-                #---------------
-                #version checking...
-                #---------------
-                setup_curl
-                setup_git
-                setup_java
-                setup_ant
-                setup_postgress
-                #TODO: no check for cdat yet :-(
-                setup_esgcet
-
-                #The arg "1" indicates an upgrade (see functions)
-                setup_tomcat 1
-
-                [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${sel} ${gridftp_config_args}
-                [ $((sel & INDEX_BIT)) != 0 ] && setup_subsystem search esg-search 1
-
-                #The arg "1" indicates an upgrade (see function)
-                setup_node 1
-
-                #---
-                start ${sel}
-
-                exit 0
-                ;;
             --check)
                 shift
                 self_verify $1 && echo "$0 is up-to-date"
@@ -4118,7 +4208,7 @@ main() {
                 check_prerequisites
                 [ $? != 0 ] && echo && exit 1
                 
-                conifgure_postgress 
+                configure_postgress 
                 exit $?
                 ;;
             --uninstall)
@@ -4296,9 +4386,9 @@ main() {
     init
 
     (( force_install ))  && echo "(force install is ON)"
-    (( (sel & DATA_BIT ) != 0)) && echo  "(data node type selected)"
+    (( (sel & DATA_BIT ) != 0)) &&  echo "(data node type selected)"
     (( (sel & INDEX_BIT ) != 0)) && echo "(index node type selected)"
-    (( (sel & IDP_BIT ) != 0)) && echo "(idp node type selected)"
+    (( (sel & IDP_BIT ) != 0)) &&   echo "(idp node type selected)"
     #---------------------------------------
     #Installation of basic system components.
     # (Only when one setup in the sequence is okay can we move to the next)
