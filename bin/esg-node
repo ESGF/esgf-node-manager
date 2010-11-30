@@ -3829,7 +3829,7 @@ start() {
 
 #Stops the esg node
 stop() {
-    local sel=${1:-${sel:-ALL}}
+    local sel=${1:-${sel:-$ALL_BIT}}
     init
     read_sel
     source ${scripts_dir}/esg-search >& /dev/null && stop_search_services
