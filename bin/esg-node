@@ -2470,7 +2470,7 @@ test_publication() {
 setup_subsystem() {
     local subsystem=$1
     [ -z "${subsystem}" ] && echo "setup_subsystem [${subsystem}] requires argument!!" && checked_done 1
-    local server_dir=${2:-"externals/bootstrap"}
+    local server_dir=${2:-"${subsystem"}
     
     echo
     read -p "Would you like to set up ${subsystem} services? [Y/n] " dosetup
@@ -3576,7 +3576,7 @@ check_for_update() {
 #  being executed is the RIGHT code!
 #
 # NOTE: Has multiple return values test for (( $? > 1 )) when looking or errors
-#       A return value fo 1 only means that the file is up-to-date and there
+#       A return value of 1 only means that the file is up-to-date and there
 #       Is no reason to fetch it.
 #
 # USAGE: checked_get [file] http://www.foo.com/file
@@ -4420,7 +4420,7 @@ main() {
     [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "security filters subsystem (TOKEN)" && setup_subsystem security-token-filters filters $@
     [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "security filters subsystem (SAML/ORP)"  && setup_subsystem security-tokenless-filters filters $@
     #---subsystems--- 
-    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "orp security subsystem" && setup_subsystem orp esg-orp $@
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "orp security subsystem" && setup_subsystem orp orp $@
    #[ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "drslib subsystem"  && setup_subsystem drslib esgf-drslib $@
 
 
