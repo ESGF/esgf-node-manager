@@ -717,7 +717,8 @@ setup_postgress() {
     local ret=$?
     (($ret == 0)) && (( ! force_install )) && echo " [OK]" && return 0
 
-    local upgrade=${1:-${ret}}
+    
+    local upgrade=$(( (ret==1) ? 1 : 0 )) #see check_version() function comments for meaning of return values
 
     echo
     echo "*******************************"
@@ -795,7 +796,7 @@ setup_postgress() {
     popd >& /dev/null
 
     if ((upgrade)); then 
-        echo "Upgrade of postgress to ${postgress_version} completed"
+        echo "UPGRADE of postgress to ${postgress_version} completed"
         echo "It is recommended to restart the entire node as to not leave"
         echo "orphaned db connections that have been created by the rest of"
         echo "the application stack"
@@ -3439,6 +3440,9 @@ return $ret
 
 #The "Public" function that should be called.  Delegates to the helper functions (the two above)
 #Makes the calls to fetch the version information about the passed in executable
+# Returns 0 if everything is up to date (version-wise)
+# Returns 1 if the current version is older than the required version
+# Returns 2 if could not find executible at all on the system
 check_version() {
     (($DEBUG)) && echo "check_version $@"
     [ -z $2 ] && return 0
@@ -4138,7 +4142,7 @@ main() {
                 setup_git
                 setup_java
                 setup_ant
-                setup_postgress 1
+                setup_postgress
                 #TODO: no check for cdat yet :-(
                 setup_esgcet
 
@@ -4416,7 +4420,7 @@ main() {
     [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "security filters subsystem (TOKEN)" && setup_subsystem security-token-filters filters $@
     [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "security filters subsystem (SAML/ORP)"  && setup_subsystem security-tokenless-filters filters $@
     #---subsystems--- 
-    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "security orp subsystem" && setup_subsystem security orp $@
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "orp security subsystem" && setup_subsystem orp esg-orp $@
    #[ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT)) != 0 ] && echo "drslib subsystem"  && setup_subsystem drslib esgf-drslib $@
 
 
