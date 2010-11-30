@@ -2470,7 +2470,7 @@ test_publication() {
 setup_subsystem() {
     local subsystem=$1
     [ -z "${subsystem}" ] && echo "setup_subsystem [${subsystem}] requires argument!!" && checked_done 1
-    local server_dir=${2:-"${subsystem"}
+    local server_dir=${2:-"${subsystem}"}
     
     echo
     read -p "Would you like to set up ${subsystem} services? [Y/n] " dosetup
