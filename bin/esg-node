@@ -3741,14 +3741,21 @@ self_verify() {
 #Every successful, explicit call to --type|-t gets recorded in the "config_type" file
 #If the configuration type is not explicity set the value is read from this file.
 read_sel() {
-    if ((sel == 0)); then
+    local let mysel=${sel}
+
+    #If mysel (our private copy of sel) has not bits in the type bits range then read the config_type file
+    #and set us to whatever value we currently add plus that one.  In the case of installation or testing
+    #those values are below the range so they shoudl not be looked at for type selection though they may be
+    #set.  However whatever we have for the type selection should be added to them for compound selection.
+    if (( (mysel <= MIN_BIT) || (mysel >= MAX_BIT) )); then
         local last_config_type=$(cat ${esg_config_type_file} 2> /dev/null)
-        (($DEBUG)) && echo "(last_config_type = ${last_config_type})"
-        sel=${last_config_type:-0}
-        ((sel == 0)) && \
-            printf "ERROR: No node type selected nor available! \n Consult usage with --help flag... look for the \"--type\" flag \n(must come BEFORE \"[start|stop|restart|update]\" args)\n\n" && exit 1
+        ((mysel+= ${last_config_type:-0}))
     fi
-    ((VERBOSE)) && echo ${sel}
+    ((mysel == 0)) && \
+        printf "ERROR: No node type selected nor available! \n Consult usage with --help flag... look for the \"--type\" flag \n(must come BEFORE \"[start|stop|restart|update]\" args)\n\n"
+    
+    ((DEBUG)) && echo "Setting sel [${sel}] to mysel [${mysel}]"
+    sel=${mysel}
 }
 
 #Write the node type numeric value to file
@@ -3800,13 +3807,15 @@ show_svc_list() {
 start() {
     local let sel=${1:-${sel:-0}}
     init
-    (($DEBUG)) && echo "starting services... ($1)"
+    ((DEBUG)) && echo "starting services... ($1)"
     read_sel
-
+    
+    [ $((sel & ALL_BIT)) == 0 ] && echo "Cannot Start: No Node Type Specified! (See --help for info on the --type|-t option)  :-|" && exit 1
+    
     echo "starting services... ($sel)"
     
-    start_postgress
-    start_tomcat
+    [ $((sel & ALL_BIT)) != 0 ] && start_postgress
+    [ $((sel & ALL_BIT)) != 0 ] && start_tomcat
 
     (( ! no_globus )) && [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && start_globus ${sel} ${gridftp_config_args}
     [ $((sel & INDEX_BIT)) != 0 ] && source ${scripts_dir}/esg-search >& /dev/null && start_search_services
@@ -4048,12 +4057,13 @@ main() {
         local unshift=0
         case $1 in
             --install | -i)
-                (($DEBUG)) && echo "INSTALL SERVICES"
+                ((DEBUG)) && echo "INSTALL SERVICES"
                 (( (sel & INSTALL_BIT) == 0 )) && ((sel+=INSTALL_BIT))
                 ;;
             --verify | --test)
-                #echo "VERIFY SERVICES"
+                ((DEBUG)) && echo "VERIFY SERVICES"
                 (( (sel & TEST_BIT) == 0 )) && ((sel+=TEST_BIT))
+                ((DEBUG)) && echo "sel = $sel "
                 ;;
             --type | -t)
                 #TODO: look for next arg if data node or if index node set the selection bit accordingly
@@ -4102,7 +4112,7 @@ main() {
                 (( $# != 0 ))  && echo "error: \"start\" must be the last argument in the arg sequence, Sorry :-(" && exit 1
                 check_prerequisites
                 [ $? != 0 ] && echo && exit 1
-                (($DEBUG)) && echo "START SERVICES (${sel})"
+                ((DEBUG)) && echo "START SERVICES (${sel})"
                 start ${sel}
                 exit 0
                 ;;
@@ -4389,6 +4399,7 @@ main() {
     fi    
 
     init
+    read_sel
 
     (( force_install ))  && echo "(force install is ON)"
     (( (sel & DATA_BIT ) != 0)) &&  echo "(data node type selected)"
@@ -4454,7 +4465,7 @@ main() {
     #---------------------------------------
     #System Launch...
     #---------------------------------------
-    start sel
+    start ${sel}
     done_remark
     echo 
 }
