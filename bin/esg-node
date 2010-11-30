@@ -3746,7 +3746,7 @@ read_sel() {
         (($DEBUG)) && echo "(last_config_type = ${last_config_type})"
         sel=${last_config_type:-0}
         ((sel == 0)) && \
-            printf "ERROR: No node type selected nor available! \n Consult usage with --help flag... look for the \"--type\" flag \n(must come BEFORE \"[start|stop|restart|--update]\" args)\n\n" && exit 1
+            printf "ERROR: No node type selected nor available! \n Consult usage with --help flag... look for the \"--type\" flag \n(must come BEFORE \"[start|stop|restart|update]\" args)\n\n" && exit 1
     fi
     ((VERBOSE)) && echo ${sel}
 }
