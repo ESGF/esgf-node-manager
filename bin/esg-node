@@ -191,6 +191,7 @@ init() {
     date_format="+%Y_%m_%d_%H%M%S"
     num_backups_to_keep=${num_backups_to_keep:-7}
     compress_extensions=".tar.gz|.tar.bz2|.tgz|.bz2"
+    certificate_extensions="pem|crt|cert|key"
     java_dist_url=${esg_dist_url}/java/${java_version}/jdk${java_version}-${word_size}.tar.gz
     ant_dist_url=http://www.trieuvan.com/apache/ant/binaries/apache-ant-${ant_version}-bin.tar.gz
     curl_workdir=${workdir}/curl
@@ -2882,7 +2883,7 @@ create_keystore() {
     local password=${5:-${keystore_password}}
     
     checked_get ${utils_url}/ImportKey.class
-    [ $? != 0 ] && echo "Could not fetch keystore generator" && return 1
+    (( $? > 1 )) && echo "Could not fetch keystore generator" && return 1
 
     [ ! -e ${private_key} ] && echo "Sorry, cannot find ${private_key}" && return 2
     [ ! -e ${public_cert} ] && echo "Sorry, cannot find ${public_cert}" && return 2
@@ -2931,7 +2932,7 @@ install_signed_certificate() {
     echo
 
     
-    if [ "${signed_cert_file##*.}" != "der" ]; then
+    if [ -z "$(echo ${signed_cert_file##*.} | egrep "($certificate_extensions)")" ]; then
         #--------------
         #convert from PEM format to a DER format  - for ingeest into the keystores :-)
         echo "converting certificate from PEM format to DER format..."
