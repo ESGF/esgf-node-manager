@@ -230,6 +230,7 @@ init() {
     scripts_dir=${install_prefix}/bin
     no_globus=${no_globus:-0}
     force_install=${force_install:-0}
+    extkeytool_download_url=${esg_dist_url}/etc/idptools.tar.gz
     keystore_file=${tomcat_install_dir}/conf/keystore-tomcat
     keystore_alias=my_esgf_node
     keystore_password=changeit
@@ -2780,12 +2781,15 @@ install_keypair() {
     echo "keystore name  = ${keystore_file}"
     echo "keystore alias = ${keystore_alias}"
 
+    local psecret=$(cat ${HOME}/.esg_keystore_pass 2> /dev/null)
+    local default_passwd=${psecret:=changeit}
+
     if [ -z "${store_password}" ]; then
         local verify_password
         while [ 1 ]; do
             echo
             read -s -p "Please enter the password for this keystore   : " store_password
-            [ "${store_password}" = "changeit" ] && break
+            [ "${store_password}" = "${default_passwd}" ] && break
             [ -z "${store_password}" ] && echo "Invalid password [${store_password}]" && continue
             echo
             read -s -p "Please re-enter the password for this keystore: " verify_password
@@ -2803,13 +2807,29 @@ install_keypair() {
         echo "store_password = ******"
     fi
 
-    #Transform the keypair into the DER format understood by Java's keystore
-    #And generate a new keystore from that pair.
-    [ -e "${keystore_name}" ] && mv ${keystore_name} ${keystore_name}.bak
-    convert_keys ${private_key} ${public_cert} && \
-        create_keystore ${private_key%.*}.der ${public_cert%.*}.der ${keystore_name} ${keystore_alias} ${store_password} 
+    local certfiles=()
+    local certfile_entry
+    echo "Please enter your Certificate Athority's certificate chain file(s): "
+    echo " [enter each cert file/url press return, press return with blank entry when done]"
+    echo
+    while [ 1 ]; do
+        read -p "certfile> " certfile_entry
+        [ -z ${certfile_entry} ] && break
+        certfiles="(${certfiles[@]} ${certfile_entry})"
+    done
+    make_fresh_keystore ${keystore_name} ${keystore_alias} ${store_password} ${private_key} -- ${public_cert} ${certfiles[@]}
+    
+    ##Transform the keypair into the DER format understood by Java's keystore
+    ##And generate a new keystore from that pair.
+    #[ -e "${keystore_name}" ] && mv ${keystore_name} ${keystore_name}.bak
+    #convert_keys ${private_key} ${public_cert} && \
+    #    create_keystore ${private_key%.*}.der ${public_cert%.*}.der ${keystore_name} ${keystore_alias} ${store_password} 
     [ $? != 0 ] && echo "ERROR: Problem with key generation and/or keystore construction" && mv ${keystore_name}.bak ${keystore_name} && exit 5
 
+    echo "${store_password}" > ${HOME}/.esg_keystore_pass
+    chmod 600 ${HOME}/.esg_keystore_pass
+    chown ${installer_uid}:${installer_gid} ${HOME}/.esg_keystore_pass
+    
     #(In order for ORP or any other local service to trust eachother put your own cert into the truststore)
     [ -e "${truststore_file}" ] && mv ${truststore_file} ${truststore_file}.bak
     rebuild_truststore && add_my_cert_to_truststore ${store_password}
@@ -2832,6 +2852,198 @@ install_keypair() {
 
     echo "Please restart this data-node for keys to take effect: \"$0 restart\""
     echo
+}
+
+#The following helper function creates a new keystore for your tomcat installation
+make_fresh_keystore() {
+    
+    #-------------
+    #Set default values such that env vars may be used
+    #-------------
+    local keystore_name
+    local keystore_alias
+    local store_password
+    local private_key
+
+
+    local provider="org.bouncycastle.jce.provider.BouncyCastleProvider"
+    local scratch_dir=${workdir}/$(md5sum <(echo esgf$(pwd)) | awk '{print "scratch" substr($1,0,7) }')
+    #-------------
+    #Collect args...
+    #-------------
+    local certfiles=()
+    local arg_length=$#
+    for ((i=1; i <= ${arg_length} ; i++)) ; do 
+	[ "$1" = "--" ] && shift && certfiles=($@) && break
+	((i==1)) && keystore_name=$1 && shift
+	((i==2)) && keystore_alias=$1 && shift
+	((i==3)) && store_password=$1 && shift
+	((i==4)) && private_key=$1 && shift
+    done
+    local size=${#certfiles[@]}
+    ((DEBUG)) && echo "(certfiles = ${certfiles[@]})"
+    [ ! -e "${private_key}" ] && echo "file [${private_key}] does not exist" && return 1
+    (( size == 0 )) && echo "no certificate files listed" && usage
+
+
+    #-------------
+    #Display values
+    #-------------
+    echo
+    echo "Keystore name : ${keystore_name}"
+    echo "Keystore alias: ${keystore_alias}"
+    echo "Store password: ${store_password}"
+    echo "Private key   : ${private_key}"
+    echo "Certificates..."
+
+    mkdir -p ${scratch_dir}
+    [ $? != 0 ] && echo "exiting..." && return 1
+    PATH=${PATH}:${scratch_dir}/bin
+
+    local certbundle="${scratch_dir}/cert.bundle"
+    local ca_chain_bundle="${scratch_dir}/ca_chain.bundle"
+    
+    local content
+    local skip_check=0
+    local count=1
+    for ((i=0; i<size; i++)) ; do 
+	if ((i == 0)) ; then
+	    echo "  Signed Cert -------> ${certfiles[i]}"
+            echo "${certfiles[i]}" | egrep '^http' 
+            if [ $? == 0 ]; then
+                curl -s -k ${certfiles[i]} > ${certbundle} && echo "[OK]"
+                skip_check=1
+            else
+                cat ${certfiles[i]} > ${certbundle}
+            fi
+            cat /dev/null > ${ca_chain_bundle}
+	elif ((i == (size-1) )) ; then
+	    echo "  Root Cert   -------> ${certfiles[i]}"
+            echo "${certfiles[i]}" | egrep '^http' 
+            if [ $? == 0 ]; then
+                content=$(curl -s -k ${certfiles[i]}) && \
+                    echo "$content" >> ${certbundle} && \
+                    echo "$content" >> ${ca_chain_bundle} && \
+                    echo "[OK]"
+                skip_check=1
+            else
+                cat ${certfiles[i]} >> ${certbundle}
+                cat ${certfiles[i]} >> ${ca_chain_bundle}
+            fi
+	else
+	    echo "  Intermediate [$((count++))] --> ${certfiles[i]}"
+            echo "${certfiles[i]}" | egrep '^http' 
+            if [ $? == 0 ]; then
+                content=$(curl -s -k ${certfiles[i]}) && \
+                    echo "$content" >> ${certbundle} && \
+                    echo "$content" >> ${ca_chain_bundle} && \
+                    echo "[OK]"
+                skip_check=1
+            else
+                cat ${certfiles[i]} >> ${certbundle}
+                cat ${certfiles[i]} >> ${ca_chain_bundle}
+            fi
+	fi
+        ((skip_check==0)) && [ ! -e "${certfiles[i]}" ] && echo "file [${certfiles[i]}] does not exist" && return 1
+        if ((skip_check==0)) ; then
+            ((DEBUG)) && head ${certfiles[i]}
+	    ((DEBUG)) && openssl x509 -text -noout -in ${certfiles[i]}
+        fi
+        skip_check=0
+    done
+    unset count
+    unset content
+
+    #-------------
+    # Structural integrity checks...
+    #-------------    
+    echo
+    echo -n "checking that key pair is congruent... "
+    local pair_hash=($((openssl x509 -noout -modulus -in ${certfiles[0]} | openssl md5 ; openssl rsa -noout -modulus -in ${private_key} | openssl md5) | uniq))
+    (( 1 == ${#pair_hash[@]} )) && printf "[OK] ${pair_hash}\n\n" || (printf "[FAIL]\n\n" && return 1)
+
+
+    #-------------
+    #Let's be a little interactive with users for a sanity check
+    #-------------
+    local answer="Y"
+    read -p "Is the above information correct? [Y/n] " answer
+    [ -n "${answer}" ] && [ "${answer}" != "Y" ]  && [ "${answer}" != "y" ]  && echo "exiting..." && return 1
+    
+    local derkey="${scratch_dir}/key.der"
+
+    #-------------
+    #Make empty keystore...
+    #-------------
+    echo "creating keystore..."
+    #create a keystore with a self-signed cert
+    local dname=${dname:-"CN=$(hostname --fqdn), OU=simpleCA-pcmdi3.llnl.gov, OU=GlobusTest, O=Grid"}
+    [ -e "${keystore_name}" ] && mv ${keystore_name} ${keystore_name}.bak
+    keytool -genkey -keyalg RSA -alias "${keystore_alias}" \
+        -keystore "${keystore_name}" \
+        -storepass "${store_password}" \
+        -keypass "${store_password}" \
+        -validity 360 \
+        -dname "${dname}" \
+        -noprompt
+    [ $? != 0 ] && echo "Problem with generating initial keystore... :-(" && return 1
+
+    echo "clearing keystore..."
+    #delete the cert
+    keytool -delete -alias "${keystore_alias}" -keystore "${keystore_name}" -storepass "${store_password}"
+    [ $? != 0 ] && echo "Problem with preparing initial keystore... :-(" && return 1
+    
+    #-------------
+    #Convert your private key into from PEM to DER format that java likes
+    #-------------
+    echo "converting private key..."
+    openssl pkcs8 -topk8 -nocrypt -inform PEM -in ${private_key} -outform DER -out ${derkey} 
+
+    #-------------
+    #Now we gather up all the other keys in the key chain...
+    #-------------
+    echo -n "checking that chain is valid... "
+    ((DEBUG)) && echo "openssl verify -CAfile ${ca_chain_bundle} ${ca_chain_bundle}"
+    local chain_check=$(openssl verify -CAfile ${ca_chain_bundle} ${ca_chain_bundle} | grep -i error)
+    if [ -z "${chain_check}" ]; then  printf "[OK]\n\n"; else  printf "[FAIL] ${chain_check}\n\n"; return 1 ; fi
+
+    
+    #-------------
+    #Generating new keystore
+    #-------------
+    echo -n "Constructing new keystore content... "
+    local command="extkeytool -importkey -keystore ${keystore_name} -alias ${keystore_alias} -storepass ${store_password} -keypass ${store_password} -keyfile ${derkey} -certfile ${certbundle} -provider ${provider}"
+    ((DEBUG)) && echo && echo ${command}
+
+    ${command} > /dev/null
+    local ret=$?
+
+    #FYI: Code 127 is "command not found"
+    if [ ${ret} == 127 ]; then
+        echo "Hmmm... Cannot find extkeytool... :-( Let me get it for you! [one moment please...]"
+        curl -s -L --insecure ${extkeytool_download_url} |  (cd ${scratch_dir}; tar xzf -)
+        ${command}
+        local ret=$?
+    fi
+
+    [ ${ret} != 0 ] && echo "Problem with running extkeytool :-(" && return 1
+    [ ${ret} == 0 ] && echo "[OK]" && ((!DEBUG)) && echo && echo "cleaning up scratch files" && rm -rf ${scratch_dir} && echo "[OK]"
+    
+    echo
+    echo "How do things look?"
+    keytool -v -list -keystore "${keystore_name}" -storepass ${store_password}
+    if [ $? == 0 ]; then
+	echo 
+	echo "If Everything looks good... then replace your tomcat keystore with this one."
+	echo "Don't forget to change your tomcat's server.xml entry accordingly :-)"
+	echo "Remember: Keep your private key ${private_key} and signed cert ${certfiles[0]} in a safe place!!!"
+	echo
+    else
+	echo 
+	echo "Hmmm... something didn't quite go so right... double check things..."
+	usage
+    fi
+    return 0
 }
 
 #------
