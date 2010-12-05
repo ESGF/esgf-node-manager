@@ -2837,6 +2837,7 @@ install_keypair() {
     [ -e "${truststore_file}" ] && mv ${truststore_file} ${truststore_file}.bak
     rebuild_truststore && add_my_cert_to_truststore ${store_password}
     [ $? != 0 ] && echo "ERROR: Problem with truststore generation" && mv ${truststore_file}.bak ${truststore_file} && exit 6
+    register
     
     #--------------------------------------------------
     #Copy the files to where they need to go for GLOBUS 
@@ -2853,7 +2854,7 @@ install_keypair() {
         chmod 644 ${globus_grid_security_dir}/hostcert.pem && \
         openssl x509 -noout -text -in ${globus_grid_security_dir}/hostcert.pem
 
-    echo "Please restart this data-node for keys to take effect: \"$0 restart\""
+    echo "Please restart this node for keys to take effect: \"$0 restart\""
     echo
 }
 
@@ -4183,7 +4184,7 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         --get-type - returns the last stored type code value of the last run node configuration (data=4 +| index=8 +| idp=16)
 
         Key Management Flags:
-        --register    - connects to desired gateway, fetches and stores their certificate to enable ingress SSL connections
+        --register    - connects to desired node, fetches and stores their certificate to enable ingress SSL connections
         --generate-ssl-key-and-csr - generate new key and cert request files <key file> <cert file> [<dn>]
                                      (The 'dn' value is of the form - Ex:'/O=ESG/OU=ESG-DATA-NODE/CN=<fqdn>')
         --install-keypair - takes as input private key and public cert files and installs them. <key> <cert> [<keystore> <alias> <password>]
