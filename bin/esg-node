@@ -2293,7 +2293,7 @@ setup_globus() {
         touch ${globus_location}/esg_${progname}_installed
     fi
 
-    ((ret)) && checked_done $ret
+    ret=1
 
     if [ $((sel & IDP_BIT)) != 0 ]; then
         echo -n "Globus Setup for Index-Node... (MyProxy server) "
@@ -2359,8 +2359,7 @@ start_globus() {
     ((sel == 0)) && echo "start_globus: no selection set, returning (1)" && return 1
     shift
 
-    local ret=1
-
+    local data_node_ret=1
     local directive="notype"
     if [ $((sel & DATA_BIT))  != 0 ]; then
         echo "Starting Globus Services for Data-Node... (GridFTP server(s)) : [$@]"
@@ -2369,12 +2368,13 @@ start_globus() {
         [ $? != 0 ] && checked_done 1
         pushd ${workdir} >& /dev/null
         source ${scripts_dir}/esg-globus && start_globus_services "${directive}" $@
-        ret=$?
+        data_node_ret=$?
+        [ data_node_ret != 0 ] && echo "Could Not Start Globus Data Node related services (GridFTP)"
         popd >& /dev/null
     fi
 
-    ((ret)) && checked_done $ret
 
+    local idp_node_ret=1
     if [ $((sel & IDP_BIT)) != 0 ]; then
         echo "Starting Globus Services for Index-Node... (MyProxy server)"
         directive="gateway"
@@ -2382,10 +2382,11 @@ start_globus() {
         [ $? != 0 ] && checked_done 1
         pushd ${workdir} >& /dev/null
         source ${scripts_dir}/esg-globus && start_globus_services "${directive}" $@
-        ret=$?
+        idp_node_ret=$?
+        [ idp_node_ret != 0 ] && echo "Could Not Start Globus IDP Node related services (MyProxy)"
         popd >& /dev/null
     fi
-    checked_done $ret
+
 }
 
 # Stops the globus services by delegating out to esg-globus script
@@ -4033,7 +4034,7 @@ show_svc_list() {
     echo "---------------------------"
     echo -n "Running Node Services... "; ((sel != 0)) && echo "[type code=$sel]" || echo ""
     echo "---------------------------"
-    lsof -i |egrep  'postgres|jsvc|globus-gr|java'
+    lsof -i |egrep  'postgres|jsvc|globus-gr|java|myproxy'
     echo "---------------------------"
     echo
     return 0
@@ -4344,7 +4345,11 @@ main() {
                 ;;
             --get-type)
                 read_sel
-                echo "node type: [${sel}]"
+                local resolved_to=""
+                [ $((sel & DATA_BIT)) != 0 ] && resolved_to+="data "
+                [ $((sel & INDEX_BIT)) != 0 ] && resolved_to+="index "
+                [ $((sel & IDP_BIT)) != 0 ] && resolved_to+="idp "
+                echo "node type: [ ${resolved_to}] (${sel}) "
                 exit 0
                 ;;
             start | --start)
