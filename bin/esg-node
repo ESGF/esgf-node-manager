@@ -2310,7 +2310,7 @@ setup_globus() {
 write_globus_env() {
     ((show_summary_latch++))
     echo "export GLOBUS_LOCATION=$GLOBUS_LOCATION" >> ${envfile}
-    echo "export X509_CERT_DIR=$X509_CERT_DIR" >>  ${envfile}
+    echo "export X509_CERT_DIR=\${HOME}/.globus/certificates-esg" >>  ${envfile}
     echo "export gridftp_config_args=$gridftp_config_args" >> ${envfile}
     dedup ${envfile} && source ${envfile}
     return 0
