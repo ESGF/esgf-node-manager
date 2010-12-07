@@ -3981,15 +3981,19 @@ self_verify() {
 #Every successful, explicit call to --type|-t gets recorded in the "config_type" file
 #If the configuration type is not explicity set the value is read from this file.
 read_sel() {
+    ((DEBUG)) && echo "read_sel(${sel})"
     local let mysel=${sel}
+    ((DEBUG)) && echo "mysel = ${mysel}"
 
     #If mysel (our private copy of sel) has not bits in the type bits range then read the config_type file
     #and set us to whatever value we currently add plus that one.  In the case of installation or testing
     #those values are below the range so they shoudl not be looked at for type selection though they may be
     #set.  However whatever we have for the type selection should be added to them for compound selection.
-    if (( (mysel <= MIN_BIT) || (mysel >= MAX_BIT) )); then
+    if (( (mysel < MIN_BIT) || (mysel > MAX_BIT) )); then
+        ((DEBUG)) && echo "Out of Range ${mysel} < ${MIN_BIT} || ${mysel} > ${MAX_BIT}"
         local last_config_type=$(cat ${esg_config_type_file} 2> /dev/null)
         ((mysel+= ${last_config_type:-0}))
+        ((DEBUG)) && echo "mysel is now: ${mysel}"
     fi
     ((mysel == 0)) && \
         printf "ERROR: No node type selected nor available! \n Consult usage with --help flag... look for the \"--type\" flag \n(must come BEFORE \"[start|stop|restart|update]\" args)\n\n"
