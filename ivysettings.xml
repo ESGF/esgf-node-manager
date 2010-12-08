@@ -17,12 +17,6 @@
       <!-- Public Maven 2 repository -->
       <include url="${ivy.default.root.url}/ivysettings-public.xml"/>
       
-      <!-- Shiboleth repository -->
-      <!-- <include url="${ivy.default.root.url}/ivysettings-shiboleth.xml"/> -->
-      
-      <!-- OLD ESGF repository -->
-      <include url="${ivy.default.root.url}/ivysettings-esgf.xml"/>
-      <include url="${ivy.default.root.url}/ivysettings-shared.xml"/>
 
       <include url="${ivy.default.root.url}/ivysettings-default-chain.xml"/>
       
