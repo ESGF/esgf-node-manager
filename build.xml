@@ -269,7 +269,7 @@ Builds the project via ant (obviously).
   </target>
 
   <target name="deliver" depends="deps">
-    <ivy:deliver deliverpattern="dist/[artifact].[revision].[ext]"
+    <ivy:deliver deliverpattern="dist/[artifact]-[revision].[ext]"
                  pubrevision="${version_num}" status="milestone" />
   </target>
   
@@ -279,7 +279,7 @@ Builds the project via ant (obviously).
                  module="${module}"
                  revision="${version_num}"
                  overwrite="true" haltonmissing="false">
-      <artifacts pattern="dist/[artifact].[revision].[ext]"/>
+      <artifacts pattern="dist/[artifact]-[revision].[ext]"/>
     </ivy:publish>
   </target>
 
@@ -357,12 +357,12 @@ Builds the project via ant (obviously).
     -->
   <target name="make_jar" depends="make"
 	  description="(Creates the jar file distribution of this project)">
-    <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}.${version_num}.jar"/>
+    <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}-${version_num}.jar"/>
     <delete>
-      <fileset dir="." includes="${dist_dir}/${module}.${version_num}.jar"/>
+      <fileset dir="." includes="${dist_dir}/${module}-${version_num}.jar"/>
     </delete>
     <mkdir dir="${dist_dir}" />
-    <jar destfile="${dist_dir}/${module}.${version_num}.jar">
+    <jar destfile="${dist_dir}/${module}-${version_num}.jar">
       <fileset dir="${build_dir}"
 	       includes="esg/**,**/*.properties,**/*filter-web.xml"
 	       excludes="**/test/**,**/test-instrumented/**"/>
@@ -382,12 +382,12 @@ Builds the project via ant (obviously).
   </target>
 
   <target name="make_test_jar" depends="make_test" description="(Creates test jar file)">
-    <echo message="JAR -  ${test_build_dir} ->> ${dist_dir}/${module}-test.${version_num}.jar"/>
+    <echo message="JAR -  ${test_build_dir} ->> ${dist_dir}/${module}-test-${version_num}.jar"/>
     <delete>
-      <fileset dir="." includes="${dist_dir}/${module}-test.${version_num}.jar"/>
+      <fileset dir="." includes="${dist_dir}/${module}-test-${version_num}.jar"/>
     </delete>
     <mkdir dir="${dist_dir}" />
-    <jar destfile="${dist_dir}/${module}-test.${version_num}.jar">
+    <jar destfile="${dist_dir}/${module}-test-${version_num}.jar">
       <fileset dir="${test_build_dir}"/>
       <manifest>
 	<attribute name="Organization" value="${organization}"/>
@@ -404,12 +404,12 @@ Builds the project via ant (obviously).
   </target>
   
   <target name="make_common_jar" depends="make" description="(Creates common jar file)">
-    <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}-common.${version_num}.jar"/> 
+    <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}-common-${version_num}.jar"/> 
     <delete> 
       <fileset dir="." includes="${dist_dir}/${module}-common*.jar"/>
     </delete>
     <mkdir dir="${dist_dir}" />
-    <jar destfile="${dist_dir}/${module}-common.${version_num}.jar">
+    <jar destfile="${dist_dir}/${module}-common-${version_num}.jar">
       <fileset dir="${build_dir}"
 	       includes="esg/common/**"/>
       <manifest>
@@ -428,12 +428,12 @@ Builds the project via ant (obviously).
 
   <target name="make_filter_jar" depends="make"
 	  description="(Creates the jar file distribution for service filters)">
-    <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}-filters.${version_num}.jar"/> 
+    <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}-filters-${version_num}.jar"/> 
     <delete> 
-      <fileset dir="." includes="${dist_dir}/${module}-filters.${version_num}.jar"/>
+      <fileset dir="." includes="${dist_dir}/${module}-filters-${version_num}.jar"/>
     </delete>
     <mkdir dir="${dist_dir}" />
-    <jar destfile="${dist_dir}/${module}-filters.${version_num}.jar">
+    <jar destfile="${dist_dir}/${module}-filters-${version_num}.jar">
       <fileset dir="${build_dir}" 
 	       includes="esg/node/filters/**,esg/common/db/**,**/*.properties,**/*filter-web.xml"
 	       excludes="**/test/**,**/test-instrumented/**,**/${module}.properties/**"/>
@@ -452,12 +452,12 @@ Builds the project via ant (obviously).
   </target>
   
   <target name="make_access_log_client_jar" depends="make" description="(Creates jar file for client rpc call to access log service)">
-    <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}-accesslog-client.${version_num}.jar"/> 
+    <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}-accesslog-client-${version_num}.jar"/> 
     <delete> 
       <fileset dir="." includes="${dist_dir}/${module}-accesslog-client*.jar"/>
     </delete>
     <mkdir dir="${dist_dir}" />
-    <jar destfile="${dist_dir}/${module}-accesslog-client.${version_num}.jar">
+    <jar destfile="${dist_dir}/${module}-accesslog-client-${version_num}.jar">
       <fileset dir="${build_dir}"
 	       includes="esg/gateway/client/**,esg/gateway/service/ESGAccessLogService.class"/>
       <manifest>
@@ -512,18 +512,18 @@ Builds the project via ant (obviously).
 
   <target name="make_dist" depends="make_war,make_all_jars"
 	  description="(Creates full software distribution)">
-    <delete file="${dist_dir}/${module}.${version_num}.tar.gz"/> 
-    <tar destfile="${dist_dir}/${module}.${version_num}.tar">
-      <tarfileset dir="${dist_dir}" includes="**/*.jar,**/*.war" prefix="${module}.${version_num}"/>
-      <tarfileset dir="${etc_dir}/db" prefix="${module}.${version_num}/db"/>
-      <tarfileset dir="${basedir}" prefix="${module}.${version_num}">
+    <delete file="${dist_dir}/${module}-${version_num}.tar.gz"/> 
+    <tar destfile="${dist_dir}/${module}-${version_num}.tar">
+      <tarfileset dir="${dist_dir}" includes="**/*.jar,**/*.war" prefix="${module}-${version_num}"/>
+      <tarfileset dir="${etc_dir}/db" prefix="${module}-${version_num}/db"/>
+      <tarfileset dir="${basedir}" prefix="${module}-${version_num}">
 	<include name="LICENSE"/>
 	<include name="INSTALL"/>
 	<include name="README"/>
       </tarfileset>
     </tar>
-    <gzip destfile="${dist_dir}/${module}.${version_num}.tar.gz" src="${dist_dir}/${module}.${version_num}.tar"/>
-    <delete file="${dist_dir}/${module}.${version_num}.tar"/> 
+    <gzip destfile="${dist_dir}/${module}-${version_num}.tar.gz" src="${dist_dir}/${module}-${version_num}.tar"/>
+    <delete file="${dist_dir}/${module}-${version_num}.tar"/> 
 
   </target>
 
@@ -562,7 +562,7 @@ Builds the project via ant (obviously).
   <target name="clean_test_jar" depends="init" 
 	  description="(Cleans out the test jar file)">
     <echo message="Cleaning out test jar file"/> 
-    <delete file="${dist_dir}/${module}-test.${version_num}.jar"/>
+    <delete file="${dist_dir}/${module}-test-${version_num}.jar"/>
     <tstamp/>
   </target>
 
@@ -773,7 +773,7 @@ Builds the project via ant (obviously).
 	<include name="**/*.jar"/>
 	<exclude name="**/junit*.jar"/>
       </fileset>
-      <pathelement path="${dist_dir}/${module}.${version_num}.jar"/>
+      <pathelement path="${dist_dir}/${module}-${version_num}.jar"/>
     </path>
     
     <pathconvert property="__cp" refid="jar_cp" pathsep="${line.separator}"/>
