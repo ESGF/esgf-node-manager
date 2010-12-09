@@ -84,6 +84,8 @@ logfile=${logfile:-"/var/tmp/${t##*/}.out"}
 install_prefix=${install_prefix:-"/usr/local"}
 esg_root_dir=${esg_root_dir:-"/esg"}
 esg_config_type_file=${esg_root_dir}/config/config_type
+pg_secret_file=${esg_root_dir}/config/.esg_pg_pass
+ks_secret_file=${esg_root_dir}/config/.esg_keystore_pass
 workdir=${workdir:-~/workbench/esg}
 install_logfile=${install_logfile:-"/etc/esg.install_log"}
 #--------------
@@ -111,8 +113,8 @@ init() {
     git_install_dir=${GIT_HOME:-${install_prefix}/git}
     postgress_install_dir=${PGHOME:-${install_prefix}/pgsql}
     postgress_user=${PGUSER:-dbsuper}
-    local psecret=$(cat ${HOME}/.esg_pgpass 2> /dev/null)
-    pg_sys_acct_passwd=${pg_sys_acct_passwd:=${psecret:=changeme}}
+    local pg_secret=$(cat ${pg_secret_file} 2> /dev/null)
+    pg_sys_acct_passwd=${pg_sys_acct_passwd:=${pg_secret:=changeme}}
     postgress_host=${PGHOST:-localhost}
     postgress_port=${PGPORT:-5432}
     cdat_home=${CDAT_HOME:-${install_prefix}/cdat}
@@ -825,9 +827,9 @@ setup_postgress() {
         echo "Creating account..."
         /usr/sbin/useradd -r -c"PostgreSQL Service" -g $pg_sys_acct_group -p $pg_sys_acct_passwd -s /bin/bash $pg_sys_acct
         [ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add postgres system account user" && popd && checked_done 1
-        echo "${pg_sys_acct_passwd}" > ${HOME}/.esg_pgpass
-        chmod 600 ${HOME}/.esg_pgpass
-        chown ${installer_uid}:${installer_gid} ${HOME}/.esg_pgpass
+        echo "${pg_sys_acct_passwd}" > ${pg_secret_file}
+        chmod 600 ${pg_secret_file}
+        chown ${installer_uid}:${installer_gid} ${pg_secret_file}
     fi
 
     ########
@@ -2783,8 +2785,8 @@ install_keypair() {
     echo "keystore name  = ${keystore_file}"
     echo "keystore alias = ${keystore_alias}"
 
-    local psecret=$(cat ${HOME}/.esg_keystore_pass 2> /dev/null)
-    local default_passwd=${psecret:=changeit}
+    local ks_secret=$(cat ${ks_secret_file} 2> /dev/null)
+    local default_passwd=${ks_secret:=changeit}
 
     if [ -z "${store_password}" ]; then
         local verify_password
@@ -2830,9 +2832,9 @@ install_keypair() {
     #    create_keystore ${private_key%.*}.der ${public_cert%.*}.der ${keystore_name} ${keystore_alias} ${store_password} 
     #[ $? != 0 ] && echo "ERROR: Problem with key generation and/or keystore construction" && mv ${keystore_name}.bak ${keystore_name} && exit 5
 
-    echo "${store_password}" > ${HOME}/.esg_keystore_pass
-    chmod 600 ${HOME}/.esg_keystore_pass
-    chown ${installer_uid}:${installer_gid} ${HOME}/.esg_keystore_pass
+    echo "${store_password}" > ${ks_secret_file}
+    chmod 600 ${ks_secret_file}
+    chown ${installer_uid}:${installer_gid} ${ks_secret_file}
     
     #(In order for ORP or any other local service to trust eachother put your own cert into the truststore)
     [ -e "${truststore_file}" ] && mv ${truststore_file} ${truststore_file}.bak
@@ -4184,6 +4186,7 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
 
         --no-globus   - will not perform any operations affecting globus tools (for those with existing globus setups)
         --gridftp-config - [ with-bdm-config | bdm-config-only ] without this arg uses default end-user config only
+        --myproxy - [gen-self-cert] <dir> | [regen-simpleca] [fetch-certs|gen-self-cert|keep-certs] | [install|update]
 
         --type | -t <data &| index &| idp> - Select type of node: \"data node\", \"index node\" and/or \"identity provider node\" (\"data\" is default)
         --set-type  <data &| index &| idp> - Sets the type value to be used at next start up
@@ -4412,7 +4415,8 @@ main() {
                 #The arg "1" indicates an upgrade (see functions)
                 setup_tomcat 1
 
-                [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${sel} ${gridftp_config_args}
+                [ $((sel & DATA_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${sel} ${gridftp_config_args}
+                [ $((sel & IDP_BIT )) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${sel} ${myproxy_config_args}
                 [ $((sel & INDEX_BIT)) != 0 ] && setup_subsystem search esg-search 1
 
                 #The arg "1" indicates an upgrade (see function)
@@ -4602,10 +4606,11 @@ main() {
                 force_install=1
                 ;;
             --gridftp-config)
+                (( (sel & DATA_BIT) == 0 )) && echo "Sorry, the --gridftp flag may only be used for \"node\" type commands" && exit 1
                 #acceptable args:  "with-bdm-config" | "bdm-config-only"
                 #Gather up tokens after this switch as long as the
                 #subsequent tokens do not start with "--"
-                local tmpargs #array to store args for this switch.
+                local tmpargs=""#array to store args for this switch.
                 local let index=0
                 shift
                 until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ] || [ "$1" = "update" ]; do
@@ -4614,8 +4619,26 @@ main() {
                     shift
                 done
                 unshift=1
-                [ "${#tmpargs}" = 0 ] && printf "\n\n must follow --gridftp-config with proper flag! \n\n" && usage
+                [ "${#tmpargs}" = 0 ] && printf "\n\n must follow --gridftp-config with proper flag(s)! \n\n" && usage
                 gridftp_config_args=${tmpargs[@]}
+                unset tmpargs
+                ;;
+            --myproxy)
+                (( (sel & IDP_BIT) == 0 )) && echo "Sorry, the --myproxy flag may only be used for \"idp\" type commands" && exit 1
+                #acceptable args:  [gen-self-cert] <dir> | [regen-simpleca] [fetch-certs|gen-self-cert|keep-certs] | [install|update]
+                #Gather up tokens after this switch as long as the
+                #subsequent tokens do not start with "--"
+                local tmpargs=""#array to store args for this switch.
+                local let index=0
+                shift
+                until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ] || [ "$1" = "update" ]; do
+                    tmpargs[((index++))]=$1
+                    (($DEBUG)) && echo "added $1 to args list: ${tmpargs[@]}"
+                    shift
+                done
+                unshift=1
+                [ "${#tmpargs}" = 0 ] && printf "\n\n must follow --myproxy with proper flags! \n\n" && usage
+                myproxy_config_args=${tmpargs[@]}
                 unset tmpargs
                 ;;
             status | --status)
@@ -4694,7 +4717,7 @@ main() {
     #---------------------------------------
     # Globus Installation...
     #---------------------------------------
-    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT+IDP_BIT))   != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus $sel ${gridftp_config_args}
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus $sel ${gridftp_config_args}
     [ $((sel & TEST_BIT))    != 0 ] && [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "test_globus" && test_globus $sel
 
 
