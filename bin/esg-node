@@ -115,6 +115,7 @@ init() {
     postgress_user=${PGUSER:-dbsuper}
     local pg_secret=$(cat ${pg_secret_file} 2> /dev/null)
     pg_sys_acct_passwd=${pg_sys_acct_passwd:=${pg_secret:=changeme}}
+    unset pg_secret #only here to hold the tertiary ephemeral value from file, unset asap
     postgress_host=${PGHOST:-localhost}
     postgress_port=${PGPORT:-5432}
     cdat_home=${CDAT_HOME:-${install_prefix}/cdat}
@@ -4437,8 +4438,8 @@ main() {
                 #The arg "1" indicates an upgrade (see functions)
                 setup_tomcat 1
 
-                [ $((sel & DATA_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${DATA_BIT} ${gridftp_config_args}
-                [ $((sel & IDP_BIT )) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${IDP_BIT} ${myproxy_config_args}
+                [ $((sel & DATA_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus [${DATA_BIT}]" && setup_globus ${DATA_BIT} ${gridftp_config_args}
+                [ $((sel & IDP_BIT )) != 0 ] && (( ! no_globus )) && echo "setup_globus [${IDP_BIT}]" && setup_globus ${IDP_BIT} ${myproxy_config_args}
                 [ $((sel & INDEX_BIT)) != 0 ] && setup_subsystem search esg-search 1
 
                 #The arg "1" indicates an upgrade (see function)
@@ -4740,8 +4741,8 @@ main() {
     #---------------------------------------
     # Globus Installation...
     #---------------------------------------
-    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus $sel ${gridftp_config_args}
-    [ $((sel & TEST_BIT))    != 0 ] && [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "test_globus" && test_globus $sel
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus [${DATA_BIT}]" && setup_globus ${DATA_BIT} ${gridftp_config_args}
+    [ $((sel & TEST_BIT))    != 0 ] && [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "test_globus [${IDP_BIT}" && test_globus ${IDP_BIT} ${myproxy_config_args}
 
 
     #---------------------------------------
