@@ -341,7 +341,7 @@ Builds the project via ant (obviously).
     </javac>
 
     <copy todir="${build_dir}" filtering="${filter}" overwrite="true">
-      <fileset dir="${conf_dir}" includes="**/*.properties,**/*.template,**/*filter-web.xml"/>
+      <fileset dir="${conf_dir}" includes="**/*.properties,**/*.template,**/*.xml"/>
       <fileset dir="${src_dir}" includes="**/*.properties,**/*.template,**/*.xml"/>
     </copy> 
 
