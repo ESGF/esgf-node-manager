@@ -2313,12 +2313,12 @@ setup_globus() {
         directive="gateway"
         pushd ${workdir} >& /dev/null
         source ${scripts_dir}/${fetch_file} && setup_globus_services "${directive}" $@
-        local ret=$?
+        ret=$?
         popd >& /dev/null
         [ ${ret} = 0 ] && write_globus_env || checked_done 1
         touch ${globus_location}/esg_${progname}_installed
     fi
-    checked_done $ret
+    return 0
 }
 
 write_globus_env() {
