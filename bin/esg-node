@@ -84,6 +84,8 @@ logfile=${logfile:-"/var/tmp/${t##*/}.out"}
 install_prefix=${install_prefix:-"/usr/local"}
 esg_root_dir=${esg_root_dir:-"/esg"}
 esg_config_type_file=${esg_root_dir}/config/config_type
+pg_secret_file=${esg_root_dir}/config/.esg_pg_pass
+ks_secret_file=${esg_root_dir}/config/.esg_keystore_pass
 workdir=${workdir:-~/workbench/esg}
 install_logfile=${install_logfile:-"/etc/esg.install_log"}
 #--------------
@@ -105,14 +107,15 @@ init() {
     ant_version=${ant_version:-"1.8.1"}
     postgress_version=${postgress_version:-"8.4.5"}
     tomcat_version=${tomcat_version:-"6.0.29"}
-    tds_version=${tds_version:-"4.1.6"}
+    tds_version=${tds_version:-"4.2"}
 
     curl_install_dir=${CURL_HOME:-${install_prefix}/curl}
     git_install_dir=${GIT_HOME:-${install_prefix}/git}
     postgress_install_dir=${PGHOME:-${install_prefix}/pgsql}
     postgress_user=${PGUSER:-dbsuper}
-    local psecret=$(cat ${HOME}/.esg_pgpass 2> /dev/null)
-    pg_sys_acct_passwd=${pg_sys_acct_passwd:=${psecret:=changeme}}
+    local pg_secret=$(cat ${pg_secret_file} 2> /dev/null)
+    pg_sys_acct_passwd=${pg_sys_acct_passwd:=${pg_secret:=changeme}}
+    unset pg_secret #only here to hold the tertiary ephemeral value from file, unset asap
     postgress_host=${PGHOST:-localhost}
     postgress_port=${PGPORT:-5432}
     cdat_home=${CDAT_HOME:-${install_prefix}/cdat}
@@ -121,6 +124,7 @@ init() {
     ant_install_dir=${ANT_HOME:-${install_prefix}/ant}
     tomcat_install_dir=${CATALINA_HOME:-${install_prefix}/tomcat}
     tomcat_conf_dir=${tomcat_install_dir}/conf
+    #tomcat_conf_dir=${esg_root_dir}/config/tomcat
     tomcat_opts=${CATALINA_OPTS}
     tomcat_user=${tomcat_user:-tomcat}
     tomcat_group=${tomcat_group:-$tomcat_user}
@@ -232,6 +236,7 @@ init() {
     no_globus=${no_globus:-0}
     force_install=${force_install:-0}
     extkeytool_download_url=${esg_dist_url}/etc/idptools.tar.gz
+    tomcat_users_file=${tomcat_conf_dir}/tomcat-users.xml
     keystore_file=${tomcat_conf_dir}/keystore-tomcat
     keystore_alias=my_esgf_node
     keystore_password=changeit
@@ -246,7 +251,8 @@ init() {
     mkdir -p ${esg_backup_dir}  && \
         mkdir -p ${esg_tools_dir} && \
         mkdir -p ${esg_log_dir} && \
-        mkdir -p ${esg_config_dir}
+        mkdir -p ${esg_config_dir} && \
+        mkdir -p ${tomcat_conf_dir}
     [ $? != 0 ] && echo "ERROR: could not create ${esg_root_dir} dir and/or subdirectories" && checked_done 1
 
     [ -w "${envfile}" ] && write_paths
@@ -825,9 +831,9 @@ setup_postgress() {
         echo "Creating account..."
         /usr/sbin/useradd -r -c"PostgreSQL Service" -g $pg_sys_acct_group -p $pg_sys_acct_passwd -s /bin/bash $pg_sys_acct
         [ $? != 0 ] && [ $? != 9 ] && echo "ERROR: Could not add postgres system account user" && popd && checked_done 1
-        echo "${pg_sys_acct_passwd}" > ${HOME}/.esg_pgpass
-        chmod 600 ${HOME}/.esg_pgpass
-        chown ${installer_uid}:${installer_gid} ${HOME}/.esg_pgpass
+        echo "${pg_sys_acct_passwd}" > ${pg_secret_file}
+        chmod 600 ${pg_secret_file}
+        chown ${installer_uid}:${installer_gid} ${pg_secret_file}
     fi
 
     ########
@@ -1465,17 +1471,17 @@ configure_tomcat() {
     echo "*******************************"
     echo
 
-    pushd $tomcat_install_dir/conf #>& /dev/null
+    pushd ${tomcat_install_dir}/conf #>& /dev/null
     
     local fetch_file
     local genreq=N
 
     fetch_file=server.xml
-    checked_get ./${fetch_file} ${esg_dist_url}/externals/bootstrap/dnode.${fetch_file}
+    checked_get ./${fetch_file} ${esg_dist_url}/externals/bootstrap/node.${fetch_file}
     (( $? > 1 )) && popd && checked_done 1
     chmod 600 ${fetch_file}
 
-    #Create a keystore in $tomcat_install_dir/conf
+    #Create a keystore in $tomcat_conf_dir
     echo "Keystore setup: "
     local store_password=${1}
     if [ ! -e ${keystore_file} ]; then
@@ -1542,14 +1548,14 @@ configure_tomcat() {
         #Now we generate the key and cert externally, but maintaining the DN specified in the, just built, keystore
         local dn=$(extract_keystore_dn ${keystore_file} ${store_password})
         sleep 1
-        generate_ssl_key_and_csr hostkey.pem $(hostname --fqdn)-esg-node.csr ${dn}
+        generate_ssl_key_and_csr ${tomcat_conf_dir}/hostkey.pem ${tomcat_conf_dir}/$(hostname --fqdn)-esg-node.csr ${dn}
         [ $? != 0 ] && echo " ERROR: Unable to generate ssl key and csr! (you will have to run --generate-ssl-key-and-csr after installation)"
 
         chown -R ${installer_uid}:${installer_gid} $(hostname --fqdn)-esg-node.csr
     fi
     
 
-    #Fetch/Copy truststore to $tomcat_install_dir/conf
+    #Fetch/Copy truststore to $tomcat_conf_dir
     #(first try getting it from distribution server otherwise copy Java's)
     if [ ! -e ${truststore_file} ]; then
         fetch_file=${truststore_file##*/} # i.e. esg-truststore.ts
@@ -1568,6 +1574,8 @@ configure_tomcat() {
     #NOTE: The truststore uses the java default password: "changeit"
 
     #Edit the server.xml file to contain proper location of certificates
+    eval "perl -p -i -e 's#\\@\\@tomcat_users_file\\@\\@#${tomcat_users_file}#g' server.xml"
+    echo -n "*"
     eval "perl -p -i -e 's#\\@\\@truststore_file\\@\\@#${truststore_file}#g' server.xml"
     echo -n "*"
     eval "perl -p -i -e 's#\\@\\@truststore_password\\@\\@#changeit#g' server.xml"
@@ -1585,6 +1593,11 @@ configure_tomcat() {
     [ $? != 0 ] && " ERROR: Could not change ownership of tomcat to \"$tomcat_user\" user" && popd && checked_done 1
     chgrp -R $tomcat_group $(readlink -f ${tomcat_install_dir})
     [ $? != 0 ] && " ERROR: Could not change group of tomcat to \"$tomcat_user\" user" && popd && checked_done 1
+
+    chown -R $tomcat_user $(readlink -f ${tomcat_conf_dir})
+    [ $? != 0 ] && " ERROR: Could not change ownership of esg's tomcat config dir to \"$tomcat_user\" user" && popd && checked_done 1
+    chgrp -R $tomcat_group $(readlink -f ${tomcat_conf_dir})
+    [ $? != 0 ] && " ERROR: Could not change group of esg's tomcat config dir to \"$tomcat_user\" user" && popd && checked_done 1
 
     popd #>& /dev/null
 }
@@ -1995,13 +2008,13 @@ setup_tds() {
     #Setup Digest authentication
     ############################
 
-    pushd $tomcat_install_dir/conf/ >& /dev/null
+    pushd ${tomcat_conf_dir} >& /dev/null
 
     fetch_file=tomcat-users.xml
-    checked_get $tomcat_install_dir/conf/${fetch_file} ${esg_dist_url}/externals/bootstrap/${fetch_file}
+    checked_get $tomcat_conf_dir/${fetch_file} ${esg_dist_url}/externals/bootstrap/${fetch_file}
     (( $? > 1 )) && popd && checked_done 1
-    chown ${tomcat_user}  $tomcat_install_dir/conf/${fetch_file}
-    chgrp ${tomcat_group} $tomcat_install_dir/conf/${fetch_file}
+    chown ${tomcat_user}  $tomcat_conf_dir/${fetch_file}
+    chgrp ${tomcat_group} $tomcat_conf_dir/${fetch_file}
     
 
     #1: Generate password hash
@@ -2050,7 +2063,7 @@ setup_tds() {
 
     mkdir -p ${tomcat_conf_dir}/Catalina/localhost
     fetch_file=thredds.xml
-    checked_get $tomcat_install_dir/conf/Catalina/localhost/${fetch_file} ${esg_dist_url}/externals/bootstrap/tomcat-${fetch_file}
+    checked_get $tomcat_conf_dir/Catalina/localhost/${fetch_file} ${esg_dist_url}/externals/bootstrap/tomcat-${fetch_file}
     (( $? > 1 )) && echo " ERROR: Problem pulling down ${fetch_file} from esg distribution" && popd && checked_done 1
 
     
@@ -2265,7 +2278,7 @@ test_tds() {
 # for idp configuration (MyProxy stuff): [gen-self-cert] <dir> | [regen-simpleca] [fetch-certs|gen-self-cert] | ["install"|"update"])
 setup_globus() {
     local sel=${1:-${sel:-0}}
-    read_sel
+    echo "setup_globus for sel type ${sel}"
     ((sel == 0)) && echo "setup_globus: no selection set, returning (1)" && return 1
     shift
     
@@ -2699,7 +2712,7 @@ add_my_cert_to_truststore() {
 #arg 3 -> what we want the DN to be for public cert
 generate_ssl_key_and_csr() {
     echo "Generating private host key... "
-    local private_key=${1:-"hostkey.pem"}
+    local private_key=${1:-${tomcat_conf_dir}/hostkey.pem}
     openssl genrsa -out ${private_key} 1024
     [ $? == 0 ] && echo "[OK]" || (echo "[FAILED]" && return 1)
     chmod 400 ${private_key}
@@ -2707,7 +2720,7 @@ generate_ssl_key_and_csr() {
     #NOTE: To include DN at the command line
     #openssl req -new -nodes -subj '/O=Grid/OU=GlobusTest/OU=simpleCA-pcmdi3.llnl.gov/CN=esg-test1.llnl.gov' -key hostkey.pem -out esg-test1.llnl.gov-esg-node.csr
     echo "Generating Certificate Signing Request (csr)... "
-    local public_cert_req=${2:-$(hostname --fqdn)-esg-node.csr}    
+    local public_cert_req=${2:-${tomcat_conf_dir}/$(hostname --fqdn)-esg-node.csr}
     local public_cert_dn=${3:-$(extract_keystore_dn ${keystore_file})}
 
     echo "Using DN = [${public_cert_dn}]"
@@ -2784,8 +2797,8 @@ install_keypair() {
     echo "keystore name  = ${keystore_file}"
     echo "keystore alias = ${keystore_alias}"
 
-    local psecret=$(cat ${HOME}/.esg_keystore_pass 2> /dev/null)
-    local default_passwd=${psecret:=changeit}
+    local ks_secret=$(cat ${ks_secret_file} 2> /dev/null)
+    local default_passwd=${ks_secret:=changeit}
 
     if [ -z "${store_password}" ]; then
         local verify_password
@@ -2831,9 +2844,9 @@ install_keypair() {
     #    create_keystore ${private_key%.*}.der ${public_cert%.*}.der ${keystore_name} ${keystore_alias} ${store_password} 
     #[ $? != 0 ] && echo "ERROR: Problem with key generation and/or keystore construction" && mv ${keystore_name}.bak ${keystore_name} && exit 5
 
-    echo "${store_password}" > ${HOME}/.esg_keystore_pass
-    chmod 600 ${HOME}/.esg_keystore_pass
-    chown ${installer_uid}:${installer_gid} ${HOME}/.esg_keystore_pass
+    echo "${store_password}" > ${ks_secret_file}
+    chmod 600 ${ks_secret_file}
+    chown ${installer_uid}:${installer_gid} ${ks_secret_file}
     
     #(In order for ORP or any other local service to trust eachother put your own cert into the truststore)
     [ -e "${truststore_file}" ] && mv ${truststore_file} ${truststore_file}.bak
@@ -3335,7 +3348,7 @@ register() {
     (( $? > 1 )) && echo " ERROR: Could not download utility class(2) for installing certificates" && popd && return 1
     popd # >& /dev/null
 
-    pushd $tomcat_install_dir/conf >& /dev/null
+    pushd ${tomcat_conf_dir} >& /dev/null
     
     local input=${1:-${ESG_GATEWAY_SVC_ROOT%%/*}}
     [ -z "${input}" ] && popd && echo "Could not register: No endpoint specified" && return 1
@@ -3733,7 +3746,7 @@ check_webapp_version() {
     local webapp_name=$1
     local target_version=$2
 
-    local current_version=$(sed -n '/^Version:[ ]*\(.*\)/p' ${tomcat_install_dir}/webapps/${webapp_name}/META-INF/MANIFEST.MF | awk '{print $2}' | xargs)
+    local current_version=$(sed -n '/^Version:[ ]*\(.*\)/p' ${tomcat_install_dir}/webapps/${webapp_name}/META-INF/MANIFEST.MF | awk '{print $2}' | xargs 2> /dev/null)
     [ $? != 0 ] && echo " WARNING:(2) Could not detect version of ${webapp_name}" && return 2
     [ -z "${current_version}" ] && echo " WARNING:(1) Could not detect version of ${webapp_name}" && return 3
 
@@ -4183,14 +4196,23 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         --info        - provides a brief explaination of the DataNode
         --upgrade|--update - upgrades/updates the node manager
 
-        --no-globus   - will not perform any operations affecting globus tools (for those with existing globus setups)
-        --gridftp-config - [ with-bdm-config | bdm-config-only ] without this arg uses default end-user config only
-
+        -------------------------------
+        Configuration Selection
+        -------------------------------
         --type | -t <data &| index &| idp> - Select type of node: \"data node\", \"index node\" and/or \"identity provider node\" (\"data\" is default)
         --set-type  <data &| index &| idp> - Sets the type value to be used at next start up
         --get-type - returns the last stored type code value of the last run node configuration (data=4 +| index=8 +| idp=16)
 
+        -------------------------------
+        Globus Tool Management
+        -------------------------------
+        --no-globus   - will not perform any operations affecting globus tools (for those with existing globus setups)
+        --gridftp-config - [ with-bdm-config | bdm-config-only ] without this arg uses default end-user config only
+        --myproxy - [gen-self-cert] <dir> | [regen-simpleca] [fetch-certs|gen-self-cert|keep-certs] | [install|update]
+
+        -------------------------------
         Key Management Flags:
+        -------------------------------
         --register    - connects to desired node, fetches and stores their certificate to enable ingress SSL connections
         --generate-ssl-key-and-csr - generate new key and cert request files <key file> <cert file> [<dn>]
                                      (The 'dn' value is of the form - Ex:'/O=ESG/OU=ESG-DATA-NODE/CN=<fqdn>')
@@ -4203,7 +4225,9 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
         (deprecated) --install-signed-cert - installs signed host certificate into keystore and truststore <signed PEM file>
         (deprecated) --export-keys-to-globus  - exports keystore certificates to globus host{cert,key}.pem files.
 
+        -------------------------------
         Node Life Cycle Flags:
+        -------------------------------
         start   - start the node's services
         stop    - stops the node's services
         status  - status on node's services
@@ -4252,13 +4276,15 @@ ${progname} ([--<directive>] | [start] | [stop] | [status] [restart]
       *installation - this should be sourced by users of this
       *application stack.
 
+      --------------
       Typical usage:
+      --------------
 
       Installation : esg-node --install --verify
           (submit csr and get back returned cert)
       Credentials  : esg-node --install-keypair <key> <cert>
       Test Publish : esg-node --test-pub
-      Update Certs : esg-node --rebuild-truststore
+      Update Certs : esg-node [--force] --rebuild-truststore
       Life Cycle   : esg-node [start|stop|status|restart|update]
 
     " | more
@@ -4413,7 +4439,8 @@ main() {
                 #The arg "1" indicates an upgrade (see functions)
                 setup_tomcat 1
 
-                [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus ${sel} ${gridftp_config_args}
+                [ $((sel & DATA_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus [${DATA_BIT}]" && setup_globus ${DATA_BIT} ${gridftp_config_args}
+                [ $((sel & IDP_BIT )) != 0 ] && (( ! no_globus )) && echo "setup_globus [${IDP_BIT}]" && setup_globus ${IDP_BIT} ${myproxy_config_args}
                 [ $((sel & INDEX_BIT)) != 0 ] && setup_subsystem search esg-search 1
 
                 #The arg "1" indicates an upgrade (see function)
@@ -4509,8 +4536,9 @@ main() {
                 exit $?
                 ;;
             --rebuild-truststore)
-                self_verify
                 shift
+                (( $# != 0 ))  && echo "error: \"--rebuild-truststore\" must be the last argument in the arg sequence, Sorry :-(" && exit 1
+                self_verify
                 init
                 id | grep root >& /dev/null
                 [ $? != 0 ] && printf "[FAIL] \n\tMust be root for this option\n\n" && exit 1
@@ -4603,10 +4631,11 @@ main() {
                 force_install=1
                 ;;
             --gridftp-config)
+                (( (sel & DATA_BIT) == 0 )) && echo "Sorry, the --gridftp flag may only be used for \"node\" type commands" && exit 1
                 #acceptable args:  "with-bdm-config" | "bdm-config-only"
                 #Gather up tokens after this switch as long as the
                 #subsequent tokens do not start with "--"
-                local tmpargs #array to store args for this switch.
+                local tmpargs=""#array to store args for this switch.
                 local let index=0
                 shift
                 until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ] || [ "$1" = "update" ]; do
@@ -4615,8 +4644,26 @@ main() {
                     shift
                 done
                 unshift=1
-                [ "${#tmpargs}" = 0 ] && printf "\n\n must follow --gridftp-config with proper flag! \n\n" && usage
+                [ "${#tmpargs}" = 0 ] && printf "\n\n must follow --gridftp-config with proper flag(s)! \n\n" && usage
                 gridftp_config_args=${tmpargs[@]}
+                unset tmpargs
+                ;;
+            --myproxy)
+                (( (sel & IDP_BIT) == 0 )) && echo "Sorry, the --myproxy flag may only be used for \"idp\" type commands" && exit 1
+                #acceptable args:  [gen-self-cert] <dir> | [regen-simpleca] [fetch-certs|gen-self-cert|keep-certs] | [install|update]
+                #Gather up tokens after this switch as long as the
+                #subsequent tokens do not start with "--"
+                local tmpargs=""#array to store args for this switch.
+                local let index=0
+                shift
+                until [ $(echo $1 | egrep '^\s*--') ] || [ -z "$1" ] || [ "$1" = "stop" ] || [ "$1" = "start" ] || [ "$1" = "status" ] || [ "$1" = "restart" ] || [ "$1" = "update" ]; do
+                    tmpargs[((index++))]=$1
+                    (($DEBUG)) && echo "added $1 to args list: ${tmpargs[@]}"
+                    shift
+                done
+                unshift=1
+                [ "${#tmpargs}" = 0 ] && printf "\n\n must follow --myproxy with proper flags! \n\n" && usage
+                myproxy_config_args=${tmpargs[@]}
                 unset tmpargs
                 ;;
             status | --status)
@@ -4695,8 +4742,8 @@ main() {
     #---------------------------------------
     # Globus Installation...
     #---------------------------------------
-    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT+IDP_BIT))   != 0 ] && (( ! no_globus )) && echo "setup_globus" && setup_globus $sel ${gridftp_config_args}
-    [ $((sel & TEST_BIT))    != 0 ] && [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "test_globus" && test_globus $sel
+    [ $((sel & INSTALL_BIT)) != 0 ] && [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "setup_globus [${DATA_BIT}]" && setup_globus ${DATA_BIT} ${gridftp_config_args}
+    [ $((sel & TEST_BIT))    != 0 ] && [ $((sel & DATA_BIT+IDP_BIT)) != 0 ] && (( ! no_globus )) && echo "test_globus [${IDP_BIT}" && test_globus ${IDP_BIT} ${myproxy_config_args}
 
 
     #---------------------------------------
