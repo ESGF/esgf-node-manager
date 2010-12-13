@@ -97,7 +97,8 @@ init() {
     #--------------------------------
     # Internal data-node code versions and supporting external libraries
     #--------------------------------
-    cdat_version=${cdat_version:-"eb8b668"}
+    #cdat_version=${cdat_version:-"eb8b668"}
+    cdat_version=${cdat_version:-"4.0.0"}
     esgcet_version=${esgcet_version:-"2.7.3"}
     esgcet_python_version=${esgcet_python_version:-"2.6"}
     node_version=${node_version:-"0.9.0"}
@@ -121,7 +122,7 @@ init() {
     ant_version=${ant_version:-"1.8.1"}
     postgress_version=${postgress_version:-"8.4.5"}
     tomcat_version=${tomcat_version:-"6.0.29"}
-    tds_version=${tds_version:-"4.2"}
+    tds_version=${tds_version:-"4.2.20100908.2246"}
 
     #--------------------------------
     # Script vars (~external)
@@ -1018,6 +1019,11 @@ test_postgress() {
 # Python/CDMS
 #####
 setup_cdat() {
+    echo -n "Checking for CDAT (Pythong+CDMS) ${cdat_version}"
+    check_version_with "cdat" ${cdat_version} "${cdat_home}/bin/cdatversion"
+    local ret=$?
+    ((ret == 0)) && (( ! force_install )) && echo " [OK]" && return 0
+
     echo
     echo "*******************************"
     echo "Setting up CDAT - (Python + CDMS)... ${cdat_version}"
@@ -1958,9 +1964,14 @@ configure_postgress() {
 # THREDDS Data Server
 #####
 setup_tds() {
+    echo -n "Checking for thredds (tds) ${tds_version}"
+    check_webapp_version "thredds" ${tds_version} "Implementation-Version"
+    local ret=$?
+    ((ret == 0)) && (( ! force_install )) && echo " [OK]" && return 0
+
     echo
     echo "*******************************"
-    echo "Setting up Thredds Data Server..."
+    echo "Setting up Thredds Data Server... v${tds_version}"
     echo "*******************************"
     echo
 
@@ -3754,17 +3765,18 @@ check_module_version() {
     (($DEBUG)) && echo " The return value from the call to helper function check_version_ is $ret"
     [ $ret == 0 ] && return 0
 
-    printf "\nSorry, the detected version of $1 [${current_version}] is older than required minimum version [$2] \n"
+    printf "\nSorry, the detected version of $1 [${current_version}] is older than required minimum version [${target_version}] \n"
     return 1
 }
 
 check_webapp_version() {
     local webapp_name=$1
     local target_version=$2
+    local version_property=${3:-"Version"}
 
-    [ ! -d "${tomcat_install}/webapps/${webapp_name}" ] && echo "Web Application \"${webapp_name}\" is not present or cannot be detected!" && return 2
+    [ ! -d "${tomcat_install_dir}/webapps/${webapp_name}" ] && echo " Web Application \"${webapp_name}\" is not present or cannot be detected!" && return 2
 
-    local current_version=$(sed -n '/^Version:[ ]*\(.*\)/p' ${tomcat_install_dir}/webapps/${webapp_name}/META-INF/MANIFEST.MF | awk '{print $2}' | xargs 2> /dev/null)
+    local current_version=$(sed -n '/^'${version_property}':[ ]*\(.*\)/p' ${tomcat_install_dir}/webapps/${webapp_name}/META-INF/MANIFEST.MF | awk '{print $2}' | xargs 2> /dev/null)
     [ $? != 0 ] && echo " WARNING:(2) Could not detect version of ${webapp_name}" && return 3
     [ -z "${current_version}" ] && echo " WARNING:(1) Could not detect version of ${webapp_name}" && return 4
 
@@ -3774,7 +3786,7 @@ check_webapp_version() {
     (($DEBUG)) && echo " The return value from the call to helper function check_version_ is $ret"
     [ $ret == 0 ] && return 0
 
-    printf "\nSorry, the detected version of $1 [${current_version}] is older than required minimum version [$2] \n"
+    printf "\nSorry, the detected version of $1 [${current_version}] is older than required minimum version [${target_version}] \n"
     return 1
 }
 
@@ -3794,7 +3806,26 @@ check_app_version() {
     (($DEBUG)) && echo " The return value from the call to helper function check_version_ is $ret"
     [ $ret == 0 ] && return 0
 
-    printf "\nSorry, the detected version of ${app_dir##*/} [${current_version}] is older than required minimum version [$2] \n"
+    printf "\nSorry, the detected version of ${app_dir##*/} [${current_version}] is older than required minimum version [${target_version}] \n"
+    return 1
+}
+
+#Provide your own command for fetching current version
+check_version_with() {
+    local app_name=$1
+    local target_version=$2
+    local version_command=${3:-"${app_name} --version"}
+
+    local current_version=$(${version_command})
+    [ $? != 0 ] && echo " WARNING:(2) Could not detect version of ${app_name##*/}" && return 3
+
+    (($DEBUG)) && echo " calling helper, check_version_helper ${current_version} >= ${target_version}"
+    check_version_helper "${current_version}" ">=" "${target_version}" # note: bug found (needed to quote the operation ">=")
+    local ret=$?
+    (($DEBUG)) && echo " The return value from the call to helper function check_version_ is $ret"
+    [ $ret == 0 ] && return 0
+
+    printf "\nSorry, the detected version of ${app_name##*/} [${current_version}] is older than required minimum version [${target_version}] \n"
     return 1
 }
 
