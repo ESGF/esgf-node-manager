@@ -1446,7 +1446,7 @@ setup_tomcat() {
             ret=$?
             [ $ret == 0 ] && break
             sleep 1
-            : ((wait_time--))
+            : $((wait_time--))
             echo -n "."
         done
         [ $ret == 0 ] && echo " [OK]" || echo " [FAIL]"
@@ -2238,7 +2238,7 @@ setup_tds() {
         ret=$?
         [ $ret == 0 ] && break
         sleep 1
-        : ((wait_time--))
+        : $((wait_time--))
     done
 
     [ $? != 0 ] && echo "[FAILED]" && echo " ERROR: Not able to contact thredds page on this server" && checked_done 1
@@ -3486,7 +3486,7 @@ pcheck() {
         ret=$?
         ((return_on_true)) && [ $ret == 0 ] && break
         ((iterations != 1)) && sleep ${wait_time}
-        : ((iterations--))
+        : $((iterations--))
     done
     [ $ret == 0 ] && printf "\n${task_function} [OK]\n" || printf "\n${task_function} [FAIL]\n"
     return $ret
