@@ -14,4 +14,4 @@
 ../LICENSE
 
 ../dist/esgf-node-manager-0.9.1.tar.gz
-./esgf-node-manager
+./esg-node-manager
