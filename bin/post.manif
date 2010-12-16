@@ -6,14 +6,14 @@
 # This is a manifest, listing all the files to be posted to the
 # distribution server.
 
-[esg-node]
+[esgf-node-manager]
 
 ../HOWTO
 ../INSTALL
 ../TODO
 ../LICENSE
 
-../dist/esg-node.1.0.0.4.tar.gz
+../dist/esgf-node-manager-0.9.1.tar.gz
 ./esg-node
 ./esg-update
 
