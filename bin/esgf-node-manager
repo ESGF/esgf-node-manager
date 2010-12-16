@@ -73,7 +73,7 @@
 DEBUG=${DEBUG:-0}
 VERBOSE=${VERBOSE:-0}
 progname=esg-node
-version="0.9.0"
+version="0.9.1"
 envfile="/etc/esg.env"
 
 #--------------
@@ -89,7 +89,6 @@ ks_secret_file=${esg_root_dir}/config/.esg_keystore_pass
 workdir=${workdir:-~/workbench/esg}
 install_logfile=${install_logfile:-"/etc/esg.install_log"}
 #--------------
-
 
 init() {
     [ -e "${envfile}" ] && source ${envfile} && ((VERBOSE)) && printf "sourcing environment from: ${envfile} \n"
@@ -265,7 +264,6 @@ init() {
 
     mkdir -p ${scripts_dir}
     [ $? != 0 ] && echo "ERROR: could not create ${scripts_dir}... required for installation" && checked_done 1
-
     mkdir -p ${esg_backup_dir}  && \
         mkdir -p ${esg_tools_dir} && \
         mkdir -p ${esg_log_dir} && \

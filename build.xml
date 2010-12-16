@@ -85,7 +85,7 @@ Builds the project via ant (obviously).
 
 <project name="esg-node" default="make" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
   
-  <property name="module" value="esg-node"/>
+  <property name="module" value="esgf-node-manager"/>
   <property name="organization" value="Earth Systems Grid Federation"/>
   
   <!--
