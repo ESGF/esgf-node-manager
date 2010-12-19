@@ -19,9 +19,9 @@
 *   All rights reserved. This file is part of the:                         *
 *   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
 *                                                                          *
-*   For details, see http://esgf.org/esg-node/                    *
+*   For details, see http://esgf.org/esg-node/                             *
 *   Please also read this link                                             *
-*    http://esgf.org/LICENSE                                      *
+*    http://esgf.org/LICENSE                                               *
 *                                                                          *
 *   * Redistribution and use in source and binary forms, with or           *
 *   without modification, are permitted provided that the following        *
@@ -114,7 +114,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	InputStream in = null;
 	try {
 	    propCache.clear();
-	    Resource config = new Resource("esg-node.properties");
+	    Resource config = new Resource("esgf-node-manager.properties");
 	    assert (null != config) : "Resource object named config is null!";
 	    in = config.getInputStream();
 	    props = new Properties();
