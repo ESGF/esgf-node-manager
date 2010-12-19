@@ -102,8 +102,8 @@ init() {
     node_app_context_root=esgf-node-manager
     node_manager_app_home=${tomcat_install_dir}/webapps/${node_manager_app_context_root}
 
-    postgress_driver=org.postgresql.Driver
-    postgress_protocol=jdbc:postgresql:
+    postgress_driver=${postgress_driver:-org.postgresql.Driver}
+    postgress_protocol=${postgress_protocol:-jdbc:postgresql:}
     postgress_host=${PGHOST:-localhost}
     postgress_port=${PGPORT:-5432}
     postgress_user=${PGUSER:-dbsuper}
