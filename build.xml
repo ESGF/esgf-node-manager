@@ -20,7 +20,7 @@
 *   All rights reserved. This file is part of the:                         *
 *   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
 *                                                                          *
-*   For details, see http://esgf.org/esg-node/                             *
+*   For details, see http://esgf.org/esgf-node-manager/                    *
 *   Please also read this link                                             *
 *    http://esgf.org/LICENSE                                               *
 *                                                                          *
@@ -59,11 +59,12 @@
 /**
    Description:
 
-   This is the ant build file for the esg-node project.  This file
-   should not be modified.  A user may set the values of the
+   This is the ant build file for the esgf-node-manager project.  This
+   file should not be modified.  A user may set the values of the
    properties used in this file by defining the property file
-   $HOME/.esg-node.ant.properties which will override the values set
-   here.  An example of such a file is located in this etc directory.
+   $HOME/.esgf-node-manager.ant.properties which will override the
+   values set here.  An example of such a file is located in this etc
+   directory.
 
    NOTE:
    If you get this error:
@@ -83,7 +84,7 @@ Description:
 Builds the project via ant (obviously).
 -->
 
-<project name="esg-node" default="make" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="esgf-node-manager" default="make" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
   
   <property name="module" value="esgf-node-manager"/>
   <property name="organization" value="Earth Systems Grid Federation"/>
@@ -280,6 +281,7 @@ Builds the project via ant (obviously).
                  revision="${version_num}"
                  overwrite="true" haltonmissing="false">
       <artifacts pattern="dist/[artifact]-[revision].[ext]"/>
+      <artifacts pattern="dist/[artifact].war"/>
     </ivy:publish>
   </target>
 
