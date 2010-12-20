@@ -249,6 +249,8 @@ Builds the project via ant (obviously).
   <target name="deps" depends="init-ivy" description="(Sets up library dependencies: Ivy)">
     <mkdir dir="${lib_fetched_dir}"/>
     <ivy:retrieve sync="true"/>
+    <ivy:deliver deliverpattern="dist/[artifact]-[revision].[ext]"
+                 pubrevision="${version_num}" status="milestone" />
     <path id="main_classpath">
       <fileset dir="${lib_dir}">
 	<include name="**/*.jar"/>
@@ -269,12 +271,7 @@ Builds the project via ant (obviously).
     <echo message="--------------------------------"/> 
   </target>
 
-  <target name="deliver" depends="deps">
-    <ivy:deliver deliverpattern="dist/[artifact]-[revision].[ext]"
-                 pubrevision="${version_num}" status="milestone" />
-  </target>
-  
-  <target name="publish" depends="deliver">
+  <target name="publish" depends="init-ivy">
     <ivy:publish resolver="esgf_repo_devel" 
                  organisation="org.esgf"
                  module="${module}"

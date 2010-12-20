@@ -263,6 +263,9 @@ setup_node_manager() {
     (( ! upgrade )) && configure_postgress
     write_node_manager_install_log
     set_redirect
+
+    [ -d ${tomcat_install_dir}/webapps/esg-node ] && echo -n "Removing old esg-node webapp (${tomcat_install_dir}/webapps/esg-node)... " && rm -rvf ${tomcat_install_dir}/webapps/esg-node && echo "[OK]"
+
     checked_done 0
 
 }
