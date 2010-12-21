@@ -74,7 +74,7 @@ VERBOSE=${VERBOSE:-0}
 esg_dist_url=http://198.128.245.140/dist
 envfile="/etc/esg.env"
 
-node_manager_version=${node_manager_version:-"0.9.1"}
+node_manager_version=${node_manager_version:-"0.4.0"}
 
 #--------------
 #User Defined / Settable (public)
@@ -97,10 +97,20 @@ node_manager_app_context_root=esgf-node-manager
 init() {
     [ -n "${envfile}" ] && [ -e "${envfile}" ] && source ${envfile} && ((VERBOSE)) && printf "node manager: sourcing environment from: ${envfile} \n"
 
-    node_dist_url=${esg_dist_url}/esgf-node-manager/esg-node-manager.${node_manager_version}.tar.gz
+    node_dist_url=${esg_dist_url}/esgf-node-manager/esgf-node-manager-${node_manager_version}.tar.gz
     node_db_name=esgcet
     node_app_context_root=esgf-node-manager
     node_manager_app_home=${tomcat_install_dir}/webapps/${node_manager_app_context_root}
+
+    postgress_driver=${postgress_driver:-org.postgresql.Driver}
+    postgress_protocol=${postgress_protocol:-jdbc:postgresql:}
+    postgress_host=${PGHOST:-localhost}
+    postgress_port=${PGPORT:-5432}
+    postgress_user=${PGUSER:-dbsuper}
+    pg_sys_acct_passwd=${pg_sys_acct_passwd:=${pg_secret:=changeme}}
+
+    mail_smtp_host=${mail_smtp_host:-smtp.`hostname --domain`} #standard guess.
+    mail_admin_address=${mail_admin_address}
 
 }
 
@@ -192,7 +202,7 @@ setup_node_manager() {
 
 
     #----------------------------
-    fetch_file=esg-node-manager.properties
+    fetch_file=esgf-node-manager.properties
 
     #NOTE: The saving of the last config file must be done *BEFORE* we untar the new distro!
     if ((upgrade)) && [ -e WEB-INF/classes/${fetch_file} ]; then
@@ -212,7 +222,7 @@ setup_node_manager() {
     cp ${fetch_file} ${fetch_file}.tmpl
     if((upgrade)) && [ -e ${fetch_file}.saved ]; then
         echo "Re-Instituting  ${fetch_file}... "
-        #reuse the last esg-node-manager.properties file...
+        #reuse the last esgf-node-manager.properties file...
         #pull it out of the tar archive we made a few lines up
         cp ${fetch_file}.saved ${fetch_file}
     else
@@ -253,6 +263,9 @@ setup_node_manager() {
     (( ! upgrade )) && configure_postgress
     write_node_manager_install_log
     set_redirect
+
+    [ -d ${tomcat_install_dir}/webapps/esg-node ] && echo -n "Removing old esg-node webapp (${tomcat_install_dir}/webapps/esg-node)... " && rm -rvf ${tomcat_install_dir}/webapps/esg-node && echo "[OK]"
+
     checked_done 0
 
 }

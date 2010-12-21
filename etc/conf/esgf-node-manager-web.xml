@@ -62,7 +62,7 @@
   <!-- ESG Data Node Service                                    -->
   <!-- ******************************************************** -->
   <servlet>
-   <servlet-name>datanode</servlet-name>
+   <servlet-name>node</servlet-name>
    <servlet-class>com.caucho.hessian.server.HessianServlet</servlet-class>
     <init-param>
       <param-name>home-class</param-name>
@@ -75,8 +75,8 @@
   </servlet>
 
   <servlet-mapping>
-    <url-pattern>/datanode</url-pattern>
-    <servlet-name>datanode</servlet-name>
+    <url-pattern>/node</url-pattern>
+    <servlet-name>node</servlet-name>
     <load-on-startup>1</load-on-startup>
   </servlet-mapping>
   <!-- ******************************************************** -->
