@@ -113,7 +113,7 @@ public class ESGAccessLogClient {
     */
     public ESGAccessLogClient setEndpoint(String serviceHost) {
         assert (serviceHost != null);
-        String serviceURL = "http://"+serviceHost+"/esg-node/accesslog";
+        String serviceURL = "http://"+serviceHost+"/esgf-node-manager/accesslog";
         log.trace("Creating stub endpoint to : "+serviceURL);
         this.currentEndpoint = (ESGAccessLogService)factoryCreate(ESGAccessLogService.class,serviceURL);
         this.currentServiceURL=serviceURL;
