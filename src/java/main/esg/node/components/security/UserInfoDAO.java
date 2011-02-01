@@ -95,25 +95,25 @@ import org.apache.commons.logging.impl.*;
 
 import esg.common.db.DatabaseResource;
 
-public class SAMLDAO implements Serializable {
+public class UserInfoDAO implements Serializable {
 
     private static final String idQuery = "SELECT first_name, last_name, openid, email FROM user WHERE openid = ?";
     private static final String attributeQuery = "SELECT attribute_name, attribute_value FROM user_attributes where openid = ?";
     
-    private static final Log log = LogFactory.getLog(SAMLDAO.class);
+    private static final Log log = LogFactory.getLog(UserInfoDAO.class);
 
     private Properties props = null;
     private DataSource dataSource = null;
     private QueryRunner queryRunner = null;
-    private ResultSetHandler<SAMLUserInfo> samlUserInfoResultSetHandler = null;
-    private ResultSetHandler<Map<String,Set<String>>> samlUserAttributesResultSetHandler = null;
+    private ResultSetHandler<UserInfo> userInfoResultSetHandler = null;
+    private ResultSetHandler<Map<String,Set<String>>> userAttributesResultSetHandler = null;
 
     //uses default values in the DatabaseResource to connect to database
-    public SAMLDAO() {
+    public UserInfoDAO() {
         this(new Properties());
     }
 
-    public SAMLDAO(Properties props) {
+    public UserInfoDAO(Properties props) {
         
         //This is kind of tricky because the DatabaseResource is meant
         //to be set up once in the earliest part of this application.
@@ -135,11 +135,11 @@ public class SAMLDAO implements Serializable {
 
     public void init() {
         //To handle the single record result
-        samlUserInfoResultSetHandler =  new ResultSetHandler<SAMLUserInfo>() {
-            public SAMLUserInfo handle(ResultSet rs) throws SQLException {
-                SAMLUserInfo userInfo = null;
+        userInfoResultSetHandler =  new ResultSetHandler<UserInfo>() {
+            public UserInfo handle(ResultSet rs) throws SQLException {
+                UserInfo userInfo = null;
                 while(rs.next()) {
-                    userInfo = new SAMLUserInfo();
+                    userInfo = new UserInfo();
                     userInfo.setFirstName(rs.getString(1))
                         .setLastName(rs.getString(2))
                         .setOpenid(rs.getString(3))
@@ -149,7 +149,7 @@ public class SAMLDAO implements Serializable {
             }
         };
         
-        samlUserAttributesResultSetHandler = new ResultSetHandler<Map<String,Set<String>>>() {
+        userAttributesResultSetHandler = new ResultSetHandler<Map<String,Set<String>>>() {
             Map<String,Set<String>> attributes = null;    
             Set<String> attributeValueSet = null;
             
@@ -192,13 +192,13 @@ public class SAMLDAO implements Serializable {
     //------------------------------------
     //Query function calls...
     //------------------------------------
-    public synchronized SAMLUserInfo getAttributesForId(String identifier) {
-        SAMLUserInfo userInfo = null;
+    public synchronized UserInfo getAttributesForId(String identifier) {
+        UserInfo userInfo = null;
         try{
             log.trace("Issuing Query for info associated with id: ["+identifier+"], from database");
             if (identifier==null) { return null; }
-            userInfo = queryRunner.query(idQuery,samlUserInfoResultSetHandler,identifier);
-            userInfo.setAttributes(queryRunner.query(idQuery,samlUserAttributesResultSetHandler,identifier));
+            userInfo = queryRunner.query(idQuery,userInfoResultSetHandler,identifier);
+            userInfo.setAttributes(queryRunner.query(idQuery,userAttributesResultSetHandler,identifier));
             
             //A bit of debugging and sanity checking...
             System.out.println(userInfo);

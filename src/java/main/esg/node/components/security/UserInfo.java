@@ -58,7 +58,7 @@ package esg.node.components.security;
 
 /**
    Description:
-   Container object to hold SAML user information
+   Container object to hold node user information
    (uses "fluent" mutator functions to make life easier when populating)
 **/
 
@@ -67,7 +67,7 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
 
-public class SAMLUserInfo {
+public class UserInfo {
 
     private String firstName = null;
     private String lastName = null;
@@ -76,29 +76,29 @@ public class SAMLUserInfo {
     private Map<String,Set<String>> attributes = null;    
     private Set<String> attributeValueSet = null;
 
-    public SAMLUserInfo() {
+    public UserInfo() {
     }
 
 	public String getFirstName() { return firstName; }
-    public SAMLUserInfo setFirstName(String firstName) {
+    public UserInfo setFirstName(String firstName) {
         this.firstName = firstName;
         return this;
     }
 
 	public String getLastName() { return lastName; }
-    public SAMLUserInfo setLastName(String lastName) {
+    public UserInfo setLastName(String lastName) {
         this.lastName = lastName;
         return this;
     }
     
 	public String getOpenid() { return openid; }
-	public SAMLUserInfo setOpenid(String openid) {
+	public UserInfo setOpenid(String openid) {
         this.openid = openid;
         return this;
     }
     
 	public String getEmail() { return email; }
-	public SAMLUserInfo setEmail(String email) {
+	public UserInfo setEmail(String email) {
         this.email = email;
         return this;
     }
@@ -108,8 +108,9 @@ public class SAMLUserInfo {
     }
     
     //At package level visibility on purpose
-    void setAttributes(Map<String,Set<String>> attributes) {
+    UserInfo setAttributes(Map<String,Set<String>> attributes) {
         this.attributes = attributes;
+        return this;
     }
     
     public void addAttribute(String name, String value) {
