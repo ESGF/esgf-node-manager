@@ -98,14 +98,15 @@ import esg.common.db.DatabaseResource;
 public class SAMLDAO implements Serializable {
 
     private static final String idQuery = "SELECT first_name, last_name, openid, email FROM user WHERE openid = ?";
+    private static final String attributeQuery = "SELECT attribute_name, attribute_value FROM user_attributes where openid = ?";
     
     private static final Log log = LogFactory.getLog(SAMLDAO.class);
 
     private Properties props = null;
     private DataSource dataSource = null;
     private QueryRunner queryRunner = null;
-    private String identifier = null;
     private ResultSetHandler<SAMLUserInfo> samlUserInfoResultSetHandler = null;
+    private ResultSetHandler<Map<String,Set<String>>> samlUserAttributesResultSetHandler = null;
 
     //uses default values in the DatabaseResource to connect to database
     public SAMLDAO() {
@@ -133,16 +134,50 @@ public class SAMLDAO implements Serializable {
     }
 
     public void init() {
+        //To handle the single record result
         samlUserInfoResultSetHandler =  new ResultSetHandler<SAMLUserInfo>() {
             public SAMLUserInfo handle(ResultSet rs) throws SQLException {
-                if(!rs.next()) { return null; }
-                SAMLUserInfo userInfo = new SAMLUserInfo();
-                userInfo.setFirstName(rs.getString(1))
-                .setLastName(rs.getString(2))
-                .setOpenid(rs.getString(3))
-                .setEmail(rs.getString(4));
+                SAMLUserInfo userInfo = null;
+                while(rs.next()) {
+                    userInfo = new SAMLUserInfo();
+                    userInfo.setFirstName(rs.getString(1))
+                        .setLastName(rs.getString(2))
+                        .setOpenid(rs.getString(3))
+                        .setEmail(rs.getString(4));
+                }
                 return userInfo;
             }
+        };
+        
+        samlUserAttributesResultSetHandler = new ResultSetHandler<Map<String,Set<String>>>() {
+            Map<String,Set<String>> attributes = null;    
+            Set<String> attributeValueSet = null;
+            
+            public Map<String,Set<String>> handle(ResultSet rs) throws SQLException{
+                while(rs.next()) {
+                    addAttribute(rs.getString(1),rs.getString(2));
+                }
+                return attributes;
+            }
+            
+            public void addAttribute(String name, String value) {
+                //lazily instantiate attributes map
+                if(attributes == null) {
+                    attributes = new HashMap<String,Set<String>>();
+                }
+                
+                //lazily instantiate the set of values for attribute if not
+                //there
+                if((attributeValueSet = attributes.get(name)) == null) {
+                    attributeValueSet = new HashSet<String>();
+                }
+                
+                //enter attribute associated with attribute value set
+                attributeValueSet.add(value);
+                attributes.put(name, attributeValueSet);
+            }
+
+
         };
     }
     
@@ -154,30 +189,20 @@ public class SAMLDAO implements Serializable {
         this.queryRunner = new QueryRunner(dataSource);
     }
     
-    public synchronized String getCurrentIdentifier() {
-        return identifier;
-    }
-
-    //fluent mutator function...
-    public synchronized SAMLDAO setIdentifier(String identifier) {
-        this.identifier = identifier;
-        return this;
-    }
-
     //------------------------------------
     //Query function calls...
     //------------------------------------
     public synchronized SAMLUserInfo getAttributesForId(String identifier) {
-        setIdentifier(identifier);
-        return getAttributesForId();
-    }
-    
-    public SAMLUserInfo getAttributesForId() {
         SAMLUserInfo userInfo = null;
         try{
             log.trace("Issuing Query for info associated with id: ["+identifier+"], from database");
             if (identifier==null) { return null; }
-            userInfo = queryRunner.query(idQuery,samlUserInfoResultSetHandler,getCurrentIdentifier());
+            userInfo = queryRunner.query(idQuery,samlUserInfoResultSetHandler,identifier);
+            userInfo.setAttributes(queryRunner.query(idQuery,samlUserAttributesResultSetHandler,identifier));
+            
+            //A bit of debugging and sanity checking...
+            System.out.println(userInfo);
+            
         }catch(SQLException ex) {
             log.error(ex);      
         }

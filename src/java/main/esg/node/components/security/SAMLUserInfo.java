@@ -62,36 +62,88 @@ package esg.node.components.security;
    (uses "fluent" mutator functions to make life easier when populating)
 **/
 
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
+
 public class SAMLUserInfo {
 
     private String firstName = null;
     private String lastName = null;
     private String openid = null;
     private String email = null;
-    
+    private Map<String,Set<String>> attributes = null;    
+    private Set<String> attributeValueSet = null;
 
-	String getFirstName() { return firstName; }
-    SAMLUserInfo setFirstName(String firstName) {
+    public SAMLUserInfo() {
+    }
+
+	public String getFirstName() { return firstName; }
+    public SAMLUserInfo setFirstName(String firstName) {
         this.firstName = firstName;
         return this;
     }
 
-	String getLastName() { return lastName; }
-    SAMLUserInfo setLastName(String lastName) {
+	public String getLastName() { return lastName; }
+    public SAMLUserInfo setLastName(String lastName) {
         this.lastName = lastName;
         return this;
     }
     
-	String getOpenid() { return openid; }
-	SAMLUserInfo setOpenid(String openid) {
+	public String getOpenid() { return openid; }
+	public SAMLUserInfo setOpenid(String openid) {
         this.openid = openid;
         return this;
     }
     
-	String getEmail() { return email; }
-	SAMLUserInfo setEmail(String email) {
+	public String getEmail() { return email; }
+	public SAMLUserInfo setEmail(String email) {
         this.email = email;
         return this;
     }
 
+    public Map<String,Set<String>> getAttributes() {
+        return attributes;
+    }
+    
+    //At package level visibility on purpose
+    void setAttributes(Map<String,Set<String>> attributes) {
+        this.attributes = attributes;
+    }
+    
+    public void addAttribute(String name, String value) {
+        //lazily instantiate attributes map
+        if(attributes == null) {
+            attributes = new HashMap<String,Set<String>>();
+        }
+
+        //lazily instantiate the set of values for attribute if not
+        //there
+        if((attributeValueSet = attributes.get(name)) == null) {
+            attributeValueSet = new HashSet<String>();
+        }
+
+        //enter attribute associated with attribute value set
+        attributeValueSet.add(value);
+        attributes.put(name, attributeValueSet);
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("UserInfo:\n")
+            .append("First Name:\t"+firstName+"\n")
+            .append("Last Name:\t"+lastName+"\n")
+            .append("Open ID:\t"+openid+"\n")
+            .append("Email:\t"+email+"\n")
+            .append("Attributes:\n");
+        
+        for(String attributeName : attributes.keySet()) {
+            for(String attributeValue : attributes.get(attributeName)) {
+                sb.append("\t"+attributeName+" --> "+attributeValue+"\n");
+            }
+        }
+        return sb.toString();
+    }
+    
 }
