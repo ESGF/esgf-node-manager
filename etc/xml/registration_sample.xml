@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<registration versionDate="20101018" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <node>
+      <type>4</type>
+      <organization>NASA 1</organization>
+      <commonName>ESG-JPL</commonName>
+      <hostname>esg-jpl.jpl.nasa.gov</hostname>
+      <id>06a37cfd-5ca5-4e5a-bc6b-797dbdace482</id>
+      <description>Earth System Grid gateway at the Jet Propulsion Laboratory</description>
+      <baseUrl>http://esg-gateway.jpl.nasa.gov/</baseUrl>
+      <baseSecureUrl>https://esg-gateway.jpl.nasa.gov/</baseSecureUrl>
+      <identity>CN=esg-jpl.jpl.nasa.gov, OU=Services, DC=doegrids, DC=org</identity>
+      <administratorPersonal>ESG-JPL Administrator</administratorPersonal>
+      <administratorEmail>administrator AT esg-jpl.jpl.nasa.gov</administratorEmail>
+      <myproxy port="7512"  AuthorizationAuthority="CN=jpl-esg.jpl.nasa.gov, OU=ESG-JPL, O=ESG" />
+      <attributeService url="https://esg-gateway.jpl.nasa.gov/saml/soap/secure/attributeService.htm" AuthorizationAuthority="" />
+      <authorizationService url="https://jpl-esg.jpl.nasa.gov/openid/provider.htm" AuthorizationAuthority="CN=esg-gateway.jpl.nasa.gov, OU=Domain Control Validated - RapidSSL(R), OU=See www.rapidssl.com/resources/cps (c)10, OU=GT59609478, O=esg-gateway.jpl.nasa.gov, C=US, serialNumber=1DfLTHkkGVP1MEf8YZcSQrs4iIRBLY2Y" />
+      <oaiRepository url="http://esg-gateway.jpl.nasa.gov/oai/repository.htm" AuthorizationAuthority="" />
+      <identityProvider url="https://esg-gateway.jpl.nasa.gov/openid/provider.htm" AuthorizationAuthority="" />
+
+      <threddsService url="http://esg-datanode.jpl.nasa.gov/thredds/"/>
+      <gridftpServer  url="gsiftp://esg-gateway.jpl.nasa.gov"/>
+
+      <pkiCA>
+        <hash>053e3ae0</hash>
+        <dn>CN=jpl-esg.jpl.nasa.gov, OU=ESG-JPL, O=ESG</dn>
+      </pkiCA>
+      <openIdCA>
+        <hash>c4a11bb8</hash>
+        <dn>CN=esg-datanode.jpl.nasa.gov, OU=Domain Control Validated - RapidSSL?(R), OU=See www.rapidssl.com/resources/cps (c)10, OU=GT25821476, O=esg-datanode.jpl.nasa.gov, C=US, serialNumber=ROF2RAfDrdcNrCcL4KQEH0-uHPVwt-lK</dn>
+      </openIdCA>
+      
+
+    </node>
+
+</registration>
+
