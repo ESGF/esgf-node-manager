@@ -63,28 +63,15 @@
 **/
 package esg.node.components.security;
 
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Calendar;
 import java.util.Properties;
-import java.util.regex.*;
 import java.io.Serializable;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
-import java.nio.*;
-import java.nio.charset.*;
-import java.nio.channels.*;
-
 
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
@@ -97,8 +84,9 @@ import esg.common.db.DatabaseResource;
 
 public class UserInfoDAO implements Serializable {
 
-    private static final String idQuery = "SELECT first_name, last_name, openid, email FROM user WHERE openid = ?";
-    private static final String attributeQuery = "SELECT attribute_name, attribute_value FROM user_attributes where openid = ?";
+    private static final String idQuery = "SELECT firstname, lastname, openid, email FROM user WHERE openid = ?";
+    private static final String attributeQuery = "SELECT g.name, r.name from group as g, role as r, permission as p WHERE p.user_id = ? and p.group_id = g.id and p.role_id = r.id ORDER BY g.name"
+
     
     private static final Log log = LogFactory.getLog(UserInfoDAO.class);
 
@@ -194,7 +182,8 @@ public class UserInfoDAO implements Serializable {
     }
     
     //------------------------------------
-    //Query function calls...
+    //Query function calls... 
+    //(NOTE: synchronized since there are two calls to database - can optimize around later)
     //------------------------------------
     public synchronized UserInfo getAttributesForId(String identifier) {
         UserInfo userInfo = null;
