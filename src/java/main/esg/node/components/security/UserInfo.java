@@ -76,8 +76,8 @@ public class UserInfo {
     private Map<String,Set<String>> attributes = null;    
     private Set<String> attributeValueSet = null;
 
-    public UserInfo() {
-    }
+    //At package level visibility - on purpose :-)
+    UserInfo() {}
 
 	public String getFirstName() { return firstName; }
     public UserInfo setFirstName(String firstName) {

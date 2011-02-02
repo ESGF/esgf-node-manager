@@ -114,6 +114,10 @@ public class UserInfoDAO implements Serializable {
     }
 
     public UserInfoDAO(Properties props) {
+        if (props == null) {
+            log.warn("Input Properties parameter is: ["+props+"] - creating empty Properties obj");
+            props = new Properties();
+        }
         
         //This is kind of tricky because the DatabaseResource is meant
         //to be set up once in the earliest part of this application.
