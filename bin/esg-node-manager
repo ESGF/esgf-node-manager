@@ -308,6 +308,9 @@ set_redirect() {
 #--------------------------------------------------
 configure_postgress() {
     
+    local let mysel=${1:-${sel:-4}}
+    ((DEBUG)) && echo "Database configuration... (selection = ${mysel})"
+
     echo
     echo "*******************************"
     echo "Configuring Postgres... (for Node Manager)"
@@ -329,22 +332,46 @@ configure_postgress() {
     pushd ${workdir}/${node_dist_dir:-esgf-node-manager-${node_manager_version}}/db
     [ $? != 0 ] && echo " ERROR: Could not find node distribution dir ${workdir}/${node_dist_dir}" && checked_done 1
 
-    echo "${ANT_HOME}/bin/ant -buildfile database-tasks.ant.xml \
-        -Dnode.property.file=${node_manager_app_home}/WEB-INF/classes/esgf-node-manager.properties \
-        -Dsql.jdbc.base.url=${postgress_protocol}//${postgress_host}:${postgress_port}/ \
-        -Dsql.jdbc.database.name=${node_db_name} \
-        -Dsql.jdbc.database.user=${postgress_user} \
-        -Dsql.jdbc.database.password=${pg_sys_acct_passwd} \
-        -Dsql.jdbc.driver.jar=${node_manager_app_home}/WEB-INF/lib/${postgress_jar} make_node_db"
+    local target="make_node_db"
 
-    ${ANT_HOME}/bin/ant -buildfile database-tasks.ant.xml \
-        -Dnode.property.file=${node_manager_app_home}/WEB-INF/classes/esgf-node-manager.properties \
-        -Dsql.jdbc.base.url=${postgress_protocol}//${postgress_host}:${postgress_port}/ \
-        -Dsql.jdbc.database.name=${node_db_name} \
-        -Dsql.jdbc.database.user=${postgress_user} \
-        -Dsql.jdbc.database.password=${pg_sys_acct_passwd} \
-        -Dsql.jdbc.driver.jar=${node_manager_app_home}/WEB-INF/lib/${postgress_jar} make_node_db >& /dev/null
-    (( $? > 1 )) && echo "ERROR: Could not create esg node database tables in ${node_db_name}" && return 1
+    #------------------------------------------------------------------------
+    #Based on the node type selection we build the appropriate database tables
+    #------------------------------------------------------------------------
+
+    while (( (mysel >= MIN_BIT) && (mysel <= MAX_BIT) )); do
+        
+        ((DEBUG)) && echo " mysel = ${mysel}"
+
+        if (( (mysel & DATA_BIT) != 0 )); then
+            target="make_node_db"
+            echo "Setting up database for DATA node type"
+            ((mysel-=DATA_BIT))
+        elif (( (mysel & IDP_BIT) != 0 )); then
+            target="make_security_db"
+            echo "Setting up database for IDP node type"
+            ((mysel-=IDP_BIT))
+        fi
+        
+        echo "${ANT_HOME}/bin/ant -buildfile database-tasks.ant.xml \
+                  -Dnode.property.file=${node_manager_app_home}/WEB-INF/classes/esgf-node-manager.properties \
+                  -Dsql.jdbc.base.url=${postgress_protocol}//${postgress_host}:${postgress_port}/ \
+                  -Dsql.jdbc.database.name=${node_db_name} \
+                  -Dsql.jdbc.database.user=${postgress_user} \
+                  -Dsql.jdbc.database.password=${pg_sys_acct_passwd} \
+                  -Dsql.jdbc.driver.jar=${node_manager_app_home}/WEB-INF/lib/${postgress_jar} ${target}"
+        
+        ${ANT_HOME}/bin/ant -buildfile database-tasks.ant.xml \
+            -Dnode.property.file=${node_manager_app_home}/WEB-INF/classes/esgf-node-manager.properties \
+            -Dsql.jdbc.base.url=${postgress_protocol}//${postgress_host}:${postgress_port}/ \
+            -Dsql.jdbc.database.name=${node_db_name} \
+            -Dsql.jdbc.database.user=${postgress_user} \
+            -Dsql.jdbc.database.password=${pg_sys_acct_passwd} \
+            -Dsql.jdbc.driver.jar=${node_manager_app_home}/WEB-INF/lib/${postgress_jar} ${target} >& /dev/null
+        (( $? > 1 )) && echo "ERROR: Could not create esg node database tables in ${node_db_name}" && return 1
+        
+    done
+    
+    ((DEBUG)) && echo "*mysel = ${mysel}"
     
     popd >& /dev/null
     echo
