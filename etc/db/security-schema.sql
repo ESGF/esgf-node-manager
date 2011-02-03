@@ -13,6 +13,7 @@ CREATE TABLE user (
     firstname character varyi    ng NOT NULL,
     middlename character varying,
     lastname character varying,
+    username character varying,
     email character varying NOT NULL,
     username character varying,
     password character varying,
