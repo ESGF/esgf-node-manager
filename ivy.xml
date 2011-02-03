@@ -79,8 +79,8 @@ Note: Check Maven for propery dependency parameter values @
   </configurations>
 
   <publications>
-    <artifact name="${module}" type="war" conf="*"/>
-    <artifact name="${module}" type="jar" conf="*"/>
+<!-- <artifact name="${module}" type="war" conf="*"/> -->
+<!-- <artifact name="${module}" type="jar" conf="*"/> -->
     <artifact name="${module}-common" type="jar" conf="*"/>
     <artifact name="${module}-security" type="jar" conf="*"/>
     <artifact name="${module}-filters" type="jar" conf="*"/>
