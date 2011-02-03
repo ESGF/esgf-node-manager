@@ -60,6 +60,11 @@ package esg.node.components.security;
    Description:
    Container object to hold node user information
    (uses "fluent" mutator functions to make life easier when populating)
+
+   Just from a lexicon standpoint:
+   In SAML Land ------------------------ In User Land
+   (Attributes Type -> Attribute Value) => (Group -> Role)
+
 **/
 
 import java.util.Map;
@@ -73,8 +78,8 @@ public class UserInfo {
     private String lastName = null;
     private String openid = null;
     private String email = null;
-    private Map<String,Set<String>> attributes = null;    
-    private Set<String> attributeValueSet = null;
+    private Map<String,Set<String>> groups = null;    
+    private Set<String> roleSet = null;
 
     //At package level visibility - on purpose :-)
     UserInfo() {}
@@ -103,31 +108,31 @@ public class UserInfo {
         return this;
     }
 
-    public Map<String,Set<String>> getAttributes() {
-        return attributes;
+    public Map<String,Set<String>> getGroups() {
+        return groups;
     }
     
     //At package level visibility on purpose
-    UserInfo setAttributes(Map<String,Set<String>> attributes) {
-        this.attributes = attributes;
+    UserInfo setGroups(Map<String,Set<String>> groups) {
+        this.groups = groups;
         return this;
     }
     
-    public void addAttribute(String name, String value) {
-        //lazily instantiate attributes map
-        if(attributes == null) {
-            attributes = new HashMap<String,Set<String>>();
+    public void addGroup(String name, String value) {
+        //lazily instantiate groups map
+        if(groups == null) {
+            groups = new HashMap<String,Set<String>>();
         }
 
-        //lazily instantiate the set of values for attribute if not
+        //lazily instantiate the set of values for group if not
         //there
-        if((attributeValueSet = attributes.get(name)) == null) {
-            attributeValueSet = new HashSet<String>();
+        if((roleSet = groups.get(name)) == null) {
+            roleSet = new HashSet<String>();
         }
 
-        //enter attribute associated with attribute value set
-        attributeValueSet.add(value);
-        attributes.put(name, attributeValueSet);
+        //enter group associated with group value set
+        roleSet.add(value);
+        groups.put(name, roleSet);
     }
 
     public String toString() {
@@ -137,11 +142,11 @@ public class UserInfo {
             .append("Last Name:\t"+lastName+"\n")
             .append("Open ID:\t"+openid+"\n")
             .append("Email:\t"+email+"\n")
-            .append("Attributes:\n");
+            .append("Groups:\n");
         
-        for(String attributeName : attributes.keySet()) {
-            for(String attributeValue : attributes.get(attributeName)) {
-                sb.append("\t"+attributeName+" --> "+attributeValue+"\n");
+        for(String groupName : groups.keySet()) {
+            for(String role : groups.get(groupName)) {
+                sb.append("\t"+groupName+" --> "+role+"\n");
             }
         }
         return sb.toString();

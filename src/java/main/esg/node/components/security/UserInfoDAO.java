@@ -85,7 +85,7 @@ import esg.common.db.DatabaseResource;
 public class UserInfoDAO implements Serializable {
 
     private static final String idQuery = "SELECT firstname, lastname, openid, email FROM user WHERE openid = ?";
-    private static final String attributeQuery = "SELECT g.name, r.name from group as g, role as r, permission as p WHERE p.user_id = ? and p.group_id = g.id and p.role_id = r.id ORDER BY g.name"
+    private static final String groupQuery = "SELECT g.name, r.name from group as g, role as r, permission as p WHERE p.user_id = ? and p.group_id = g.id and p.role_id = r.id ORDER BY g.name";
 
     
     private static final Log log = LogFactory.getLog(UserInfoDAO.class);
@@ -94,7 +94,7 @@ public class UserInfoDAO implements Serializable {
     private DataSource dataSource = null;
     private QueryRunner queryRunner = null;
     private ResultSetHandler<UserInfo> userInfoResultSetHandler = null;
-    private ResultSetHandler<Map<String,Set<String>>> userAttributesResultSetHandler = null;
+    private ResultSetHandler<Map<String,Set<String>>> userGroupsResultSetHandler = null;
 
     //uses default values in the DatabaseResource to connect to database
     public UserInfoDAO() {
@@ -141,32 +141,32 @@ public class UserInfoDAO implements Serializable {
             }
         };
         
-        userAttributesResultSetHandler = new ResultSetHandler<Map<String,Set<String>>>() {
-            Map<String,Set<String>> attributes = null;    
-            Set<String> attributeValueSet = null;
+        userGroupsResultSetHandler = new ResultSetHandler<Map<String,Set<String>>>() {
+            Map<String,Set<String>> groups = null;    
+            Set<String> roleSet = null;
             
             public Map<String,Set<String>> handle(ResultSet rs) throws SQLException{
                 while(rs.next()) {
-                    addAttribute(rs.getString(1),rs.getString(2));
+                    addGroup(rs.getString(1),rs.getString(2));
                 }
-                return attributes;
+                return groups;
             }
             
-            public void addAttribute(String name, String value) {
-                //lazily instantiate attributes map
-                if(attributes == null) {
-                    attributes = new HashMap<String,Set<String>>();
+            public void addGroup(String name, String value) {
+                //lazily instantiate groups map
+                if(groups == null) {
+                    groups = new HashMap<String,Set<String>>();
                 }
                 
-                //lazily instantiate the set of values for attribute if not
+                //lazily instantiate the set of values for group if not
                 //there
-                if((attributeValueSet = attributes.get(name)) == null) {
-                    attributeValueSet = new HashSet<String>();
+                if((roleSet = groups.get(name)) == null) {
+                    roleSet = new HashSet<String>();
                 }
                 
-                //enter attribute associated with attribute value set
-                attributeValueSet.add(value);
-                attributes.put(name, attributeValueSet);
+                //enter group associated with group value set
+                roleSet.add(value);
+                groups.put(name, roleSet);
             }
 
 
@@ -185,13 +185,13 @@ public class UserInfoDAO implements Serializable {
     //Query function calls... 
     //(NOTE: synchronized since there are two calls to database - can optimize around later)
     //------------------------------------
-    public synchronized UserInfo getAttributesForId(String identifier) {
+    public synchronized UserInfo getUserById(String openid) {
         UserInfo userInfo = null;
         try{
-            log.trace("Issuing Query for info associated with id: ["+identifier+"], from database");
-            if (identifier==null) { return null; }
-            userInfo = queryRunner.query(idQuery,userInfoResultSetHandler,identifier);
-            userInfo.setAttributes(queryRunner.query(idQuery,userAttributesResultSetHandler,identifier));
+            log.trace("Issuing Query for info associated with id: ["+openid+"], from database");
+            if (openid==null) { return null; }
+            userInfo = queryRunner.query(idQuery,userInfoResultSetHandler,openid);
+            userInfo.setGroups(queryRunner.query(groupQuery,userGroupsResultSetHandler,openid));
             
             //A bit of debugging and sanity checking...
             System.out.println(userInfo);

@@ -1,5 +1,5 @@
 --
--- PostgreSQL database for esg node
+-- PostgreSQL database for esg node (security)
 --
 
 SET standard_conforming_strings = off;
