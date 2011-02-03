@@ -307,7 +307,7 @@ set_redirect() {
 #      installation/configuration (setup_node_manager) 
 #--------------------------------------------------
 configure_postgress() {
-    
+    init
     local let mysel=${1:-${sel:-4}}
     ((DEBUG)) && echo "Database configuration... (selection = ${mysel})"
 
@@ -316,11 +316,11 @@ configure_postgress() {
     echo "Configuring Postgres... (for Node Manager)"
     echo "*******************************"
     echo
-
+    
     start_postgress
 
     #Create the database...
-    echo "Creating esg node database: ${node_db_name}"
+    echo "Creating esg node database: [${node_db_name}]"
     echo "${postgress_install_dir}/bin/createdb ${node_db_name}"
     ${postgress_install_dir}/bin/createdb ${node_db_name} >& /dev/null
     (( $? > 1 )) && echo " ERROR: Could not create esg node database: ${node_db_name}" && return 0
