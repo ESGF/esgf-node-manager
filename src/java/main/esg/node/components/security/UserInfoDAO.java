@@ -85,7 +85,7 @@ import esg.common.db.DatabaseResource;
 public class UserInfoDAO implements Serializable {
 
     private static final String idQuery = "SELECT firstname, lastname, openid, email FROM user WHERE openid = ?";
-    private static final String groupQuery = "SELECT g.name, r.name from group as g, role as r, permission as p WHERE p.user_id = ? and p.group_id = g.id and p.role_id = r.id ORDER BY g.name";
+    private static final String groupQuery = "SELECT g.name, r.name from group as g, role as r, permission as p, user as u WHERE p.user_id = u.id and u.openid = ? and p.group_id = g.id and p.role_id = r.id ORDER BY g.name";
 
     
     private static final Log log = LogFactory.getLog(UserInfoDAO.class);
