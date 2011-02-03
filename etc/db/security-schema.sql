@@ -10,7 +10,7 @@ SET escape_string_warning = off;
 CREATE TABLE user (
     id int PRIMARY KEY,
     openid character varying NOT NULL,
-    firstname character varyi    ng NOT NULL,
+    firstname character varying NOT NULL,
     middlename character varying,
     lastname character varying,
     username character varying,
