@@ -309,7 +309,15 @@ set_redirect() {
 configure_postgress() {
     init
     local let mysel=${1:-${sel:-4}}
+        
     ((DEBUG)) && echo "Database configuration... (selection = ${mysel})"
+    
+    #-------
+    #IMPORTANT! The SUM of all the handled types is the real max value
+    #here! (else can't decrement down to 0 and get into an infinite loop)
+    local myMAX_BIT=$((DATA_BIT+IDP_BIT)) 
+    ((mysel > myMAX_BIT)) && echo -n "Adjusting selection to bounds... " && ((mysel=myMAX_BIT)) && echo "(selection = ${mysel})"
+    #-------
 
     echo
     echo "*******************************"
@@ -329,7 +337,7 @@ configure_postgress() {
     #NOTE: (zoiks) Need to be able to tell the difference between a
     #database already there vs another error
 
-    pushd ${workdir}/${node_dist_dir:-esgf-node-manager-${node_manager_version}}/db
+    pushd ${workdir}/${node_dist_dir:-esgf-node-manager-${node_manager_version}}/db >& /dev/null
     [ $? != 0 ] && echo " ERROR: Could not find node distribution dir ${workdir}/${node_dist_dir}" && checked_done 1
 
     local target="make_node_db"
@@ -337,8 +345,8 @@ configure_postgress() {
     #------------------------------------------------------------------------
     #Based on the node type selection we build the appropriate database tables
     #------------------------------------------------------------------------
-
-    while (( (mysel >= MIN_BIT) && (mysel <= MAX_BIT) )); do
+    
+    while (( (mysel >= MIN_BIT) && (mysel <= myMAX_BIT) )); do
         
         ((DEBUG)) && echo " mysel = ${mysel}"
 
