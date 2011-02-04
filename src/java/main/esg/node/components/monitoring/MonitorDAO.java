@@ -99,9 +99,9 @@ import esg.common.ESGInvalidObjectStateException;
 
 public class MonitorDAO implements Serializable {
 
-    private static final String markTimeQuery      = "UPDATE monitor_run_log SET last_run_time = ? WHERE id = ?";
-    private static final String regCheckEntryQuery = "SELECT COUNT(*) FROM monitor_run_log WHERE id = ?";
-    private static final String regAddEntryQuery   = "INSERT INTO monitor_run_log (id, last_run_time) VALUES ( ? , ? )";
+    private static final String markTimeQuery      = "UPDATE esgf.monitor_run_log SET last_run_time = ? WHERE id = ?";
+    private static final String regCheckEntryQuery = "SELECT COUNT(*) FROM esgf.monitor_run_log WHERE id = ?";
+    private static final String regAddEntryQuery   = "INSERT INTO esgf.monitor_run_log (id, last_run_time) VALUES ( ? , ? )";
     
     private static final Log log = LogFactory.getLog(MonitorDAO.class);
 
