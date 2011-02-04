@@ -7,7 +7,8 @@ SET check_function_bodies = false;
 SET client_min_messages = warning;
 SET escape_string_warning = off;
 
-CREATE SCHEMA esgf
+CREATE SCHEMA esgf;
+SET search_path TO public,esgf;
 
 CREATE TABLE esgf.user (
     id int PRIMARY KEY,
