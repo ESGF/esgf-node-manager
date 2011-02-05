@@ -65,6 +65,17 @@ package esg.node.components.security;
    In SAML Land ------------------------ In User Land
    (Attributes Type -> Attribute Value) => (Group -> Role)
 
+   NOTE:
+
+   This object represents a user in the system, encapsulating their basic
+   information.  By using this tuple it will be easier to see if users
+   are equal at the object level. Because there are other attributes that
+   do not take part in the equality, writers most be extra careful when
+   using data structures to hold these objects that they be sure to
+   remove the object and write put in this new one during insertion.
+   Many datastructures will refuse to re-write an object that is
+   considered already there!
+
 **/
 
 import java.util.Map;
