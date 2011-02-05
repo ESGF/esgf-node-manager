@@ -92,16 +92,16 @@ force_install=${force_install:-0}
 tomcat_user=${tomcat_user:-tomcat}
 tomcat_group=${tomcat_group:-$tomcat_user}
 tomcat_install_dir=${CATALINA_HOME:-${install_prefix}/tomcat}
-node_manager_app_context_root=esgf-node-manager
 
 init() {
     [ -n "${envfile}" ] && [ -e "${envfile}" ] && source ${envfile} && ((VERBOSE)) && printf "node manager: sourcing environment from: ${envfile} \n"
 
     node_dist_url=${esg_dist_url}/esgf-node-manager/esgf-node-manager-${node_manager_version}.tar.gz
-    node_db_name=esgcet
-    node_app_context_root=esgf-node-manager
+    node_manager_app_context_root=esgf-node-manager
     node_manager_app_home=${tomcat_install_dir}/webapps/${node_manager_app_context_root}
 
+    #Database information....
+    node_db_name=${node_db_name:-"esgcet"}
     postgress_driver=${postgress_driver:-org.postgresql.Driver}
     postgress_protocol=${postgress_protocol:-jdbc:postgresql:}
     postgress_host=${PGHOST:-localhost}
@@ -109,6 +109,7 @@ init() {
     postgress_user=${PGUSER:-dbsuper}
     pg_sys_acct_passwd=${pg_sys_acct_passwd:=${pg_secret:=changeme}}
 
+    #Notification component information...
     mail_smtp_host=${mail_smtp_host:-smtp.`hostname --domain`} #standard guess.
     mail_admin_address=${mail_admin_address}
 
@@ -153,13 +154,23 @@ setup_node_manager() {
         fi
         
         local dobackup="Y"
-        read -p "Do you want to make a back up of the existing distribution?? [Y/n] " dobackup
+        read -p "Do you want to make a back up of the existing distribution [${node_manager_app_context_root}]?? [Y/n] " dobackup
         [ -z "${dobackup}" ] && dobackup=${default}
         if [ "${dobackup}" = "Y" ] || [ "${dobackup}" = "y" ]; then
-            echo "Creating a backup archive of this web application $node_manager_app_home"
+            echo "Creating a backup archive of this web application [$node_manager_app_home]"
             backup ${node_manager_app_home}
         fi
 
+        echo
+
+        dobackup="Y"
+        read -p "Do you want to make a back up of the existing database [${node_db_name}]?? [Y/n] " dobackup
+        [ -z "${dobackup}" ] && dobackup=${default}
+        if [ "${dobackup}" = "Y" ] || [ "${dobackup}" = "y" ]; then
+            echo "Creating a backup archive of the manager's database [$node_db_name]"
+            backup_db ${node_db_name}
+        fi
+        unset dobackup
         echo
     fi
 
