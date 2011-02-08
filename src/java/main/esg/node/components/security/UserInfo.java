@@ -72,12 +72,24 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
+
 public class UserInfo {
 
+    private static final Log log = LogFactory.getLog(UserInfo.class);
+
     private String firstName = null;
+    private String middleName = null;
     private String lastName = null;
+    private String userName = null;
     private String openid = null;
     private String email = null;
+    private String organization = null;
+    private String city = null;
+    private String state = null;
+    private String country = null;   
     private Map<String,Set<String>> groups = null;    
     private Set<String> roleSet = null;
 
@@ -90,14 +102,26 @@ public class UserInfo {
         return this;
     }
 
+    public String getMiddleName() { return middleName; }
+    public UserInfo setMiddleName(String middleName) {
+        this.middleName = middleName;
+        return this;
+    }
+    
 	public String getLastName() { return lastName; }
     public UserInfo setLastName(String lastName) {
         this.lastName = lastName;
         return this;
     }
+
+    public String getUserName() { return userName; }
+    UserInfo setUserName(String userName) {
+        this.userName = userName;
+        return this;
+    }
     
 	public String getOpenid() { return openid; }
-	public UserInfo setOpenid(String openid) {
+    UserInfo setOpenid(String openid) {
         this.openid = openid;
         return this;
     }
@@ -107,6 +131,36 @@ public class UserInfo {
         this.email = email;
         return this;
     }
+    
+	public String getOrganization() { return organization; }
+	public UserInfo setOrganization(String organization) {
+        this.organization = organization;
+        return this;
+    }
+
+	public String getCity() { return city; }
+	public UserInfo setCity(String city) {
+        this.city = city;
+        return this;
+    }
+
+	public String getState() { return state; }
+	public UserInfo setState(String state) {
+        this.state = state;
+        return this;
+    }
+
+	public String getCountry() { return country; }
+	public UserInfo setCountry(String country) {
+        this.country = country;
+        return this;
+    }
+
+
+
+    //--------------------------------------
+    // Group and Role collecting
+    //--------------------------------------
 
     public Map<String,Set<String>> getGroups() {
         return groups;
@@ -118,7 +172,7 @@ public class UserInfo {
         return this;
     }
     
-    public void addGroup(String name, String value) {
+    public UserInfo addGroupAndRole(String group, String role) {
         //lazily instantiate groups map
         if(groups == null) {
             groups = new HashMap<String,Set<String>>();
@@ -126,27 +180,34 @@ public class UserInfo {
 
         //lazily instantiate the set of values for group if not
         //there
-        if((roleSet = groups.get(name)) == null) {
+        if((roleSet = groups.get(group)) == null) {
             roleSet = new HashSet<String>();
         }
 
         //enter group associated with group value set
-        roleSet.add(value);
-        groups.put(name, roleSet);
+        roleSet.add(role);
+        groups.put(group, roleSet);
+        return this;
     }
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("UserInfo:\n")
             .append("First Name:\t"+firstName+"\n")
+            .append("Middle Name:\t"+middleName+"\n")
             .append("Last Name:\t"+lastName+"\n")
+            .append("User Name:\t"+userName+"\n")
             .append("Open ID:\t"+openid+"\n")
             .append("Email:\t"+email+"\n")
-            .append("Groups:\n");
+            .append("Organization:\t"+organization+"\n")
+            .append("City:\t"+city+"\n")
+            .append("State:\t"+state+"\n")
+            .append("Country:\t"+country+"\n")
+            .append("Groups and Roles:\n");
         
         for(String groupName : groups.keySet()) {
             for(String role : groups.get(groupName)) {
-                sb.append("\t"+groupName+" --> "+role+"\n");
+                sb.append("\t"+groupName+"\t "+role+"\n");
             }
         }
         return sb.toString();
