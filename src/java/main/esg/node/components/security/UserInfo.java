@@ -65,17 +65,6 @@ package esg.node.components.security;
    In SAML Land ------------------------ In User Land
    (Attributes Type -> Attribute Value) => (Group -> Role)
 
-   NOTE:
-
-   This object represents a user in the system, encapsulating their basic
-   information.  By using this tuple it will be easier to see if users
-   are equal at the object level. Because there are other attributes that
-   do not take part in the equality, writers most be extra careful when
-   using data structures to hold these objects that they be sure to
-   remove the object and write put in this new one during insertion.
-   Many datastructures will refuse to re-write an object that is
-   considered already there!
-
 **/
 
 import java.util.Map;
@@ -91,20 +80,27 @@ public class UserInfo {
     private String email = null;
     private Map<String,Set<String>> groups = null;    
     private Set<String> roleSet = null;
-    private String objId = null;
-    
 
     //At package level visibility - on purpose :-)
-    UserInfo(String firstName, String lastName, String openid) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.openid = openid;
-        makeId();
-    }
+    UserInfo() {}
 
 	public String getFirstName() { return firstName; }
+    public UserInfo setFirstName(String firstName) {
+        this.firstName = firstName;
+        return this;
+    }
+
 	public String getLastName() { return lastName; }
+    public UserInfo setLastName(String lastName) {
+        this.lastName = lastName;
+        return this;
+    }
+    
 	public String getOpenid() { return openid; }
+	public UserInfo setOpenid(String openid) {
+        this.openid = openid;
+        return this;
+    }
     
 	public String getEmail() { return email; }
 	public UserInfo setEmail(String email) {
@@ -137,22 +133,6 @@ public class UserInfo {
         //enter group associated with group value set
         roleSet.add(value);
         groups.put(name, roleSet);
-    }
-
-    //NOTE: This object is identified the the equivalence of the tuple
-    //of firstName+lastName+openid. This value is computed at
-    //construction.  This is encapsulated here to provide single
-    //location for changing of this object's id
-    private String makeId() {
-        objId = ""+getFirstName()+getLastName()+getOpenid();
-        return objId;
-    }
-
-    public int hashCode() { return objId.hashCode(); }
-
-    public boolean equals(Object o) {
-        if (! (o instanceof esg.node.components.security.UserInfo)) return false;
-        return this.objId.equals(((UserInfo)o).objId);
     }
 
     public String toString() {

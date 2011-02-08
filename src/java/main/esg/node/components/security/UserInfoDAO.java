@@ -131,8 +131,11 @@ public class UserInfoDAO implements Serializable {
             public UserInfo handle(ResultSet rs) throws SQLException {
                 UserInfo userInfo = null;
                 while(rs.next()) {
-                    userInfo = new UserInfo(rs.getString(1),rs.getString(2),rs.getString(3));
-                    userInfo.setEmail(rs.getString(4));
+                    userInfo = new UserInfo();
+                    userInfo.setFirstName(rs.getString(1))
+                        .setLastName(rs.getString(2))
+                        .setOpenid(rs.getString(3))
+                        .setEmail(rs.getString(4));
                 }
                 return userInfo;
             }
