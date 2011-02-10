@@ -100,7 +100,7 @@ public class UserInfoTest {
             addGroupAndRole("CMIP5","user").
             addGroupAndRole("ARM","user");
         
-        System.out.println("userInfo);
+        System.out.println(userInfo);
 
     }
 }

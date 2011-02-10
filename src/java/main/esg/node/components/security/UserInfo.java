@@ -83,15 +83,15 @@ public class UserInfo {
     private int id = -1;
     private String openid = null;
     private String firstName = null;
-    private String middleName = null;
+    private String middleName = "";
     private String lastName = null;
     private String userName = null;
     private String email = null;
-    private String organization = null;
-    private String orgType = null;
-    private String city = null;
-    private String state = null;
-    private String country = null;   
+    private String organization = "";
+    private String orgType = "";
+    private String city = "";
+    private String state = "";
+    private String country = "";   
     private Map<String,Set<String>> groups = null;    
     private Set<String> roleSet = null;
 
@@ -206,7 +206,7 @@ public class UserInfo {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("UserInfo:\n")
+        sb.append("UserInfo...\n")
             .append("Open ID:\t"+openid+"\n")
             .append("First Name:\t"+firstName+"\n")
             .append("Middle Name:\t"+middleName+"\n")
@@ -221,9 +221,11 @@ public class UserInfo {
             .append("Permissions (Groups and Roles):\n");
         
         for(String groupName : groups.keySet()) {
+                sb.append("\t"+groupName+"\t");
             for(String role : groups.get(groupName)) {
-                sb.append("\t"+groupName+"\t "+role+"\n");
+                sb.append("\t"+role);
             }
+            sb.append("\n");
         }
         return sb.toString();
     }
