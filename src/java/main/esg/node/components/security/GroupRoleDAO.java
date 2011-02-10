@@ -82,62 +82,57 @@ import org.apache.commons.logging.impl.*;
 
 import esg.common.db.DatabaseResource;
 
-public class UserInfoDAO implements Serializable {
-
-    //-------------------
-    //Selection queries
-    //-------------------
-    private static final String idQuery = 
-        "SELECT esgf.id, esgf.firstname, esgf.lastname, esgf.openid, esgf.email "+
-        "FROM user "+
-        "WHERE esgf.openid = ?";
-
-    private static final String groupQuery = 
-        "SELECT g.name, r.name from esgf.group as g, esgf.role as r, esgf.permission as p, esgf.user as u "+
-        "WHERE p.user_id = u.id and u.openid = ? and p.group_id = g.id and p.role_id = r.id "+
-        "ORDER BY g.name";
+public class GroupRoleDAO implements Serializable {
 
     //-------------------
     //Insertion queries
     //-------------------
     
-    //User Queries...
-    private static final String hasUserOpenidQuery =
-        "SELECT * form esgf.user "+
-        "WHERE openid = ?";
-    private static final String updateUserQuery = 
-        "UPDATE esgf.user "+
-        "SET openid=?, firstname=?, middlename=?, lastname=?, username=?, email=?, organization=?, organization_type=?, city=? state=?, country=? "+
-        "WHERE id = ? ";
-    private static final String getNextUserPrimaryKeyValQuery = 
-        "SELECT NEXTVAL('esgf.seq_user')";
-    private static final String addUserQuery = 
-        "INSERT INTO esgf.user (id, openid, firstname, middlename, lastname, username, email, organization, organization_type, city, state, country) "+
-        "VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    //Group Queries...
+    private static final String hasGroupNameQuery =
+        "SELECT * form esgf.group "+
+        "WHERE name = ?";
+    private static final String updateGroupQuery = 
+        "UPDATE esgf.group "+
+        "SET name=? "+
+        "WHERE id=?";
+    private static final String getNextGroupPrimaryKeyValQuery = 
+        "SELECT NEXTVAL('esgf.seq_group')";
+    private static final String addGroupQuery = 
+        "INSERT INTO esgf.group (id, name) "+
+        "VALUES ( ?, ? )";
 
-    //Permission Queries...
-    private static final String addPermissionQuery = 
-        "INSERT INTO esgf.permission (user_id, grou_id, role_id) "+
+    //Role Queries...
+    private static final String hasRoleNameQuery =
+        "SELECT * form esgf.role "+
+        "WHERE name = ?";
+    private static final String updateRoleQuery = 
+        "UPDATE esgf.role "+
+        "SET name=? "+
+        "WHERE id=?";
+    private static final String getNextRolePrimaryKeyValQuery  = 
+        "SELECT NEXTVAL('esgf.seq_role')";
+    private static final String addRoleQuery = 
+        "INSERT INTO esgf.role (id, name) "+
         "VALUES ( ?, ? )";
 
     //-------------------
 
     
-    private static final Log log = LogFactory.getLog(UserInfoDAO.class);
+    private static final Log log = LogFactory.getLog(GroupRoleDAO.class);
 
     private Properties props = null;
     private DataSource dataSource = null;
     private QueryRunner queryRunner = null;
-    private ResultSetHandler<UserInfo> userInfoResultSetHandler = null;
     private ResultSetHandler<Map<String,Set<String>>> userGroupsResultSetHandler = null;
     private ResultSetHandler<Integer> idResultSetHandler = null;
 
     //uses default values in the DatabaseResource to connect to database
-    public UserInfoDAO() {
+    public GroupRoleDAO() {
         this(new Properties());
     }
 
-    public UserInfoDAO(Properties props) {
+    public GroupRoleDAO(Properties props) {
         if (props == null) {
             log.warn("Input Properties parameter is: ["+props+"] - creating empty Properties obj");
             props = new Properties();
@@ -168,21 +163,6 @@ public class UserInfoDAO implements Serializable {
                 return rs.getInt(1);
 		    }
 		};
-        
-        //To handle the single record result
-        userInfoResultSetHandler =  new ResultSetHandler<UserInfo>() {
-            public UserInfo handle(ResultSet rs) throws SQLException {
-                UserInfo userInfo = null;
-                while(rs.next()) {
-                    userInfo = new UserInfo();
-                    userInfo.setFirstName(rs.getString(1))
-                        .setLastName(rs.getString(2))
-                        .setOpenid(rs.getString(3))
-                        .setEmail(rs.getString(4));
-                }
-                return userInfo;
-            }
-        };
         
         userGroupsResultSetHandler = new ResultSetHandler<Map<String,Set<String>>>() {
             Map<String,Set<String>> groups = null;    
@@ -219,103 +199,58 @@ public class UserInfoDAO implements Serializable {
     public void setProperties(Properties props) { this.props = props; }
 
     public void setDataSource(DataSource dataSource) {
-        log.trace("Setting Up UserInfoDAO's Pooled Data Source");
+        log.trace("Setting Up GroupRoalDAO's Pooled Data Source");
         this.dataSource = dataSource;
         this.queryRunner = new QueryRunner(dataSource);
     }
     
-    //------------------------------------
-    //Query function calls... 
-    //(NOTE: synchronized since there are two calls to database - can optimize around later)
-    //------------------------------------
-    public synchronized UserInfo getUserById(String openid) {
-        UserInfo userInfo = null;
-        int affectedRecords = 0;
-        try{
-            log.trace("Issuing Query for info associated with id: ["+openid+"], from database");
-            if (openid==null) { return null; }
-            userInfo = queryRunner.query(idQuery,userInfoResultSetHandler,openid);
-            userInfo.setGroups(queryRunner.query(groupQuery,userGroupsResultSetHandler,openid));
-            
-            //A bit of debugging and sanity checking...
-            System.out.println(userInfo);
-            
-        }catch(SQLException ex) {
-            log.error(ex);      
-        }
-        return userInfo;
-    }
-
-    public synchronized boolean addUserInfo(UserInfo userInfo) {
-        int userid = -1;
+    public synchronized int addGroup(String groupName) {
         int groupid = -1;
-        int roleid = -1;
         int numRowsAffected = -1;
+        
         try{
-            log.trace("Inserting UserInfo associated with id: ["+userInfo.getOpenid()+"], into database");
-            if (userInfo.getOpenid() == null) { return false; }
-            
-            //Check to see if there is an entry by this openid already....
-            userid = queryRunner.query(hasUserOpenidQuery,idResultSetHandler,userInfo.getOpenid());
+            //Check to see if there is an entry by this name already....
+            groupid = queryRunner.query(hasGroupNameQuery,idResultSetHandler,groupName);
             
             //If there *is*... then UPDATE that record
-            if(userid > 0) {
-                assert (userid == userInfo.getid()) : "The database id ("+userid+") for this openid ("+userInfo.getOpenid()+") does NOT match this object's ("+userInfo.getid()+")";
-                numRowsAffected = queryRunner.update(updateUserQuery,
-                                                     userInfo.getOpenid(),
-                                                     userInfo.getFirstName(),
-                                                     userInfo.getMiddleName(),
-                                                     userInfo.getLastName(),
-                                                     userInfo.getUserName(),
-                                                     userInfo.getEmail(),
-                                                     userInfo.getOrganization(),
-                                                     userInfo.getOrgType(),
-                                                     userInfo.getCity(),
-                                                     userInfo.getState(),
-                                                     userInfo.getCountry(),
-                                                     userid
-                                                     );
-                return (numRowsAffected > 0);
+            if(groupid > 0) {
+                numRowsAffected = queryRunner.update(updateGroupQuery,
+                                                     groupName, groupid);
+                return numRowsAffected;
             }
             
-            //If this user does not exist in the database then add (INSERT) a new one
-            userid = queryRunner.query(getNextUserPrimaryKeyValQuery ,idResultSetHandler);
-            numRowsAffected = queryRunner.update(addUserQuery,
-                                                 userid,
-                                                 userInfo.getOpenid(),
-                                                 userInfo.getFirstName(),
-                                                 userInfo.getMiddleName(),
-                                                 userInfo.getLastName(),
-                                                 userInfo.getUserName(),
-                                                 userInfo.getEmail(),
-                                                 userInfo.getOrganization(),
-                                                 userInfo.getOrgType(),
-                                                 userInfo.getCity(),
-                                                 userInfo.getState(),
-                                                 userInfo.getCountry()
-                                                 );
-            
-            
-            //A bit of debugging and sanity checking...
-            System.out.println(userInfo);
-            
-        }catch(SQLException ex) {
-            log.error(ex);      
-        }
-        return (numRowsAffected > 0);
-    }
-    
-    public synchronized int addPermission(int userid, int groupid,int roleid) {
-        int numRowsAffected = -1;
-        try{
-            numRowsAffected = queryRunner.update(addPermissionQuery,
-                                                 userid, groupid, roleid);
+            //If this group does not exist in the database then add (INSERT) a new one
+            groupid = queryRunner.query(getNextGroupPrimaryKeyValQuery, idResultSetHandler);
+            numRowsAffected = queryRunner.update(addGroupQuery,groupid,groupName);
         }catch(SQLException ex) {
             log.error(ex);
         }
         return numRowsAffected;
     }
     
+    public synchronized int addRole(String roleName) {
+        int roleid = -1;
+        int numRowsAffected = -1;
+        try{
+            //Check to see if there is an entry by this name already....
+            roleid = queryRunner.query(hasRoleNameQuery,idResultSetHandler,roleName);
+            
+            //If there *is*... then UPDATE that record
+            if(roleid > 0) {
+                numRowsAffected = queryRunner.update(updateRoleQuery,
+                                                     roleName, roleid);
+                return numRowsAffected;
+            }
+            
+            //If this role does not exist in the database then add (INSERT) a new one
+            roleid = queryRunner.query(getNextRolePrimaryKeyValQuery,idResultSetHandler);
+            numRowsAffected = queryRunner.update(addRoleQuery,roleid,roleName);
+        }catch(SQLException ex) {
+            log.error(ex);
+        }
+        return numRowsAffected;
+    }
+
     
     //------------------------------------
     

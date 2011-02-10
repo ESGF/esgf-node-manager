@@ -17,11 +17,11 @@
 *   LLNL-CODE-420962                                                       *
 *                                                                          *
 *   All rights reserved. This file is part of the:                         *
-*   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
+*   Earth System Grid Federation (ESGF) Data Node Software Stack           *
 *                                                                          *
-*   For details, see http://esgf.org/esg-node/                    *
+*   For details, see http://esgf.org/esg-node/                             *
 *   Please also read this link                                             *
-*    http://esgf.org/LICENSE                                      *
+*    http://esgf.org/LICENSE                                               *
 *                                                                          *
 *   * Redistribution and use in source and binary forms, with or           *
 *   without modification, are permitted provided that the following        *
@@ -54,12 +54,14 @@
 *   SUCH DAMAGE.                                                           *
 *                                                                          *
 ***************************************************************************/
+package esg.node.components.security;
 
 /**
    Description:
 
+   Testing the UserInfo and UserInfoDAO objects
+
 **/
-package esg.node.components.simple;
 
 import org.junit.*;
 import static org.junit.Assert.*;
@@ -67,23 +69,38 @@ import static org.junit.Assume.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.logging.impl.*;
 
-public class SimpleEventGenerator {
-    private static final Log log = LogFactory.getLog(SimpleEventGenerator.class);
-    
-    public SimpleEventGenerator() {
-        log.trace("Instantiating SimpleEventGenerator");
-    }
-    
-    public ESGEvent nextEvent() {
-        log.warn("IMPLEMENT ME!!!");
-        return null;
-    }
+import java.util.Properties;
 
-    public ESGRemoteEvent nextRemoteEvent() {
-        log.warn("IMPLEMENT ME!!!");
-        return null;
+
+public class UserInfoTest {
+
+    private static final Log log = LogFactory.getLog(UserInfoTest.class);
+    private static UserInfoDAO userInfoDAO = null;
+ 
+    @BeforeClass
+    public static void initTest() {
+        log.trace("UserInfoTest initializing");
+        //userInfoDAO = new UserInfoDAO(new Properties());
     }
     
+    @Test
+    public void testUserInfo() {
+        UserInfo userInfo = new UserInfo();
+        userInfo.setFirstName("Gavin").
+            setMiddleName("Max").
+            setLastName("Bell").
+            setUserName("bell51").
+            setEmail("gavin@llnl.gov").
+            setOrganization("LLNL").
+            setCity("Livermore").
+            setState("California").
+            setCountry("USA").
+            addGroupAndRole("CMIP5","admin").
+            addGroupAndRole("CMIP5","user").
+            addGroupAndRole("ARM","user");
+        
+        System.out.println("userInfo);
+
+    }
 }

@@ -80,13 +80,15 @@ public class UserInfo {
 
     private static final Log log = LogFactory.getLog(UserInfo.class);
 
+    private int id = -1;
+    private String openid = null;
     private String firstName = null;
     private String middleName = null;
     private String lastName = null;
     private String userName = null;
-    private String openid = null;
     private String email = null;
     private String organization = null;
+    private String orgType = null;
     private String city = null;
     private String state = null;
     private String country = null;   
@@ -95,6 +97,18 @@ public class UserInfo {
 
     //At package level visibility - on purpose :-)
     UserInfo() {}
+
+    int getid() { return id;}
+    UserInfo setid(int id) {
+        this.id = id;
+        return this;
+    }
+
+	public String getOpenid() { return openid; }
+    UserInfo setOpenid(String openid) {
+        this.openid = openid;
+        return this;
+    }
 
 	public String getFirstName() { return firstName; }
     public UserInfo setFirstName(String firstName) {
@@ -119,13 +133,7 @@ public class UserInfo {
         this.userName = userName;
         return this;
     }
-    
-	public String getOpenid() { return openid; }
-    UserInfo setOpenid(String openid) {
-        this.openid = openid;
-        return this;
-    }
-    
+        
 	public String getEmail() { return email; }
 	public UserInfo setEmail(String email) {
         this.email = email;
@@ -135,6 +143,12 @@ public class UserInfo {
 	public String getOrganization() { return organization; }
 	public UserInfo setOrganization(String organization) {
         this.organization = organization;
+        return this;
+    }
+
+	public String getOrgType() { return orgType; }
+	public UserInfo setOrgType(String orgType) {
+        this.orgType = orgType;
         return this;
     }
 
@@ -193,17 +207,18 @@ public class UserInfo {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("UserInfo:\n")
+            .append("Open ID:\t"+openid+"\n")
             .append("First Name:\t"+firstName+"\n")
             .append("Middle Name:\t"+middleName+"\n")
             .append("Last Name:\t"+lastName+"\n")
             .append("User Name:\t"+userName+"\n")
-            .append("Open ID:\t"+openid+"\n")
             .append("Email:\t"+email+"\n")
             .append("Organization:\t"+organization+"\n")
+            .append("Org Type:\t"+orgType+"\n")
             .append("City:\t"+city+"\n")
             .append("State:\t"+state+"\n")
             .append("Country:\t"+country+"\n")
-            .append("Groups and Roles:\n");
+            .append("Permissions (Groups and Roles):\n");
         
         for(String groupName : groups.keySet()) {
             for(String role : groups.get(groupName)) {
