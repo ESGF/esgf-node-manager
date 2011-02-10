@@ -88,9 +88,9 @@ public class UserInfoDAO implements Serializable {
     //Selection queries
     //-------------------
     private static final String idQuery = 
-        "SELECT esgf.id, esgf.firstname, esgf.lastname, esgf.openid, esgf.email "+
-        "FROM user "+
-        "WHERE esgf.openid = ?";
+        "SELECT id, openid, firstname, middlename, lastname, username, email, organization, organization_type, city, state, country "+
+        "FROM esgf.user "+
+        "WHERE openid = ?";
 
     private static final String groupQuery = 
         "SELECT g.name, r.name from esgf.group as g, esgf.role as r, esgf.permission as p, esgf.user as u "+
@@ -175,10 +175,18 @@ public class UserInfoDAO implements Serializable {
                 UserInfo userInfo = null;
                 while(rs.next()) {
                     userInfo = new UserInfo();
-                    userInfo.setFirstName(rs.getString(1))
-                        .setLastName(rs.getString(2))
-                        .setOpenid(rs.getString(3))
-                        .setEmail(rs.getString(4));
+                    userInfo.setid(rs.getInt(1))
+                        .setOpenid(rs.getString(2))
+                        .setFirstName(rs.getString(3))
+                        .setMiddleName(rs.getString(4))
+                        .setLastName(rs.getString(5))
+                        .setUserName(rs.getString(6))
+                        .setEmail(rs.getString(7))
+                        .setOrganization(rs.getString(8))
+                        .setOrgType(rs.getString(9))
+                        .setCity(rs.getString(10))
+                        .setState(rs.getString(11))
+                        .setCountry(rs.getString(12));
                 }
                 return userInfo;
             }
