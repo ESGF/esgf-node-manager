@@ -89,11 +89,11 @@ public class UserInfoDAO implements Serializable {
     //-------------------
     private static final String idQuery = 
         "SELECT id, openid, firstname, middlename, lastname, username, email, organization, organization_type, city, state, country "+
-        "FROM esgf.user "+
+        "FROM esgf_security.user "+
         "WHERE openid = ?";
 
     private static final String groupQuery = 
-        "SELECT g.name, r.name from esgf.group as g, esgf.role as r, esgf.permission as p, esgf.user as u "+
+        "SELECT g.name, r.name from esgf_security.group as g, esgf_security.role as r, esgf_security.permission as p, esgf_security.user as u "+
         "WHERE p.user_id = u.id and u.openid = ? and p.group_id = g.id and p.role_id = r.id "+
         "ORDER BY g.name";
 
@@ -103,21 +103,21 @@ public class UserInfoDAO implements Serializable {
     
     //User Queries...
     private static final String hasUserOpenidQuery =
-        "SELECT * form esgf.user "+
+        "SELECT * form esgf_security.user "+
         "WHERE openid = ?";
     private static final String updateUserQuery = 
-        "UPDATE esgf.user "+
-        "SET openid=?, firstname=?, middlename=?, lastname=?, username=?, email=?, organization=?, organization_type=?, city=? state=?, country=? "+
+        "UPDATE esgf_security.user "+
+        "SET openid=?, firstname=?, middlename=?, lastname=?, username=?, email=?, organization=?, dn=?, organization_type=?, city=? state=?, country=? "+
         "WHERE id = ? ";
     private static final String getNextUserPrimaryKeyValQuery = 
-        "SELECT NEXTVAL('esgf.seq_user')";
+        "SELECT NEXTVAL('esgf_security.user_id_seq')";
     private static final String addUserQuery = 
-        "INSERT INTO esgf.user (id, openid, firstname, middlename, lastname, username, email, organization, organization_type, city, state, country) "+
-        "VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        "INSERT INTO esgf_security.user (id, openid, firstname, middlename, lastname, username, email, dn, organization, organization_type, city, state, country) "+
+        "VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     //Permission Queries...
     private static final String addPermissionQuery = 
-        "INSERT INTO esgf.permission (user_id, grou_id, role_id) "+
+        "INSERT INTO esgf_security.permission (user_id, grou_id, role_id) "+
         "VALUES ( ?, ? )";
 
     //-------------------
@@ -276,6 +276,7 @@ public class UserInfoDAO implements Serializable {
                                                      userInfo.getLastName(),
                                                      userInfo.getUserName(),
                                                      userInfo.getEmail(),
+                                                     userInfo.getDn(),
                                                      userInfo.getOrganization(),
                                                      userInfo.getOrgType(),
                                                      userInfo.getCity(),
@@ -296,6 +297,7 @@ public class UserInfoDAO implements Serializable {
                                                  userInfo.getLastName(),
                                                  userInfo.getUserName(),
                                                  userInfo.getEmail(),
+                                                 userInfo.getDn(),
                                                  userInfo.getOrganization(),
                                                  userInfo.getOrgType(),
                                                  userInfo.getCity(),

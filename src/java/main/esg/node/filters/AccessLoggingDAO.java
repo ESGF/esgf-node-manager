@@ -78,12 +78,12 @@ import org.apache.commons.logging.impl.*;
 public class AccessLoggingDAO implements Serializable {
 
     //TODO figure out what these queries should be!
-    private static final String getNextPrimaryKeyValQuery = "select nextval('seq_access_logging')";
+    private static final String getNextPrimaryKeyValQuery = "select nextval('access_logging_id_seq')";
     private static final String accessLoggingIngressQuery = 
-        "insert into access_logging (id, user_id, email, url, file_id, remote_addr, user_agent, service_type, batch_update_time, date_fetched, success) "+
+        "insert into esgf_manager.access_logging (id, user_id, email, url, file_id, remote_addr, user_agent, service_type, batch_update_time, date_fetched, success) "+
         "values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     private static final String accessLoggingEgressQuery = 
-        "update access_logging set success = ?, duration = ? where id = ?";
+        "update esgf_manager.access_logging set success = ?, duration = ? where id = ?";
     
     private static final Log log = LogFactory.getLog(AccessLoggingDAO.class);
     

@@ -90,9 +90,9 @@ import esg.common.ESGInvalidObjectStateException;
 
 public class MetricsDAO implements Serializable {
 
-    private static final String markTimeQuery      = "UPDATE esgf.metrics_run_log SET last_run_time = ? WHERE id = ?";
-    private static final String regCheckEntryQuery = "SELECT COUNT(*) FROM esgf.metrics_run_log WHERE id = ?";
-    private static final String regAddEntryQuery   = "INSERT INTO esgf.metrics_run_log (id, last_run_time) VALUES ( ? , ? )";
+    private static final String markTimeQuery      = "UPDATE esgf_manager.metrics_run_log SET last_run_time = ? WHERE id = ?";
+    private static final String regCheckEntryQuery = "SELECT COUNT(*) FROM esgf_manager.metrics_run_log WHERE id = ?";
+    private static final String regAddEntryQuery   = "INSERT INTO esgf_manager.metrics_run_log (id, last_run_time) VALUES ( ? , ? )";
     static final String SUBQ = "select fv.file_id, fv.size, fv.url from (select file_id, max(version) as mv from file_version group by file_id order by mv desc) as mver, file_version as fv where fv.file_id=mver.file_id and fv.version=mver.mv";
 
     

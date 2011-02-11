@@ -89,10 +89,10 @@ import esg.common.ESGInvalidObjectStateException;
 
 public class NotificationDAO implements Serializable {
 
-    private static final String notificationQuery = "SELECT DISTINCT d.user_id, d.email, ds.name, d.url, fv.mod_time FROM dataset as ds, file as f, esgf.access_logging as d, file_version as fv WHERE ds.id=f.dataset_id and fv.file_id=f.id and d.url=fv.url and fv.mod_time>d.date_fetched AND d.date_fetched > (SELECT distinct MAX(notify_time) FROM esgf.notification_run_log where id = ? ) ORDER BY d.email";
-    private static final String markTimeQuery      = "UPDATE esgf.notification_run_log SET notify_time = ? WHERE id = ?";
-    private static final String regCheckEntryQuery = "SELECT COUNT(*) FROM esgf.notification_run_log WHERE id = ?";
-    private static final String regAddEntryQuery   = "INSERT INTO esgf.notification_run_log (id, notify_time) VALUES ( ? , ? )";
+    private static final String notificationQuery = "SELECT DISTINCT d.user_id, d.email, ds.name, d.url, fv.mod_time FROM dataset as ds, file as f, esgf_manager.access_logging as d, file_version as fv WHERE ds.id=f.dataset_id and fv.file_id=f.id and d.url=fv.url and fv.mod_time>d.date_fetched AND d.date_fetched > (SELECT distinct MAX(notify_time) FROM esgf_manager.notification_run_log where id = ? ) ORDER BY d.email";
+    private static final String markTimeQuery      = "UPDATE esgf_manager.notification_run_log SET notify_time = ? WHERE id = ?";
+    private static final String regCheckEntryQuery = "SELECT COUNT(*) FROM esgf_manager.notification_run_log WHERE id = ?";
+    private static final String regAddEntryQuery   = "INSERT INTO esgf_manager.notification_run_log (id, notify_time) VALUES ( ? , ? )";
 
     private static final Log log = LogFactory.getLog(NotificationDAO.class);
 

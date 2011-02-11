@@ -90,30 +90,30 @@ public class GroupRoleDAO implements Serializable {
     
     //Group Queries...
     private static final String hasGroupNameQuery =
-        "SELECT * form esgf.group "+
+        "SELECT * form esgf_security.group "+
         "WHERE name = ?";
     private static final String updateGroupQuery = 
-        "UPDATE esgf.group "+
+        "UPDATE esgf_security.group "+
         "SET name=? "+
         "WHERE id=?";
     private static final String getNextGroupPrimaryKeyValQuery = 
-        "SELECT NEXTVAL('esgf.seq_group')";
+        "SELECT NEXTVAL('esgf_security.group_id_seq')";
     private static final String addGroupQuery = 
-        "INSERT INTO esgf.group (id, name) "+
+        "INSERT INTO esgf_security.group (id, name) "+
         "VALUES ( ?, ? )";
 
     //Role Queries...
     private static final String hasRoleNameQuery =
-        "SELECT * form esgf.role "+
+        "SELECT * form esgf_security.role "+
         "WHERE name = ?";
     private static final String updateRoleQuery = 
-        "UPDATE esgf.role "+
+        "UPDATE esgf_security.role "+
         "SET name=? "+
         "WHERE id=?";
     private static final String getNextRolePrimaryKeyValQuery  = 
-        "SELECT NEXTVAL('esgf.seq_role')";
+        "SELECT NEXTVAL('esgf_security.role_id_seq')";
     private static final String addRoleQuery = 
-        "INSERT INTO esgf.role (id, name) "+
+        "INSERT INTO esgf_security.role (id, name) "+
         "VALUES ( ?, ? )";
 
     //-------------------

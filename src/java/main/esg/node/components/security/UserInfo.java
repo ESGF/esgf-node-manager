@@ -87,6 +87,7 @@ public class UserInfo {
     private String lastName = null;
     private String userName = null;
     private String email = null;
+    private String dn = "";
     private String organization = "";
     private String orgType = "";
     private String city = "";
@@ -98,14 +99,14 @@ public class UserInfo {
     //At package level visibility - on purpose :-)
     UserInfo() {}
 
-    int getid() { return id;}
-    UserInfo setid(int id) {
+    final public int getid() { return id;}
+    final UserInfo setid(int id) {
         this.id = id;
         return this;
     }
 
-	public String getOpenid() { return openid; }
-    UserInfo setOpenid(String openid) {
+	public final String getOpenid() { return openid; }
+    final UserInfo setOpenid(String openid) {
         this.openid = openid;
         return this;
     }
@@ -134,9 +135,15 @@ public class UserInfo {
         return this;
     }
         
-	public String getEmail() { return email; }
-	public UserInfo setEmail(String email) {
+	public final String getEmail() { return email; }
+	public final UserInfo setEmail(String email) {
         this.email = email;
+        return this;
+    }
+    
+	public String getDn() { return dn; }
+	public UserInfo setDn(String dn) {
+        this.dn = dn;
         return this;
     }
     
@@ -207,12 +214,14 @@ public class UserInfo {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("UserInfo...\n")
+            .append("ID:\t"+id+"\n")
             .append("Open ID:\t"+openid+"\n")
             .append("First Name:\t"+firstName+"\n")
             .append("Middle Name:\t"+middleName+"\n")
             .append("Last Name:\t"+lastName+"\n")
             .append("User Name:\t"+userName+"\n")
             .append("Email:\t"+email+"\n")
+            .append("Dn:\t"+dn+"\n")
             .append("Organization:\t"+organization+"\n")
             .append("Org Type:\t"+orgType+"\n")
             .append("City:\t"+city+"\n")
