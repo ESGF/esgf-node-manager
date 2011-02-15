@@ -70,25 +70,35 @@
 basedir=$(pwd)
 python_dist_dir="${basedir}/src/python/esgf/dist/"
 
+
 make_python_egg() {
     echo "Building python egg: $@"
     echo "rooted in $(pwd)"
-    dist_file=${1:?"need to specify distribution file"}
+    local dist_file=${1:?"need to specify distribution file"}
+
+    local installer_uid=$(id ${HOME##*/} | sed 's/.*uid=\([0-9]*\).*/\1/')
+    [ $? != 0 ] || [ -z "$installer_uid" ] && echo "installer_uid is not set" && exit 1
+    local installer_gid=$(id ${HOME##*/} | sed 's/.*gid=\([0-9]*\).*/\1/')
+    [ $? != 0 ] || [ -z "$installer_gid" ] && echo "installer_gid is not set" && exit 1
+    local installer_home=${HOME}
+    
     pushd ${basedir}/src/python/esgf
-    python setup.py --verbose bdist_egg
+    python setup.py bdist_egg
     [ $? != 0 ] && echo "ERROR: could not run python setup" && popd >& /dev/null && return 1
     [ -e ${python_dist_dir}/${dist_file} ] && \
         mkdir -p ${basedir}/dist && \
-        mv -v ${python_dist_dir}/${dist_file} ${basedir}/
+        mv -v ${python_dist_dir}/${dist_file} ${basedir}/dist
     [ $? != 0 ] && echo "ERROR: could not move distribution file" && popd >& /dev/null && return 1
+    chown ${installer_uid}:${installer_gid} ${basedir}/dist/${dist_file}
     popd >& /dev/null
     return 0
 }
 
 cleanup_build_artifacts() {
-    pushd ${basedir}/src/python/esgf 
-    [ $? != 0 ] return 1
-    rm -rvf ${basedir}/src/python/esgf/dist \
+    echo "cleaning up artifacts from python build..."
+    pushd ${basedir}/src/python/esgf >& /dev/null
+    [ $? != 0 ] && return 1
+    rm -rf ${basedir}/src/python/esgf/dist \
         ${basedir}/src/python/esgf/build \
         ${basedir}/src/python/esgf/esgf*.egg-info
     ret=$?

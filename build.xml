@@ -532,7 +532,7 @@ Builds the project via ant (obviously).
     <delete file="${web_dir}/index.html"/>
   </target>
 
-  <target name="make_dist" depends="make_war,make_all_jars"
+  <target name="make_dist" depends="make_war,make_all_jars,make_python"
 	  description="(Creates full software distribution)">
     <delete file="${dist_dir}/${module}-${version_num}.tar.gz"/> 
     <tar destfile="${dist_dir}/${module}-${version_num}.tar">
