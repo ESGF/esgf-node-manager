@@ -844,11 +844,11 @@ Builds the project via ant (obviously).
       ************************************************************
     -->
   <target name="make_python">
-    <ant dir="${basedir}/src/python" antfile="build.xml" target="gen"/>
+    <property name="python_egg_file" value="esgf-0.1.3-py2.6.egg"/>
+    <echo message="Building python egg"/>
+    <exec executable="./etc/db/make_python" dir="${basedir}">
+      <arg value="${python_egg_file}"/>
+    </exec>
   </target>
                 
-  <target name="clean_python">
-    <ant dir="${basedir}/src/python" antfile="build.xml" target="clean"/>
-  </target>
- 
 </project>
