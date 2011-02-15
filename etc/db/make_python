@@ -89,7 +89,7 @@ make_python_egg() {
         mkdir -p ${basedir}/dist && \
         mv -v ${python_dist_dir}/${dist_file} ${basedir}/dist
     [ $? != 0 ] && echo "ERROR: could not move distribution file" && popd >& /dev/null && return 1
-    chown ${installer_uid}:${installer_gid} ${basedir}/dist/${dist_file}
+    chown -R ${installer_uid}:${installer_gid} ${basedir}/dist
     popd >& /dev/null
     return 0
 }
