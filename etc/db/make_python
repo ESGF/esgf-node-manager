@@ -95,15 +95,36 @@ make_python_egg() {
 }
 
 cleanup_build_artifacts() {
-    echo "cleaning up artifacts from python build..."
+    echo "Cleaning up artifacts from python build..."
     pushd ${basedir}/src/python/esgf >& /dev/null
     [ $? != 0 ] && return 1
     rm -rf ${basedir}/src/python/esgf/dist \
         ${basedir}/src/python/esgf/build \
-        ${basedir}/src/python/esgf/esgf*.egg-info
+        ${basedir}/src/python/esgf/esgf*.egg-info \
+        ${basedir}/src/python/esgf/SQLAlchemy-*.egg \
+        ${basedir}/src/python/esgf/sqlalchemy_*.egg
     ret=$?
     popd >& /dev/null
     return ${ret}
 }
 
-make_python_egg $@ && cleanup_build_artifacts
+case $1 in
+    --make|-m)
+        shift
+        make_python_egg $@
+        ;;
+    --clean|-c)
+        cleanup_build_artifacts
+        ;;
+    --all)
+        shift
+        make_python_egg $@ && cleanup_build_artifacts
+        ;;
+    --help|-h)
+        usage
+        ;;
+    *)
+        printf "\n ERROR: unknown switch \"$1\" \n\n" && exit 1
+        ;;
+esac
+
