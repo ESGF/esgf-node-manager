@@ -104,6 +104,7 @@ cleanup_build_artifacts() {
         ${basedir}/src/python/esgf/SQLAlchemy-*.egg \
         ${basedir}/src/python/esgf/sqlalchemy_*.egg
     ret=$?
+    [ -e ${basedir}/src/python/esgf/setup.py.tmpl ] && [ -e ${basedir}/src/python/esgf/setup.py ] && rm -v ${basedir}/src/python/esgf/setup.py
     popd >& /dev/null
     return ${ret}
 }

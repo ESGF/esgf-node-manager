@@ -107,6 +107,8 @@ Builds the project via ant (obviously).
   <!-- **static defines** -->
   <property name="version_num" value="0.0.0"/>
   <filter token="version_num"  value="${version_num}"/>
+  <property name="db_version_num" value="0.0.0"/>
+  <filter token="db_version_num"  value="${db_version_num}"/>
   <property name="release_name" value="no_name"/>
   <filter token="release_name" value="${release_name}"/>
 
@@ -198,9 +200,13 @@ Builds the project via ant (obviously).
     <property name="test_coverage_file"   value="${basedir}/.cobertura.ser"/>
     <property name="ivy.lib.dir"          value="${lib_fetched_dir}"/>
 
+    <property name="py_src_dir"	          value="${basedir}/src/python/esgf"/>
+
+
     <echo message="--------------------------------"/> 
     <echo message="module            = ${module} "/> 
     <echo message="version_num       = ${version_num} "/> 
+    <echo message="db_version_num    = ${db_version_num} "/> 
     <echo message="release_name      = ${release_name} "/> 
     <echo message="--------------------------------"/> 
     <echo message="src_dir           = ${src_dir}"/>
@@ -226,6 +232,8 @@ Builds the project via ant (obviously).
     <echo message="test_reports_dir     = ${test_reports_dir}"/>
     <echo message="test_coverage_dir    = ${test_coverage_dir}"/>
     <echo message="lib_deps_reports_dir = ${doc_dir_generated}/dep-reports"/>
+    <echo message="--------------------------------"/> 
+    <echo message="py_src_dir        = ${py_src_dir}"/>
     <echo message="--------------------------------"/> 
     <tstamp/>
   </target> 
@@ -844,7 +852,9 @@ Builds the project via ant (obviously).
       ************************************************************
     -->
   <target name="make_python">
-    <property name="python_egg_file" value="esgf-0.1.3-py2.6.egg"/>
+    <copy file="${py_src_dir}/setup.py.tmpl" tofile="${py_src_dir}/setup.py" filtering="true"/>
+
+    <property name="python_egg_file" value="esgf-${db_version_num}-py2.6.egg"/>
     <echo message="Building python egg"/>
     <exec executable="./etc/db/make_python" dir="${basedir}">
       <arg value="--all"/>
