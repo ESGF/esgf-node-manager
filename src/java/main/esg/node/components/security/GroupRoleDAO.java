@@ -204,7 +204,7 @@ public class GroupRoleDAO implements Serializable {
         this.queryRunner = new QueryRunner(dataSource);
     }
     
-    public synchronized int addGroup(String groupName) {
+    public synchronized boolean addGroup(String groupName) {
         int groupid = -1;
         int numRowsAffected = -1;
         
@@ -212,12 +212,8 @@ public class GroupRoleDAO implements Serializable {
             //Check to see if there is an entry by this name already....
             groupid = queryRunner.query(hasGroupNameQuery,idResultSetHandler,groupName);
             
-            //If there *is*... then UPDATE that record
-            if(groupid > 0) {
-                numRowsAffected = queryRunner.update(updateGroupQuery,
-                                                     groupName, groupid);
-                return numRowsAffected;
-            }
+            //If there *is*... then there is nothing to add!
+            if(groupid > 0) { return true; }
             
             //If this group does not exist in the database then add (INSERT) a new one
             groupid = queryRunner.query(getNextGroupPrimaryKeyValQuery, idResultSetHandler);
@@ -225,22 +221,41 @@ public class GroupRoleDAO implements Serializable {
         }catch(SQLException ex) {
             log.error(ex);
         }
-        return numRowsAffected;
+        return (numRowsAffected > 0);
     }
     
-    public synchronized int addRole(String roleName) {
+    public synchronized boolean renameGroup(String origName, String newName) {
+        int groupid = -1;
+        int numRowsAffected = -1;
+        
+        try{
+            //Check to see if there is an entry by this name already....
+            groupid = queryRunner.query(hasGroupNameQuery,idResultSetHandler,origName);
+            
+            //If there *is*... then UPDATE that record
+            if(groupid > 0) {
+                numRowsAffected = queryRunner.update(updateGroupQuery, newName, groupid);
+            }
+        }catch(SQLException ex) {
+            log.error(ex);
+        }
+        return (numRowsAffected > 0);
+    }
+    
+    //TODO: What to really do here to make this happen
+    public synchronized boolean removeGroup(String groupName) {
+        return false;
+    }
+    
+    public synchronized boolean addRole(String roleName) {
         int roleid = -1;
         int numRowsAffected = -1;
         try{
             //Check to see if there is an entry by this name already....
             roleid = queryRunner.query(hasRoleNameQuery,idResultSetHandler,roleName);
             
-            //If there *is*... then UPDATE that record
-            if(roleid > 0) {
-                numRowsAffected = queryRunner.update(updateRoleQuery,
-                                                     roleName, roleid);
-                return numRowsAffected;
-            }
+            //If there *is*... then it is already there!
+            if(roleid > 0) { return true; }
             
             //If this role does not exist in the database then add (INSERT) a new one
             roleid = queryRunner.query(getNextRolePrimaryKeyValQuery,idResultSetHandler);
@@ -248,9 +263,30 @@ public class GroupRoleDAO implements Serializable {
         }catch(SQLException ex) {
             log.error(ex);
         }
-        return numRowsAffected;
+        return (numRowsAffected > 0);
     }
 
+    public synchronized boolean renameRole(String origName, String newName) {
+        int roleid = -1;
+        int numRowsAffected = -1;
+        try{
+            //Check to see if there is an entry by this name already....
+            roleid = queryRunner.query(hasRoleNameQuery,idResultSetHandler,origName);
+            
+            //If there *is*... then UPDATE (rename) that record
+            if(roleid > 0) {
+                numRowsAffected = queryRunner.update(updateRoleQuery, newName, roleid);
+            }
+        }catch(SQLException ex) {
+            log.error(ex);
+        }
+        return (numRowsAffected > 0);
+    }
+    
+    //TODO: What to really do here to make this happen
+    public synchronized boolean removeRole(String roleName) {
+        return false;
+    }
     
     //------------------------------------
     

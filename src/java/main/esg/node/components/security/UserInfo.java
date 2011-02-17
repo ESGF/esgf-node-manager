@@ -227,14 +227,18 @@ public class UserInfo {
             .append("City:\t"+city+"\n")
             .append("State:\t"+state+"\n")
             .append("Country:\t"+country+"\n")
-            .append("Permissions (Groups and Roles):\n");
-        
-        for(String groupName : groups.keySet()) {
+            .append("Permissions (Groups and Roles):");
+     
+        if(this.groups != null) {
+            for(String groupName : groups.keySet()) {
                 sb.append("\t"+groupName+"\t");
-            for(String role : groups.get(groupName)) {
-                sb.append("\t"+role);
+                for(String role : groups.get(groupName)) {
+                    sb.append("\t"+role);
+                }
+                sb.append("\n");
             }
-            sb.append("\n");
+        }else {
+            System.out.println("-- no permissions -- :-(\n");
         }
         return sb.toString();
     }

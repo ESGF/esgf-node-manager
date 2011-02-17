@@ -110,7 +110,7 @@ public class UserInfoDAO implements Serializable {
         "WHERE openid = ?";
     private static final String updateUserQuery = 
         "UPDATE esgf_security.user "+
-        "SET openid=?, firstname=?, middlename=?, lastname=?, username=?, email=?, organization=?, dn=?, organization_type=?, city=? state=?, country=? "+
+        "SET openid = ?, firstname = ?, middlename = ?, lastname = ?, username = ?, email = ?, dn = ?, organization = ?, organization_type = ?, city = ?, state = ?, country = ? "+
         "WHERE id = ? ";
     private static final String getNextUserPrimaryKeyValQuery = 
         "SELECT NEXTVAL('esgf_security.user_id_seq')";
@@ -125,12 +125,11 @@ public class UserInfoDAO implements Serializable {
 
     //Password Queries...
     private static final String setPasswordQuery = 
-        "INSERT INTO esgf_security.user (password) "+
-        "VALUES ( ? ) "+
-	"WHERE openid = ?";
+        "UPDATE esgf_security.user SET password = ? "+
+        "WHERE openid = ?";
 
     private static final String getPasswordQuery = 
-	"SELECT password FROM esgf_security.user WHERE openid = ?";
+        "SELECT password FROM esgf_security.user WHERE openid = ?";
 
     //-------------------
 
@@ -281,18 +280,19 @@ public class UserInfoDAO implements Serializable {
         int roleid = -1;
         int numRowsAffected = -1;
         try{
-            log.trace("Inserting UserInfo associated with id: ["+userInfo.getOpenid()+"], into database");
-            if (userInfo.getOpenid() == null) { 
-		System.out.println("Openid is null ["+userInfo.getOpenid()+"] no go playa!");
-		return false; 
-	    }
+            log.trace("Inserting UserInfo associated with username: ["+userInfo.getUserName()+"], into database");
+            //THE ONLY PLACE OPEN ID IS SET!!! UPON INITIAL SUBMISSION ONLY!!!
+            if(userInfo.getOpenid() == null) {
+                userInfo.setOpenid("https://"+getFQDN()+"/esgf-idp/openid/"+userInfo.getUserName());
+            }
+            System.out.println("Openid is ["+userInfo.getOpenid()+"]");
             
             //Check to see if there is an entry by this openid already....
             userid = queryRunner.query(hasUserOpenidQuery,idResultSetHandler,userInfo.getOpenid());
             
             //If there *is*... then UPDATE that record
             if(userid > 0) {
-		System.out.println("I HAVE A USERID: "+userid);
+                System.out.println("I HAVE A USERID: "+userid);
                 assert (userid == userInfo.getid()) : "The database id ("+userid+") for this openid ("+userInfo.getOpenid()+") does NOT match this object's ("+userInfo.getid()+")";
                 numRowsAffected = queryRunner.update(updateUserQuery,
                                                      userInfo.getOpenid(),
@@ -313,14 +313,10 @@ public class UserInfoDAO implements Serializable {
             }
             
             //If this user does not exist in the database then add (INSERT) a new one
-	    System.out.println("Whole new user: "+userInfo.getFirstName());
+            System.out.println("Whole new user: "+userInfo.getFirstName());
             userid = queryRunner.query(getNextUserPrimaryKeyValQuery ,idResultSetHandler);
-	    System.out.println("New ID to be assigned: "+userInfo.getid());
-        
-        //THE ONLY PLACE OPEN ID IS SET!!! UPON INITIAL SUBMISSION ONLY!!!
-        if(userInfo.getOpenid() == null)
-            userInfo.setOpenid("https://"+getFQDN()+"/esgf-idp/openid/"+userInfo.getUserName());
-
+            System.out.println("New ID to be assigned: "+userid);
+            
             numRowsAffected = queryRunner.update(addUserQuery,
                                                  userid,
                                                  userInfo.getOpenid(),
@@ -346,40 +342,41 @@ public class UserInfoDAO implements Serializable {
         }
         return (numRowsAffected > 0);
     }
-
+    
     //Sets the password value for a given user (openid)
     synchronized boolean setPassword(String openid, String newPassword) {
-	int numRowsAffected = -1;
-	try{
-	    numRowsAffected = queryRunner.update(setPasswordQuery, md5Hex(newPassword), openid);
-	}catch(SQLException ex) {
-	    log.error(ex);
-	}
-	return (numRowsAffected > 0);
+        if((newPassword == null) || (newPassword.equals(""))) return false; //should throw and esgf exception here with meaningful message
+        int numRowsAffected = -1;
+        try{
+            numRowsAffected = queryRunner.update(setPasswordQuery, md5Hex(newPassword), openid);
+        }catch(SQLException ex) {
+            log.error(ex);
+        }
+        return (numRowsAffected > 0);
     }
-
+    
     //Given a password, check to see if that password matches what is
     //in the database for this user (openid)
-    boolean checkPassword(String openid, String queryPassword) {
-	boolean isMatch = false;
-	try{
-	    isMatch = (md5Hex(queryPassword)).equals(queryRunner.query(getPasswordQuery, passwordQueryHandler, openid));
-	}catch(SQLException ex) {
-	    log.error(ex);
-	}
-	return isMatch;
+    public boolean checkPassword(String openid, String queryPassword) {
+        boolean isMatch = false;
+        try{
+            isMatch = (md5Hex(queryPassword)).equals(queryRunner.query(getPasswordQuery, passwordQueryHandler, openid));
+        }catch(SQLException ex) {
+            log.error(ex);
+        }
+        return isMatch;
     }
-
+    
     //Given the old password and the new password for a given user
     //(openid) update the password, only if the old password matches
-    synchronized boolean changePassword(String openid, String queryPassword, String newPassword) {
-	boolean isSuccessful = false;
-	if(checkPassword(openid,queryPassword)){
-	    setPassword(openid,newPassword);
-	}
-	return isSuccessful;
+    public synchronized boolean changePassword(String openid, String queryPassword, String newPassword) {
+        boolean isSuccessful = false;
+        if(checkPassword(openid,queryPassword)){
+            isSuccessful = setPassword(openid,newPassword);
+        }
+        return isSuccessful;
     }
-
+    
     synchronized int addPermission(int userid, int groupid,int roleid) {
         int numRowsAffected = -1;
         try{

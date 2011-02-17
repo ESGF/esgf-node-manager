@@ -66,6 +66,8 @@ package esg.node.components.security;
 import org.junit.*;
 import static org.junit.Assert.*;
 import static org.junit.Assume.*;
+import static org.apache.commons.codec.digest.DigestUtils.*;
+import static esg.common.Utils.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -96,8 +98,6 @@ public class UserInfoTest {
             addGroupAndRole("CMIP5","admin").
             addGroupAndRole("CMIP5","user").
             addGroupAndRole("ARM","user");
-
-        gavin.setOpenid("https://pcmdi.llnl.gov/esgf/"+gavin.getUserName());
     }
     
     @Test
@@ -107,12 +107,91 @@ public class UserInfoTest {
 
     @Test
     public void testAddUser() {
-        System.out.println("Adding user "+gavin.getFirstName()+" id="+gavin.getid());
+        System.out.print("Adding user "+gavin.getUserName()+" id="+gavin.getid()+" openid="+gavin.getOpenid()+": ");
         if(userInfoDAO.addUserInfo(gavin)) {
-            System.out.println("Apparently Successful add");
+            System.out.println("[OK]");
+            
+            String origPassword = "foobar";
+            String newPassword = "foobaralpha";
+
+            String origPasswordMd5Hex = md5Hex(origPassword);
+            String newPasswordMd5Hex  = md5Hex(newPassword);
+            
+            System.out.print("Setting password: ["+origPassword+" -> "+origPasswordMd5Hex+"]");
+            if(userInfoDAO.setPassword(gavin.getOpenid(),origPassword)) {
+                System.out.println("[OK]");
+            }else {
+                System.out.println("[FAIL]");
+            }
+
+            System.out.print("Checking password: ");
+            if(userInfoDAO.checkPassword(gavin.getOpenid(),origPassword)) {
+                System.out.println("[OK]");
+            }else {
+                System.out.println("[FAIL]");
+            }
+
+            System.out.print("Able to change password: ");
+            System.out.print("["+origPassword+" -> "+origPasswordMd5Hex+"]");
+            System.out.print("["+newPassword+" -> "+newPasswordMd5Hex+"]");
+            if(userInfoDAO.changePassword(gavin.getOpenid(),origPassword,newPassword)) {
+                System.out.println("[OK]");
+            }else{
+                System.out.println("[FAIL]");
+            }
+
+            System.out.print("Checking password mismatch: ["+origPassword+" ?-> "+newPasswordMd5Hex+"]");
+            if(userInfoDAO.checkPassword(gavin.getOpenid(),origPassword)) {
+                System.out.println("[FAIL]");
+            }else {
+                //This should fail! since the password is now foobaralpha! (right!?)
+                System.out.println("[OK]");
+            }
+                                
         }else{
-            System.out.println("Was Unable to add user :-(");
+            System.out.println("[FAIL]");
         }
+    }
+    
+    @Test
+    public void testGetUser() {
+        UserInfo dean = new UserInfo();
+        System.out.println("\nCreating Fresh Dean User");
+        dean.setFirstName("Dean").
+            setMiddleName("N").
+            setLastName("Williams").
+            setUserName("williams13").
+            setEmail("dean@llnl.gov").
+            setDn("O=LLNL/OU=ESGF").
+            setOrganization("LLNL").
+            setOrgType("Research").
+            setCity("Livermore").
+            setState("California").
+            setCountry("USA").
+            addGroupAndRole("CMIP5","admin").
+            addGroupAndRole("ARM","user");
+        System.out.println(dean);
+
+
+        System.out.println("\nAdding Fresh Dean User To Database...");
+        userInfoDAO.addUserInfo(dean);
+        System.out.print(dean);
+        
+        System.out.println("\nPulling out Dean user from Database...");
+        dean = userInfoDAO.getUserById("https://"+getFQDN()+"/esgf-idp/openid/williams13");
+
+        System.out.println("\nModifying Dean user object...(middle name and email)");
+        dean.setMiddleName("Neill");
+        dean.setEmail("williams13@llnl.gov");
+        System.out.println(dean);
+
+        System.out.println("\nModifying Dean user object and resubmitting to database...");
+        userInfoDAO.addUserInfo(dean);
+
+        System.out.println("\nPulling out Dean user from Database after modifications...");
+        dean = userInfoDAO.getUserById("https://"+getFQDN()+"/esgf-idp/openid/williams13");
+        System.out.println(dean);
+
     }
 
     
