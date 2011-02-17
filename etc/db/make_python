@@ -76,11 +76,9 @@ make_python_egg() {
     echo "rooted in $(pwd)"
     local dist_file=${1:?"need to specify distribution file"}
 
-    local installer_uid=$(id ${HOME##*/} | sed 's/.*uid=\([0-9]*\).*/\1/')
-    [ $? != 0 ] || [ -z "$installer_uid" ] && echo "installer_uid is not set" && exit 1
-    local installer_gid=$(id ${HOME##*/} | sed 's/.*gid=\([0-9]*\).*/\1/')
-    [ $? != 0 ] || [ -z "$installer_gid" ] && echo "installer_gid is not set" && exit 1
-    local installer_home=${HOME}
+    installer_uid=${ESG_USER_UID:-${SUDO_UID:-$(id -u)}}
+    installer_gid=${ESG_USER_GID:-${SUDO_GID:-$(id -g)}}
+    installer_home=${ESG_USER_HOME:-$(getent passwd ${installer_uid} | awk -F : '{print $6}')}
     
     pushd ${basedir}/src/python/esgf
     python setup.py bdist_egg
