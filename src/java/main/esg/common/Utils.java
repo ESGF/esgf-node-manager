@@ -72,9 +72,11 @@ public class Utils {
     private static final Log log = LogFactory.getLog(Utils.class);
     
     private static AtomicLong msgCounter = new AtomicLong(0);
+    private static String myHostname = null;
+
+
     public static long nextSeq() { return msgCounter.getAndIncrement(); }
 
-    //-----
     public static String getNodeID() {
         String nodeID = null;
         if(null != nodeID) { return nodeID; }
@@ -87,6 +89,16 @@ public class Utils {
         //pointer exception the return value should NEVER be null!
         return nodeID.toString();
     }
-    //-----
+
+    public static String getFQDN() {
+        try{
+            if (myHostname == null) {
+                myHostname = java.net.InetAddress.getLocalHost().getCanonicalHostName();
+            }
+        }catch (java.net.UnknownHostException ex) {
+            log.error(ex);
+        }
+        return myHostname;
+    }
 
 }

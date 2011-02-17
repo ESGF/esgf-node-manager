@@ -76,11 +76,14 @@ import javax.sql.DataSource;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
 
+import static org.apache.commons.codec.digest.DigestUtils.*;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
 import esg.common.db.DatabaseResource;
+import static esg.common.Utils.*;
 
 public class UserInfoDAO implements Serializable {
 
@@ -103,7 +106,7 @@ public class UserInfoDAO implements Serializable {
     
     //User Queries...
     private static final String hasUserOpenidQuery =
-        "SELECT * form esgf_security.user "+
+        "SELECT * from esgf_security.user "+
         "WHERE openid = ?";
     private static final String updateUserQuery = 
         "UPDATE esgf_security.user "+
@@ -120,6 +123,15 @@ public class UserInfoDAO implements Serializable {
         "INSERT INTO esgf_security.permission (user_id, grou_id, role_id) "+
         "VALUES ( ?, ? )";
 
+    //Password Queries...
+    private static final String setPasswordQuery = 
+        "INSERT INTO esgf_security.user (password) "+
+        "VALUES ( ? ) "+
+	"WHERE openid = ?";
+
+    private static final String getPasswordQuery = 
+	"SELECT password FROM esgf_security.user WHERE openid = ?";
+
     //-------------------
 
     
@@ -131,12 +143,13 @@ public class UserInfoDAO implements Serializable {
     private ResultSetHandler<UserInfo> userInfoResultSetHandler = null;
     private ResultSetHandler<Map<String,Set<String>>> userGroupsResultSetHandler = null;
     private ResultSetHandler<Integer> idResultSetHandler = null;
-
+    private ResultSetHandler<String> passwordQueryHandler = null;
+    
     //uses default values in the DatabaseResource to connect to database
     public UserInfoDAO() {
         this(new Properties());
     }
-
+    
     public UserInfoDAO(Properties props) {
         if (props == null) {
             log.warn("Input Properties parameter is: ["+props+"] - creating empty Properties obj");
@@ -160,14 +173,14 @@ public class UserInfoDAO implements Serializable {
         this.setProperties(props);
         init();
     }
-
+    
     public void init() {
         this.idResultSetHandler = new ResultSetHandler<Integer>() {
-		    public Integer handle(ResultSet rs) throws SQLException {
+	    public Integer handle(ResultSet rs) throws SQLException {
                 if(!rs.next()) { return -1; }
                 return rs.getInt(1);
-		    }
-		};
+	    }
+	};
         
         //To handle the single record result
         userInfoResultSetHandler =  new ResultSetHandler<UserInfo>() {
@@ -219,13 +232,21 @@ public class UserInfoDAO implements Serializable {
                 roleSet.add(value);
                 groups.put(name, roleSet);
             }
-
-
         };
+	
+	passwordQueryHandler = new ResultSetHandler<String>() {
+	    public String handle(ResultSet rs) throws SQLException {
+		String password = null;
+		while(rs.next()) {
+		    password = rs.getString(1);
+		}
+		return password;
+	    }
+	};
     }
     
     public void setProperties(Properties props) { this.props = props; }
-
+    
     public void setDataSource(DataSource dataSource) {
         log.trace("Setting Up UserInfoDAO's Pooled Data Source");
         this.dataSource = dataSource;
@@ -254,20 +275,24 @@ public class UserInfoDAO implements Serializable {
         return userInfo;
     }
 
-    public synchronized boolean addUserInfo(UserInfo userInfo) {
+    synchronized boolean addUserInfo(UserInfo userInfo) {
         int userid = -1;
         int groupid = -1;
         int roleid = -1;
         int numRowsAffected = -1;
         try{
             log.trace("Inserting UserInfo associated with id: ["+userInfo.getOpenid()+"], into database");
-            if (userInfo.getOpenid() == null) { return false; }
+            if (userInfo.getOpenid() == null) { 
+		System.out.println("Openid is null ["+userInfo.getOpenid()+"] no go playa!");
+		return false; 
+	    }
             
             //Check to see if there is an entry by this openid already....
             userid = queryRunner.query(hasUserOpenidQuery,idResultSetHandler,userInfo.getOpenid());
             
             //If there *is*... then UPDATE that record
             if(userid > 0) {
+		System.out.println("I HAVE A USERID: "+userid);
                 assert (userid == userInfo.getid()) : "The database id ("+userid+") for this openid ("+userInfo.getOpenid()+") does NOT match this object's ("+userInfo.getid()+")";
                 numRowsAffected = queryRunner.update(updateUserQuery,
                                                      userInfo.getOpenid(),
@@ -288,7 +313,14 @@ public class UserInfoDAO implements Serializable {
             }
             
             //If this user does not exist in the database then add (INSERT) a new one
+	    System.out.println("Whole new user: "+userInfo.getFirstName());
             userid = queryRunner.query(getNextUserPrimaryKeyValQuery ,idResultSetHandler);
+	    System.out.println("New ID to be assigned: "+userInfo.getid());
+        
+        //THE ONLY PLACE OPEN ID IS SET!!! UPON INITIAL SUBMISSION ONLY!!!
+        if(userInfo.getOpenid() == null)
+            userInfo.setOpenid("https://"+getFQDN()+"/esgf-idp/openid/"+userInfo.getUserName());
+
             numRowsAffected = queryRunner.update(addUserQuery,
                                                  userid,
                                                  userInfo.getOpenid(),
@@ -310,12 +342,45 @@ public class UserInfoDAO implements Serializable {
             System.out.println(userInfo);
             
         }catch(SQLException ex) {
-            log.error(ex);      
+            log.error(ex);
         }
         return (numRowsAffected > 0);
     }
-    
-    public synchronized int addPermission(int userid, int groupid,int roleid) {
+
+    //Sets the password value for a given user (openid)
+    synchronized boolean setPassword(String openid, String newPassword) {
+	int numRowsAffected = -1;
+	try{
+	    numRowsAffected = queryRunner.update(setPasswordQuery, md5Hex(newPassword), openid);
+	}catch(SQLException ex) {
+	    log.error(ex);
+	}
+	return (numRowsAffected > 0);
+    }
+
+    //Given a password, check to see if that password matches what is
+    //in the database for this user (openid)
+    boolean checkPassword(String openid, String queryPassword) {
+	boolean isMatch = false;
+	try{
+	    isMatch = (md5Hex(queryPassword)).equals(queryRunner.query(getPasswordQuery, passwordQueryHandler, openid));
+	}catch(SQLException ex) {
+	    log.error(ex);
+	}
+	return isMatch;
+    }
+
+    //Given the old password and the new password for a given user
+    //(openid) update the password, only if the old password matches
+    synchronized boolean changePassword(String openid, String queryPassword, String newPassword) {
+	boolean isSuccessful = false;
+	if(checkPassword(openid,queryPassword)){
+	    setPassword(openid,newPassword);
+	}
+	return isSuccessful;
+    }
+
+    synchronized int addPermission(int userid, int groupid,int roleid) {
         int numRowsAffected = -1;
         try{
             numRowsAffected = queryRunner.update(addPermissionQuery,

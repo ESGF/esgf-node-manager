@@ -130,7 +130,7 @@ public class UserInfo {
     }
 
     public String getUserName() { return userName; }
-    UserInfo setUserName(String userName) {
+    public UserInfo setUserName(String userName) {
         this.userName = userName;
         return this;
     }
