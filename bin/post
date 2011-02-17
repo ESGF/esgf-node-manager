@@ -71,6 +71,7 @@ noop=${noop:-0}
 manifest_file=${manifest_file:-$0.manif}
 esg_dist_url="rainbow.llnl.gov:/pcmdi_web/dist"
 current_dir=${current_dir:="esg_node"}
+xfer_user=${xfer_user:-$(whoami)}
 
 fail=0
 good=0
@@ -103,9 +104,9 @@ while read file dest_dir; do
     
     ((debug)) && echo -n "pushing $file ---> ${esg_dist_url}/${dest_dir} " || echo -n "*"
     ((!noop))  && md5sum $file > ${file}.md5
-    ((!noop))  && rsync -c ${file}.md5 ${esg_dist_url}/${dest_dir}/${file##*/}.md5 >& /dev/null
+    ((!noop))  && rsync -c ${file}.md5 ${xfer_user}@${esg_dist_url}/${dest_dir}/${file##*/}.md5 >& /dev/null
     echo -n "-"
-    ((!noop))  && rsync -c ${file} ${esg_dist_url}/${dest_dir}/${file##*/} >& /dev/null
+    ((!noop))  && rsync -c ${file} ${xfer_user}@${esg_dist_url}/${dest_dir}/${file##*/} >& /dev/null
     if [ $? != 0 ]; then
 	((debug)) && echo "[FAIL]"
 	((++fail))
