@@ -63,6 +63,7 @@ CREATE TABLE role (
 CREATE TABLE "user" (
     id integer NOT NULL,
     firstname character varying(100) NOT NULL,
+    middlename character varying(100),
     lastname character varying(100) NOT NULL,
     email character varying(100) NOT NULL,
     username character varying(100) NOT NULL,
@@ -70,6 +71,7 @@ CREATE TABLE "user" (
     dn character varying(300),
     openid character varying(200) NOT NULL,
     organization character varying(200),
+    organization_type character varying(200),
     city character varying(100),
     state character varying(100),
     country character varying(100)
