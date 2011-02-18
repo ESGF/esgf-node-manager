@@ -851,7 +851,7 @@ Builds the project via ant (obviously).
       Python Targets....(calls targets defined in ${basedir}/src/python/build.xml
       ************************************************************
     -->
-  <target name="make_python">
+  <target name="make_python" depends="init">
     <copy file="${py_src_dir}/setup.py.tmpl" tofile="${py_src_dir}/setup.py" filtering="true"/>
 
     <property name="python_egg_file" value="esgf-${db_version_num}-py2.6.egg"/>
