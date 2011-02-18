@@ -280,7 +280,7 @@ public class UserInfoDAO implements Serializable {
     //(NOTE: synchronized since there are two calls to database - can optimize around later)
     //------------------------------------
     public synchronized UserInfo getUserById(String id) {
-        System.out.println("getUserById("+id+")");
+        log.info("getUserById("+id+")");
         
         UserInfo userInfo = null;
         int affectedRecords = 0;
@@ -305,8 +305,8 @@ public class UserInfoDAO implements Serializable {
 
         }
 
-        System.out.println("openid = "+openid);
-        System.out.println("username = "+username);
+        log.info("openid = "+openid);
+        log.info("username = "+username);
 
         try{
             log.trace("Issuing Query for info associated with id: ["+openid+"], from database");
@@ -326,7 +326,7 @@ public class UserInfoDAO implements Serializable {
             }
             
             //A bit of debugging and sanity checking...
-            System.out.println(userInfo);
+            log.trace(userInfo.toString());
             
         }catch(SQLException ex) {
             log.error(ex);      
@@ -336,7 +336,7 @@ public class UserInfoDAO implements Serializable {
     
     public synchronized UserInfo refresh(UserInfo userInfo) {
         if(userInfo.getid() > 0) {
-            System.out.println("Refreshing ["+userInfo.getUserName()+"]...");
+            log.info("Refreshing ["+userInfo.getUserName()+"]...");
             userInfo = getUserById(userInfo.getOpenid());
         }
         return userInfo;
@@ -349,18 +349,20 @@ public class UserInfoDAO implements Serializable {
         int numRowsAffected = -1;
         try{
             log.trace("Inserting UserInfo associated with username: ["+userInfo.getUserName()+"], into database");
-            //THE ONLY PLACE OPEN ID IS SET!!! UPON INITIAL SUBMISSION ONLY!!!
+
             if(userInfo.getOpenid() == null) {
+                //should actually never get in here... vestige 
                 userInfo.setOpenid("https://"+getFQDN()+"/esgf-idp/openid/"+userInfo.getUserName());
             }
-            System.out.println("Openid is ["+userInfo.getOpenid()+"]");
+
+            log.trace("Openid is ["+userInfo.getOpenid()+"]");
             
             //Check to see if there is an entry by this openid already....
             userid = queryRunner.query(hasUserOpenidQuery,idResultSetHandler,userInfo.getOpenid());
             
             //If there *is*... then UPDATE that record
             if(userid > 0) {
-                System.out.println("I HAVE A USERID: "+userid);
+                log.trace("I HAVE A USERID: "+userid);
                 assert (userid == userInfo.getid()) : "The database id ("+userid+") for this openid ("+userInfo.getOpenid()+") does NOT match this object's ("+userInfo.getid()+")";
                 numRowsAffected = queryRunner.update(updateUserQuery,
                                                      userInfo.getOpenid(),
@@ -378,7 +380,7 @@ public class UserInfoDAO implements Serializable {
                                                      userid
                                                      );
 
-                System.out.println("SUBMITTING PERMISSIONS (update):");
+                log.trace("SUBMITTING PERMISSIONS (update):");
                 if(userInfo.getGroups() != null) {
                     for(String groupName : userInfo.getGroups().keySet()) {
                         for(String roleName : userInfo.getGroups().get(groupName)) {
@@ -391,9 +393,9 @@ public class UserInfoDAO implements Serializable {
             }
             
             //If this user does not exist in the database then add (INSERT) a new one
-            System.out.println("Whole new user: "+userInfo.getFirstName());
+            log.trace("Whole new user: "+userInfo.getUserName());
             userid = queryRunner.query(getNextUserPrimaryKeyValQuery ,idResultSetHandler);
-            System.out.println("New ID to be assigned: "+userid);
+            log.trace("New ID to be assigned: "+userid);
             
             numRowsAffected = queryRunner.update(addUserQuery,
                                                  userid,
@@ -414,9 +416,9 @@ public class UserInfoDAO implements Serializable {
             
             //A bit of debugging and sanity checking...
             userInfo.setid(userid);
-            System.out.println(userInfo);
+            log.trace(userInfo);
             
-            System.out.println("SUBMITTING PERMISSIONS (new):");
+            log.trace("SUBMITTING PERMISSIONS (new):");
             if(userInfo.getGroups() != null) {
                 for(String groupName : userInfo.getGroups().keySet()) {
                     for(String roleName : userInfo.getGroups().get(groupName)) {
@@ -441,10 +443,10 @@ public class UserInfoDAO implements Serializable {
     synchronized boolean deleteUser(String openid) {
         int numRowsAffected = -1;
         try {
-            System.out.println("Deleting user with openid ["+openid+"] ");
+            log.trace("Deleting user with openid ["+openid+"] ");
             this.deleteAllUserPermissions(openid);
             numRowsAffected = queryRunner.update(delUserQuery,openid);
-            if (numRowsAffected >0) System.out.println("[OK]"); else System.out.println("[FAIL]");            
+            if (numRowsAffected >0) log.trace("[OK]"); else log.trace("[FAIL]");            
         }catch(SQLException ex) {
             log.error(ex);
         }
@@ -498,9 +500,9 @@ public class UserInfoDAO implements Serializable {
     synchronized boolean addPermission(int userid, String groupName, String roleName) {
         int numRowsAffected = -1;
         try{
-            System.out.print("Adding Permission ("+userid+", "+groupName+", "+roleName+") ");
+            log.trace("Adding Permission ("+userid+", "+groupName+", "+roleName+") ");
             numRowsAffected = queryRunner.update(addPermissionQuery, userid, groupName, roleName);
-            if (numRowsAffected >0) System.out.println("[OK]"); else System.out.println("[FAIL]");
+            if (numRowsAffected >0) log.trace("[OK]"); else log.trace("[FAIL]");
         }catch(SQLException ex) {
             log.error(ex);
         }
@@ -512,7 +514,7 @@ public class UserInfoDAO implements Serializable {
         try{
             System.out.print("Deleting Permission ("+userid+", "+groupName+", "+roleName+") ");
             numRowsAffected = queryRunner.update(delPermissionQuery, userid, groupName, roleName);
-            if (numRowsAffected >0) System.out.println("[OK]"); else System.out.println("[FAIL]");
+            if (numRowsAffected >0) log.trace("[OK]"); else log.trace("[FAIL]");
         }catch(SQLException ex) {
             log.error(ex);
         }
@@ -524,8 +526,8 @@ public class UserInfoDAO implements Serializable {
         try{
             System.out.print("Deleting All Permissions for openid = ["+openid+"] ");
             numRowsAffected = queryRunner.update(delAllUserPermissionsQuery, openid);
-            if (numRowsAffected > 0) System.out.println("[OK]"); else System.out.println("[FAIL]");
-            System.out.println(numRowsAffected+" entries removed");
+            if (numRowsAffected > 0) log.trace("[OK]"); else log.trace("[FAIL]");
+            log.trace(numRowsAffected+" permission entries removed");
         }catch(SQLException ex) {
             log.error(ex);
         }

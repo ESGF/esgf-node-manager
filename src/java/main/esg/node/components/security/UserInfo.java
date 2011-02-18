@@ -104,7 +104,7 @@ public class UserInfo {
         this.id = id;
         return this;
     }
-
+    
 	public final String getOpenid() { return openid; }
     final UserInfo setOpenid(String openid) {
         this.openid = openid;
@@ -221,7 +221,7 @@ public class UserInfo {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("UserInfo...\n")
+        sb.append("\n----------\nUserInfo...\n")
             .append("ID:\t"+id+"\n")
             .append("Open ID:\t"+openid+"\n")
             .append("First Name:\t"+firstName+"\n")
@@ -246,8 +246,9 @@ public class UserInfo {
                 sb.append("\n");
             }
         }else {
-            System.out.println("-- no permissions -- :-(\n");
+            sb.append("-- no permissions -- :-(\n");
         }
+        sb.append("\n----------\n");
         return sb.toString();
     }
     

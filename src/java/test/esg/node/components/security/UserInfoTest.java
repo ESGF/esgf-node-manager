@@ -86,13 +86,14 @@ public class UserInfoTest {
     public static void initTest() {
         System.out.println("UserInfoTest initializing");
         
+        userInfoDAO = new UserInfoDAO(new Properties());
         groupRoleDAO = new GroupRoleDAO(new Properties());
+
+
         groupRoleDAO.addGroup("CMIP5_test");
         groupRoleDAO.addGroup("ARM_test");
         groupRoleDAO.addRole("user_test");
         
-        
-        userInfoDAO = new UserInfoDAO(new Properties());
         
         gavin = userInfoDAO.getUserById("bell51");
         if(gavin.isValid()) {
@@ -118,7 +119,7 @@ public class UserInfoTest {
         System.out.print("\nDeleting Gavin user object...");
         if(userInfoDAO.deleteUserInfo(gavin)) System.out.println("[OK]"); else System.out.println("[FAIL]");
 
-        groupRoleDAO.deleteRole("user_test");
+        groupRoleDAO.deleteRole("user_test_renamed"); //changed name from user_test
         groupRoleDAO.deleteGroup("ARM_test");
         groupRoleDAO.deleteGroup("CMIP_NOW"); //changed name from CMIP5_test
 
@@ -126,8 +127,6 @@ public class UserInfoTest {
         groupRoleDAO.deleteGroup("CMIP7_test");
         groupRoleDAO.deleteRole("lord");
         groupRoleDAO.deleteRole("king");
-        groupRoleDAO.deleteRole("user_test_renamed");
-
     }
 
     @Test
@@ -196,7 +195,7 @@ public class UserInfoTest {
                 setState("California").
                 setCountry("USA").
                 addGroupAndRole("CMIP5_test","admin").
-                addGroupAndRole("ARM_test","user");
+                addGroupAndRole("ARM_test","user_test");
         }
         System.out.println(dean);
 
@@ -231,8 +230,8 @@ public class UserInfoTest {
     @Test
     public void testSetPermissions() {
         
-        groupRoleDAO.addGroup("CMIP6");
-        groupRoleDAO.addGroup("CMIP7");
+        groupRoleDAO.addGroup("CMIP6_test");
+        groupRoleDAO.addGroup("CMIP7_test");
 
         groupRoleDAO.addRole("god");
         groupRoleDAO.addRole("king");
@@ -241,27 +240,27 @@ public class UserInfoTest {
         if(bob.isValid()) {
             System.out.println("\nApparently drach1 is present in the system!");
         }else{
-            System.out.println("\nCreating Fresh Bob User");
+            System.out.println("\nCreating Fresh Bob User");        
+            bob.setFirstName("Bob").
+                setLastName("Drach").
+                setUserName("drach1").
+                setEmail("bob@llnl.gov").
+                setDn("O=LLNL/OU=ESGF").
+                setOrganization("LLNL").
+                setOrgType("Research").
+                setCity("Livermore").
+                setState("California").
+                setCountry("USA").
+                addGroupAndRole("CMIP5_test","admin").
+                addGroupAndRole("CMIP5_test","user_test").
+                addGroupAndRole("CMIP6_test","god").
+                addGroupAndRole("CMIP6_test","king").
+                addGroupAndRole("CMIP6_test","admin").
+                addGroupAndRole("CMIP7_test","admin");
         }
         
-        bob.setFirstName("Bob").
-            setLastName("Drach").
-            setUserName("drach1").
-            setEmail("bob@llnl.gov").
-            setDn("O=LLNL/OU=ESGF").
-            setOrganization("LLNL").
-            setOrgType("Research").
-            setCity("Livermore").
-            setState("California").
-            setCountry("USA").
-            addGroupAndRole("CMIP5_test","admin").
-            addGroupAndRole("CMIP5_test","user").
-            addGroupAndRole("CMIP6_test","god").
-            addGroupAndRole("CMIP6_test","king").
-            addGroupAndRole("CMIP6_test","admin").
-            addGroupAndRole("CMIP7_test","admin");
         System.out.println(bob);
-
+        
         if(userInfoDAO.addUserInfo(bob)) System.out.println("[OK]"); else System.out.println("[FAIL]");
 
 
