@@ -504,7 +504,7 @@ public class UserInfoDAO implements Serializable {
             numRowsAffected = queryRunner.update(addPermissionQuery, userid, groupName, roleName);
             if (numRowsAffected >0) log.trace("[OK]"); else log.trace("[FAIL]");
         }catch(SQLException ex) {
-            log.error(ex);
+            //log.error(ex);
         }
         return (numRowsAffected > 0);
     }
