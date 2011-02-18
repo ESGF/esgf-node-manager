@@ -178,7 +178,6 @@ public class UserInfo {
     }
 
 
-
     //--------------------------------------
     // Group and Role collecting
     //--------------------------------------
@@ -210,6 +209,15 @@ public class UserInfo {
         groups.put(group, roleSet);
         return this;
     }
+
+    //--------------------------------------
+
+    //Check if this object is a "valid" object.  Valid objects must
+    //have fulfill these conditions.
+    public final boolean isValid() {
+        return ((this.id > 0) && (this.openid != null) && (this.userName != null));
+    }
+
 
     public String toString() {
         StringBuilder sb = new StringBuilder();

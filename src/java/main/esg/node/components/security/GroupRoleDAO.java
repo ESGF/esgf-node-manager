@@ -101,6 +101,8 @@ public class GroupRoleDAO implements Serializable {
     private static final String addGroupQuery = 
         "INSERT INTO esgf_security.group (id, name, description) "+
         "VALUES ( ?, ?, ? )";
+    private static final String delGroupQuery =
+        "DELETE FROM esgf_security.group where name = ?";
 
     //Role Queries...
     private static final String hasRoleNameQuery =
@@ -115,6 +117,8 @@ public class GroupRoleDAO implements Serializable {
     private static final String addRoleQuery = 
         "INSERT INTO esgf_security.role (id, name, description) "+
         "VALUES ( ?, ? ,? )";
+    private static final String delRoleQuery =
+        "DELETE FROM esgf_security.role where name = ?";
 
     //-------------------
 
@@ -246,8 +250,17 @@ public class GroupRoleDAO implements Serializable {
     }
     
     //TODO: What to really do here to make this happen
-    public synchronized boolean removeGroup(String groupName) {
-        return false;
+    public synchronized boolean deleteGroup(String groupName) {
+        int numRowsAffected = -1;
+        try{
+            System.out.print("Deleting Group "+groupName);
+            numRowsAffected = queryRunner.update(delGroupQuery, groupName);
+            if (numRowsAffected > 0) System.out.println("[OK]"); else System.out.println("[FAIL]");
+            System.out.println(numRowsAffected+" entries removed");
+        }catch(SQLException ex) {
+            log.error(ex);
+        }
+        return (numRowsAffected > 0);
     }
     
     public boolean addRole(String roleName) {
@@ -290,8 +303,17 @@ public class GroupRoleDAO implements Serializable {
     }
     
     //TODO: What to really do here to make this happen
-    public synchronized boolean removeRole(String roleName) {
-        return false;
+    synchronized boolean deleteRole(String roleName) {
+        int numRowsAffected = -1;
+        try{
+            System.out.print("Deleting Role "+roleName);
+            numRowsAffected = queryRunner.update(delRoleQuery, roleName);
+            if (numRowsAffected > 0) System.out.println("[OK]"); else System.out.println("[FAIL]");
+            System.out.println(numRowsAffected+" entries removed");
+        }catch(SQLException ex) {
+            log.error(ex);
+        }
+        return (numRowsAffected > 0);
     }
     
     //------------------------------------

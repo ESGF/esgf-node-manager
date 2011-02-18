@@ -72,6 +72,8 @@ import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
@@ -153,6 +155,10 @@ public class UserInfoDAO implements Serializable {
     private ResultSetHandler<Map<String,Set<String>>> userGroupsResultSetHandler = null;
     private ResultSetHandler<Integer> idResultSetHandler = null;
     private ResultSetHandler<String> passwordQueryHandler = null;
+    private static Pattern openidUrlPattern = Pattern.compile("https://([^/ ]*)/.*[/]*/([^/ @*%#!()+=]*$)");
+    private Matcher openidMatcher = null;
+    private static Pattern usernamePattern = Pattern.compile("^[^/ @*%#!()+=]*$");
+    private Matcher usernameMatcher = null;
     
     //uses default values in the DatabaseResource to connect to database
     public UserInfoDAO() {
@@ -273,14 +279,51 @@ public class UserInfoDAO implements Serializable {
     //Query function calls... 
     //(NOTE: synchronized since there are two calls to database - can optimize around later)
     //------------------------------------
-    public synchronized UserInfo getUserById(String openid) {
+    public synchronized UserInfo getUserById(String id) {
+        System.out.println("getUserById("+id+")");
+        
         UserInfo userInfo = null;
         int affectedRecords = 0;
+        String openid = null;
+        String username = null;
+
+        //Discern if they user put in a an openid url or just a username, 
+        //set values accordingly...
+        openidMatcher = openidUrlPattern.matcher(id);
+        if(openidMatcher.find()) {
+            openid = id;
+            username = openidMatcher.group(2);
+        }else{
+            usernameMatcher = usernamePattern.matcher(id);
+            if(usernameMatcher.find()) {
+                openid = "https://"+getFQDN()+"/esgf-idp/openid/"+id;
+                username = id;
+            }else {
+                System.out.println("Sorry money, your id is not well formed");
+                return null;
+            }
+
+        }
+
+        System.out.println("openid = "+openid);
+        System.out.println("username = "+username);
+
         try{
             log.trace("Issuing Query for info associated with id: ["+openid+"], from database");
             if (openid==null) { return null; }
             userInfo = queryRunner.query(idQuery,userInfoResultSetHandler,openid);
-            userInfo.setGroups(queryRunner.query(groupQuery,userGroupsResultSetHandler,openid));
+
+            //IF does not already exist in our system, then create a
+            //skeleton instance suitable for adding... (setting openid
+            //and username) You know this object is not in the system
+            //because it's id will be -1.
+            if(userInfo == null) {
+                userInfo = new UserInfo();
+                userInfo.setOpenid(openid);
+                userInfo.setUserName(username);
+            }else {
+                userInfo.setGroups(queryRunner.query(groupQuery,userGroupsResultSetHandler,openid));
+            }
             
             //A bit of debugging and sanity checking...
             System.out.println(userInfo);
@@ -294,9 +337,9 @@ public class UserInfoDAO implements Serializable {
     public synchronized UserInfo refresh(UserInfo userInfo) {
         if(userInfo.getid() > 0) {
             System.out.println("Refreshing ["+userInfo.getUserName()+"]...");
-            return getUserById(userInfo.getOpenid());
+            userInfo = getUserById(userInfo.getOpenid());
         }
-        return null;
+        return userInfo;
     }
     
     synchronized boolean addUserInfo(UserInfo userInfo) {
@@ -479,7 +522,7 @@ public class UserInfoDAO implements Serializable {
     synchronized boolean deleteAllUserPermissions(String openid) {
         int numRowsAffected = -1;
         try{
-            System.out.print("Deleting All Permissions for openid = "+openid);
+            System.out.print("Deleting All Permissions for openid = ["+openid+"] ");
             numRowsAffected = queryRunner.update(delAllUserPermissionsQuery, openid);
             if (numRowsAffected > 0) System.out.println("[OK]"); else System.out.println("[FAIL]");
             System.out.println(numRowsAffected+" entries removed");

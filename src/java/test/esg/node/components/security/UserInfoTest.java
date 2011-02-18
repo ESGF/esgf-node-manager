@@ -87,35 +87,51 @@ public class UserInfoTest {
         System.out.println("UserInfoTest initializing");
         
         groupRoleDAO = new GroupRoleDAO(new Properties());
-        groupRoleDAO.addGroup("CMIP5");
-        groupRoleDAO.addGroup("ARM");
-        groupRoleDAO.addRole("admin");
-        groupRoleDAO.addRole("user");
-
-
+        groupRoleDAO.addGroup("CMIP5_test");
+        groupRoleDAO.addGroup("ARM_test");
+        groupRoleDAO.addRole("user_test");
+        
+        
         userInfoDAO = new UserInfoDAO(new Properties());
-        gavin = new UserInfo();
-        gavin.setFirstName("Gavin").
-            setMiddleName("Max").
-            setLastName("Bell").
-            setUserName("bell51").
-            setEmail("gavin@llnl.gov").
-            setOrganization("LLNL").
-            setCity("Livermore").
-            setState("California").
-            setCountry("USA").
-            addGroupAndRole("CMIP5","admin").
-            addGroupAndRole("CMIP5","user").
-            addGroupAndRole("ARM","user");
-    }
-    
-    @Test
-    public void testUserInfo() {        
+        
+        gavin = userInfoDAO.getUserById("bell51");
+        if(gavin.isValid()) {
+            System.out.println("Apparently gavin is present in the system!");
+        }else {
+            gavin.setFirstName("Gavin").
+                setMiddleName("Max").
+                setLastName("Bell").
+                setEmail("gavin@llnl.gov").
+                setOrganization("LLNL").
+                setCity("Livermore").
+                setState("California").
+                setCountry("USA").
+                addGroupAndRole("CMIP5_test","admin").
+                addGroupAndRole("CMIP5_test","user_test").
+                addGroupAndRole("ARM_test","user_test");
+        }
         System.out.println(gavin);
     }
+    
+    @AfterClass
+    public static void testCleanup() {
+        System.out.print("\nDeleting Gavin user object...");
+        if(userInfoDAO.deleteUserInfo(gavin)) System.out.println("[OK]"); else System.out.println("[FAIL]");
+
+        groupRoleDAO.deleteRole("user_test");
+        groupRoleDAO.deleteGroup("ARM_test");
+        groupRoleDAO.deleteGroup("CMIP_NOW"); //changed name from CMIP5_test
+
+        groupRoleDAO.deleteGroup("CMIP6_test");
+        groupRoleDAO.deleteGroup("CMIP7_test");
+        groupRoleDAO.deleteRole("lord");
+        groupRoleDAO.deleteRole("king");
+        groupRoleDAO.deleteRole("user_test_renamed");
+
+    }
 
     @Test
-    public void testAddUser() {
+    public void testPassword() {
         System.out.print("Adding user "+gavin.getUserName()+" id="+gavin.getid()+" openid="+gavin.getOpenid()+": ");
         if(userInfoDAO.addUserInfo(gavin)) {
             System.out.println("[OK]");
@@ -164,21 +180,24 @@ public class UserInfoTest {
     
     @Test
     public void testGetUser() {
-        UserInfo dean = new UserInfo();
-        System.out.println("\nCreating Fresh Dean User");
-        dean.setFirstName("Dean").
-            setMiddleName("N").
-            setLastName("Williams").
-            setUserName("williams13").
-            setEmail("dean@llnl.gov").
-            setDn("O=LLNL/OU=ESGF").
-            setOrganization("LLNL").
-            setOrgType("Research").
-            setCity("Livermore").
-            setState("California").
-            setCountry("USA").
-            addGroupAndRole("CMIP5","admin").
-            addGroupAndRole("ARM","user");
+        UserInfo dean = userInfoDAO.getUserById("williams13");
+        if(dean.isValid()) {
+            System.out.println("Apparently dean is present in the system!");
+        }else {
+            dean.setFirstName("Dean").
+                setMiddleName("N").
+                setLastName("Williams").
+                setUserName("williams13").
+                setEmail("dean@llnl.gov").
+                setDn("O=LLNL/OU=ESGF").
+                setOrganization("LLNL").
+                setOrgType("Research").
+                setCity("Livermore").
+                setState("California").
+                setCountry("USA").
+                addGroupAndRole("CMIP5_test","admin").
+                addGroupAndRole("ARM_test","user");
+        }
         System.out.println(dean);
 
         boolean success = false;
@@ -204,6 +223,9 @@ public class UserInfoTest {
         System.out.println("\nRe-Adding SAME Dean user object to database...");
         if(userInfoDAO.addUserInfo(dean)) System.out.println("[OK]"); else System.out.println("[FAIL]");
 
+        System.out.println("\nDeleting Dean user object...");
+        if(userInfoDAO.deleteUserInfo(dean)) System.out.println("[OK]"); else System.out.println("[FAIL]");
+
     }
 
     @Test
@@ -215,8 +237,13 @@ public class UserInfoTest {
         groupRoleDAO.addRole("god");
         groupRoleDAO.addRole("king");
 
-        UserInfo bob = new UserInfo();
-        System.out.println("\nCreating Fresh Bob User");
+        UserInfo bob = userInfoDAO.getUserById("drach1");
+        if(bob.isValid()) {
+            System.out.println("\nApparently drach1 is present in the system!");
+        }else{
+            System.out.println("\nCreating Fresh Bob User");
+        }
+        
         bob.setFirstName("Bob").
             setLastName("Drach").
             setUserName("drach1").
@@ -227,26 +254,25 @@ public class UserInfoTest {
             setCity("Livermore").
             setState("California").
             setCountry("USA").
-            addGroupAndRole("CMIP5","admin").
-            addGroupAndRole("CMIP5","user").
-            addGroupAndRole("CMIP6","god").
-            addGroupAndRole("CMIP6","king").
-            addGroupAndRole("CMIP6","admin").
-            addGroupAndRole("CMIP7","admin");
+            addGroupAndRole("CMIP5_test","admin").
+            addGroupAndRole("CMIP5_test","user").
+            addGroupAndRole("CMIP6_test","god").
+            addGroupAndRole("CMIP6_test","king").
+            addGroupAndRole("CMIP6_test","admin").
+            addGroupAndRole("CMIP7_test","admin");
         System.out.println(bob);
 
         if(userInfoDAO.addUserInfo(bob)) System.out.println("[OK]"); else System.out.println("[FAIL]");
 
-        System.out.println("\nPulling out Gavin user from Database... DELETING...");
-        UserInfo gavin = userInfoDAO.getUserById("https://"+getFQDN()+"/esgf-idp/openid/bell51");
-        if(userInfoDAO.deleteUserInfo(gavin)) System.out.println("[OK]"); else System.out.println("[FAIL]");
 
-        groupRoleDAO.renameGroup("CMIP5","CMIP_NOW");
+        groupRoleDAO.renameGroup("CMIP5_test","CMIP_NOW");
         groupRoleDAO.renameRole("god","lord");
-        groupRoleDAO.renameRole("admin","administrator");
+        groupRoleDAO.renameRole("user_test","user_test_renamed");
         bob = userInfoDAO.refresh(bob);
         System.out.println(bob);
         
+        System.out.println("\nDeleting Bob user object...");
+        if(userInfoDAO.deleteUserInfo(bob)) System.out.println("[OK]"); else System.out.println("[FAIL]");
     }
 
     
