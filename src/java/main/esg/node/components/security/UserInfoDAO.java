@@ -91,7 +91,7 @@ public class UserInfoDAO implements Serializable {
     //Selection queries
     //-------------------
     private static final String idQuery = 
-        "SELECT id, openid, firstname, middlename, lastname, username, email, organization, organization_type, city, state, country "+
+        "SELECT id, openid, firstname, middlename, lastname, username, email, dn, organization, organization_type, city, state, country "+
         "FROM esgf_security.user "+
         "WHERE openid = ?";
 
@@ -117,11 +117,21 @@ public class UserInfoDAO implements Serializable {
     private static final String addUserQuery = 
         "INSERT INTO esgf_security.user (id, openid, firstname, middlename, lastname, username, email, dn, organization, organization_type, city, state, country) "+
         "VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String delUserQuery =
+        "DELETE FROM esgf_security.user "+
+        "WHERE openid = ?";
 
     //Permission Queries...
     private static final String addPermissionQuery = 
-        "INSERT INTO esgf_security.permission (user_id, grou_id, role_id) "+
-        "VALUES ( ?, ? )";
+        "INSERT INTO esgf_security.permission (user_id, group_id, role_id) "+
+        "VALUES ( ?, (SELECT id FROM esgf_security.group WHERE name = ? ), (SELECT id FROM esgf_security.role WHERE name = ?))";
+    private static final String delPermissionQuery = 
+        "DELETE FROM esgf_security.permission "+
+        "WHERE user_id = ?, "+
+        "group_id = (SELECT id FROM esgf_security.group WHERE name = ?), "+
+        "role_id = (SELECT id FROM esgf_security.role WHERE name = ?)";
+    private static final String delAllUserPermissionsQuery =
+        "DELETE FROM esgf_security.permission WHERE user_id = (SELECT id FROM esgf_security.user WHERE openid = ?)";
 
     //Password Queries...
     private static final String setPasswordQuery = 
@@ -194,11 +204,12 @@ public class UserInfoDAO implements Serializable {
                         .setLastName(rs.getString(5))
                         .setUserName(rs.getString(6))
                         .setEmail(rs.getString(7))
-                        .setOrganization(rs.getString(8))
-                        .setOrgType(rs.getString(9))
-                        .setCity(rs.getString(10))
-                        .setState(rs.getString(11))
-                        .setCountry(rs.getString(12));
+                        .setDn(rs.getString(8))
+                        .setOrganization(rs.getString(9))
+                        .setOrgType(rs.getString(10))
+                        .setCity(rs.getString(11))
+                        .setState(rs.getString(12))
+                        .setCountry(rs.getString(13));
                 }
                 return userInfo;
             }
@@ -251,6 +262,12 @@ public class UserInfoDAO implements Serializable {
         this.dataSource = dataSource;
         this.queryRunner = new QueryRunner(dataSource);
     }
+
+
+    //-------------------------------------------------------
+    //User Manipulations
+    //-------------------------------------------------------
+
     
     //------------------------------------
     //Query function calls... 
@@ -273,7 +290,15 @@ public class UserInfoDAO implements Serializable {
         }
         return userInfo;
     }
-
+    
+    public synchronized UserInfo refresh(UserInfo userInfo) {
+        if(userInfo.getid() > 0) {
+            System.out.println("Refreshing ["+userInfo.getUserName()+"]...");
+            return getUserById(userInfo.getOpenid());
+        }
+        return null;
+    }
+    
     synchronized boolean addUserInfo(UserInfo userInfo) {
         int userid = -1;
         int groupid = -1;
@@ -309,6 +334,16 @@ public class UserInfoDAO implements Serializable {
                                                      userInfo.getCountry(),
                                                      userid
                                                      );
+
+                System.out.println("SUBMITTING PERMISSIONS (update):");
+                if(userInfo.getGroups() != null) {
+                    for(String groupName : userInfo.getGroups().keySet()) {
+                        for(String roleName : userInfo.getGroups().get(groupName)) {
+                            addPermission(userid,groupName,roleName);
+                        }
+                    }
+                }    
+                
                 return (numRowsAffected > 0);
             }
             
@@ -335,14 +370,49 @@ public class UserInfoDAO implements Serializable {
             
             
             //A bit of debugging and sanity checking...
+            userInfo.setid(userid);
             System.out.println(userInfo);
+            
+            System.out.println("SUBMITTING PERMISSIONS (new):");
+            if(userInfo.getGroups() != null) {
+                for(String groupName : userInfo.getGroups().keySet()) {
+                    for(String roleName : userInfo.getGroups().get(groupName)) {
+                        addPermission(userid,groupName,roleName);
+                    }
+                }
+            }
             
         }catch(SQLException ex) {
             log.error(ex);
         }
         return (numRowsAffected > 0);
     }
+
+    boolean deleteUserInfo(UserInfo userInfo) {
+        if(userInfo.getid() > 0) {
+            return this.deleteUser(userInfo.getOpenid());
+        }
+        return false;
+    }
     
+    synchronized boolean deleteUser(String openid) {
+        int numRowsAffected = -1;
+        try {
+            System.out.println("Deleting user with openid ["+openid+"] ");
+            this.deleteAllUserPermissions(openid);
+            numRowsAffected = queryRunner.update(delUserQuery,openid);
+            if (numRowsAffected >0) System.out.println("[OK]"); else System.out.println("[FAIL]");            
+        }catch(SQLException ex) {
+            log.error(ex);
+        }
+        return (numRowsAffected > 0);
+    }
+    
+
+    //-------------------------------------------------------
+    //Password Manipulations
+    //-------------------------------------------------------
+
     //Sets the password value for a given user (openid)
     synchronized boolean setPassword(String openid, String newPassword) {
         if((newPassword == null) || (newPassword.equals(""))) return false; //should throw and esgf exception here with meaningful message
@@ -377,17 +447,47 @@ public class UserInfoDAO implements Serializable {
         return isSuccessful;
     }
     
-    synchronized int addPermission(int userid, int groupid,int roleid) {
+
+    //-------------------------------------------------------
+    //Permission Manipulations
+    //-------------------------------------------------------
+
+    synchronized boolean addPermission(int userid, String groupName, String roleName) {
         int numRowsAffected = -1;
         try{
-            numRowsAffected = queryRunner.update(addPermissionQuery,
-                                                 userid, groupid, roleid);
+            System.out.print("Adding Permission ("+userid+", "+groupName+", "+roleName+") ");
+            numRowsAffected = queryRunner.update(addPermissionQuery, userid, groupName, roleName);
+            if (numRowsAffected >0) System.out.println("[OK]"); else System.out.println("[FAIL]");
         }catch(SQLException ex) {
             log.error(ex);
         }
-        return numRowsAffected;
+        return (numRowsAffected > 0);
     }
-    
+
+    synchronized boolean deletePermission(int userid, String groupName, String roleName) {
+        int numRowsAffected = -1;
+        try{
+            System.out.print("Deleting Permission ("+userid+", "+groupName+", "+roleName+") ");
+            numRowsAffected = queryRunner.update(delPermissionQuery, userid, groupName, roleName);
+            if (numRowsAffected >0) System.out.println("[OK]"); else System.out.println("[FAIL]");
+        }catch(SQLException ex) {
+            log.error(ex);
+        }
+        return (numRowsAffected > 0);
+    }
+
+    synchronized boolean deleteAllUserPermissions(String openid) {
+        int numRowsAffected = -1;
+        try{
+            System.out.print("Deleting All Permissions for openid = "+openid);
+            numRowsAffected = queryRunner.update(delAllUserPermissionsQuery, openid);
+            if (numRowsAffected > 0) System.out.println("[OK]"); else System.out.println("[FAIL]");
+            System.out.println(numRowsAffected+" entries removed");
+        }catch(SQLException ex) {
+            log.error(ex);
+        }
+        return (numRowsAffected > 0);
+    }
     
     //------------------------------------
     

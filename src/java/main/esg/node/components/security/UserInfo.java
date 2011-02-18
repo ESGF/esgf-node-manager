@@ -193,7 +193,7 @@ public class UserInfo {
         return this;
     }
     
-    public UserInfo addGroupAndRole(String group, String role) {
+    UserInfo addGroupAndRole(String group, String role) {
         //lazily instantiate groups map
         if(groups == null) {
             groups = new HashMap<String,Set<String>>();
@@ -227,7 +227,7 @@ public class UserInfo {
             .append("City:\t"+city+"\n")
             .append("State:\t"+state+"\n")
             .append("Country:\t"+country+"\n")
-            .append("Permissions (Groups and Roles):");
+            .append("Permissions (Groups and Roles):\n");
      
         if(this.groups != null) {
             for(String groupName : groups.keySet()) {

@@ -90,7 +90,7 @@ public class GroupRoleDAO implements Serializable {
     
     //Group Queries...
     private static final String hasGroupNameQuery =
-        "SELECT * form esgf_security.group "+
+        "SELECT * from esgf_security.group "+
         "WHERE name = ?";
     private static final String updateGroupQuery = 
         "UPDATE esgf_security.group "+
@@ -99,22 +99,22 @@ public class GroupRoleDAO implements Serializable {
     private static final String getNextGroupPrimaryKeyValQuery = 
         "SELECT NEXTVAL('esgf_security.group_id_seq')";
     private static final String addGroupQuery = 
-        "INSERT INTO esgf_security.group (id, name) "+
-        "VALUES ( ?, ? )";
+        "INSERT INTO esgf_security.group (id, name, description) "+
+        "VALUES ( ?, ?, ? )";
 
     //Role Queries...
     private static final String hasRoleNameQuery =
-        "SELECT * form esgf_security.role "+
+        "SELECT * from esgf_security.role "+
         "WHERE name = ?";
     private static final String updateRoleQuery = 
         "UPDATE esgf_security.role "+
         "SET name=? "+
         "WHERE id=?";
-    private static final String getNextRolePrimaryKeyValQuery  = 
+    private static final String getNextRolePrimaryKeyValQuery  =
         "SELECT NEXTVAL('esgf_security.role_id_seq')";
     private static final String addRoleQuery = 
-        "INSERT INTO esgf_security.role (id, name) "+
-        "VALUES ( ?, ? )";
+        "INSERT INTO esgf_security.role (id, name, description) "+
+        "VALUES ( ?, ? ,? )";
 
     //-------------------
 
@@ -204,7 +204,10 @@ public class GroupRoleDAO implements Serializable {
         this.queryRunner = new QueryRunner(dataSource);
     }
     
-    public synchronized boolean addGroup(String groupName) {
+    public boolean addGroup(String groupName) {
+        return addGroup(groupName,"");
+    }
+    public synchronized boolean addGroup(String groupName, String groupDesc) {
         int groupid = -1;
         int numRowsAffected = -1;
         
@@ -217,7 +220,7 @@ public class GroupRoleDAO implements Serializable {
             
             //If this group does not exist in the database then add (INSERT) a new one
             groupid = queryRunner.query(getNextGroupPrimaryKeyValQuery, idResultSetHandler);
-            numRowsAffected = queryRunner.update(addGroupQuery,groupid,groupName);
+            numRowsAffected = queryRunner.update(addGroupQuery,groupid,groupName,groupDesc);
         }catch(SQLException ex) {
             log.error(ex);
         }
@@ -247,7 +250,10 @@ public class GroupRoleDAO implements Serializable {
         return false;
     }
     
-    public synchronized boolean addRole(String roleName) {
+    public boolean addRole(String roleName) {
+        return addRole(roleName,"");
+    }
+    public synchronized boolean addRole(String roleName, String roleDesc) {
         int roleid = -1;
         int numRowsAffected = -1;
         try{
@@ -259,7 +265,7 @@ public class GroupRoleDAO implements Serializable {
             
             //If this role does not exist in the database then add (INSERT) a new one
             roleid = queryRunner.query(getNextRolePrimaryKeyValQuery,idResultSetHandler);
-            numRowsAffected = queryRunner.update(addRoleQuery,roleid,roleName);
+            numRowsAffected = queryRunner.update(addRoleQuery,roleid,roleName,roleDesc);
         }catch(SQLException ex) {
             log.error(ex);
         }

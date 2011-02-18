@@ -79,11 +79,20 @@ public class UserInfoTest {
 
     private static final Log log = LogFactory.getLog(UserInfoTest.class);
     private static UserInfoDAO userInfoDAO = null;
+    private static GroupRoleDAO groupRoleDAO = null;
     private static UserInfo gavin = null;
  
     @BeforeClass
     public static void initTest() {
         System.out.println("UserInfoTest initializing");
+        
+        groupRoleDAO = new GroupRoleDAO(new Properties());
+        groupRoleDAO.addGroup("CMIP5");
+        groupRoleDAO.addGroup("ARM");
+        groupRoleDAO.addRole("admin");
+        groupRoleDAO.addRole("user");
+
+
         userInfoDAO = new UserInfoDAO(new Properties());
         gavin = new UserInfo();
         gavin.setFirstName("Gavin").
@@ -172,9 +181,9 @@ public class UserInfoTest {
             addGroupAndRole("ARM","user");
         System.out.println(dean);
 
-
+        boolean success = false;
         System.out.println("\nAdding Fresh Dean User To Database...");
-        userInfoDAO.addUserInfo(dean);
+        if(userInfoDAO.addUserInfo(dean)) System.out.println("[OK]"); else System.out.println("[FAIL]");
         System.out.print(dean);
         
         System.out.println("\nPulling out Dean user from Database...");
@@ -186,12 +195,58 @@ public class UserInfoTest {
         System.out.println(dean);
 
         System.out.println("\nModifying Dean user object and resubmitting to database...");
-        userInfoDAO.addUserInfo(dean);
+        if(userInfoDAO.addUserInfo(dean)) System.out.println("[OK]"); else System.out.println("[FAIL]");
 
         System.out.println("\nPulling out Dean user from Database after modifications...");
         dean = userInfoDAO.getUserById("https://"+getFQDN()+"/esgf-idp/openid/williams13");
         System.out.println(dean);
 
+        System.out.println("\nRe-Adding SAME Dean user object to database...");
+        if(userInfoDAO.addUserInfo(dean)) System.out.println("[OK]"); else System.out.println("[FAIL]");
+
+    }
+
+    @Test
+    public void testSetPermissions() {
+        
+        groupRoleDAO.addGroup("CMIP6");
+        groupRoleDAO.addGroup("CMIP7");
+
+        groupRoleDAO.addRole("god");
+        groupRoleDAO.addRole("king");
+
+        UserInfo bob = new UserInfo();
+        System.out.println("\nCreating Fresh Bob User");
+        bob.setFirstName("Bob").
+            setLastName("Drach").
+            setUserName("drach1").
+            setEmail("bob@llnl.gov").
+            setDn("O=LLNL/OU=ESGF").
+            setOrganization("LLNL").
+            setOrgType("Research").
+            setCity("Livermore").
+            setState("California").
+            setCountry("USA").
+            addGroupAndRole("CMIP5","admin").
+            addGroupAndRole("CMIP5","user").
+            addGroupAndRole("CMIP6","god").
+            addGroupAndRole("CMIP6","king").
+            addGroupAndRole("CMIP6","admin").
+            addGroupAndRole("CMIP7","admin");
+        System.out.println(bob);
+
+        if(userInfoDAO.addUserInfo(bob)) System.out.println("[OK]"); else System.out.println("[FAIL]");
+
+        System.out.println("\nPulling out Gavin user from Database... DELETING...");
+        UserInfo gavin = userInfoDAO.getUserById("https://"+getFQDN()+"/esgf-idp/openid/bell51");
+        if(userInfoDAO.deleteUserInfo(gavin)) System.out.println("[OK]"); else System.out.println("[FAIL]");
+
+        groupRoleDAO.renameGroup("CMIP5","CMIP_NOW");
+        groupRoleDAO.renameRole("god","lord");
+        groupRoleDAO.renameRole("admin","administrator");
+        bob = userInfoDAO.refresh(bob);
+        System.out.println(bob);
+        
     }
 
     
