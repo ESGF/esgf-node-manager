@@ -252,11 +252,11 @@ ALTER TABLE ONLY permission
 -- Initialize roles
 --
 
-INSERT INTO role VALUES (0, 'none', 'None');
-INSERT INTO role VALUES (1, 'default', 'Standard');
-INSERT INTO role VALUES (2, 'publisher', 'Data Publisher');
-INSERT INTO role VALUES (3, 'admin', 'Group Administrator');
-INSERT INTO role VALUES (4, 'super', 'Super User');
+INSERT INTO role VALUES (select nextval('esgf_security.role_id_seq'), 'none', 'None');
+INSERT INTO role VALUES (select nextval('esgf_security.role_id_seq'), 'default', 'Standard');
+INSERT INTO role VALUES (select nextval('esgf_security.role_id_seq'), 'publisher', 'Data Publisher');
+INSERT INTO role VALUES (select nextval('esgf_security.role_id_seq'), 'admin', 'Group Administrator');
+INSERT INTO role VALUES (select nextval('esgf_security.role_id_seq'), 'super', 'Super User');
 
 --
 -- PostgreSQL database dump complete
