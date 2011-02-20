@@ -62,8 +62,10 @@ package esg.node.components.security;
    (uses "fluent" mutator functions to make life easier when populating)
 
    Just from a lexicon standpoint:
-   In SAML Land ------------------------ In User Land
-   (Attributes Type -> Attribute Value) => (Group -> Role)
+   In SAML Parlance ---------------------  In User/Security Parlance
+   (Attributes Type -> Attribute Value) => Permission (Group -> Role)
+   
+   The touple of (userid, group, role) = a "permission"
 
 **/
 
@@ -93,7 +95,7 @@ public class UserInfo {
     private String city = "";
     private String state = "";
     private String country = "";   
-    private Map<String,Set<String>> groups = null;    
+    private Map<String,Set<String>> permissions = null;    
     private Set<String> roleSet = null;
 
     //At package level visibility - on purpose :-)
@@ -179,46 +181,46 @@ public class UserInfo {
 
 
     //--------------------------------------
-    // Group and Role collecting
+    // Permissions (Groups and Roles) collecting
     //--------------------------------------
 
-    public Map<String,Set<String>> getGroups() {
-        return groups;
+    public Map<String,Set<String>> getPermissions() {
+        return permissions;
     }
     
     //At package level visibility on purpose
-    UserInfo setGroups(Map<String,Set<String>> groups) {
-        this.groups = groups;
+    UserInfo setPermissions(Map<String,Set<String>> permissions) {
+        this.permissions = permissions;
         return this;
     }
     
-    UserInfo addGroupAndRole(String group, String role) {
-        //lazily instantiate groups map
-        if(groups == null) {
-            groups = new HashMap<String,Set<String>>();
+    UserInfo addPermission(String group, String role) {
+        //lazily instantiate permissions map
+        if(permissions == null) {
+            permissions = new HashMap<String,Set<String>>();
         }
-
+        
         //lazily instantiate the set of values for group if not
         //there
-        if((roleSet = groups.get(group)) == null) {
+        if((roleSet = permissions.get(group)) == null) {
             roleSet = new HashSet<String>();
         }
-
+        
         //enter group associated with group value set
         roleSet.add(role);
-        groups.put(group, roleSet);
+        permissions.put(group, roleSet);
         return this;
     }
-
+    
     //--------------------------------------
-
+    
     //Check if this object is a "valid" object.  Valid objects must
     //have fulfill these conditions.
     public final boolean isValid() {
         return ((this.id > 0) && (this.openid != null) && (this.userName != null));
     }
-
-
+    
+    
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("\n----------\nUserInfo...\n")
@@ -236,11 +238,11 @@ public class UserInfo {
             .append("State:\t"+state+"\n")
             .append("Country:\t"+country+"\n")
             .append("Permissions (Groups and Roles):\n");
-     
-        if(this.groups != null) {
-            for(String groupName : groups.keySet()) {
+        
+        if(this.permissions != null) {
+            for(String groupName : permissions.keySet()) {
                 sb.append("\t"+groupName+"\t");
-                for(String role : groups.get(groupName)) {
+                for(String role : permissions.get(groupName)) {
                     sb.append("\t"+role);
                 }
                 sb.append("\n");

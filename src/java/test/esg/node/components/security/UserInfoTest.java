@@ -89,13 +89,16 @@ public class UserInfoTest {
         userInfoDAO = new UserInfoDAO(new Properties());
         groupRoleDAO = new GroupRoleDAO(new Properties());
 
+        assertNotNull(userInfoDAO);
+        assertNotNull(groupRoleDAO);
 
-        groupRoleDAO.addGroup("CMIP5_test");
-        groupRoleDAO.addGroup("ARM_test");
-        groupRoleDAO.addRole("user_test");
+        assertTrue(groupRoleDAO.addGroup("CMIP5_test"));
+        assertTrue(groupRoleDAO.addGroup("ARM_test"));
+        assertTrue(groupRoleDAO.addRole("user_test"));
         
         
         gavin = userInfoDAO.getUserById("bell51");
+        assertNotNull(gavin);
         if(gavin.isValid()) {
             System.out.println("Apparently gavin is present in the system!");
         }else {
@@ -107,21 +110,26 @@ public class UserInfoTest {
                 setCity("Livermore").
                 setState("California").
                 setCountry("USA").
-                addGroupAndRole("CMIP5_test","admin").
-                addGroupAndRole("CMIP5_test","user_test").
-                addGroupAndRole("ARM_test","user_test");
+                addPermission("CMIP5_test","admin").
+                addPermission("CMIP5_test","user_test").
+                addPermission("ARM_test","user_test");
         }
+        assertNotNull(gavin);
         System.out.println(gavin);
     }
     
     @AfterClass
     public static void testCleanup() {
+        System.out.println("------------------------");
+        System.out.println("UserInfoTest Cleanup....");
+        System.out.println("------------------------");
+
         System.out.print("\nDeleting Gavin user object...");
         if(userInfoDAO.deleteUserInfo(gavin)) System.out.println("[OK]"); else System.out.println("[FAIL]");
 
-        groupRoleDAO.deleteRole("user_test_renamed"); //changed name from user_test
+        groupRoleDAO.deleteRole("user_test_renamed"); //changed name from "user_test"
         groupRoleDAO.deleteGroup("ARM_test");
-        groupRoleDAO.deleteGroup("CMIP_NOW"); //changed name from CMIP5_test
+        groupRoleDAO.deleteGroup("CMIP_NOW"); //changed name from "CMIP5_test"
 
         groupRoleDAO.deleteGroup("CMIP6_test");
         groupRoleDAO.deleteGroup("CMIP7_test");
@@ -153,6 +161,7 @@ public class UserInfoTest {
                 System.out.println("[OK]");
             }else {
                 System.out.println("[FAIL]");
+                fail();
             }
 
             System.out.print("Able to change password: ");
@@ -162,11 +171,13 @@ public class UserInfoTest {
                 System.out.println("[OK]");
             }else{
                 System.out.println("[FAIL]");
+                fail("Problem with changing password!");
             }
 
-            System.out.print("Checking password mismatch: ["+origPassword+" ?-> "+newPasswordMd5Hex+"]");
+            System.out.print("Checking password mismatch: ["+origPassword+" != "+newPassword+"]");
             if(userInfoDAO.checkPassword(gavin.getOpenid(),origPassword)) {
                 System.out.println("[FAIL]");
+                fail("Sorry, Passwords Should Not Match for this case");
             }else {
                 //This should fail! since the password is now foobaralpha! (right!?)
                 System.out.println("[OK]");
@@ -174,12 +185,14 @@ public class UserInfoTest {
                                 
         }else{
             System.out.println("[FAIL]");
+            fail();
         }
     }
     
     @Test
     public void testGetUser() {
         UserInfo dean = userInfoDAO.getUserById("williams13");
+        assertNotNull(dean);
         if(dean.isValid()) {
             System.out.println("Apparently dean is present in the system!");
         }else {
@@ -194,17 +207,17 @@ public class UserInfoTest {
                 setCity("Livermore").
                 setState("California").
                 setCountry("USA").
-                addGroupAndRole("CMIP5_test","admin").
-                addGroupAndRole("ARM_test","user_test");
+                addPermission("CMIP5_test","admin").
+                addPermission("ARM_test","user_test");
         }
         System.out.println(dean);
 
         boolean success = false;
-        System.out.println("\nAdding Fresh Dean User To Database...");
-        if(userInfoDAO.addUserInfo(dean)) System.out.println("[OK]"); else System.out.println("[FAIL]");
+        System.out.print("\nAdding Fresh Dean User To Database...");
+        if(userInfoDAO.addUserInfo(dean)) System.out.println("[OK]"); else { System.out.println("[FAIL]"); fail(); }
         System.out.print(dean);
         
-        System.out.println("\nPulling out Dean user from Database...");
+        System.out.println("\nPulling Out Dean User From Database...");
         dean = userInfoDAO.getUserById("https://"+getFQDN()+"/esgf-idp/openid/williams13");
 
         System.out.println("\nModifying Dean user object...(middle name and email)");
@@ -212,19 +225,27 @@ public class UserInfoTest {
         dean.setEmail("williams13@llnl.gov");
         System.out.println(dean);
 
-        System.out.println("\nModifying Dean user object and resubmitting to database...");
-        if(userInfoDAO.addUserInfo(dean)) System.out.println("[OK]"); else System.out.println("[FAIL]");
+        System.out.print("\nResubmitting Dean User To Database...");
+        if(userInfoDAO.addUserInfo(dean)) System.out.println("[OK]"); else { System.out.println("[FAIL]"); fail(); }
 
-        System.out.println("\nPulling out Dean user from Database after modifications...");
+        //Hint: we only support openid URLs using httpS protocol (among other things)
+        System.out.println("\nIntentionally making a BAD call to getUserByID...");
+        dean = userInfoDAO.getUserById("http://"+getFQDN()+"/esgf-idp/openid/williams13");
+        assertNull(dean);
+        if(dean == null) System.out.println("[OK]"); else { System.out.println("[FAIL]"); fail(); }
+
+
+        System.out.println("\nPulling Out Dean User From Database After Modifications, Using Openid...");
         dean = userInfoDAO.getUserById("https://"+getFQDN()+"/esgf-idp/openid/williams13");
+        if(dean != null) System.out.println("[OK]"); else { System.out.println("[FAIL]"); fail(); }
         System.out.println(dean);
 
-        System.out.println("\nRe-Adding SAME Dean user object to database...");
-        if(userInfoDAO.addUserInfo(dean)) System.out.println("[OK]"); else System.out.println("[FAIL]");
+        System.out.print("\nRe-Adding SAME Dean user object to database...");
+        if(userInfoDAO.addUserInfo(dean)) System.out.println("[OK]"); else { System.out.println("[FAIL]"); fail(); }
 
         System.out.println("\nDeleting Dean user object...");
-        if(userInfoDAO.deleteUserInfo(dean)) System.out.println("[OK]"); else System.out.println("[FAIL]");
-
+        if(userInfoDAO.deleteUserInfo(dean)) System.out.println("[OK]"); else { System.out.println("[FAIL]"); }
+        
     }
 
     @Test
@@ -240,7 +261,7 @@ public class UserInfoTest {
         if(bob.isValid()) {
             System.out.println("\nApparently drach1 is present in the system!");
         }else{
-            System.out.println("\nCreating Fresh Bob User");        
+            System.out.println("\nCreating Fresh Bob User");
             bob.setFirstName("Bob").
                 setLastName("Drach").
                 setUserName("drach1").
@@ -251,29 +272,37 @@ public class UserInfoTest {
                 setCity("Livermore").
                 setState("California").
                 setCountry("USA").
-                addGroupAndRole("CMIP5_test","admin").
-                addGroupAndRole("CMIP5_test","user_test").
-                addGroupAndRole("CMIP6_test","god").
-                addGroupAndRole("CMIP6_test","king").
-                addGroupAndRole("CMIP6_test","admin").
-                addGroupAndRole("CMIP7_test","admin");
+                addPermission("CMIP5_test","admin").
+                addPermission("CMIP5_test","user_test").
+                addPermission("CMIP6_test","god").
+                addPermission("CMIP6_test","king").
+                addPermission("CMIP6_test","admin").
+                addPermission("CMIP7_test","admin");
         }
         
         System.out.println(bob);
         
+        System.out.print("Adding Bob into database... ");
         if(userInfoDAO.addUserInfo(bob)) System.out.println("[OK]"); else System.out.println("[FAIL]");
 
+        System.out.print("Renaming group CMIP5_test -> CMIP_NOW...");
+        if(groupRoleDAO.renameGroup("CMIP5_test","CMIP_NOW")) 
+            System.out.println("[OK]"); else { System.out.println("[FAIL]"); fail(); }
 
-        groupRoleDAO.renameGroup("CMIP5_test","CMIP_NOW");
-        groupRoleDAO.renameRole("god","lord");
-        groupRoleDAO.renameRole("user_test","user_test_renamed");
+        System.out.print("Renaming role god -> lord...");
+        if(groupRoleDAO.renameRole("god","lord")) 
+            System.out.println("[OK]"); else { System.out.println("[FAIL]"); fail(); }
+
+        System.out.print("Renaming role user_test -> user_test_renamed...");
+        if(groupRoleDAO.renameRole("user_test","user_test_renamed"))
+            System.out.println("[OK]"); else { System.out.println("[FAIL]"); fail(); }
+
+        System.out.println("Refreshing Bob user object... ");
         bob = userInfoDAO.refresh(bob);
         System.out.println(bob);
         
         System.out.println("\nDeleting Bob user object...");
         if(userInfoDAO.deleteUserInfo(bob)) System.out.println("[OK]"); else System.out.println("[FAIL]");
     }
-
-    
     
 }

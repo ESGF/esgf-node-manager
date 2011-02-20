@@ -97,11 +97,6 @@ public class UserInfoDAO implements Serializable {
         "FROM esgf_security.user "+
         "WHERE openid = ?";
 
-    private static final String groupQuery = 
-        "SELECT g.name, r.name from esgf_security.group as g, esgf_security.role as r, esgf_security.permission as p, esgf_security.user as u "+
-        "WHERE p.user_id = u.id and u.openid = ? and p.group_id = g.id and p.role_id = r.id "+
-        "ORDER BY g.name";
-
     //-------------------
     //Insertion queries
     //-------------------
@@ -124,6 +119,10 @@ public class UserInfoDAO implements Serializable {
         "WHERE openid = ?";
 
     //Permission Queries...
+    private static final String getPermissionsQuery = 
+        "SELECT g.name, r.name from esgf_security.group as g, esgf_security.role as r, esgf_security.permission as p, esgf_security.user as u "+
+        "WHERE p.user_id = u.id and u.openid = ? and p.group_id = g.id and p.role_id = r.id "+
+        "ORDER BY g.name";
     private static final String addPermissionQuery = 
         "INSERT INTO esgf_security.permission (user_id, group_id, role_id) "+
         "VALUES ( ?, (SELECT id FROM esgf_security.group WHERE name = ? ), (SELECT id FROM esgf_security.role WHERE name = ?))";
@@ -152,7 +151,7 @@ public class UserInfoDAO implements Serializable {
     private DataSource dataSource = null;
     private QueryRunner queryRunner = null;
     private ResultSetHandler<UserInfo> userInfoResultSetHandler = null;
-    private ResultSetHandler<Map<String,Set<String>>> userGroupsResultSetHandler = null;
+    private ResultSetHandler<Map<String,Set<String>>> userPermissionsResultSetHandler = null;
     private ResultSetHandler<Integer> idResultSetHandler = null;
     private ResultSetHandler<String> passwordQueryHandler = null;
     private static Pattern openidUrlPattern = Pattern.compile("https://([^/ ]*)/.*[/]*/([^/ @*%#!()+=]*$)");
@@ -221,32 +220,29 @@ public class UserInfoDAO implements Serializable {
             }
         };
         
-        userGroupsResultSetHandler = new ResultSetHandler<Map<String,Set<String>>>() {
-            Map<String,Set<String>> groups = null;    
+        userPermissionsResultSetHandler = new ResultSetHandler<Map<String,Set<String>>>() {
+            Map<String,Set<String>> permissions = new HashMap<String,Set<String>>();
             Set<String> roleSet = null;
             
             public Map<String,Set<String>> handle(ResultSet rs) throws SQLException{
-                while(rs.next()) {
-                    addGroup(rs.getString(1),rs.getString(2));
-                }
-                return groups;
+                permissions.clear();
+                if(!rs.next()) { return permissions; }
+                do {
+                    addPermission(rs.getString(1),rs.getString(2));
+                } while(rs.next()) ;
+                return permissions;
             }
             
-            public void addGroup(String name, String value) {
-                //lazily instantiate groups map
-                if(groups == null) {
-                    groups = new HashMap<String,Set<String>>();
-                }
-                
+            public void addPermission(String groupName, String roleName) {
                 //lazily instantiate the set of values for group if not
                 //there
-                if((roleSet = groups.get(name)) == null) {
+                if((roleSet = permissions.get(groupName)) == null) {
                     roleSet = new HashSet<String>();
                 }
                 
                 //enter group associated with group value set
-                roleSet.add(value);
-                groups.put(name, roleSet);
+                roleSet.add(roleName);
+                permissions.put(groupName, roleSet);
             }
         };
 	
@@ -322,7 +318,7 @@ public class UserInfoDAO implements Serializable {
                 userInfo.setOpenid(openid);
                 userInfo.setUserName(username);
             }else {
-                userInfo.setGroups(queryRunner.query(groupQuery,userGroupsResultSetHandler,openid));
+                userInfo.setPermissions(queryRunner.query(getPermissionsQuery,userPermissionsResultSetHandler,openid));
             }
             
             //A bit of debugging and sanity checking...
@@ -381,9 +377,9 @@ public class UserInfoDAO implements Serializable {
                                                      );
 
                 log.trace("SUBMITTING PERMISSIONS (update):");
-                if(userInfo.getGroups() != null) {
-                    for(String groupName : userInfo.getGroups().keySet()) {
-                        for(String roleName : userInfo.getGroups().get(groupName)) {
+                if(userInfo.getPermissions() != null) {
+                    for(String groupName : userInfo.getPermissions().keySet()) {
+                        for(String roleName : userInfo.getPermissions().get(groupName)) {
                             addPermission(userid,groupName,roleName);
                         }
                     }
@@ -419,9 +415,9 @@ public class UserInfoDAO implements Serializable {
             log.trace(userInfo);
             
             log.trace("SUBMITTING PERMISSIONS (new):");
-            if(userInfo.getGroups() != null) {
-                for(String groupName : userInfo.getGroups().keySet()) {
-                    for(String roleName : userInfo.getGroups().get(groupName)) {
+            if(userInfo.getPermissions() != null) {
+                for(String groupName : userInfo.getPermissions().keySet()) {
+                    for(String roleName : userInfo.getPermissions().get(groupName)) {
                         addPermission(userid,groupName,roleName);
                     }
                 }

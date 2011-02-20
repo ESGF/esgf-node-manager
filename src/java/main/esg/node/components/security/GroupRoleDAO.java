@@ -96,11 +96,11 @@ public class GroupRoleDAO implements Serializable {
         "UPDATE esgf_security.group "+
         "SET name=? "+
         "WHERE id=?";
-    private static final String getNextGroupPrimaryKeyValQuery = 
-        "SELECT NEXTVAL('esgf_security.group_id_seq')";
+    //private static final String getNextGroupPrimaryKeyValQuery = 
+    //    "SELECT NEXTVAL('esgf_security.group_id_seq')";
     private static final String addGroupQuery = 
-        "INSERT INTO esgf_security.group (id, name, description) "+
-        "VALUES ( ?, ?, ? )";
+        "INSERT INTO esgf_security.group (name, description) "+
+        "VALUES ( ?, ? )";
     private static final String delGroupQuery =
         "DELETE FROM esgf_security.group where name = ?";
 
@@ -112,11 +112,11 @@ public class GroupRoleDAO implements Serializable {
         "UPDATE esgf_security.role "+
         "SET name=? "+
         "WHERE id=?";
-    private static final String getNextRolePrimaryKeyValQuery  =
-        "SELECT NEXTVAL('esgf_security.role_id_seq')";
+    //private static final String getNextRolePrimaryKeyValQuery  =
+    //    "SELECT NEXTVAL('esgf_security.role_id_seq')";
     private static final String addRoleQuery = 
-        "INSERT INTO esgf_security.role (id, name, description) "+
-        "VALUES ( ?, ? ,? )";
+        "INSERT INTO esgf_security.role (name, description) "+
+        "VALUES ( ? ,? )";
     private static final String delRoleQuery =
         "DELETE FROM esgf_security.role where name = ?";
 
@@ -223,8 +223,8 @@ public class GroupRoleDAO implements Serializable {
             if(groupid > 0) { return true; }
             
             //If this group does not exist in the database then add (INSERT) a new one
-            groupid = queryRunner.query(getNextGroupPrimaryKeyValQuery, idResultSetHandler);
-            numRowsAffected = queryRunner.update(addGroupQuery,groupid,groupName,groupDesc);
+            //groupid = queryRunner.query(getNextGroupPrimaryKeyValQuery, idResultSetHandler);
+            numRowsAffected = queryRunner.update(addGroupQuery,groupName,groupDesc);
         }catch(SQLException ex) {
             log.error(ex);
         }
@@ -277,8 +277,8 @@ public class GroupRoleDAO implements Serializable {
             if(roleid > 0) { return true; }
             
             //If this role does not exist in the database then add (INSERT) a new one
-            roleid = queryRunner.query(getNextRolePrimaryKeyValQuery,idResultSetHandler);
-            numRowsAffected = queryRunner.update(addRoleQuery,roleid,roleName,roleDesc);
+            //roleid = queryRunner.query(getNextRolePrimaryKeyValQuery,idResultSetHandler);
+            numRowsAffected = queryRunner.update(addRoleQuery,roleName,roleDesc);
         }catch(SQLException ex) {
             log.error(ex);
         }
