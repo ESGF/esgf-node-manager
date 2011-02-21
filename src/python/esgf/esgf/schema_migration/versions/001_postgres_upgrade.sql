@@ -9,80 +9,92 @@ SET client_min_messages = warning;
 SET escape_string_warning = off;
 
 --
--- Name: esgf_security; Type: SCHEMA; Schema: -; Owner: -
+-- Clean up existing tables from public schema if present
+--
+DROP TABLE IF EXISTS access_logging;
+DROP TABLE IF EXISTS download;
+DROP TABLE IF EXISTS metrics_run_log;
+DROP TABLE IF EXISTS monitor_run_log;
+DROP TABLE IF EXISTS notification_run_log;
+
+--
+-- Name: esgf_manager; Type: SCHEMA; Schema: -; Owner: -
 --
 
-CREATE SCHEMA esgf_security;
+CREATE SCHEMA esgf_manager;
 
 
-SET search_path = esgf_security, pg_catalog;
+SET search_path = esgf_manager, pg_catalog;
 
 SET default_tablespace = '';
 
 SET default_with_oids = false;
 
 --
--- Name: group; Type: TABLE; Schema: esgf_security; Owner: -; Tablespace: 
+-- Name: access_logging; Type: TABLE; Schema: esgf_manager; Owner: -; Tablespace: 
 --
 
-CREATE TABLE "group" (
+CREATE TABLE access_logging (
     id integer NOT NULL,
-    name character varying(100) NOT NULL,
-    description text NOT NULL,
-    visible boolean,
-    automatic_approval boolean
+    user_id character varying NOT NULL,
+    email character varying,
+    url character varying NOT NULL,
+    file_id character varying,
+    remote_addr character varying NOT NULL,
+    user_agent character varying,
+    service_type character varying,
+    batch_update_time double precision,
+    date_fetched double precision NOT NULL,
+    success boolean,
+    duration double precision
 );
 
 
 --
--- Name: permission; Type: TABLE; Schema: esgf_security; Owner: -; Tablespace: 
+-- Name: download; Type: TABLE; Schema: esgf_manager; Owner: -; Tablespace: 
 --
 
-CREATE TABLE permission (
-    user_id integer NOT NULL,
-    group_id integer NOT NULL,
-    role_id integer NOT NULL
+CREATE TABLE download (
+    userid character varying(64),
+    url character varying(255)
 );
 
 
 --
--- Name: role; Type: TABLE; Schema: esgf_security; Owner: -; Tablespace: 
+-- Name: metrics_run_log; Type: TABLE; Schema: esgf_manager; Owner: -; Tablespace: 
 --
 
-CREATE TABLE role (
+CREATE TABLE metrics_run_log (
     id integer NOT NULL,
-    name character varying(100) NOT NULL,
-    description text NOT NULL
+    last_run_time double precision
 );
 
 
 --
--- Name: user; Type: TABLE; Schema: esgf_security; Owner: -; Tablespace: 
+-- Name: monitor_run_log; Type: TABLE; Schema: esgf_manager; Owner: -; Tablespace: 
 --
 
-CREATE TABLE "user" (
+CREATE TABLE monitor_run_log (
     id integer NOT NULL,
-    firstname character varying(100) NOT NULL,
-    middlename character varying(100),
-    lastname character varying(100) NOT NULL,
-    email character varying(100) NOT NULL,
-    username character varying(100) NOT NULL,
-    password character varying(100),
-    dn character varying(300),
-    openid character varying(200) NOT NULL,
-    organization character varying(200),
-    organization_type character varying(200),
-    city character varying(100),
-    state character varying(100),
-    country character varying(100)
+    last_run_time double precision
 );
 
 
 --
--- Name: group_id_seq; Type: SEQUENCE; Schema: esgf_security; Owner: -
+-- Name: notification_run_log; Type: TABLE; Schema: esgf_manager; Owner: -; Tablespace: 
 --
 
-CREATE SEQUENCE group_id_seq
+CREATE TABLE notification_run_log (
+    id integer NOT NULL,
+    notify_time double precision
+);
+
+
+--
+-- Name: access_logging_id_seq; Type: SEQUENCE; Schema: esgf_manager; Owner: -
+--
+
+CREATE SEQUENCE access_logging_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MAXVALUE
@@ -91,17 +103,17 @@ CREATE SEQUENCE group_id_seq
 
 
 --
--- Name: group_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_security; Owner: -
+-- Name: access_logging_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_manager; Owner: -
 --
 
-ALTER SEQUENCE group_id_seq OWNED BY "group".id;
+ALTER SEQUENCE access_logging_id_seq OWNED BY access_logging.id;
 
 
 --
--- Name: role_id_seq; Type: SEQUENCE; Schema: esgf_security; Owner: -
+-- Name: metrics_run_log_id_seq; Type: SEQUENCE; Schema: esgf_manager; Owner: -
 --
 
-CREATE SEQUENCE role_id_seq
+CREATE SEQUENCE metrics_run_log_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MAXVALUE
@@ -110,17 +122,17 @@ CREATE SEQUENCE role_id_seq
 
 
 --
--- Name: role_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_security; Owner: -
+-- Name: metrics_run_log_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_manager; Owner: -
 --
 
-ALTER SEQUENCE role_id_seq OWNED BY role.id;
+ALTER SEQUENCE metrics_run_log_id_seq OWNED BY metrics_run_log.id;
 
 
 --
--- Name: user_id_seq; Type: SEQUENCE; Schema: esgf_security; Owner: -
+-- Name: monitor_run_log_id_seq; Type: SEQUENCE; Schema: esgf_manager; Owner: -
 --
 
-CREATE SEQUENCE user_id_seq
+CREATE SEQUENCE monitor_run_log_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MAXVALUE
@@ -129,134 +141,97 @@ CREATE SEQUENCE user_id_seq
 
 
 --
--- Name: user_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_security; Owner: -
+-- Name: monitor_run_log_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_manager; Owner: -
 --
 
-ALTER SEQUENCE user_id_seq OWNED BY "user".id;
-
-
---
--- Name: id; Type: DEFAULT; Schema: esgf_security; Owner: -
---
-
-ALTER TABLE "group" ALTER COLUMN id SET DEFAULT nextval('group_id_seq'::regclass);
+ALTER SEQUENCE monitor_run_log_id_seq OWNED BY monitor_run_log.id;
 
 
 --
--- Name: id; Type: DEFAULT; Schema: esgf_security; Owner: -
+-- Name: notification_run_log_id_seq; Type: SEQUENCE; Schema: esgf_manager; Owner: -
 --
 
-ALTER TABLE role ALTER COLUMN id SET DEFAULT nextval('role_id_seq'::regclass);
-
-
---
--- Name: id; Type: DEFAULT; Schema: esgf_security; Owner: -
---
-
-ALTER TABLE "user" ALTER COLUMN id SET DEFAULT nextval('user_id_seq'::regclass);
+CREATE SEQUENCE notification_run_log_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
 
 
 --
--- Name: group_name_key; Type: CONSTRAINT; Schema: esgf_security; Owner: -; Tablespace: 
+-- Name: notification_run_log_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_manager; Owner: -
 --
 
-ALTER TABLE ONLY "group"
-    ADD CONSTRAINT group_name_key UNIQUE (name);
-
-
---
--- Name: group_pkey; Type: CONSTRAINT; Schema: esgf_security; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY "group"
-    ADD CONSTRAINT group_pkey PRIMARY KEY (id);
+ALTER SEQUENCE notification_run_log_id_seq OWNED BY notification_run_log.id;
 
 
 --
--- Name: permission_pkey; Type: CONSTRAINT; Schema: esgf_security; Owner: -; Tablespace: 
+-- Name: id; Type: DEFAULT; Schema: esgf_manager; Owner: -
 --
 
-ALTER TABLE ONLY permission
-    ADD CONSTRAINT permission_pkey PRIMARY KEY (user_id, group_id, role_id);
-
-
---
--- Name: role_name_key; Type: CONSTRAINT; Schema: esgf_security; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY role
-    ADD CONSTRAINT role_name_key UNIQUE (name);
+ALTER TABLE access_logging ALTER COLUMN id SET DEFAULT nextval('access_logging_id_seq'::regclass);
 
 
 --
--- Name: role_pkey; Type: CONSTRAINT; Schema: esgf_security; Owner: -; Tablespace: 
+-- Name: id; Type: DEFAULT; Schema: esgf_manager; Owner: -
 --
 
-ALTER TABLE ONLY role
-    ADD CONSTRAINT role_pkey PRIMARY KEY (id);
-
-
---
--- Name: user_pkey; Type: CONSTRAINT; Schema: esgf_security; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY "user"
-    ADD CONSTRAINT user_pkey PRIMARY KEY (id);
+ALTER TABLE metrics_run_log ALTER COLUMN id SET DEFAULT nextval('metrics_run_log_id_seq'::regclass);
 
 
 --
--- Name: user_username_key; Type: CONSTRAINT; Schema: esgf_security; Owner: -; Tablespace: 
+-- Name: id; Type: DEFAULT; Schema: esgf_manager; Owner: -
 --
 
-ALTER TABLE ONLY "user"
-    ADD CONSTRAINT user_username_key UNIQUE (username);
-
-
---
--- Name: ix_esgf_security_user_openid; Type: INDEX; Schema: esgf_security; Owner: -; Tablespace: 
---
-
-CREATE INDEX ix_esgf_security_user_openid ON "user" USING btree (openid);
+ALTER TABLE monitor_run_log ALTER COLUMN id SET DEFAULT nextval('monitor_run_log_id_seq'::regclass);
 
 
 --
--- Name: permission_group_id_fkey; Type: FK CONSTRAINT; Schema: esgf_security; Owner: -
+-- Name: id; Type: DEFAULT; Schema: esgf_manager; Owner: -
 --
 
-ALTER TABLE ONLY permission
-    ADD CONSTRAINT permission_group_id_fkey FOREIGN KEY (group_id) REFERENCES "group"(id);
-
-
---
--- Name: permission_role_id_fkey; Type: FK CONSTRAINT; Schema: esgf_security; Owner: -
---
-
-ALTER TABLE ONLY permission
-    ADD CONSTRAINT permission_role_id_fkey FOREIGN KEY (role_id) REFERENCES role(id);
+ALTER TABLE notification_run_log ALTER COLUMN id SET DEFAULT nextval('notification_run_log_id_seq'::regclass);
 
 
 --
--- Name: permission_user_id_fkey; Type: FK CONSTRAINT; Schema: esgf_security; Owner: -
+-- Name: access_logging_pkey; Type: CONSTRAINT; Schema: esgf_manager; Owner: -; Tablespace: 
 --
 
-ALTER TABLE ONLY permission
-    ADD CONSTRAINT permission_user_id_fkey FOREIGN KEY (user_id) REFERENCES "user"(id);
-
-
---
--- PostgreSQL database dump complete
---
+ALTER TABLE ONLY access_logging
+    ADD CONSTRAINT access_logging_pkey PRIMARY KEY (id);
 
 
 --
--- Initialize roles
+-- Name: metrics_run_log_pkey; Type: CONSTRAINT; Schema: esgf_manager; Owner: -; Tablespace: 
 --
 
-INSERT INTO role (name,description) VALUES ('none', 'None');
-INSERT INTO role (name,description) VALUES ('default', 'Standard');
-INSERT INTO role (name,description) VALUES ('publisher', 'Data Publisher');
-INSERT INTO role (name,description) VALUES ('admin', 'Group Administrator');
-INSERT INTO role (name,description) VALUES ('super', 'Super User');
+ALTER TABLE ONLY metrics_run_log
+    ADD CONSTRAINT metrics_run_log_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: monitor_run_log_pkey; Type: CONSTRAINT; Schema: esgf_manager; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY monitor_run_log
+    ADD CONSTRAINT monitor_run_log_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notification_run_log_pkey; Type: CONSTRAINT; Schema: esgf_manager; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY notification_run_log
+    ADD CONSTRAINT notification_run_log_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ix_esgf_manager_access_logging_url; Type: INDEX; Schema: esgf_manager; Owner: -; Tablespace: 
+--
+
+CREATE INDEX ix_esgf_manager_access_logging_url ON access_logging USING btree (url);
+
 
 --
 -- PostgreSQL database dump complete
@@ -264,3 +239,4 @@ INSERT INTO role (name,description) VALUES ('super', 'Super User');
 --
 
 SET search_path = public, pg_catalog;
+

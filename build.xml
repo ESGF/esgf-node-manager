@@ -111,6 +111,7 @@ Builds the project via ant (obviously).
   <filter token="db_version_num"  value="${db_version_num}"/>
   <property name="release_name" value="no_name"/>
   <filter token="release_name" value="${release_name}"/>
+  <filter token="module" value="${module}"/>
 
   <!-- mail property values -->
   <property name="mail.smtp.host" value="no_name"/>
@@ -200,6 +201,7 @@ Builds the project via ant (obviously).
     <property name="test_coverage_file"   value="${basedir}/.cobertura.ser"/>
     <property name="ivy.lib.dir"          value="${lib_fetched_dir}"/>
 
+    <property name="python_version"       value="2.6"/>
     <property name="py_src_dir"	          value="${basedir}/src/python/esgf"/>
 
 
@@ -233,6 +235,7 @@ Builds the project via ant (obviously).
     <echo message="test_coverage_dir    = ${test_coverage_dir}"/>
     <echo message="lib_deps_reports_dir = ${doc_dir_generated}/dep-reports"/>
     <echo message="--------------------------------"/> 
+    <echo message="python_version    = ${python_version}"/>
     <echo message="py_src_dir        = ${py_src_dir}"/>
     <echo message="--------------------------------"/> 
     <tstamp/>
@@ -854,11 +857,12 @@ Builds the project via ant (obviously).
   <target name="make_python" depends="init">
     <copy file="${py_src_dir}/setup.py.tmpl" tofile="${py_src_dir}/setup.py" filtering="true"/>
 
-    <property name="python_egg_file" value="esgf-${db_version_num}-py2.6.egg"/>
     <echo message="Building python egg"/>
     <exec executable="./etc/db/make_python" dir="${basedir}">
       <arg value="--all"/>
-      <arg value="${python_egg_file}"/>
+      <arg value="${module}"/>
+      <arg value="${db_version_num}"/>
+      <arg value="${python_version}"/>
     </exec>
   </target>
 
