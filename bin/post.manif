@@ -15,5 +15,5 @@
 
 ../dist/esgf-node-manager-0.4.0.tar.gz
 ../dist/esgf-node-manager-accesslog-client-0.4.0.jar
-../dist/esgf-0.1.4-py2.6.egg
+../dist/esgf_node_manager-0.1.4-py2.6.egg
 ./esg-node-manager

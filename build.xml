@@ -436,29 +436,6 @@ Builds the project via ant (obviously).
     </jar>
   </target>
 
-  <target name="make_security_jar" depends="make" description="(Creates security jar file)">
-    <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}-security-${version_num}.jar"/> 
-    <delete> 
-      <fileset dir="." includes="${dist_dir}/${module}-security*.jar"/>
-    </delete>
-    <mkdir dir="${dist_dir}" />
-    <jar destfile="${dist_dir}/${module}-security-${version_num}.jar">
-      <fileset dir="${build_dir}"
-	       includes="esg/node/components/security/**"/>
-      <manifest>
-	<attribute name="Organization" value="${organization}"/>
-	<attribute name="Author"       value="${author}"/>
-	<attribute name="Project"      value="${project_name} security"/>
-	<attribute name="Module"       value="${module}"/>
-	<attribute name="Version"      value="${version_num}"/>
-	<attribute name="Release-Name" value="${release_name}"/>
-	<section name="esg/node/components/security/">
-	  <attribute name="Sealed" value="false"/>
-	</section>
-      </manifest>
-    </jar>
-  </target>
-
   <target name="make_filter_jar" depends="make"
 	  description="(Creates the jar file distribution for service filters)">
     <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}-filters-${version_num}.jar"/> 
@@ -508,8 +485,8 @@ Builds the project via ant (obviously).
     </jar>
   </target>
 
-<!-- <target name="make_all_jars" depends="make_jar,make_test_jar,make_common_jar,make_security_jar,make_filter_jar,make_access_log_client_jar"/> -->
-  <target name="make_all_jars" depends="make_jar,make_common_jar,make_security_jar,make_filter_jar,make_access_log_client_jar"/>
+<!-- <target name="make_all_jars" depends="make_jar,make_test_jar,make_common_jar,make_filter_jar,make_access_log_client_jar"/> -->
+  <target name="make_all_jars" depends="make_jar,make_common_jar,make_filter_jar,make_access_log_client_jar"/>
 
   <target name="make_war" depends="make,init"
 	  description="(Creates war file of this project)">
