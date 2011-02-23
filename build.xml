@@ -217,7 +217,7 @@ Builds the project via ant (obviously).
     <echo message="lib_fetched_dir   = ${lib_fetched_dir}"/>
     <echo message="build_dir         = ${build_dir}"/>
     <echo message="dist_dir          = ${dist_dir}"/>
-    <echo message="bin_dir          = ${bin_dir}"/>
+    <echo message="bin_dir           = ${bin_dir}"/>
     <echo message="test_src_dir      = ${test_src_dir}"/>
     <echo message="test_build_dir    = ${test_build_dir}"/>
     <echo message="etc_dir           = ${etc_dir}"/>
