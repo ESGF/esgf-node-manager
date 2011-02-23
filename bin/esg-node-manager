@@ -101,12 +101,12 @@ init() {
 
     esgf_node_manager_version=${esgf_node_manager_version:-"0.4.1"}
     esgf_node_manager_db_version=${esgf_manager_db_version:-"0.1.4"}
-    esgf_node_manager_egg_file=esgf-${esgf_node_manager_db_version}-py${python_version}.egg
+    esgf_node_manager_egg_file=esgf_node_manager-${esgf_node_manager_db_version}-py${python_version}.egg
 
     #---------------------------------------------------------------------------------------------------
     #NOTE: should be moved out into security install script when split database creation module into parts 
-    esgf_security_db_version=${esgf_security_db_version:-"0.1.3"}    
-    esgf_security_egg_file=esgf-${esgf_security_db_version}-py${python_version}.egg
+    esgf_security_db_version=${esgf_security_db_version:-"0.1.4"}
+    esgf_security_egg_file=esgf_security-${esgf_security_db_version}-py${python_version}.egg
     #---------------------------------------------------------------------------------------------------
 
     #Database information....
