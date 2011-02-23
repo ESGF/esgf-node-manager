@@ -68,13 +68,17 @@
 #**
 
 basedir=$(pwd)
-python_dist_dir="${basedir}/src/python/esgf/dist/"
+python_dist_dir="${basedir}/src/python/esgf/dist"
 
 
 make_python_egg() {
     echo "Building python egg: $@"
     echo "rooted in $(pwd)"
-    local dist_file=${1:?"need to specify distribution file"}
+    local module=${1:?"module name is required"}
+    local db_version_num=${2:?"version number of this migration software is required"}
+    local python_version=${3:?"version number of python is required"}
+    
+    local dist_file=$(echo ${module} | tr - _)-${db_version_num}-py${python_version}.egg
 
     installer_uid=${ESG_USER_UID:-${SUDO_UID:-$(id -u)}}
     installer_gid=${ESG_USER_GID:-${SUDO_GID:-$(id -g)}}
@@ -86,7 +90,7 @@ make_python_egg() {
     [ -e ${python_dist_dir}/${dist_file} ] && \
         mkdir -p ${basedir}/dist && \
         mv -v ${python_dist_dir}/${dist_file} ${basedir}/dist
-    [ $? != 0 ] && echo "ERROR: could not move distribution file" && popd >& /dev/null && return 1
+    [ $? != 0 ] && echo "ERROR: could not move distribution file [${dist_file}]" && popd >& /dev/null && return 1
     chown -R ${installer_uid}:${installer_gid} ${basedir}/dist
     popd >& /dev/null
     return 0
@@ -103,6 +107,7 @@ cleanup_build_artifacts() {
         ${basedir}/src/python/esgf/sqlalchemy_*.egg
     ret=$?
     [ -e ${basedir}/src/python/esgf/setup.py.tmpl ] && [ -e ${basedir}/src/python/esgf/setup.py ] && rm -v ${basedir}/src/python/esgf/setup.py
+    [ -e ${basedir}/src/python/esgf/scripts/esgf_node_manager_initialize.tmpl ] && [ -e ${basedir}/src/python/esgf/scripts/esgf_node_manager_initialize ] && rm -v ${basedir}/src/python/esgf/scripts/esgf_node_manager_initialize
     popd >& /dev/null
     return ${ret}
 }

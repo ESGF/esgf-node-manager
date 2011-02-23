@@ -68,7 +68,7 @@ def main(argv):
         raise RuntimeError("No database URL specified.")
 
     # Setup schema migration if necessary ...
-    repo_cfg_path = resource_filename('esgf.schema_migration', 'migrate.cfg')
+    repo_cfg_path = resource_filename('@module@.schema_migration', 'migrate.cfg')
     repo_path = os.path.dirname(repo_cfg_path)
 
     if upgradeTables:
