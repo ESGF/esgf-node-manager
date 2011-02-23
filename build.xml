@@ -833,6 +833,7 @@ Builds the project via ant (obviously).
     -->
   <target name="make_python" depends="init">
     <copy file="${py_src_dir}/setup.py.tmpl" tofile="${py_src_dir}/setup.py" filtering="true"/>
+    <copy file="${py_src_dir}/scripts/esgf_node_manager_initialize.tmpl" tofile="${py_src_dir}/scripts/esgf_node_manager_initialize" filtering="true"/>
 
     <echo message="Building python egg"/>
     <exec executable="./etc/db/make_python" dir="${basedir}">

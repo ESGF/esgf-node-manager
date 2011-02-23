@@ -107,6 +107,7 @@ cleanup_build_artifacts() {
         ${basedir}/src/python/esgf/sqlalchemy_*.egg
     ret=$?
     [ -e ${basedir}/src/python/esgf/setup.py.tmpl ] && [ -e ${basedir}/src/python/esgf/setup.py ] && rm -v ${basedir}/src/python/esgf/setup.py
+    [ -e ${basedir}/src/python/esgf/scripts/esgf_node_manager_initialize.tmpl ] && [ -e ${basedir}/src/python/esgf/scripts/esgf_node_manager_initialize ] && rm -v ${basedir}/src/python/esgf/scripts/esgf_node_manager_initialize
     popd >& /dev/null
     return ${ret}
 }
