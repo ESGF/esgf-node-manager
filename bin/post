@@ -77,6 +77,19 @@ fail=0
 good=0
 total=0
 
+while [ -n "$1" ]; do 
+    case $1 in
+        --debug)
+            shift
+            debug=1
+            ;;
+        --dry-run|--noop)
+            shift
+            noop=1
+            ;;
+    esac
+done
+
 while read file dest_dir; do
     
     #skip comment lines (#) and blank lines...
