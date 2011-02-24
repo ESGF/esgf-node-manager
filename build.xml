@@ -488,7 +488,7 @@ Builds the project via ant (obviously).
       <fileset dir="${lib_dir}" includes="**/*.jar" excludes="servlet-api*.jar,**/junit*.jar,**/*sources.jar,**/*javadoc.jar"/>
     </copy>
 
-    <copy file="${web_dir}/index.tmpl.html" tofile="${web_dir}/index.html" filtering="true"/>
+    <copy file="${web_dir}/index.tmpl.html" tofile="${web_dir}/index.html" filtering="true" overwrite="true"/>
 
     <delete file="${dist_dir}/${module}.war"/>
     <war destfile="${dist_dir}/${module}.war" webxml="${build_dir}/${module}-web.xml">
@@ -575,7 +575,9 @@ Builds the project via ant (obviously).
 
   <target name="clean_all"
           depends="clean,clean_dist,clean_jaxb,dep_clean_libs,clean_python"
-          description="(Cleans out generatable artifacts)"/>
+          description="(Cleans out generatable artifacts)">
+    <delete file="${bin_dir}/post.manif"/>
+  </target>
   
   <!--
       ************************************************************
@@ -822,9 +824,9 @@ Builds the project via ant (obviously).
   </target>
 
   <target name="post" depends="init" description="(posts built artifacts to distribution server)">
-    <copy file="${bin_dir}/post.manif.tmpl" tofile="${bin_dir}/post.manif" filtering="true"/>
+    <copy file="${bin_dir}/post.manif.tmpl" tofile="${bin_dir}/post.manif" filtering="true" overwrite="true"/>
     <echo message="Posting Files To Distribution Server..."/>
-    <exec executable="post" dir="${basedir}/bin">
+    <exec executable="post" dir="${bin_dir}">
       <arg value="--debug"/>
     </exec>
   </target>
@@ -846,8 +848,8 @@ Builds the project via ant (obviously).
       ************************************************************
     -->
   <target name="make_python" depends="init" description="(creates python egg distribution)">
-    <copy file="${py_src_dir}/setup.py.tmpl" tofile="${py_src_dir}/setup.py" filtering="true"/>
-    <copy file="${py_src_dir}/scripts/esgf_node_manager_initialize.tmpl" tofile="${py_src_dir}/scripts/esgf_node_manager_initialize" filtering="true"/>
+    <copy file="${py_src_dir}/setup.py.tmpl" tofile="${py_src_dir}/setup.py" filtering="true" overwrite="true"/>
+    <copy file="${py_src_dir}/scripts/esgf_node_manager_initialize.tmpl" tofile="${py_src_dir}/scripts/esgf_node_manager_initialize" filtering="true" overwrite="true"/>
 
     <echo message="Building python egg"/>
     <exec executable="./etc/db/make_python" dir="${basedir}">
