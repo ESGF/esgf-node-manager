@@ -381,8 +381,8 @@ configure_postgress() {
             [ $? != 0 ] && echo "ERROR: Could not create esgf node manager python module" && checked_done 1
 
             #run the code to build the database and install sql migration...
-            ((DEBUG)) && echo "$cdat_home/bin/esgf_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c"
-            $cdat_home/bin/esgf_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c
+            ((DEBUG)) && echo "$cdat_home/bin/esgf_node_manager_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c"
+            $cdat_home/bin/esgf_node_manager_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c
             [ $? != 0 ] && echo "ERROR: Could not create esgf manager database tables in ${node_db_name}" && checked_done 1
 
             ((mysel-=DATA_BIT))
@@ -392,7 +392,7 @@ configure_postgress() {
             echo "Setting up database for IDP node type"
 
             #download the egg file from the distribution server is necessary....
-            checked_get ${esgf_security_egg_file} ${esg_dist_url}/esgf-node-manager/${esgf_security_egg_file} $((force_install))
+            checked_get ${esgf_security_egg_file} ${esg_dist_url}/esgf-security/${esgf_security_egg_file} $((force_install))
             (( $? > 1 )) && return 0
 
             #install the egg....
@@ -401,8 +401,8 @@ configure_postgress() {
             [ $? != 0 ] && echo "ERROR: Could not create esgf security python module" && checked_done 1
 
             #run the code to build the database and install sql migration...
-            ((DEBUG)) && echo "$cdat_home/bin/esgf_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c"
-            $cdat_home/bin/esgf_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c
+            ((DEBUG)) && echo "$cdat_home/bin/esgf_security_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c"
+            $cdat_home/bin/esgf_security_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c
             [ $? != 0 ] && echo "ERROR: Could not create esgf security database tables in ${node_db_name}" && checked_done 1
 
             ((mysel-=IDP_BIT))
