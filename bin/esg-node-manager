@@ -91,6 +91,7 @@ tomcat_user=${tomcat_user:-tomcat}
 tomcat_group=${tomcat_group:-$tomcat_user}
 tomcat_install_dir=${CATALINA_HOME:-${install_prefix}/tomcat}
 python_version=${python_version:-"2.6"}
+db_config_file=${esg_root_dir}/config/esgf-db.properties
 
 init() {
     [ -n "${envfile}" ] && [ -e "${envfile}" ] && source ${envfile} && ((VERBOSE)) && printf "node manager: sourcing environment from: ${envfile} \n"
@@ -278,6 +279,9 @@ setup_node_manager() {
     unset fetch_file
     popd >& /dev/null
     #----------------------------
+    
+
+    write_db_config
 
     popd >& /dev/null
     configure_postgress
@@ -287,7 +291,29 @@ setup_node_manager() {
     [ -d ${tomcat_install_dir}/webapps/esg-node ] && echo -n "Removing old esg-node webapp (${tomcat_install_dir}/webapps/esg-node)... " && rm -rf ${tomcat_install_dir}/webapps/esg-node && echo "[OK]"
 
     checked_done 0
+    
+}
 
+write_db_config() {
+    #----------------------------
+    ((DEBUG || VERBOSE)) && echo "Writing down database connection info"
+    #----------------------------
+    mkdir -p ${esg_root_dir}/config
+    pushd ${esg_root_dir}/config >& /dev/null
+    cat > ${db_config_file} <<EOF
+db.driver=${postgress_driver}
+db.protocol=${postgress_protocol}
+db.host=${postgress_host}
+db.port=${postgress_port}
+db.database=${node_db_name}
+db.user=${postgress_user}
+db.password=${pg_sys_acct_passwd}
+EOF
+    chown ${tomcat_user}:${tomcat_group} ${db_config_file}
+    chmod 600 ${db_config_file}
+    popd >& /dev/null
+    #----------------------------
+    return 0
 }
 
 write_node_manager_install_log() {
@@ -392,7 +418,7 @@ configure_postgress() {
             echo "Setting up database for IDP node type"
 
             #download the egg file from the distribution server is necessary....
-            checked_get ${esgf_security_egg_file} ${esg_dist_url}/esgf-node-manager/${esgf_security_egg_file} $((force_install))
+            checked_get ${esgf_security_egg_file} ${esg_dist_url}/esgf-security/${esgf_security_egg_file} $((force_install))
             (( $? > 1 )) && return 0
 
             #install the egg....
