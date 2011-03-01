@@ -94,7 +94,7 @@ python_version=${python_version:-"2.6"}
 db_config_file=${esg_root_dir}/config/esgf-db.properties
 
 init() {
-    [ -n "${envfile}" ] && [ -e "${envfile}" ] && source ${envfile} && ((VERBOSE)) && printf "node manager: sourcing environment from: ${envfile} \n"
+    #[ -n "${envfile}" ] && [ -e "${envfile}" ] && source ${envfile} && ((VERBOSE)) && printf "node manager: sourcing environment from: ${envfile} \n"
 
     node_dist_url=${esg_dist_url}/esgf-node-manager/esgf-node-manager-${esgf_node_manager_version}.tar.gz
     node_manager_app_context_root=esgf-node-manager
@@ -103,12 +103,6 @@ init() {
     esgf_node_manager_version=${esgf_node_manager_version:-"0.4.1"}
     esgf_node_manager_db_version=${esgf_manager_db_version:-"0.1.4"}
     esgf_node_manager_egg_file=esgf_node_manager-${esgf_node_manager_db_version}-py${python_version}.egg
-
-    #---------------------------------------------------------------------------------------------------
-    #NOTE: should be moved out into security install script when split database creation module into parts 
-    esgf_security_db_version=${esgf_security_db_version:-"0.1.4"}
-    esgf_security_egg_file=esgf_security-${esgf_security_db_version}-py${python_version}.egg
-    #---------------------------------------------------------------------------------------------------
 
     #Database information....
     node_db_name=${node_db_name:-"esgcet"}
@@ -145,7 +139,7 @@ setup_node_manager() {
     
     echo
     echo "*******************************"
-    echo "Setting up The ESG Node Manager..."
+    echo "Setting up The ESGF Node Manager..."
     echo "*******************************"
     echo
 
@@ -300,7 +294,7 @@ write_db_config() {
     #----------------------------
     mkdir -p ${esg_root_dir}/config
     pushd ${esg_root_dir}/config >& /dev/null
-    cat > ${db_config_file} <<EOF
+    cat >> ${db_config_file} <<EOF
 db.driver=${postgress_driver}
 db.protocol=${postgress_protocol}
 db.host=${postgress_host}
@@ -309,6 +303,7 @@ db.database=${node_db_name}
 db.user=${postgress_user}
 db.password=${pg_sys_acct_passwd}
 EOF
+    dedup_properties ${db_config_file}
     chown ${tomcat_user}:${tomcat_group} ${db_config_file}
     chmod 600 ${db_config_file}
     popd >& /dev/null
@@ -354,20 +349,10 @@ set_redirect() {
 #--------------------------------------------------
 configure_postgress() {
     init
-    local let mysel=${1:-${sel:-4}}
-        
-    ((DEBUG)) && echo "Database configuration... (selection = ${mysel})"
     
-    #-------
-    #IMPORTANT! The SUM of all the handled types is the real max value
-    #here! (else can't decrement down to 0 and get into an infinite loop)
-    local myMAX_BIT=$((DATA_BIT+IDP_BIT)) 
-    ((mysel > myMAX_BIT)) && echo -n "Adjusting selection to bounds... " && ((mysel=myMAX_BIT)) && echo "(selection = ${mysel})"
-    #-------
-
     echo
     echo "*******************************"
-    echo -n "Configuring Postgres... " && show_type
+    echo "Configuring Postgres... for ESGF Node Manager"
     echo "*******************************"
     echo
     
@@ -383,65 +368,27 @@ configure_postgress() {
     pushd ${workdir}/${node_dist_dir:-esgf-node-manager-${esgf_node_manager_version}}/db >& /dev/null
     [ $? != 0 ] && echo " ERROR: Could not find node distribution dir ${workdir}/${node_dist_dir}" && checked_done 1
 
-    local target="make_node_db"
-
     #------------------------------------------------------------------------
     #Based on the node type selection we build the appropriate database tables
     #------------------------------------------------------------------------
     
-    while (( (mysel >= MIN_BIT) && (mysel <= myMAX_BIT) )); do
-        
-        ((DEBUG)) && echo " mysel = ${mysel} : "
-
-        if (( (mysel & DATA_BIT) != 0 )); then
-            target="make_node_db"
-            echo "Setting up database for DATA node type"
-
-            #download the egg file from the distribution server is necessary....
-            checked_get ${esgf_node_manager_egg_file} ${esg_dist_url}/esgf-node-manager/${esgf_node_manager_egg_file} $((force_install))
-            (( $? > 1 )) && return 0
-            
-            #install the egg....
-            ((DEBUG)) && echo "$cdat_home/bin/easy_install ${esgf_node_manager_egg_file}"
-            $cdat_home/bin/easy_install ${esgf_node_manager_egg_file}
-            [ $? != 0 ] && echo "ERROR: Could not create esgf node manager python module" && checked_done 1
-
-            #run the code to build the database and install sql migration...
-            ((DEBUG)) && echo "$cdat_home/bin/esgf_node_manager_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c"
-            $cdat_home/bin/esgf_node_manager_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c
-            [ $? != 0 ] && echo "ERROR: Could not create esgf manager database tables in ${node_db_name}" && checked_done 1
-
-            write_node_manager_db_install_log
-
-            ((mysel-=DATA_BIT))
-            
-        elif (( (mysel & IDP_BIT) != 0 )); then
-            target="make_security_db"
-            echo "Setting up database for IDP node type"
-
-            #download the egg file from the distribution server is necessary....
-            checked_get ${esgf_security_egg_file} ${esg_dist_url}/esgf-security/${esgf_security_egg_file} $((force_install))
-            (( $? > 1 )) && return 0
-
-            #install the egg....
-            ((DEBUG)) && "$cdat_home/bin/easy_install ${esgf_security_egg_file}"
-            $cdat_home/bin/easy_install ${esgf_security_egg_file}
-            [ $? != 0 ] && echo "ERROR: Could not create esgf security python module" && checked_done 1
-
-            #run the code to build the database and install sql migration...
-            ((DEBUG)) && echo "$cdat_home/bin/esgf_security_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c"
-            $cdat_home/bin/esgf_security_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c
-            [ $? != 0 ] && echo "ERROR: Could not create esgf security database tables in ${node_db_name}" && checked_done 1
-
-            write_security_db_install_log
-
-            ((mysel-=IDP_BIT))
-
-        fi
-        echo
-    done
     
-    ((DEBUG)) && echo "*mysel = ${mysel}"
+    #download the egg file from the distribution server is necessary....
+    checked_get ${esgf_node_manager_egg_file} ${esg_dist_url}/esgf-node-manager/${esgf_node_manager_egg_file} $((force_install))
+    (( $? > 1 )) && return 0
+    
+    #install the egg....
+    ((DEBUG)) && echo "$cdat_home/bin/easy_install ${esgf_node_manager_egg_file}"
+    $cdat_home/bin/easy_install ${esgf_node_manager_egg_file}
+    [ $? != 0 ] && echo "ERROR: Could not create esgf node manager python module" && checked_done 1
+
+    #run the code to build the database and install sql migration...
+    ((DEBUG)) && echo "$cdat_home/bin/esgf_node_manager_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c"
+    $cdat_home/bin/esgf_node_manager_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c
+    [ $? != 0 ] && echo "ERROR: Could not create esgf manager database tables in ${node_db_name}" && checked_done 1
+
+    write_node_manager_db_install_log
+    echo
     
     popd >& /dev/null
     echo
@@ -451,12 +398,6 @@ configure_postgress() {
 
 write_node_manager_db_install_log() {
     echo "$(date ${date_format}) python:esgf_node_manager=${esgf_node_manager_db_version} " >> ${install_logfile}
-    dedup ${install_logfile}
-    return 0
-}
-
-write_security_db_install_log() {
-    echo "$(date ${date_format}) python:esgf_security=${esgf_security_db_version} " >> ${install_logfile}
     dedup ${install_logfile}
     return 0
 }
