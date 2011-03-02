@@ -178,7 +178,7 @@ setup_node_manager() {
         echo
     fi
 
-    configure_postgress
+    (write_db_config && configure_postgress) || checked_done 1
 
     mkdir -p ${workdir}
     [ $? != 0 ] && return 1
@@ -276,9 +276,6 @@ setup_node_manager() {
     popd >& /dev/null
     #----------------------------
     
-
-    write_db_config
-
     popd >& /dev/null
     write_node_manager_install_log
     set_redirect
