@@ -78,6 +78,7 @@ envfile="/etc/esg.env"
 #User Defined / Settable (public)
 #--------------
 install_prefix=${install_prefix:-"/usr/local"}
+cdat_home=${cdat_home:-${install_prefix}/cdat}
 esg_root_dir=${esg_root_dir:-"/esg"}
 workdir=${workdir:-~/workbench/esg}
 install_logfile=${install_logfile:-"/etc/esg.install_log"}
@@ -397,5 +398,53 @@ configure_postgress() {
 write_node_manager_db_install_log() {
     echo "$(date ${date_format}) python:esgf_node_manager=${esgf_node_manager_db_version} " >> ${install_logfile}
     dedup ${install_logfile}
+    return 0
+}
+
+#--------------------------------------
+# Clean / Uninstall this module...
+#--------------------------------------
+
+clean_node_manager_webapp_subsystem() {
+    init
+    local doit="N"
+    if [ -e ${node_manager_app_home} ]; then
+        read -p "remove ESG Node Manager web service? (${node_manager_app_home}) [y/N]: " doit
+        if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
+            echo "removing ${node_manager_app_home}"
+            if [ -n ${node_manager_app_home} ] ; then 
+                rm -rf ${node_manager_app_home}
+                [ $? != 0 ] && echo "ERROR: Unable to remove ${node_manager_app_home}" && return 1
+                perl -n -i -e'print unless m!webapp:esgf-node-manager!' ${install_logfile}
+            fi
+        fi
+    fi 
+    return 0
+}
+
+#NOTE: There are certain fields that we are not pulling from (node_db_name and postgress_host).
+#      If the fit hits the shan I want to make it clear that we are not nuking anyone else's database, etc.
+#      strictly the "esgcet" database on "localhost"
+clean_node_manager_database_subsystem_installation() {
+    init
+    local doit="N"
+
+    if $(psql -U ${postgress_user} esgcet -c "\dt esgf_manager.;" | egrep '^\([1-9]* row[s]?\)' >& /dev/null); then
+        read -p "remove ESG Node Manager database, database subsystem AND DATA? (esgf_manager.*) [y/N]: " doit
+        if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
+            #Call me paranoid but I want some integrity check that this code is what is meant to be straight from the distribution.
+            diff <(md5sum ${scripts_dir}/esg-node-manager | tr -s " " | cut -d " " -f 1) <(curl -s -L --insecure ${esg_dist_url}/esgf-node-manager/esg-node-manager.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
+            [ $? != 0 ] && echo " WARNING: Could not verify ${scripts_dir}/esg-node-manager, aborting this uninstall" && return 3
+            echo "[VERIFIED]"
+
+            backup_db esgcet manager
+            echo "removing esgf_node_manager.* schema and tables and DATA"
+            ${cdat_home}/bin/esgf_security_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@localhost:${postgress_port}/esgcet -d 0
+            [ $? != 0 ] && echo "ERROR: Unable to remove ${tomcat_install_dir}/webapps/${node_manager_app_context_root}" && return 1
+            rm -rvf ${cdat_home}/bin/esgf_node_manager_initialize && \
+                rm -rf ${cdat_home}/lib/python${python_version}/${esgf_node_manager_egg_file} && \
+                perl -n -i -e'print unless m!python:esgf_node_manager!' ${install_logfile} && echo "[REMOVED]"
+        fi
+    fi 
     return 0
 }
