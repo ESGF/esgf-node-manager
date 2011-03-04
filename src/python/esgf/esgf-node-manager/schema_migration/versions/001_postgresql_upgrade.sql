@@ -18,20 +18,20 @@ DROP TABLE IF EXISTS monitor_run_log;
 DROP TABLE IF EXISTS notification_run_log;
 
 --
--- Name: esgf_manager; Type: SCHEMA; Schema: -; Owner: -
+-- Name: esgf_node_manager; Type: SCHEMA; Schema: -; Owner: -
 --
 
-CREATE SCHEMA esgf_manager;
+CREATE SCHEMA esgf_node_manager;
 
 
-SET search_path = esgf_manager, pg_catalog;
+SET search_path = esgf_node_manager, pg_catalog;
 
 SET default_tablespace = '';
 
 SET default_with_oids = false;
 
 --
--- Name: access_logging; Type: TABLE; Schema: esgf_manager; Owner: -; Tablespace: 
+-- Name: access_logging; Type: TABLE; Schema: esgf_node_manager; Owner: -; Tablespace: 
 --
 
 CREATE TABLE access_logging (
@@ -51,7 +51,7 @@ CREATE TABLE access_logging (
 
 
 --
--- Name: download; Type: TABLE; Schema: esgf_manager; Owner: -; Tablespace: 
+-- Name: download; Type: TABLE; Schema: esgf_node_manager; Owner: -; Tablespace: 
 --
 
 CREATE TABLE download (
@@ -61,7 +61,7 @@ CREATE TABLE download (
 
 
 --
--- Name: metrics_run_log; Type: TABLE; Schema: esgf_manager; Owner: -; Tablespace: 
+-- Name: metrics_run_log; Type: TABLE; Schema: esgf_node_manager; Owner: -; Tablespace: 
 --
 
 CREATE TABLE metrics_run_log (
@@ -71,7 +71,7 @@ CREATE TABLE metrics_run_log (
 
 
 --
--- Name: monitor_run_log; Type: TABLE; Schema: esgf_manager; Owner: -; Tablespace: 
+-- Name: monitor_run_log; Type: TABLE; Schema: esgf_node_manager; Owner: -; Tablespace: 
 --
 
 CREATE TABLE monitor_run_log (
@@ -81,7 +81,7 @@ CREATE TABLE monitor_run_log (
 
 
 --
--- Name: notification_run_log; Type: TABLE; Schema: esgf_manager; Owner: -; Tablespace: 
+-- Name: notification_run_log; Type: TABLE; Schema: esgf_node_manager; Owner: -; Tablespace: 
 --
 
 CREATE TABLE notification_run_log (
@@ -91,7 +91,7 @@ CREATE TABLE notification_run_log (
 
 
 --
--- Name: access_logging_id_seq; Type: SEQUENCE; Schema: esgf_manager; Owner: -
+-- Name: access_logging_id_seq; Type: SEQUENCE; Schema: esgf_node_manager; Owner: -
 --
 
 CREATE SEQUENCE access_logging_id_seq
@@ -103,14 +103,14 @@ CREATE SEQUENCE access_logging_id_seq
 
 
 --
--- Name: access_logging_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_manager; Owner: -
+-- Name: access_logging_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_node_manager; Owner: -
 --
 
 ALTER SEQUENCE access_logging_id_seq OWNED BY access_logging.id;
 
 
 --
--- Name: metrics_run_log_id_seq; Type: SEQUENCE; Schema: esgf_manager; Owner: -
+-- Name: metrics_run_log_id_seq; Type: SEQUENCE; Schema: esgf_node_manager; Owner: -
 --
 
 CREATE SEQUENCE metrics_run_log_id_seq
@@ -122,14 +122,14 @@ CREATE SEQUENCE metrics_run_log_id_seq
 
 
 --
--- Name: metrics_run_log_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_manager; Owner: -
+-- Name: metrics_run_log_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_node_manager; Owner: -
 --
 
 ALTER SEQUENCE metrics_run_log_id_seq OWNED BY metrics_run_log.id;
 
 
 --
--- Name: monitor_run_log_id_seq; Type: SEQUENCE; Schema: esgf_manager; Owner: -
+-- Name: monitor_run_log_id_seq; Type: SEQUENCE; Schema: esgf_node_manager; Owner: -
 --
 
 CREATE SEQUENCE monitor_run_log_id_seq
@@ -141,14 +141,14 @@ CREATE SEQUENCE monitor_run_log_id_seq
 
 
 --
--- Name: monitor_run_log_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_manager; Owner: -
+-- Name: monitor_run_log_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_node_manager; Owner: -
 --
 
 ALTER SEQUENCE monitor_run_log_id_seq OWNED BY monitor_run_log.id;
 
 
 --
--- Name: notification_run_log_id_seq; Type: SEQUENCE; Schema: esgf_manager; Owner: -
+-- Name: notification_run_log_id_seq; Type: SEQUENCE; Schema: esgf_node_manager; Owner: -
 --
 
 CREATE SEQUENCE notification_run_log_id_seq
@@ -160,42 +160,42 @@ CREATE SEQUENCE notification_run_log_id_seq
 
 
 --
--- Name: notification_run_log_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_manager; Owner: -
+-- Name: notification_run_log_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_node_manager; Owner: -
 --
 
 ALTER SEQUENCE notification_run_log_id_seq OWNED BY notification_run_log.id;
 
 
 --
--- Name: id; Type: DEFAULT; Schema: esgf_manager; Owner: -
+-- Name: id; Type: DEFAULT; Schema: esgf_node_manager; Owner: -
 --
 
 ALTER TABLE access_logging ALTER COLUMN id SET DEFAULT nextval('access_logging_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: esgf_manager; Owner: -
+-- Name: id; Type: DEFAULT; Schema: esgf_node_manager; Owner: -
 --
 
 ALTER TABLE metrics_run_log ALTER COLUMN id SET DEFAULT nextval('metrics_run_log_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: esgf_manager; Owner: -
+-- Name: id; Type: DEFAULT; Schema: esgf_node_manager; Owner: -
 --
 
 ALTER TABLE monitor_run_log ALTER COLUMN id SET DEFAULT nextval('monitor_run_log_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: esgf_manager; Owner: -
+-- Name: id; Type: DEFAULT; Schema: esgf_node_manager; Owner: -
 --
 
 ALTER TABLE notification_run_log ALTER COLUMN id SET DEFAULT nextval('notification_run_log_id_seq'::regclass);
 
 
 --
--- Name: access_logging_pkey; Type: CONSTRAINT; Schema: esgf_manager; Owner: -; Tablespace: 
+-- Name: access_logging_pkey; Type: CONSTRAINT; Schema: esgf_node_manager; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY access_logging
@@ -203,7 +203,7 @@ ALTER TABLE ONLY access_logging
 
 
 --
--- Name: metrics_run_log_pkey; Type: CONSTRAINT; Schema: esgf_manager; Owner: -; Tablespace: 
+-- Name: metrics_run_log_pkey; Type: CONSTRAINT; Schema: esgf_node_manager; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY metrics_run_log
@@ -211,7 +211,7 @@ ALTER TABLE ONLY metrics_run_log
 
 
 --
--- Name: monitor_run_log_pkey; Type: CONSTRAINT; Schema: esgf_manager; Owner: -; Tablespace: 
+-- Name: monitor_run_log_pkey; Type: CONSTRAINT; Schema: esgf_node_manager; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY monitor_run_log
@@ -219,7 +219,7 @@ ALTER TABLE ONLY monitor_run_log
 
 
 --
--- Name: notification_run_log_pkey; Type: CONSTRAINT; Schema: esgf_manager; Owner: -; Tablespace: 
+-- Name: notification_run_log_pkey; Type: CONSTRAINT; Schema: esgf_node_manager; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY notification_run_log
@@ -227,10 +227,10 @@ ALTER TABLE ONLY notification_run_log
 
 
 --
--- Name: ix_esgf_manager_access_logging_url; Type: INDEX; Schema: esgf_manager; Owner: -; Tablespace: 
+-- Name: ix_esgf_node_manager_access_logging_url; Type: INDEX; Schema: esgf_node_manager; Owner: -; Tablespace: 
 --
 
-CREATE INDEX ix_esgf_manager_access_logging_url ON access_logging USING btree (url);
+CREATE INDEX ix_esgf_node_manager_access_logging_url ON access_logging USING btree (url);
 
 
 --

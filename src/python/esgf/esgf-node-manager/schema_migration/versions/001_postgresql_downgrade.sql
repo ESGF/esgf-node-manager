@@ -1,1 +1,1 @@
-DROP SCHEMA IF EXISTS esgf_manager CASCADE;
+DROP SCHEMA IF EXISTS esgf_node_manager CASCADE;

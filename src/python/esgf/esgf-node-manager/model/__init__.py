@@ -46,7 +46,7 @@ permissionTable = Table('permission', metadata,
                         schema = 'esgf_security',
                         )
 
-# esgf_manager tables
+# esgf_node_manager tables
 
 accessLoggingTable = Table('access_logging', metadata,
                            Column('id', types.Integer, primary_key=True, autoincrement=True),
@@ -61,31 +61,31 @@ accessLoggingTable = Table('access_logging', metadata,
                            Column('date_fetched', types.Float(precision=53), nullable=False),
                            Column('success', types.Boolean, default=False), 
                            Column('duration', types.Float(precision=53), default=0.0),
-                           schema = 'esgf_manager',
+                           schema = 'esgf_node_manager',
                            )
 
 downloadTable = Table('download', metadata,
                       Column('userid', types.String(64)),
                       Column('url', types.String(255)),
-                      schema = 'esgf_manager',
+                      schema = 'esgf_node_manager',
                       )
 
 metricsRunLogTable = Table('metrics_run_log', metadata,
                            Column('id', types.Integer, primary_key=True, autoincrement=True),
                            Column('last_run_time', types.Float(precision=53)),
-                           schema = 'esgf_manager',
+                           schema = 'esgf_node_manager',
                            )
 
 monitorRunLogTable = Table('monitor_run_log', metadata,
                            Column('id', types.Integer, primary_key=True, autoincrement=True),
                            Column('last_run_time', types.Float(precision=53)),
-                           schema = 'esgf_manager',
+                           schema = 'esgf_node_manager',
                            )
 
 notificationRunLogTable = Table('notification_run_log', metadata, 
                                 Column('id', types.Integer, primary_key=True, autoincrement=True),
                                 Column('notify_time', types.Float(precision=53)),
-                                schema = 'esgf_manager',
+                                schema = 'esgf_node_manager',
                                 )
 
 # Mapped classes

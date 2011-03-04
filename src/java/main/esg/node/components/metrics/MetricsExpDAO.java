@@ -103,7 +103,7 @@ public class MetricsExpDAO extends ESGDAO {
     //------------------------------------
     private static final String query = "select d.project, d.experiment, count(*), sum(lver.size) from ("+MetricsDAO.SUBQ+") as lver, file as f, dataset as d where lver.file_id=f.id and f.dataset_id=d.id group by project, experiment";
 
-    private static final String downloadQuery = "select d.project, d.experiment, count(*), sum(size) from ("+MetricsDAO.SUBQ+") as lver, esgf_manager.access_logging as dl, file as f, dataset as d where dl.url=lver.url and lver.file_id=f.id and f.dataset_id=d.id group by project, experiment";
+    private static final String downloadQuery = "select d.project, d.experiment, count(*), sum(size) from ("+MetricsDAO.SUBQ+") as lver, esgf_node_manager.access_logging as dl, file as f, dataset as d where dl.url=lver.url and lver.file_id=f.id and f.dataset_id=d.id group by project, experiment";
     
     public List<MetricsExpDAO.ExpInfo> getMetricsInfo() { return performQuery(query); }
     public List<MetricsExpDAO.ExpInfo> getDownloadMetricsInfo() { return performQuery(downloadQuery); }

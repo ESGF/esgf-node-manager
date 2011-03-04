@@ -99,7 +99,7 @@ public class MetricsUsersDAO extends ESGDAO {
     //------------------------------------
     //Query...
     //------------------------------------
-    private static final String query = "select dl.user_id, count(*), sum(size) from ("+MetricsDAO.SUBQ+") as lver, esgf_manager.access_logging as dl where lver.url=dl.url group by user_id";
+    private static final String query = "select dl.user_id, count(*), sum(size) from ("+MetricsDAO.SUBQ+") as lver, esgf_node_manager.access_logging as dl where lver.url=dl.url group by user_id";
 
     public List<MetricsUsersDAO.UserInfo> getDownloadMetricsInfo() {
 	if(this.dataSource == null) {

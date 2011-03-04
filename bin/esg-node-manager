@@ -102,7 +102,7 @@ init() {
     node_manager_app_home=${tomcat_install_dir}/webapps/${node_manager_app_context_root}
 
     esgf_node_manager_version=${esgf_node_manager_version:-"0.4.1"}
-    esgf_node_manager_db_version=${esgf_manager_db_version:-"0.1.4"}
+    esgf_node_manager_db_version=${esgf_node_manager_db_version:-"0.1.4"}
     esgf_node_manager_egg_file=esgf_node_manager-${esgf_node_manager_db_version}-py${python_version}.egg
 
     #Database information....
@@ -429,8 +429,8 @@ clean_node_manager_database_subsystem_installation() {
     init
     local doit="N"
 
-    if $(psql -U ${postgress_user} esgcet -c "\dt esgf_manager.;" | egrep '^\([1-9]* row[s]?\)' >& /dev/null); then
-        read -p "remove ESG Node Manager database, database subsystem AND DATA? (esgf_manager.*) [y/N]: " doit
+    if $(psql -U ${postgress_user} esgcet -c "\dt esgf_node_manager.;" | egrep '^\([1-9]* row[s]?\)' >& /dev/null); then
+        read -p "remove ESG Node Manager database, database subsystem AND DATA? (esgf_node_manager.*) [y/N]: " doit
         if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
             #Call me paranoid but I want some integrity check that this code is what is meant to be straight from the distribution.
             diff <(md5sum ${scripts_dir}/esg-node-manager | tr -s " " | cut -d " " -f 1) <(curl -s -L --insecure ${esg_dist_url}/esgf-node-manager/esg-node-manager.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
