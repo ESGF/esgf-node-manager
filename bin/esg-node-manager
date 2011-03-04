@@ -437,7 +437,7 @@ clean_node_manager_database_subsystem_installation() {
             [ $? != 0 ] && echo " WARNING: Could not verify ${scripts_dir}/esg-node-manager, aborting this uninstall" && return 3
             echo "[VERIFIED]"
 
-            backup_db esgcet manager
+            backup_db esgcet node_manager
             echo "removing esgf_node_manager.* schema and tables and DATA"
             ${cdat_home}/bin/esgf_security_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@localhost:${postgress_port}/esgcet -d 0
             [ $? != 0 ] && echo "ERROR: Unable to remove ${tomcat_install_dir}/webapps/${node_manager_app_context_root}" && return 1
