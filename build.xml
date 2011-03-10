@@ -103,6 +103,8 @@ Builds the project via ant (obviously).
   <echo message="user property file ${basedir}/etc/${module}.ant.properties"/>
 
   <property name="filter" value="false"/>
+  <property name="sign"   value="false"/>
+  <property name="seal"   value="false"/>
 
   <!-- **static defines** -->
   <property name="version_num" value="0.0.0"/>
@@ -376,10 +378,11 @@ Builds the project via ant (obviously).
         <attribute name="Release-Name" value="${release_name}"/>
         <attribute name="Main-Class"   value="${main_class}"/>
         <section name="esg/">
-          <attribute name="Sealed" value="false"/>
+          <attribute name="Sealed" value="${seal}"/>
         </section>
       </manifest>
     </jar>
+    <!-- <signjar jar="${dist_dir}/${module}-${version_num}.jar" alias="${signing_alias}" keystore="${keystore}" storepass="${storepass}"/> -->
   </target>
 
   <target name="make_test_jar" depends="make_test" description="(Creates test jar file)">
@@ -398,10 +401,11 @@ Builds the project via ant (obviously).
         <attribute name="Version"      value="${version_num}"/>
         <attribute name="Release-Name" value="${release_name}"/>
         <section name="esg/">
-          <attribute name="Sealed" value="false"/>
+          <attribute name="Sealed" value="${seal}"/>
         </section>
       </manifest>
     </jar>
+    <!-- <signjar jar="${dist_dir}/${module}-test-${version_num}.jar" alias="${signing_alias}" keystore="${keystore}" storepass="${storepass}"/> -->
   </target>
   
   <target name="make_common_jar" depends="make" description="(Creates common jar file)">
@@ -421,10 +425,11 @@ Builds the project via ant (obviously).
         <attribute name="Version"      value="${version_num}"/>
         <attribute name="Release-Name" value="${release_name}"/>
         <section name="esg/common/">
-          <attribute name="Sealed" value="false"/>
+          <attribute name="Sealed" value="${seal}"/>
         </section>
       </manifest>
     </jar>
+    <!-- <signjar jar="${dist_dir}/${module}-common-${version_num}.jar" alias="${signing_alias}" keystore="${keystore}" storepass="${storepass}"/> -->
   </target>
 
   <target name="make_filter_jar" depends="make"
@@ -446,10 +451,11 @@ Builds the project via ant (obviously).
         <attribute name="Version"      value="${version_num}"/>
         <attribute name="Release-Name" value="${release_name}"/>
         <section name="esg/">
-          <attribute name="Sealed" value="false"/>
+          <attribute name="Sealed" value="${seal}"/>
         </section>
       </manifest>
     </jar>
+    <!-- <signjar jar="${dist_dir}/${module}-filters-${version_num}.jar" alias="${signing_alias}" keystore="${keystore}" storepass="${storepass}"/> -->
   </target>
   
   <target name="make_access_log_client_jar" depends="make" description="(Creates jar file for client rpc call to access log service)">
@@ -470,10 +476,11 @@ Builds the project via ant (obviously).
         <attribute name="Release-Name" value="${release_name}"/>
         <attribute name="Main-Class"   value="esg.gateway.client.ESGAccessLogClient"/>
         <section name="esg/gateway/">
-          <attribute name="Sealed" value="false"/>
+          <attribute name="Sealed" value="${seal}"/>
         </section>
       </manifest>
     </jar>
+    <!-- <signjar jar="${dist_dir}/${module}-accesslog-client-${version_num}.jar" alias="${signing_alias}" keystore="${keystore}" storepass="${storepass}"/> -->
   </target>
 
 <!-- <target name="make_all_jars" depends="make_jar,make_test_jar,make_common_jar,make_filter_jar,make_access_log_client_jar"/> -->
