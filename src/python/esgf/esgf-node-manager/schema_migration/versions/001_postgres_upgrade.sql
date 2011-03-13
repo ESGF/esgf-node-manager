@@ -65,7 +65,7 @@ CREATE TABLE download (
 --
 
 CREATE TABLE metrics_run_log (
-    id integer NOT NULL,
+    id character varying NOT NULL,
     last_run_time double precision
 );
 
@@ -75,7 +75,7 @@ CREATE TABLE metrics_run_log (
 --
 
 CREATE TABLE monitor_run_log (
-    id integer NOT NULL,
+    id character varying NOT NULL,
     last_run_time double precision
 );
 
@@ -85,7 +85,7 @@ CREATE TABLE monitor_run_log (
 --
 
 CREATE TABLE notification_run_log (
-    id integer NOT NULL,
+    id character varying NOT NULL,
     notify_time double precision
 );
 
@@ -101,70 +101,11 @@ CREATE SEQUENCE access_logging_id_seq
     NO MINVALUE
     CACHE 1;
 
-
 --
 -- Name: access_logging_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_node_manager; Owner: -
 --
 
 ALTER SEQUENCE access_logging_id_seq OWNED BY access_logging.id;
-
-
---
--- Name: metrics_run_log_id_seq; Type: SEQUENCE; Schema: esgf_node_manager; Owner: -
---
-
-CREATE SEQUENCE metrics_run_log_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MAXVALUE
-    NO MINVALUE
-    CACHE 1;
-
-
---
--- Name: metrics_run_log_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_node_manager; Owner: -
---
-
-ALTER SEQUENCE metrics_run_log_id_seq OWNED BY metrics_run_log.id;
-
-
---
--- Name: monitor_run_log_id_seq; Type: SEQUENCE; Schema: esgf_node_manager; Owner: -
---
-
-CREATE SEQUENCE monitor_run_log_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MAXVALUE
-    NO MINVALUE
-    CACHE 1;
-
-
---
--- Name: monitor_run_log_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_node_manager; Owner: -
---
-
-ALTER SEQUENCE monitor_run_log_id_seq OWNED BY monitor_run_log.id;
-
-
---
--- Name: notification_run_log_id_seq; Type: SEQUENCE; Schema: esgf_node_manager; Owner: -
---
-
-CREATE SEQUENCE notification_run_log_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MAXVALUE
-    NO MINVALUE
-    CACHE 1;
-
-
---
--- Name: notification_run_log_id_seq; Type: SEQUENCE OWNED BY; Schema: esgf_node_manager; Owner: -
---
-
-ALTER SEQUENCE notification_run_log_id_seq OWNED BY notification_run_log.id;
-
 
 --
 -- Name: id; Type: DEFAULT; Schema: esgf_node_manager; Owner: -
@@ -174,64 +115,17 @@ ALTER TABLE access_logging ALTER COLUMN id SET DEFAULT nextval('access_logging_i
 
 
 --
--- Name: id; Type: DEFAULT; Schema: esgf_node_manager; Owner: -
---
-
-ALTER TABLE metrics_run_log ALTER COLUMN id SET DEFAULT nextval('metrics_run_log_id_seq'::regclass);
-
-
---
--- Name: id; Type: DEFAULT; Schema: esgf_node_manager; Owner: -
---
-
-ALTER TABLE monitor_run_log ALTER COLUMN id SET DEFAULT nextval('monitor_run_log_id_seq'::regclass);
-
-
---
--- Name: id; Type: DEFAULT; Schema: esgf_node_manager; Owner: -
---
-
-ALTER TABLE notification_run_log ALTER COLUMN id SET DEFAULT nextval('notification_run_log_id_seq'::regclass);
-
-
---
 -- Name: access_logging_pkey; Type: CONSTRAINT; Schema: esgf_node_manager; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY access_logging
     ADD CONSTRAINT access_logging_pkey PRIMARY KEY (id);
 
-
---
--- Name: metrics_run_log_pkey; Type: CONSTRAINT; Schema: esgf_node_manager; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY metrics_run_log
-    ADD CONSTRAINT metrics_run_log_pkey PRIMARY KEY (id);
-
-
---
--- Name: monitor_run_log_pkey; Type: CONSTRAINT; Schema: esgf_node_manager; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY monitor_run_log
-    ADD CONSTRAINT monitor_run_log_pkey PRIMARY KEY (id);
-
-
---
--- Name: notification_run_log_pkey; Type: CONSTRAINT; Schema: esgf_node_manager; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY notification_run_log
-    ADD CONSTRAINT notification_run_log_pkey PRIMARY KEY (id);
-
-
 --
 -- Name: ix_esgf_node_manager_access_logging_url; Type: INDEX; Schema: esgf_node_manager; Owner: -; Tablespace: 
 --
 
 CREATE INDEX ix_esgf_node_manager_access_logging_url ON access_logging USING btree (url);
-
 
 --
 -- PostgreSQL database dump complete
