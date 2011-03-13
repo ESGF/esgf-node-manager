@@ -92,7 +92,7 @@ tomcat_user=${tomcat_user:-tomcat}
 tomcat_group=${tomcat_group:-$tomcat_user}
 tomcat_install_dir=${CATALINA_HOME:-${install_prefix}/tomcat}
 python_version=${python_version:-"2.6"}
-db_config_file=${esg_root_dir}/config/esgf-db.properties
+config_file=${esg_root_dir}/config/esgf.properties
 
 init() {
     #[ -n "${envfile}" ] && [ -e "${envfile}" ] && source ${envfile} && ((VERBOSE)) && printf "node manager: sourcing environment from: ${envfile} \n"
@@ -235,41 +235,8 @@ setup_node_manager() {
     #Property file fetching and token replacement...
     #----------------------------
     pushd WEB-INF/classes >& /dev/null
+    cat ${fetch_file}.tmpl >> ${config_file}
 
-    cp ${fetch_file} ${fetch_file}.tmpl
-    if((upgrade)) && [ -e ${fetch_file}.saved ]; then
-        echo "Re-Instituting  ${fetch_file}... "
-        #reuse the last esgf-node-manager.properties file...
-        #pull it out of the tar archive we made a few lines up
-        cp ${fetch_file}.saved ${fetch_file}
-    else
-        #----------------------
-        pwd
-        echo -n "Replacing tokens... "
-
-        eval "perl -p -i -e 's/\\@db.driver\\@/${postgress_driver}/g' ${fetch_file}"    
-        echo -n "*"
-        eval "perl -p -i -e 's/\\@db.protocol\\@/${postgress_protocol}/g' ${fetch_file}"
-        echo -n "*"
-        
-        eval "perl -p -i -e 's/\\@db.host\\@/${postgress_host}/g' ${fetch_file}"    
-        echo -n "*"
-        eval "perl -p -i -e 's/\\@db.port\\@/${postgress_port}/g' ${fetch_file}"
-        echo -n "*"
-        eval "perl -p -i -e 's/\\@db.database\\@/${node_db_name}/g' ${fetch_file}"
-        echo -n "*"
-        eval "perl -p -i -e 's/\\@db.user\\@/${postgress_user}/g' ${fetch_file}"
-        echo -n "*"
-        eval "perl -p -i -e 's/\\@db.password\\@/${pg_sys_acct_passwd}/g' ${fetch_file}"
-        echo -n "*"
-        
-        eval "perl -p -i -e 's/\\@mail.smtp.host\\@/${mail_smtp_host}/g' ${fetch_file}"
-        echo -n "*"
-        eval "perl -p -i -e 's/\\@mail.admin.address\\@/${mail_admin_address}/g' ${fetch_file}"
-        echo -n "*"
-        echo " [OK]"
-        #----------------------
-    fi
     chown -R ${tomcat_user} ${node_manager_app_home}
     chgrp -R ${tomcat_group} ${node_manager_app_home}
     unset fetch_file
@@ -277,7 +244,7 @@ setup_node_manager() {
     #----------------------------
     
     popd >& /dev/null
-    (write_db_config && configure_postgress) || checked_done 1
+    (write_node_manager_config && configure_postgress) || checked_done 1
     write_node_manager_install_log
     set_redirect
 
@@ -287,13 +254,13 @@ setup_node_manager() {
     
 }
 
-write_db_config() {
+write_node_manager_config() {
     #----------------------------
-    ((DEBUG || VERBOSE)) && echo "Writing down database connection info"
+    ((DEBUG || VERBOSE)) && echo "Writing down database connection info and other node-wide properties"
     #----------------------------
     mkdir -p ${esg_root_dir}/config
     pushd ${esg_root_dir}/config >& /dev/null
-    cat >> ${db_config_file} <<EOF
+    cat >> ${config_file} <<EOF
 db.driver=${postgress_driver}
 db.protocol=${postgress_protocol}
 db.host=${postgress_host}
@@ -301,10 +268,12 @@ db.port=${postgress_port}
 db.database=${node_db_name}
 db.user=${postgress_user}
 db.password=${pg_sys_acct_passwd}
+mail.smtp.host=${mail_smtp_host}
+mail.admin.address=${mail_admin_address}
 EOF
-    dedup_properties ${db_config_file}
-    chown ${tomcat_user}:${tomcat_group} ${db_config_file}
-    chmod 600 ${db_config_file}
+    dedup_properties ${config_file}
+    chown ${tomcat_user}:${tomcat_group} ${config_file}
+    chmod 600 ${config_file}
     popd >& /dev/null
     #----------------------------
     return 0
