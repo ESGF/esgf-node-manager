@@ -114,9 +114,17 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	InputStream in = null;
 	try {
 	    propCache.clear();
-	    Resource config = new Resource("esgf-node-manager.properties");
-	    assert (null != config) : "Resource object named config is null!";
-	    in = config.getInputStream();
+	    //Resource config = new Resource("esgf-node-manager.properties");
+	    //assert (null != config) : "Resource object named config is null!";
+	    //in = config.getInputStream();
+        String esgfRootDir = System.getenv().get("ESGF_HOME")+"/config/esgf.properties";
+        java.io.File masterPropertyFile = new java.io.File(esgfRootDir);
+        if(masterPropertyFile.exists()) {
+            in = new java.io.FileInputStream(masterPropertyFile);
+            masterPropertyFile=null;
+        }else{
+            in = new java.io.FileInputStream("/esg/config/esgf.properties");
+        }
 	    props = new Properties();
 	    props.load(in);
 	    log.trace("Properties of esg-node.properties file: "+props);
