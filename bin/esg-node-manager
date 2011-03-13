@@ -244,6 +244,19 @@ setup_node_manager() {
     #----------------------------
     
     popd >& /dev/null
+
+    #NOTE TODO: Create a function that reads the property file and for
+    #every property that is not assigned and/or in a list of manidtory
+    #properties go through and ask the user to assign a value. -gavin
+
+    if [ -z "${mail_admin_address}" ]; then
+        while [ 1 ]; do 
+            local input
+            read -p "What email address should notifications be sent as? " input
+            [ -n "${input}" ] && mail_admin_address=${input}  && unset input && break
+        done
+    fi
+
     (write_node_manager_config && configure_postgress) || checked_done 1
     write_node_manager_install_log
     set_redirect
