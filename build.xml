@@ -479,6 +479,11 @@ Builds the project via ant (obviously).
           <attribute name="Sealed" value="${seal}"/>
         </section>
       </manifest>
+      <zipgroupfileset dir="${lib_fetched_dir}">
+        <include name="commons-logging*.jar"/>
+        <include name="log4j*.jar"/>
+        <include name="hessian-*.jar"/>
+      </zipgroupfileset>
     </jar>
     <!-- <signjar jar="${dist_dir}/${module}-accesslog-client-${version_num}.jar" alias="${signing_alias}" keystore="${keystore}" storepass="${storepass}"/> -->
   </target>
