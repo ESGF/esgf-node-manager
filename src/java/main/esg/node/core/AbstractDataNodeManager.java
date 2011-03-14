@@ -81,6 +81,7 @@ import java.io.IOException;
 //may want to move the datasource managing to the ESGDataNodeManager subclass
 //to keep this class prestine w.r.t. dependencies... think about it... -gmb
 import esg.common.db.DatabaseResource; 
+import esg.common.util.ESGFProperties;
 
 public abstract class AbstractDataNodeManager implements DataNodeManager {
 
@@ -117,16 +118,16 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	    //Resource config = new Resource("esgf-node-manager.properties");
 	    //assert (null != config) : "Resource object named config is null!";
 	    //in = config.getInputStream();
-        String esgfRootDir = System.getenv().get("ESGF_HOME")+"/config/esgf.properties";
-        java.io.File masterPropertyFile = new java.io.File(esgfRootDir);
-        if(masterPropertyFile.exists()) {
-            in = new java.io.FileInputStream(masterPropertyFile);
-            masterPropertyFile=null;
-        }else{
-            in = new java.io.FileInputStream("/esg/config/esgf.properties");
-        }
-	    props = new Properties();
-	    props.load(in);
+        //String esgfRootDir = System.getenv().get("ESGF_HOME")+"/config/esgf.properties";
+        //java.io.File masterPropertyFile = new java.io.File(esgfRootDir);
+        //if(masterPropertyFile.exists()) {
+        //    in = new java.io.FileInputStream(masterPropertyFile);
+        //    masterPropertyFile=null;
+        //}else{
+        //    in = new java.io.FileInputStream("/esg/config/esgf.properties");
+        //}
+	    props = new ESGFProperties();
+	    //props.load(in);
 	    log.trace("Properties of esg-node.properties file: "+props);
 	}catch(IOException ex) {
 	    log.error("Problem loading datanode's property file!", ex);
