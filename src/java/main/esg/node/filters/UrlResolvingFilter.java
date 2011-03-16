@@ -127,7 +127,7 @@ public class UrlResolvingFilter implements Filter {
 
 
     public void init(FilterConfig filterConfig) throws ServletException {
-        log.debug("Initializing filter: "+this.getClass().getName());
+        System.out.println("Initializing filter: "+this.getClass().getName());
         this.filterConfig = filterConfig;
         dbProperties = new Properties();
         System.out.println("FilterConfig is : "+filterConfig);
@@ -199,20 +199,23 @@ public class UrlResolvingFilter implements Filter {
                     
                     System.out.println("Executing Url Filter For: "+url);
                     String resourcePath = urlResolvingDAO.resolveDRSUrl(url);
-                    if(null != resourcePath) {
-                        File resolvedResource = new File(resourcePath);
-                        if(!resolvedResource.exists()) { 
-                            log.error("The resolved resource does not exist! ["+url+" -> "+resourcePath+"]");
-                            ((HttpServletResponse)response).sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, 
-                                                                      "Requested Resource Not Present! ["+url+"]");
-                            return;
-                        }
-                        String contentType = "application/x-netcdf";
-                        //ServletUtil.returnFile(req, res, resolvedResource, contentType);
-                        
-                    }
+                    //if(null != resourcePath) {
+                    //    File resolvedResource = new File(resourcePath);
+                    //    if(!resolvedResource.exists()) { 
+                    //        log.error("The resolved resource does not exist! ["+url+" -> "+resourcePath+"]");
+                    //        ((HttpServletResponse)response).sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, 
+                    //                                                  "Requested Resource Not Present! ["+url+"]");
+                    //        return;
+                    //    }
+                    //    String contentType = "application/x-netcdf";
+                    //    //ServletUtil.returnFile(req, res, resolvedResource, contentType);
+                    //    
+                    //}
                     //This would not work... threw IllegalStateException...
                     //filterConfig.getServletContext().getRequestDispatcher(urlResolvingDAO.resolveUrl(url)).forward(request,response);
+
+                    log.debug("*Passing through chain...");
+                    chain.doFilter(request, response);
                     
                 }else {
                     log.debug("No url resolving for: "+url);
