@@ -147,8 +147,10 @@ public class UrlResolvingDAO implements Resolver, Serializable {
         String targetResource = null;
         try{
 
+            System.out.println("URLResolvingDAO Parsed Props: "+drsProps);
+
             String filename = drsProps.getProperty(DRSConstants.FILE);
-            String version =  drsProps.getProperty(DRSConstants.VERSION);
+            int version =  Integer.valueOf(drsProps.getProperty(DRSConstants.VERSION)).intValue();
             String drsid = 
                 drsProps.getProperty(DRSConstants.PROJECT)+"."+
                 drsProps.getProperty(DRSConstants.PRODUCT)+"."+
@@ -160,12 +162,12 @@ public class UrlResolvingDAO implements Resolver, Serializable {
                 drsProps.getProperty(DRSConstants.TABLE,"")+"."+
                 drsProps.getProperty(DRSConstants.ENSEMBLE);
             
-            System.out.println("--> Query Args: (filename="+filename+", version="+version+", drsid="+drsid+")");
+            System.out.println("URLResolvingDAO - Query Args: (filename=["+filename+"], version=["+version+"], drsid=["+drsid+"])");
             
             //Issue query to resolve the parsed DRS parameters into where the target resource resides on this data-node
             targetResource = queryRunner.query(urlResolutionQuery,resolutionResultSetHandler,filename,version,drsid);
             
-            System.out.println("--> Resolved Resource: ["+targetResource+"]");
+            System.out.println("URLResolvingDAO - Resolved Resource: ["+targetResource+"]");
             return targetResource; 
             
         }catch(SQLException ex) {
@@ -246,7 +248,7 @@ public class UrlResolvingDAO implements Resolver, Serializable {
         
         //TODO: Do more scrubbing... no "/../" etc...
 
-        log.debug("Resolving Input Path: "+path);
+        System.out.println("URLResolvingDAO: Resolving Input Path: "+path);
 
         Properties drsProps = new Properties();
         String[] drsPathElements = splitPathPattern.split(path);

@@ -197,7 +197,7 @@ public class UrlResolvingFilter implements Filter {
                 
                 if(m.matches()) {
                     
-                    log.debug("Executing Url Filter For: "+url);
+                    System.out.println("Executing Url Filter For: "+url);
                     String resourcePath = urlResolvingDAO.resolveDRSUrl(url);
                     if(null != resourcePath) {
                         File resolvedResource = new File(resourcePath);
