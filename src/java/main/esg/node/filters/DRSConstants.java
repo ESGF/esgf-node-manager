@@ -63,6 +63,7 @@ package esg.node.filters;
 
 public interface DRSConstants {
     
+    public static final String PROJECT = "project";
     public static final String PRODUCT = "product";
     public static final String INSTITUTION = "institution";
     public static final String MODEL = "model";

@@ -85,7 +85,16 @@ import esg.common.Resolver;
  */
 public class UrlResolvingDAO implements Resolver, Serializable {
 
-    private static final String urlResolutionQuery = "select filename from access_logging where ? ? ? ? ? ? ? ? ? ? ?";
+    private static final String urlResolutionQuery = 
+        "select fv.location from file f, file_version fv, dataset_file_version dfv, dataset_version dv, dataset_attr da "+
+        "where f.base=? and "+
+        "f.id=fv.file_id and "+
+        "fv.id=dfv.file_version_id and "+
+        "dfv.dataset_version_id=dv.id and "+
+        "dv.version=? and "+
+        "dv.dataset_id=da.dataset_id and "+
+        "da.name='drs_id' and "+
+        "da.value=?";
 
     private static final Log log = LogFactory.getLog(UrlResolvingDAO.class);
     
@@ -137,21 +146,26 @@ public class UrlResolvingDAO implements Resolver, Serializable {
     public String resolveDRSProperties(Properties drsProps) {
         String targetResource = null;
         try{
-            //Issue query to resolve the parsed DRS parameters into where the target resource resides on this data-node
-            targetResource = queryRunner.query(urlResolutionQuery,resolutionResultSetHandler,
-                                               drsProps.getProperty(DRSConstants.PRODUCT),
-                                               drsProps.getProperty(DRSConstants.INSTITUTION),
-                                               drsProps.getProperty(DRSConstants.MODEL),
-                                               drsProps.getProperty(DRSConstants.EXPERIMENT),
-                                               drsProps.getProperty(DRSConstants.FREQUENCY),
-                                               drsProps.getProperty(DRSConstants.REALM),
-                                               drsProps.getProperty(DRSConstants.ENSEMBLE),
-                                               drsProps.getProperty(DRSConstants.VERSION),
-                                               drsProps.getProperty(DRSConstants.VARIABLE),
-                                               drsProps.getProperty(DRSConstants.TABLE,""),
-                                               drsProps.getProperty(DRSConstants.FILE));
+
+            String filename = drsProps.getProperty(DRSConstants.FILE);
+            String version =  drsProps.getProperty(DRSConstants.VERSION);
+            String drsid = 
+                drsProps.getProperty(DRSConstants.PROJECT)+"."+
+                drsProps.getProperty(DRSConstants.PRODUCT)+"."+
+                drsProps.getProperty(DRSConstants.INSTITUTION)+"."+
+                drsProps.getProperty(DRSConstants.MODEL)+"."+
+                drsProps.getProperty(DRSConstants.EXPERIMENT)+"."+
+                drsProps.getProperty(DRSConstants.FREQUENCY)+"."+
+                drsProps.getProperty(DRSConstants.REALM)+"."+
+                drsProps.getProperty(DRSConstants.TABLE,"")+"."+
+                drsProps.getProperty(DRSConstants.ENSEMBLE);
             
-            log.debug("Resolved Resource: "+targetResource);
+            System.out.println("--> Query Args: (filename="+filename+", version="+version+", drsid="+drsid+")");
+            
+            //Issue query to resolve the parsed DRS parameters into where the target resource resides on this data-node
+            targetResource = queryRunner.query(urlResolutionQuery,resolutionResultSetHandler,filename,version,drsid);
+            
+            System.out.println("--> Resolved Resource: ["+targetResource+"]");
             return targetResource; 
             
         }catch(SQLException ex) {
@@ -239,6 +253,7 @@ public class UrlResolvingDAO implements Resolver, Serializable {
         if(drsPathElements.length != 11) { return null; } //TODO make an exception here and throw it!
 
         int i = -1;
+        drsProps.setProperty(DRSConstants.PROJECT,"cmip5");
         drsProps.setProperty(DRSConstants.PRODUCT,drsPathElements[++i]);
         drsProps.setProperty(DRSConstants.INSTITUTION,drsPathElements[++i]);
         drsProps.setProperty(DRSConstants.MODEL,drsPathElements[++i]);
