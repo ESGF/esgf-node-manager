@@ -81,27 +81,27 @@ public class RegistrationGleaner {
 
     private static final Log log = LogFactory.getLog(RegistrationGleaner.class);
 
-    private Node myNode = null;
+    private Registration myRegistration = null;
     private String registrationFile = "registration.xml";
 
 
     public RegistrationGleaner() {}
 
-    public Node getMyRegistration() { return myNode; }
+    public Registration getMyRegistration() { return myRegistration; }
 
-    public boolean saveRegistration() { return saveRegistration(myNode); }
-    public boolean saveRegistration(Node node) {
+    public boolean saveRegistration() { return saveRegistration(myRegistration); }
+    public boolean saveRegistration(Registration registration) {
 		boolean success = false;
-        if (node == null) {
-            log.error("Node is ["+node+"]"); 
+        if (registration == null) {
+            log.error("Registration is ["+registration+"]"); 
             return success;
         }
-        log.info("Saving registration information for "+node.getHostname());
+        log.info("Saving registration information for "+registration.getNode().get(0).getHostname());
 		try{
-			JAXBContext jc = JAXBContext.newInstance(Node.class);
+			JAXBContext jc = JAXBContext.newInstance(Registration.class);
 			Marshaller m = jc.createMarshaller();
 			m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-			m.marshal(node, new FileOutputStream(this.registrationFile));
+			m.marshal(registration, new FileOutputStream(this.registrationFile));
 			success = true;
 		}catch(Exception e) {
 			e.printStackTrace();
@@ -126,23 +126,31 @@ public class RegistrationGleaner {
 			node.setSupportEmail("faux@email.address");
 			node.setDN("faux/dn/value");
             
-			GatewayNodeType gw = new GatewayNodeType();
-            
 			CA ca = new CA();
 			ca.setEndpoint("ca-endpoint");
 			ca.setHash("ca-hash");
 			ca.setDN("ca-dn");
-			gw.setCA(ca);
+			node.setCA(ca);
 			
 			OpenIDProvider openid = new OpenIDProvider();
 			openid.setEndpoint("openid-endpoint");
 			openid.setDN("openid-dn");
-			gw.setOpenIDProvider(openid);
+			node.setOpenIDProvider(openid);
 			
-			GatewayPortal gwp = new GatewayPortal();
-			gwp.setEndpoint("gateway-endpoint");
-			gwp.setDN("gateway-dn");
-			gw.setGatewayPortal(gwp);
+			IndexService idx = new IndexService();
+			idx.setEndpoint("index-endpoint");
+			idx.setDN("index-dn");
+			node.setIndexService(idx);
+
+			LASService las = new LASService();
+			las.setEndpoint("las-endpoint");
+			las.setDN("las-dn");
+			node.setLASService(las);
+
+			MyProxyService mproxy = new MyProxyService();
+			mproxy.setEndpoint("mproxy-endpoint");
+			mproxy.setDN("mproxy-dn");
+			node.setMyProxyService(mproxy);
 			
 			AttributeService attrSvc = new AttributeService();
 			attrSvc.setEndpoint("attrsvc-endpoint");
@@ -163,27 +171,22 @@ public class RegistrationGleaner {
                 newGroup.setDescription(tmpDesc);
                 attrSvc.getGroup().add(newGroup);
             }
-			gw.setAttributeService(attrSvc);
+			node.setAttributeService(attrSvc);
             
 			AuthorizationService authSvc = new AuthorizationService();
 			authSvc.setEndpoint("authsvc-endpoint");
 			authSvc.setDN("authsvc-dn");
-			gw.setAuthorizationService(authSvc);
+			node.setAuthorizationService(authSvc);
 			
-			node.setGatewayNode(gw);
-            
-			DataNodeType dNode = new DataNodeType();
-			dNode.setPolicyNode("datanode-policy-node");
-            
 			OAIRepository oaiRepo = new OAIRepository();
 			oaiRepo.setEndpoint("oairepo-endpoint");
 			oaiRepo.setDN("oairepo-dn");
-			dNode.setOAIRepository(oaiRepo);			
+			node.setOAIRepository(oaiRepo);			
             
 			ThreddsService tds = new ThreddsService();
 			tds.setEndpoint("thredds-endpoint");
 			tds.setDN("thredds-dn");
-			dNode.setThreddsService(tds);
+			node.setThreddsService(tds);
             
 			GridFTPService gftp = new GridFTPService();
 			gftp.setEndpoint("gftp-endpoint");
@@ -197,31 +200,31 @@ public class RegistrationGleaner {
             }else {
                 gftp.setServiceType(GridFTPServiceType.DOWNLOAD);
             }
-			dNode.setGridFTPService(gftp);
+			node.setGridFTPService(gftp);
 			
-			node.setDataNode(dNode);
 		} catch(Exception e) {
             log.error(e);
         }
         
-        myNode = node;
+        myRegistration = new Registration();
+        myRegistration.getNode().add(node);
         return this;
     }
     
     public RegistrationGleaner loadMyRegistration() {
         log.info("Loading my registration info from "+registrationFile);
 		try{
-			JAXBContext jc = JAXBContext.newInstance(Node.class);
+			JAXBContext jc = JAXBContext.newInstance(Registration.class);
             Unmarshaller u = jc.createUnmarshaller();
-            JAXBElement<Node> root = u.unmarshal(new StreamSource(new File(this.registrationFile)),Node.class);
-            myNode = root.getValue();
+            JAXBElement<Registration> root = u.unmarshal(new StreamSource(new File(this.registrationFile)),Registration.class);
+            myRegistration = root.getValue();
 		}catch(Exception e) {
 			log.error(e);
 		}
         return this;
     }
 
-    public Node createRegistration(String registrationString) {
+    public Registration createRegistration(String registrationString) {
         return null;
     }
 

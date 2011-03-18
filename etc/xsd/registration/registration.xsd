@@ -27,7 +27,7 @@ That does make it more wordy, and require and reconstruction. -->
         </xsd:complexType>
     </xsd:element>
 
-    <xsd:element name="GatewayPortal">
+    <xsd:element name="IndexService">
         <xsd:complexType>
             <xsd:attributeGroup ref="tns:ServiceAttributes"/>
         </xsd:complexType>
@@ -76,6 +76,12 @@ That does make it more wordy, and require and reconstruction. -->
         </xsd:complexType>
     </xsd:element>
 
+    <xsd:element name="MyProxyService">
+        <xsd:complexType>
+            <xsd:attributeGroup ref="tns:ServiceAttributes"/>
+        </xsd:complexType>
+    </xsd:element>
+
     <xsd:simpleType name="GridFTPServiceType">
         <xsd:restriction base="xsd:string">
             <xsd:enumeration value="Replication"/>
@@ -87,6 +93,12 @@ That does make it more wordy, and require and reconstruction. -->
         <xsd:complexType>
             <xsd:attributeGroup ref="tns:ServiceAttributes"/>
             <xsd:attribute name="ServiceType" type="tns:GridFTPServiceType"/>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="LASService">
+        <xsd:complexType>
+            <xsd:attributeGroup ref="tns:ServiceAttributes"/>
         </xsd:complexType>
     </xsd:element>
 
@@ -107,53 +119,30 @@ That does make it more wordy, and require and reconstruction. -->
     </xsd:attributeGroup>
 
 
-    <xsd:complexType name="NodeType">
+    <xsd:complexType name="Node">
         <xsd:all>
             <xsd:element ref="tns:CA" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:OpenIDProvider" minOccurs="0" maxOccurs="1"/>
-            <xsd:element ref="tns:GatewayPortal" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="tns:IndexService" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:AttributeService" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:AuthorizationService" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:OAIRepository" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:ThreddsService" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:GridFTPService" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:MetricsService" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="tns:LASService" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="tns:MyProxyService" minOccurs="0" maxOccurs="1"/>
         </xsd:all>
+        <xsd:attributeGroup ref="tns:ResourceAttributes"/>
     </xsd:complexType>
 
     <!-- Unsure how to express that atleast one node type must be specified. -->
-    <xsd:element name="Node">
+    <xsd:element name="Registration">
         <xsd:complexType>
-            <xsd:all>
-                <xsd:element name="GatewayNode" type="tns:GatewayNodeType" minOccurs="0" maxOccurs="1"/>
-                <xsd:element name="DataNode" type="tns:DataNodeType" minOccurs="0" maxOccurs="1"/>
-            </xsd:all>
-            <xsd:attributeGroup ref="tns:ResourceAttributes"/>
+            <xsd:sequence>
+              <xsd:element name="Node" type="tns:Node" minOccurs="1" maxOccurs="unbounded"/>
+            </xsd:sequence>
         </xsd:complexType>
     </xsd:element>
 
-    <xsd:complexType name="GatewayNodeType">
-
-        <xsd:all>
-            <xsd:element ref="tns:CA" minOccurs="1" maxOccurs="1"/>
-            <xsd:element ref="tns:OpenIDProvider" minOccurs="1" maxOccurs="1"/>
-            <xsd:element ref="tns:GatewayPortal" minOccurs="1" maxOccurs="1"/>
-            <xsd:element ref="tns:AttributeService" minOccurs="1" maxOccurs="1"/>
-            <xsd:element ref="tns:AuthorizationService" minOccurs="1" maxOccurs="1"/>
-        </xsd:all>
-
-    </xsd:complexType>
-
-    <xsd:complexType name="DataNodeType">
-
-        <xsd:all>
-            <xsd:element ref="tns:OAIRepository" minOccurs="0" maxOccurs="1"/>
-            <xsd:element ref="tns:ThreddsService" minOccurs="1" maxOccurs="1"/>
-            <xsd:element ref="tns:GridFTPService" minOccurs="1" maxOccurs="1"/>
-            <xsd:element ref="tns:MetricsService" minOccurs="1" maxOccurs="1"/>
-        </xsd:all>
-        <!-- If not specified, it is assumed that policy of data accessed via the node to be a
-        "GatewayNode" associated with the same namespace -->
-        <xsd:attribute name="policyNode" type="xsd:string"/>
-    </xsd:complexType>
 </xsd:schema>
