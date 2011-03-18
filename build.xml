@@ -328,7 +328,7 @@ Builds the project via ant (obviously).
       ************************************************************
     -->
   
-  <target name="make" depends="deps" 
+  <target name="make" depends="gen_jaxb" 
           description="(Java compiles all the main source code)">
     <echo message="Java compiling ${module}..."/> 
     
