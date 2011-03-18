@@ -1,0 +1,207 @@
+<xsd:schema attributeFormDefault="unqualified" elementFormDefault="qualified" version="1.0"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+ 
+    <xsd:element name="MyProxyOnlineCA">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="hash" type="xsd:string"/>
+                <xsd:element name="DN" type="xsd:string"/>
+            </xsd:sequence>
+            <xsd:attribute name="endpoint" type="xsd:string"/>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- Why do we need this. The user should provide this with their OpenId and 
+          the YADIS document should list the user-centric services? -->
+    <xsd:element name="OpenIDIdentityProvider">
+        <xsd:complexType>
+            <xsd:attribute name="endpoint" type="xsd:string"/>
+            <xsd:attribute name="AuthorizationAuthority" type="xsd:string"/>
+        </xsd:complexType>
+    </xsd:element>
+    
+    <xsd:element name="FederatedGroup">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="Description" type="xsd:string" minOccurs="1" maxOccurs="1"/> 
+            </xsd:sequence>
+            <xsd:attribute name="name" type="xsd:string" use="required" />
+        </xsd:complexType>
+    </xsd:element>
+    
+    <xsd:element name="GatewayPortal">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="DN" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+                <xsd:element name="baseURL" type="xsd:string" minOccurs="1" maxOccurs="1"/> <!-- Remove is endpoint is the same data. -->
+                <xsd:element name="secureURL" type="xsd:string" maxOccurs="1"/> <!-- Make this optional -->
+                <xsd:element name="OAIRepository" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+                <xsd:element name="AttributeServiceEndpoint" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+                <xsd:element name="AuthorizationServiceEndpoint" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+                <xsd:element ref="FederatedGroup" />
+            </xsd:sequence>
+            <!-- What is intended for this field, I suspect it is the same thing as baseURL? -->
+            <xsd:attribute name="endpoint" type="xsd:string" use="required" />
+            
+        </xsd:complexType>
+    </xsd:element>
+    
+    <!-- Why not just make this part of the GatewayPortal element, it's a service provided by the gateway? -->
+    <xsd:element name="AttributeService">
+        <xsd:complexType>
+            <xsd:attribute name="endpoint" type="xsd:string"/>
+            <!-- Why do we need these? -->
+            <xsd:attribute name="AuthorizationAuthorityDN" type="xsd:string"/>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- Why not just make this part of the GatewayPortal element, it's a service provided by the gateway? -->
+    <xsd:element name="AuthorizationService">
+        <xsd:complexType>
+            <xsd:attribute name="endpoint" type="xsd:string"/>
+            <!-- Why do we need these? -->
+            <xsd:attribute name="AuthorizationAuthorityDN" type="xsd:string"/>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- Why not just make this part of the GatewayPortal element, it's a service provided by the gateway? -->
+    <xsd:element name="OAIRepository">
+        <xsd:complexType>
+            <xsd:attribute name="endpoint" type="xsd:string"/>
+            <!-- Why do we need these? -->
+            <xsd:attribute name="AuthorizationAuthorityDN" type="xsd:string"/>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="ThreddsService">
+        <xsd:complexType>
+            <xsd:attribute name="endpoint" type="xsd:string"/>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:simpleType name="GridFTPServiceType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="Bulk Data Movement"/>
+            <xsd:enumeration value="End User Download"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:element name="GridFTPService">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="ServiceType" type="GridFTPServiceType"/>
+            </xsd:sequence>
+            <xsd:attribute name="endpoint" type="xsd:string"/>
+        </xsd:complexType>
+    </xsd:element>
+    
+    <!-- Added as the gateway will need to query it's datanodes for metrics aggregation -->
+    <xsd:element name="MetricsService">
+        <xsd:complexType>
+            <xsd:attribute name="endpoint" type="xsd:string"/>
+        </xsd:complexType>
+    </xsd:element>
+
+    <!-- Again, why is this needed at all? It should simply be downloaded from the trust root -->
+    <!-- NCW - Just remove it? -->
+    <xsd:element name="OpenIDCA">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="hash" type="xsd:string"/>
+                <xsd:element name="DN" type="xsd:string"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:attributeGroup name="NodeAttributes">
+        <!-- A unique name for the node, expected to be domain name constrained. -->
+        <xsd:attribute name="NodeName" type="xsd:string"/>
+        <xsd:attribute name="NodeDescription" type="xsd:string"/>
+        <xsd:attribute name="Organization" type="xsd:string"/>
+        <xsd:attribute name="SupportEmail" type="xsd:string"/>
+    </xsd:attributeGroup>
+
+
+    <xsd:complexType name="NodeType">
+        <xsd:sequence>
+            <xsd:element ref="MyProxyOnlineCA" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="OpenIDIdentityProvider" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="GatewayPortal" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="AttributeService" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="AuthorizationService" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="OAIRepository" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="ThreddsService" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="GridFTPService" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="MetricsService" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+        <xsd:attributeGroup ref="NodeAttributes"/>
+    </xsd:complexType>
+
+    <xsd:element name="Node" type="NodeType"/>
+
+    <xsd:complexType name="GatewayNodeType">
+        <xsd:complexContent>
+            <xsd:restriction base="NodeType">
+                <xsd:sequence>
+                    <xsd:element ref="MyProxyOnlineCA" minOccurs="0" maxOccurs="1"/>
+                    <!-- Don't think we need this -->
+                    <!--<xsd:element ref="OpenIDIdentityProvider" minOccurs="0" maxOccurs="1"/> -->
+                    <xsd:element ref="GatewayPortal" minOccurs="0" maxOccurs="1"/>
+                    <!-- See earlier question about if we need as separate elements -->
+                    <!--<xsd:element ref="AttributeService" minOccurs="0" maxOccurs="1"/>-->
+                    <!--<xsd:element ref="AuthorizationService" minOccurs="0" maxOccurs="1"/>-->
+                </xsd:sequence>
+            </xsd:restriction>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:element name="GatewayNode" type="GatewayNodeType"/>
+
+    <!-- Could we just map the datanode->gateway association by listing the associated gateway name as 
+          an attribute on the datanode? -->
+    <xsd:complexType name="DataNodeType">
+        
+          <xsd:complexContent>
+              <xsd:restriction base="NodeType">
+                  <xsd:sequence>
+                      <xsd:element ref="ThreddsService" minOccurs="0" maxOccurs="1"/>
+                      <xsd:element ref="GridFTPService" minOccurs="0" maxOccurs="1"/>
+                      <xsd:element ref="MetricsService" minOccurs="1" maxOccurs="1"/> 
+                  </xsd:sequence>
+              </xsd:restriction>
+          </xsd:complexContent>
+        
+    </xsd:complexType>
+
+    <xsd:element name="DataNode" type="DataNodeType" >   
+    </xsd:element>
+        
+    <!-- Added some top level elements -->
+    <xsd:element name="Federation">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="GatewayNodes"/>
+                <xsd:element ref="DataNodes"/>
+            </xsd:sequence>
+            <xsd:attribute name="name" use="required"/>
+            <!-- Add more federation level metadata? -->
+        </xsd:complexType>
+    </xsd:element>
+    
+    <xsd:element name="GatewayNodes">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="GatewayNode"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    
+    <xsd:element name="DataNodes">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="DataNode"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    
+</xsd:schema>

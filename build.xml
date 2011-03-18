@@ -303,23 +303,31 @@ Builds the project via ant (obviously).
 
   <!--
       ************************************************************
-      Generation  and Compilation....
+      Source Generation...
       ************************************************************
     -->
-
-  <target name="gen_jaxb" depends="deps" 
-          description="(Generates Java Objects from XML schema)">
-    <mkdir dir="${jaxb_gen_src_dir}"/>
-    <xjc package="${jaxb_gen_package}"
+  
+  <target name="gen_jaxb" depends="deps,gen_jaxb_registration" 
+          description="(Generates Java Objects from XML schema(s))"/>
+  
+  <target name="gen_jaxb_registration" depends="deps">
+    <mkdir dir="${jaxb_gen_src_dir}/registration"/>
+    <xjc package="${jaxb_gen_package}.registration"
          destdir="${src_dir}"
          removeOldOutput="yes"
          readonly="yes">
       <classpath refid="main_classpath"/>
-      <schema dir="${jaxb_xsd_dir}" includes="*.xsd"/>
-      <produces dir="${jaxb_gen_src_dir}" includes="*.java" />
+      <schema dir="${jaxb_xsd_dir}/registration" includes="*.xsd"/>
+      <produces dir="${jaxb_gen_src_dir}/registration" includes="*.java" />
     </xjc>
   </target>
 
+  <!--
+      ************************************************************
+      Build & Compilation....
+      ************************************************************
+    -->
+  
   <target name="make" depends="deps" 
           description="(Java compiles all the main source code)">
     <echo message="Java compiling ${module}..."/> 
