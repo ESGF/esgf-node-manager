@@ -64,6 +64,7 @@ import java.net.InetAddress;
 import java.sql.SQLException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -73,6 +74,7 @@ import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
 
 import esg.common.db.DatabaseResource;
+import esg.common.util.ESGFProperties;
 
 /**
    Description:
@@ -85,7 +87,7 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
     private QueryRunner queryRunner = null;
     private ResultSetHandler<List<String[]>> resultSetHandler = null;
     private int limit = 999;
-    private static final String accessLogQuery = "SELECT * FROM access_logging WHERE date_fetched >= ? AND date_fetched < ? ORDER BY date_fetched ASC LIMIT ?";
+    private static final String accessLogQuery = "SELECT * FROM esgf_node_manager.access_logging WHERE date_fetched >= ? AND date_fetched < ? ORDER BY date_fetched ASC LIMIT ?";
         
     public ESGAccessLogServiceImpl() {
 	log.trace("Instantiating ESGAccessLogService implementation");
@@ -108,7 +110,13 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
 	props.setProperty("db.database","esgcet");
 	props.setProperty("db.user","dbsuper");
 	props.setProperty("db.password","changeme");
-	queryRunner = new QueryRunner(DatabaseResource.init("org.postgresql.Driver").setupDataSource(props).getDataSource());
+    try{
+        props.putAll(new ESGFProperties());
+    }catch(IOException ex) {
+        log.error(ex);
+    }
+    
+	queryRunner = new QueryRunner(DatabaseResource.init(props.getProperty("db.driver","org.postgresql.Driver")).setupDataSource(props).getDataSource());
 	
 	resultSetHandler = new ResultSetHandler<List<String[]>>() {
 	    public List<String[]> handle(ResultSet rs) throws SQLException {

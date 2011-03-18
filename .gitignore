@@ -39,3 +39,10 @@ generated/
 /eclipse
 /backup
 /web/index.html
+
+################################
+#Generated from templated files
+################################
+src/python/esgf/setup.py
+src/python/esgf/scripts/esgf_node_manager_initialize
+bin/post.manif

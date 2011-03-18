@@ -1,9 +1,12 @@
   <!-- **************************************** -->
   <!-- web.xml entry for the esg node filter    -->
+  <!-- This filter resolves urls written in the -->
+  <!-- DRS taxonomy to be resolved to actual    -->
+  <!-- local filesystem file locations.         -->
   <!-- **************************************** -->
   <filter>
-    <filter-name>AccessLoggingFilter</filter-name>
-    <filter-class>esg.node.filters.AccessLoggingFilter</filter-class>
+    <filter-name>DRSResolvingFilter</filter-name>
+    <filter-class>esg.node.filters.UrlResolvingFilter</filter-class>
     <init-param>
       <param-name>db.driver</param-name>
       <param-value>@db.driver@</param-value>
@@ -38,7 +41,7 @@
     </init-param>
   </filter>
   <filter-mapping>
-    <filter-name>AccessLoggingFilter</filter-name>
+    <filter-name>DRSResolvingFilter</filter-name>
     <url-pattern>/*</url-pattern>
   </filter-mapping>
 

@@ -1,4 +1,5 @@
-#****************************************************************************
+#!/bin/bash
+#/***************************************************************************
 #*                                                                          *
 #*  Organization: Lawrence Livermore National Lab (LLNL)                    *
 #*   Directorate: Computation                                               *
@@ -6,7 +7,7 @@
 #*      Division: S&T Global Security                                       *
 #*        Matrix: Atmospheric, Earth and Energy Division                    *
 #*       Program: PCMDI                                                     *
-#*       Project: Earth Systems Grid (ESG) Data Node Software Stack         *
+#*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
 #*  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
 #*                                                                          *
 #****************************************************************************
@@ -17,11 +18,11 @@
 #*   LLNL-CODE-420962                                                       *
 #*                                                                          *
 #*   All rights reserved. This file is part of the:                         *
-#*   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
+#*   Earth System Grid Federation (ESGF) Data Node Software Stack           *
 #*                                                                          *
-#*   For details, see http://esg-repo.llnl.gov/esg-node/                    *
+#*   For details, see http://esgf.org/esg-node/                             *
 #*   Please also read this link                                             *
-#*    http://esg-repo.llnl.gov/LICENSE                                      *
+#*    http://esgf.org/LICENSE                                               *
 #*                                                                          *
 #*   * Redistribution and use in source and binary forms, with or           *
 #*   without modification, are permitted provided that the following        *
@@ -53,50 +54,81 @@
 #*   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF     *
 #*   SUCH DAMAGE.                                                           *
 #*                                                                          *
-#****************************************************************************
-
-
-#   Description:
+#***************************************************************************/
 #
-#   This file holds all the properties used by this application.  It
-#   is meant to be a global file, a single location for all
-#   application properties.
+#**
+#   Description:
+#   
+#   Simple bash script to build python code
+#   This is called from the ant build script for the project
+#   (yes, could have tried to use pyAntTasks but the derth of
+#   documentation and the need for alacrity made this necessary
+#   besides, who's afraid of a little bash ;-).
+#   
+#**
 
-#-------------------
-#Database Properties:
-#-------------------
-db.driver=@db.driver@
-db.protocol=@db.protocol@
-db.host=@db.host@
-db.port=@db.port@
-db.database=@db.database@
-db.user=@db.user@
-db.password=@db.password@
+basedir=$(pwd)
+python_dist_dir="${basedir}/src/python/esgf/dist"
 
-#-------------------
-#Notification / Mail Properties:
-#-------------------
-mail.smtp.host=@mail.smtp.host@
-mail.admin.address=@mail.admin.address@
-mail.notification.messageTemplateFile=notification.template
-mail.notification.initialDelay=10
-mail.notification.period=30
 
-#-------------------
-#Metrics Properties:
-#-------------------
-metrics.initialDelay=10
-metrics.period=30
-metrics.query.limit=100
+make_python_egg() {
+    echo "Building python egg: $@"
+    echo "rooted in $(pwd)"
+    local module=${1:?"module name is required"}
+    local db_version_num=${2:?"version number of this migration software is required"}
+    local python_version=${3:?"version number of python is required"}
+    
+    local dist_file=$(echo ${module} | tr - _)-${db_version_num}-py${python_version}.egg
 
-#-------------------
-#Monitor Properties:
-#-------------------
-monitor.initialDelay=10
-monitor.period=30
-#monitor.esg.ini={user.home}.esgcet/esg.ini
-monitor.buffer.meminfo=1058
-monitor.buffer.cpuinfo=1250
-monitor.buffer.uptime=23
-monitor.buffer.loadavg=27
-monitor.query.limit=100
+    installer_uid=${ESG_USER_UID:-${SUDO_UID:-$(id -u)}}
+    installer_gid=${ESG_USER_GID:-${SUDO_GID:-$(id -g)}}
+    installer_home=${ESG_USER_HOME:-$(getent passwd ${installer_uid} | awk -F : '{print $6}')}
+    
+    pushd ${basedir}/src/python/esgf
+    python setup.py bdist_egg
+    [ $? != 0 ] && echo "ERROR: could not run python setup" && popd >& /dev/null && return 1
+    [ -e ${python_dist_dir}/${dist_file} ] && \
+        mkdir -p ${basedir}/dist && \
+        mv -v ${python_dist_dir}/${dist_file} ${basedir}/dist
+    [ $? != 0 ] && echo "ERROR: could not move distribution file [${dist_file}]" && popd >& /dev/null && return 1
+    chown -R ${installer_uid}:${installer_gid} ${basedir}/dist
+    popd >& /dev/null
+    return 0
+}
+
+cleanup_build_artifacts() {
+    echo "Cleaning up artifacts from python build..."
+    pushd ${basedir}/src/python/esgf >& /dev/null
+    [ $? != 0 ] && return 1
+    rm -rf ${basedir}/src/python/esgf/dist \
+        ${basedir}/src/python/esgf/build \
+        ${basedir}/src/python/esgf/esgf*.egg-info \
+        ${basedir}/src/python/esgf/SQLAlchemy-*.egg \
+        ${basedir}/src/python/esgf/sqlalchemy_*.egg
+    ret=$?
+    [ -e ${basedir}/src/python/esgf/setup.py.tmpl ] && [ -e ${basedir}/src/python/esgf/setup.py ] && rm -v ${basedir}/src/python/esgf/setup.py
+    [ -e ${basedir}/src/python/esgf/scripts/esgf_node_manager_initialize.tmpl ] && [ -e ${basedir}/src/python/esgf/scripts/esgf_node_manager_initialize ] && rm -v ${basedir}/src/python/esgf/scripts/esgf_node_manager_initialize
+    popd >& /dev/null
+    return ${ret}
+}
+
+case $1 in
+    --make|-m)
+        shift
+        make_python_egg $@
+        ;;
+    --clean|-c)
+        cleanup_build_artifacts
+        ;;
+    --all)
+        shift
+        make_python_egg $@ && cleanup_build_artifacts
+        ;;
+    --help|-h)
+        usage
+        ;;
+    *)
+        printf "\n ERROR: unknown switch \"$1\" \n\n" && exit 1
+        ;;
+esac
+

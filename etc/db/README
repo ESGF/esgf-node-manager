@@ -1,0 +1,20 @@
+/***************************************************************************
+*                                                                          *
+*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
+*  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
+*                                                                          *
+***************************************************************************/
+
+The database that supports the node manager is defined through sql
+scripts that are managed under a sql migration scheme.  This migration
+scheme is implented in Python via the SQLMigrate module.
+
+The scripts themselves are in:
+src/python/esgf/schema_migration/versions/
+
+The make_python script in this directory is called by the ant task
+"make_python" and performs the task of building the "egg" python
+distribution that gets posted with this distribution.
+
+:-)
+

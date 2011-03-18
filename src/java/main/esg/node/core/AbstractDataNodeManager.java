@@ -81,6 +81,7 @@ import java.io.IOException;
 //may want to move the datasource managing to the ESGDataNodeManager subclass
 //to keep this class prestine w.r.t. dependencies... think about it... -gmb
 import esg.common.db.DatabaseResource; 
+import esg.common.util.ESGFProperties;
 
 public abstract class AbstractDataNodeManager implements DataNodeManager {
 
@@ -114,14 +115,10 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	InputStream in = null;
 	try {
 	    propCache.clear();
-	    Resource config = new Resource("esgf-node-manager.properties");
-	    assert (null != config) : "Resource object named config is null!";
-	    in = config.getInputStream();
-	    props = new Properties();
-	    props.load(in);
-	    log.trace("Properties of esg-node.properties file: "+props);
+	    props = new ESGFProperties();
+	    log.trace("Properties of esgf.properties file: "+props);
 	}catch(IOException ex) {
-	    log.error("Problem loading datanode's property file!", ex);
+	    log.error("Problem loading node's property file!", ex);
 	}catch(NullPointerException ex) {
 	    log.error("PROPERTY FILE INPUT STREAM IS NULL!!",ex);
 	    throw ex;

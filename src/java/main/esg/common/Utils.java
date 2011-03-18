@@ -6,7 +6,7 @@
 *      Division: S&T Global Security                                       *
 *        Matrix: Atmospheric, Earth and Energy Division                    *
 *       Program: PCMDI                                                     *
-*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
+*       Project: Earth Systems Grid (ESG) Data Node Software Stack         *
 *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
 *                                                                          *
 ****************************************************************************
@@ -17,11 +17,11 @@
 *   LLNL-CODE-420962                                                       *
 *                                                                          *
 *   All rights reserved. This file is part of the:                         *
-*   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
+*   Earth System Grid Federation (ESGF) Data Node Software Stack           *
 *                                                                          *
-*   For details, see http://esgf.org/esg-node/                    *
+*   For details, see http://esgf.org/esg-node/                             *
 *   Please also read this link                                             *
-*    http://esgf.org/LICENSE                                      *
+*    http://esgf.org/LICENSE                                               *
 *                                                                          *
 *   * Redistribution and use in source and binary forms, with or           *
 *   without modification, are permitted provided that the following        *
@@ -59,31 +59,46 @@
    Description:
 
 **/
-package esg.node.components.simple;
-
-import org.junit.*;
-import static org.junit.Assert.*;
-import static org.junit.Assume.*;
+package esg.common;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-public class SimpleEventGenerator {
-    private static final Log log = LogFactory.getLog(SimpleEventGenerator.class);
+import java.util.concurrent.atomic.AtomicLong;
+
+public class Utils {
+
+    private static final Log log = LogFactory.getLog(Utils.class);
     
-    public SimpleEventGenerator() {
-        log.trace("Instantiating SimpleEventGenerator");
-    }
-    
-    public ESGEvent nextEvent() {
-        log.warn("IMPLEMENT ME!!!");
-        return null;
+    private static AtomicLong msgCounter = new AtomicLong(0);
+    private static String myHostname = null;
+
+
+    public static long nextSeq() { return msgCounter.getAndIncrement(); }
+
+    public static String getNodeID() {
+        String nodeID = null;
+        if(null != nodeID) { return nodeID; }
+        try{
+            nodeID = java.net.InetAddress.getLocalHost().getHostAddress();
+        }catch(java.net.UnknownHostException ex) {
+            log.error(ex);
+        }
+        //NOTE: Doing the call to "toString" on purpose to force a null
+        //pointer exception the return value should NEVER be null!
+        return nodeID.toString();
     }
 
-    public ESGRemoteEvent nextRemoteEvent() {
-        log.warn("IMPLEMENT ME!!!");
-        return null;
+    public static String getFQDN() {
+        try{
+            if (myHostname == null) {
+                myHostname = java.net.InetAddress.getLocalHost().getCanonicalHostName();
+            }
+        }catch (java.net.UnknownHostException ex) {
+            log.error(ex);
+        }
+        return myHostname;
     }
-    
+
 }

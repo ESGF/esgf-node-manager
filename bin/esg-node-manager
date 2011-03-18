@@ -74,12 +74,11 @@ VERBOSE=${VERBOSE:-0}
 esg_dist_url=http://198.128.245.140/dist
 envfile="/etc/esg.env"
 
-node_manager_version=${node_manager_version:-"0.4.0"}
-
 #--------------
 #User Defined / Settable (public)
 #--------------
 install_prefix=${install_prefix:-"/usr/local"}
+cdat_home=${cdat_home:-${install_prefix}/cdat}
 esg_root_dir=${esg_root_dir:-"/esg"}
 workdir=${workdir:-~/workbench/esg}
 install_logfile=${install_logfile:-"/etc/esg.install_log"}
@@ -92,16 +91,22 @@ force_install=${force_install:-0}
 tomcat_user=${tomcat_user:-tomcat}
 tomcat_group=${tomcat_group:-$tomcat_user}
 tomcat_install_dir=${CATALINA_HOME:-${install_prefix}/tomcat}
-node_manager_app_context_root=esgf-node-manager
+python_version=${python_version:-"2.6"}
+config_file=${esg_root_dir}/config/esgf.properties
 
 init() {
-    [ -n "${envfile}" ] && [ -e "${envfile}" ] && source ${envfile} && ((VERBOSE)) && printf "node manager: sourcing environment from: ${envfile} \n"
+    #[ -n "${envfile}" ] && [ -e "${envfile}" ] && source ${envfile} && ((VERBOSE)) && printf "node manager: sourcing environment from: ${envfile} \n"
 
-    node_dist_url=${esg_dist_url}/esgf-node-manager/esgf-node-manager-${node_manager_version}.tar.gz
-    node_db_name=esgcet
-    node_app_context_root=esgf-node-manager
+    node_dist_url=${esg_dist_url}/esgf-node-manager/esgf-node-manager-${esgf_node_manager_version}.tar.gz
+    node_manager_app_context_root=esgf-node-manager
     node_manager_app_home=${tomcat_install_dir}/webapps/${node_manager_app_context_root}
 
+    esgf_node_manager_version=${esgf_node_manager_version:-"0.4.1"}
+    esgf_node_manager_db_version=${esgf_node_manager_db_version:-"0.1.4"}
+    esgf_node_manager_egg_file=esgf_node_manager-${esgf_node_manager_db_version}-py${python_version}.egg
+
+    #Database information....
+    node_db_name=${node_db_name:-"esgcet"}
     postgress_driver=${postgress_driver:-org.postgresql.Driver}
     postgress_protocol=${postgress_protocol:-jdbc:postgresql:}
     postgress_host=${PGHOST:-localhost}
@@ -109,6 +114,7 @@ init() {
     postgress_user=${PGUSER:-dbsuper}
     pg_sys_acct_passwd=${pg_sys_acct_passwd:=${pg_secret:=changeme}}
 
+    #Notification component information...
     mail_smtp_host=${mail_smtp_host:-smtp.`hostname --domain`} #standard guess.
     mail_admin_address=${mail_admin_address}
 
@@ -125,8 +131,8 @@ init() {
 # In update mode it will always pull down latest after archiving old
 #
 setup_node_manager() {
-    echo -n "Checking for node manager ${node_manager_version}"
-    check_webapp_version "esgf-node-manager" ${node_manager_version}
+    echo -n "Checking for node manager ${esgf_node_manager_version}"
+    check_webapp_version "esgf-node-manager" ${esgf_node_manager_version}
     local ret=$?
     ((ret == 0)) && (( ! force_install )) && echo " [OK]" && return 0
     
@@ -134,7 +140,7 @@ setup_node_manager() {
     
     echo
     echo "*******************************"
-    echo "Setting up The ESG Node Manager..."
+    echo "Setting up The ESGF Node Manager..."
     echo "*******************************"
     echo
 
@@ -153,15 +159,26 @@ setup_node_manager() {
         fi
         
         local dobackup="Y"
-        read -p "Do you want to make a back up of the existing distribution?? [Y/n] " dobackup
+        read -p "Do you want to make a back up of the existing distribution [${node_manager_app_context_root}]?? [Y/n] " dobackup
         [ -z "${dobackup}" ] && dobackup=${default}
         if [ "${dobackup}" = "Y" ] || [ "${dobackup}" = "y" ]; then
-            echo "Creating a backup archive of this web application $node_manager_app_home"
+            echo "Creating a backup archive of this web application [$node_manager_app_home]"
             backup ${node_manager_app_home}
         fi
 
         echo
+
+        dobackup="Y"
+        read -p "Do you want to make a back up of the existing database [${node_db_name}]?? [Y/n] " dobackup
+        [ -z "${dobackup}" ] && dobackup=${default}
+        if [ "${dobackup}" = "Y" ] || [ "${dobackup}" = "y" ]; then
+            echo "Creating a backup archive of the manager's database [$node_db_name]"
+            backup_db ${node_db_name}
+        fi
+        unset dobackup
+        echo
     fi
+
 
     mkdir -p ${workdir}
     [ $? != 0 ] && return 1
@@ -218,60 +235,65 @@ setup_node_manager() {
     #Property file fetching and token replacement...
     #----------------------------
     pushd WEB-INF/classes >& /dev/null
+    cat ${fetch_file}.tmpl >> ${config_file}
 
-    cp ${fetch_file} ${fetch_file}.tmpl
-    if((upgrade)) && [ -e ${fetch_file}.saved ]; then
-        echo "Re-Instituting  ${fetch_file}... "
-        #reuse the last esgf-node-manager.properties file...
-        #pull it out of the tar archive we made a few lines up
-        cp ${fetch_file}.saved ${fetch_file}
-    else
-        #----------------------
-        pwd
-        echo -n "Replacing tokens... "
-
-        eval "perl -p -i -e 's/\\@db.driver\\@/${postgress_driver}/g' ${fetch_file}"    
-        echo -n "*"
-        eval "perl -p -i -e 's/\\@db.protocol\\@/${postgress_protocol}/g' ${fetch_file}"
-        echo -n "*"
-        
-        eval "perl -p -i -e 's/\\@db.host\\@/${postgress_host}/g' ${fetch_file}"    
-        echo -n "*"
-        eval "perl -p -i -e 's/\\@db.port\\@/${postgress_port}/g' ${fetch_file}"
-        echo -n "*"
-        eval "perl -p -i -e 's/\\@db.database\\@/${node_db_name}/g' ${fetch_file}"
-        echo -n "*"
-        eval "perl -p -i -e 's/\\@db.user\\@/${postgress_user}/g' ${fetch_file}"
-        echo -n "*"
-        eval "perl -p -i -e 's/\\@db.password\\@/${pg_sys_acct_passwd}/g' ${fetch_file}"
-        echo -n "*"
-        
-        eval "perl -p -i -e 's/\\@mail.smtp.host\\@/${mail_smtp_host}/g' ${fetch_file}"
-        echo -n "*"
-        eval "perl -p -i -e 's/\\@mail.admin.address\\@/${mail_admin_address}/g' ${fetch_file}"
-        echo -n "*"
-        echo " [OK]"
-        #----------------------
-    fi
     chown -R ${tomcat_user} ${node_manager_app_home}
     chgrp -R ${tomcat_group} ${node_manager_app_home}
     unset fetch_file
     popd >& /dev/null
     #----------------------------
-
+    
     popd >& /dev/null
-    (( ! upgrade )) && configure_postgress
+
+    #NOTE TODO: Create a function that reads the property file and for
+    #every property that is not assigned and/or in a list of manidtory
+    #properties go through and ask the user to assign a value. -gavin
+
+    if [ -z "${mail_admin_address}" ]; then
+        while [ 1 ]; do 
+            local input
+            read -p "What email address should notifications be sent as? " input
+            [ -n "${input}" ] && mail_admin_address=${input}  && unset input && break
+        done
+    fi
+
+    (write_node_manager_config && configure_postgress) || checked_done 1
     write_node_manager_install_log
     set_redirect
 
-    [ -d ${tomcat_install_dir}/webapps/esg-node ] && echo -n "Removing old esg-node webapp (${tomcat_install_dir}/webapps/esg-node)... " && rm -rvf ${tomcat_install_dir}/webapps/esg-node && echo "[OK]"
+    [ -d ${tomcat_install_dir}/webapps/esg-node ] && echo -n "Removing old esg-node webapp (${tomcat_install_dir}/webapps/esg-node)... " && rm -rf ${tomcat_install_dir}/webapps/esg-node && echo "[OK]"
 
     checked_done 0
+    
+}
 
+write_node_manager_config() {
+    #----------------------------
+    ((DEBUG || VERBOSE)) && echo "Writing down database connection info and other node-wide properties"
+    #----------------------------
+    mkdir -p ${esg_root_dir}/config
+    pushd ${esg_root_dir}/config >& /dev/null
+    cat >> ${config_file} <<EOF
+db.driver=${postgress_driver}
+db.protocol=${postgress_protocol}
+db.host=${postgress_host}
+db.port=${postgress_port}
+db.database=${node_db_name}
+db.user=${postgress_user}
+db.password=${pg_sys_acct_passwd}
+mail.smtp.host=${mail_smtp_host}
+mail.admin.address=${mail_admin_address}
+EOF
+    dedup_properties ${config_file}
+    chown ${tomcat_user}:${tomcat_group} ${config_file}
+    chmod 600 ${config_file}
+    popd >& /dev/null
+    #----------------------------
+    return 0
 }
 
 write_node_manager_install_log() {
-    echo "$(date ${date_format}) webapp:esgf-node-manager=${node_manager_version} ${node_manager_app_home}" >> ${install_logfile}
+    echo "$(date ${date_format}) webapp:esgf-node-manager=${esgf_node_manager_version} ${node_manager_app_home}" >> ${install_logfile}
     dedup ${install_logfile}
     return 0
 }
@@ -307,47 +329,104 @@ set_redirect() {
 #      installation/configuration (setup_node_manager) 
 #--------------------------------------------------
 configure_postgress() {
+    init
     
     echo
     echo "*******************************"
-    echo "Configuring Postgres... (for Node Manager)"
+    echo "Configuring Postgres... for ESGF Node Manager"
     echo "*******************************"
     echo
-
+    
     start_postgress
 
     #Create the database...
-    echo "Creating esg node database: ${node_db_name}"
+    echo "Creating esg node database: [${node_db_name}]"
     echo "${postgress_install_dir}/bin/createdb ${node_db_name}"
     ${postgress_install_dir}/bin/createdb ${node_db_name} >& /dev/null
     (( $? > 1 )) && echo " ERROR: Could not create esg node database: ${node_db_name}" && return 0
-    
-    #TODO... Make the above call idempotent...
-    #NOTE: (zoiks) Need to be able to tell the difference between a
-    #database already there vs another error
+    echo 
 
-    pushd ${workdir}/${node_dist_dir:-esgf-node-manager-${node_manager_version}}/db
+    pushd ${workdir}/${node_dist_dir:-esgf-node-manager-${esgf_node_manager_version}}/db >& /dev/null
     [ $? != 0 ] && echo " ERROR: Could not find node distribution dir ${workdir}/${node_dist_dir}" && checked_done 1
 
-    echo "${ANT_HOME}/bin/ant -buildfile database-tasks.ant.xml \
-        -Dnode.property.file=${node_manager_app_home}/WEB-INF/classes/esgf-node-manager.properties \
-        -Dsql.jdbc.base.url=${postgress_protocol}//${postgress_host}:${postgress_port}/ \
-        -Dsql.jdbc.database.name=${node_db_name} \
-        -Dsql.jdbc.database.user=${postgress_user} \
-        -Dsql.jdbc.database.password=${pg_sys_acct_passwd} \
-        -Dsql.jdbc.driver.jar=${node_manager_app_home}/WEB-INF/lib/${postgress_jar} make_node_db"
+    #------------------------------------------------------------------------
+    #Based on the node type selection we build the appropriate database tables
+    #------------------------------------------------------------------------
+    
+    
+    #download the egg file from the distribution server is necessary....
+    checked_get ${esgf_node_manager_egg_file} ${esg_dist_url}/esgf-node-manager/${esgf_node_manager_egg_file} $((force_install))
+    (( $? > 1 )) && return 0
+    
+    #install the egg....
+    ((DEBUG)) && echo "$cdat_home/bin/easy_install ${esgf_node_manager_egg_file}"
+    $cdat_home/bin/easy_install ${esgf_node_manager_egg_file}
+    [ $? != 0 ] && echo "ERROR: Could not create esgf node manager python module" && checked_done 1
 
-    ${ANT_HOME}/bin/ant -buildfile database-tasks.ant.xml \
-        -Dnode.property.file=${node_manager_app_home}/WEB-INF/classes/esgf-node-manager.properties \
-        -Dsql.jdbc.base.url=${postgress_protocol}//${postgress_host}:${postgress_port}/ \
-        -Dsql.jdbc.database.name=${node_db_name} \
-        -Dsql.jdbc.database.user=${postgress_user} \
-        -Dsql.jdbc.database.password=${pg_sys_acct_passwd} \
-        -Dsql.jdbc.driver.jar=${node_manager_app_home}/WEB-INF/lib/${postgress_jar} make_node_db >& /dev/null
-    (( $? > 1 )) && echo "ERROR: Could not create esg node database tables in ${node_db_name}" && return 1
+    #run the code to build the database and install sql migration...
+    ((DEBUG)) && echo "$cdat_home/bin/esgf_node_manager_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c"
+    $cdat_home/bin/esgf_node_manager_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c
+    [ $? != 0 ] && echo "ERROR: Could not create esgf manager database tables in ${node_db_name}" && checked_done 1
+
+    write_node_manager_db_install_log
+    echo
     
     popd >& /dev/null
     echo
     echo
     checked_done 0
+}
+
+write_node_manager_db_install_log() {
+    echo "$(date ${date_format}) python:esgf_node_manager=${esgf_node_manager_db_version} " >> ${install_logfile}
+    dedup ${install_logfile}
+    return 0
+}
+
+#--------------------------------------
+# Clean / Uninstall this module...
+#--------------------------------------
+
+clean_node_manager_webapp_subsystem() {
+    init
+    local doit="N"
+    if [ -e ${node_manager_app_home} ]; then
+        read -p "remove ESG Node Manager web service? (${node_manager_app_home}) [y/N]: " doit
+        if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
+            echo "removing ${node_manager_app_home}"
+            if [ -n ${node_manager_app_home} ] ; then 
+                rm -rf ${node_manager_app_home}
+                [ $? != 0 ] && echo "ERROR: Unable to remove ${node_manager_app_home}" && return 1
+                perl -n -i -e'print unless m!webapp:esgf-node-manager!' ${install_logfile}
+            fi
+        fi
+    fi 
+    return 0
+}
+
+#NOTE: There are certain fields that we are not pulling from (node_db_name and postgress_host).
+#      If the fit hits the shan I want to make it clear that we are not nuking anyone else's database, etc.
+#      strictly the "esgcet" database on "localhost"
+clean_node_manager_database_subsystem_installation() {
+    init
+    local doit="N"
+
+    if $(psql -U ${postgress_user} esgcet -c "\dt esgf_node_manager.;" | egrep '^\([1-9]* row[s]?\)' >& /dev/null); then
+        read -p "remove ESG Node Manager database, database subsystem AND DATA? (esgf_node_manager.*) [y/N]: " doit
+        if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
+            #Call me paranoid but I want some integrity check that this code is what is meant to be straight from the distribution.
+            diff <(md5sum ${scripts_dir}/esg-node-manager | tr -s " " | cut -d " " -f 1) <(curl -s -L --insecure ${esg_dist_url}/esgf-node-manager/esg-node-manager.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
+            [ $? != 0 ] && echo " WARNING: Could not verify ${scripts_dir}/esg-node-manager, aborting this uninstall" && return 3
+            echo "[VERIFIED]"
+
+            backup_db esgcet node_manager
+            echo "removing esgf_node_manager.* schema and tables and DATA"
+            ${cdat_home}/bin/esgf_security_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@localhost:${postgress_port}/esgcet -d 0
+            [ $? != 0 ] && echo "ERROR: Unable to remove ${tomcat_install_dir}/webapps/${node_manager_app_context_root}" && return 1
+            rm -rvf ${cdat_home}/bin/esgf_node_manager_initialize && \
+                rm -rf ${cdat_home}/lib/python${python_version}/${esgf_node_manager_egg_file} && \
+                perl -n -i -e'print unless m!python:esgf_node_manager!' ${install_logfile} && echo "[REMOVED]"
+        fi
+    fi 
+    return 0
 }
