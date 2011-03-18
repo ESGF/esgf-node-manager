@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Node xmlns="http://www.esgf.org/registry" DN="/O=Argonne/OU=ESG/CN=host@esgnode-1.anl.gov" Hostname="esgnode-1.anl.gov" SupportEmail="esg-support@anl.gov" Namespace="org.esgf.anl" Organization="ANL">
+    <GatewayNode>
+        <CA DN="" endpoint="https://esg-1.anl.gov:2111/myproxy" hash="abcdef"/>
+        <OpenIDProvider DN="O=VeriSign, CN=OpenID@esgnode-1.anl.gov" endpoint="https://esgnode-1.anl.gov:443/openid"/>
+        <GatewayPortal DN="" endpoint="http://esg.portal.gov"/>
+        <AttributeService DN="" endpoint="https://esgnode-1.anl.gov:443/attribute">
+            <group description="Argonne Climate Research" name="ANL_Research"/>
+            <group description="A Test Group 2" name="Test_Group2"/>
+            <group description="A Test Group 3" name="Test_Group3"/>
+        </AttributeService>
+        <AuthorizationService DN="" endpoint="https://esgnode-1.anl.gov:443/authZ"/>
+    </GatewayNode>
+    <DataNode policyNode="">
+        <OAIRepository DN="" endpoint=""/>
+        <ThreddsService DN="O=VeriSign, CN=Thredds@esgnode-1.anl.gov" endpoint="http://esgnode-1.anl.gov:1234/"/>
+        <GridFTPService endpoint="gsiftp://esgnode-1.anl.gov:2811" ServiceType="Download"/>
+    </DataNode>
+</Node>
