@@ -57,6 +57,7 @@
 package esg.node.components.registry;
 
 import esg.common.generated.registration.*;
+import esg.common.util.ESGFProperties;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.Marshaller;
@@ -64,6 +65,8 @@ import javax.xml.bind.Unmarshaller;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.StringReader;
+import java.util.Properties;
 import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.logging.Log;
@@ -118,9 +121,9 @@ public class RegistrationGleaner {
     */
     public RegistrationGleaner createMyRegistration() {
 	log.info("Creating my registration representation...");
-	Properties props = new ESGFProperties();
 	Node node = new Node();
         try{
+            Properties props = new ESGFProperties();
             String nodeHostname =props.getProperty("security.openid.host","dunno");
 
             node.setHostname(nodeHostname);
