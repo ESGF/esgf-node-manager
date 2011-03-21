@@ -126,41 +126,76 @@ public class RegistrationGleaner {
             Properties props = new ESGFProperties();
             String nodeHostname =props.getProperty("security.openid.host","dunno");
 
+            //************************************************
+            //CORE
+            //************************************************
             node.setHostname(nodeHostname);
             node.setNamespace(props.getProperty("node.namespace","dunno"));
             node.setOrganization(props.getProperty("esg.root.id","dunno"));
             node.setSupportEmail(props.getProperty("mail.admin.address","dunno"));
             node.setDN(props.getProperty("node.dn","dunno"));
-	    
+
+            //What is this ?
             CA ca = new CA();
             ca.setEndpoint(props.getProperty("security.openid.host","dunno"));
             ca.setHash(props.getProperty("security.ca.hash","dunno"));
             ca.setDN(props.getProperty("security.ca.dn","dunno"));
             node.setCA(ca);
-			
-            OpenIDProvider openid = new OpenIDProvider();
-            openid.setEndpoint(props.getProperty("security.openid.host","dunno"));
-            openid.setDN("openid-dn");
-            node.setOpenIDProvider(openid);
-			
-            IndexService idx = new IndexService();
-            idx.setEndpoint(props.getProperty("index.endpoint.host"));
-            idx.setDN(props.getProperty("index.dn","dunno"));
-            node.setIndexService(idx);
 
-            LASService las = new LASService();
-            las.setEndpoint(props.getProperty("compute.endpoint","dunno"));
-            las.setDN(props.getProperty("compute.dn","dunno"));
-            node.setLASService(las);
+            ThreddsService tds = new ThreddsService();
+            tds.setEndpoint("thredds-endpoint");
+            tds.setDN("thredds-dn");
+            node.setThreddsService(tds);
 
+            //************************************************
+            //GLOBUS SUPPORT TOOLS
+            //************************************************
             MyProxyService mproxy = new MyProxyService();
             mproxy.setEndpoint("mproxy-endpoint");
             mproxy.setDN("mproxy-dn");
             node.setMyProxyService(mproxy);
+				    	    
+            GridFTPService gftp = new GridFTPService();
+            gftp.setEndpoint("gftp-endpoint");
+            String serviceType = "gftp-svctype";
+            if (serviceType != null) {
+		if (serviceType.equals(GridFTPServiceType.REPLICATION.value())) {
+		    gftp.setServiceType(GridFTPServiceType.REPLICATION);
+		}else{
+		    gftp.setServiceType(GridFTPServiceType.DOWNLOAD);
+		}
+	    }else {
+		gftp.setServiceType(GridFTPServiceType.DOWNLOAD);
+	    }
+            node.setGridFTPService(gftp);
+
+            //************************************************
+            //INDEX
+            //************************************************
+            IndexService idx = new IndexService();
+            idx.setEndpoint(props.getProperty("index.service","dunno"));
+            idx.setDN(props.getProperty("index.service.dn","dunno"));
+            node.setIndexService(idx);
+
+            //************************************************
+            //COMPUTE
+            //************************************************
+            LASService las = new LASService();
+            las.setEndpoint(props.getProperty("compute.endpoint","dunno"));
+            las.setDN(props.getProperty("compute.dn","dunno"));
+            node.setLASService(las);
 			
+            //************************************************
+            //IDP (security)
+            //************************************************
+            OpenIDProvider openid = new OpenIDProvider();
+            openid.setEndpoint(props.getProperty("idp.identity.service","dunno"));
+            openid.setDN(props.getProperty("idp.identity.service.dn","dunno"));
+            node.setOpenIDProvider(openid);
+
             AttributeService attrSvc = new AttributeService();
-            attrSvc.setEndpoint("attrsvc-endpoint");
-            attrSvc.setDN("attrsvc-dn");
+            attrSvc.setEndpoint(props.getProperty("idp.attribute.service","dunno"));
+            attrSvc.setDN(props.getProperty("idp.attribute.service.dn","dunno"));
 	    
             // enforces max number of groups to be 64
             String groupNameBase = "group-name";
@@ -183,35 +218,19 @@ public class RegistrationGleaner {
             authSvc.setEndpoint("authsvc-endpoint");
             authSvc.setDN("authsvc-dn");
             node.setAuthorizationService(authSvc);
-			
+            
+            //************************************************
+            //INDEX DEPRECATED SERVICE
+            //************************************************
             OAIRepository oaiRepo = new OAIRepository();
             oaiRepo.setEndpoint("oairepo-endpoint");
             oaiRepo.setDN("oairepo-dn");
             node.setOAIRepository(oaiRepo);			
-	    
-            ThreddsService tds = new ThreddsService();
-            tds.setEndpoint("thredds-endpoint");
-            tds.setDN("thredds-dn");
-            node.setThreddsService(tds);
-	    
-            GridFTPService gftp = new GridFTPService();
-            gftp.setEndpoint("gftp-endpoint");
-            String serviceType = "gftp-svctype";
-            if (serviceType != null) {
-		if (serviceType.equals(GridFTPServiceType.REPLICATION.value())) {
-		    gftp.setServiceType(GridFTPServiceType.REPLICATION);
-		}else{
-		    gftp.setServiceType(GridFTPServiceType.DOWNLOAD);
-		}
-	    }else {
-		gftp.setServiceType(GridFTPServiceType.DOWNLOAD);
-	    }
-            node.setGridFTPService(gftp);
-			
+
         } catch(Exception e) {
 	    log.error(e);
 	}
-	
+
 	myRegistration = new Registration();
 	myRegistration.getNode().add(node);
 	return this;
