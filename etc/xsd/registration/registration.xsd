@@ -36,7 +36,7 @@ That does make it more wordy, and require and reconstruction. -->
     <xsd:element name="AttributeService">
         <xsd:complexType>
             <xsd:sequence>
-                <xsd:element ref="tns:group" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element ref="tns:Group" minOccurs="0" maxOccurs="unbounded"/>
             </xsd:sequence>
             <xsd:attributeGroup ref="tns:ServiceAttributes"/>
         </xsd:complexType>
@@ -45,7 +45,7 @@ That does make it more wordy, and require and reconstruction. -->
     <!-- Describes each group, such that it can be associated with an AuthZ Service
     The group name along with the organization namespace should make the group unique.
     -->
-    <xsd:element name="group">
+    <xsd:element name="Group">
         <xsd:complexType>
             <xsd:attribute name="name" type="xsd:string" use="required"/>
             <xsd:attribute name="description" type="xsd:string" use="required"/>
@@ -102,6 +102,13 @@ That does make it more wordy, and require and reconstruction. -->
         </xsd:complexType>
     </xsd:element>
 
+    <xsd:element name="PEMCert">
+      <xsd:complexType>
+        <xsd:element name="cert" type="xsd:string"/>
+      </xsd:complexType>
+    </xsd:element>
+
+
 
     <xsd:attributeGroup name="ResourceAttributes">
         <!-- Name of organization -->
@@ -115,6 +122,10 @@ That does make it more wordy, and require and reconstruction. -->
         <!-- Host Certificate DN, will be used as default identity for all services,
         unless overridden by the DN attribute in the service -->
         <xsd:attribute name="DN" type="xsd:string" use="required"/>
+
+        <xsd:attribute name="LongName" type="xsd:string" use="required"/>
+        <xsd:attribute name="ShortName" type="xsd:string" use="required"/>
+        <xsd:attribute name="TimeStamp" type="xsd:long" use="required"/>
 
     </xsd:attributeGroup>
 
@@ -132,6 +143,7 @@ That does make it more wordy, and require and reconstruction. -->
             <xsd:element ref="tns:MetricsService" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:LASService" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:MyProxyService" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="tns:PEMCert" minOccurs="0" maxOccurs="1"/>
         </xsd:all>
         <xsd:attributeGroup ref="tns:ResourceAttributes"/>
     </xsd:complexType>

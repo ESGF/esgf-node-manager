@@ -66,6 +66,8 @@ import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.Date;
 import java.util.Properties;
 import javax.xml.transform.stream.StreamSource;
 
@@ -83,8 +85,10 @@ import org.apache.commons.logging.impl.*;
 public class RegistrationGleaner {
 
     private static final Log log = LogFactory.getLog(RegistrationGleaner.class);
-
+    
     private static final String registrationFile = "registration.xml";
+    private static final boolean DEBUG=true;
+    private String registrationPath = null;
     private Registration myRegistration = null;
     private Properties props = null;
 
@@ -95,12 +99,13 @@ public class RegistrationGleaner {
             this.props = new ESGFProperties();
         } catch(Exception e) {
             log.error(e);
-        }        
+        }
+        registrationPath = props.getProperty("node.manager.app.home",".")+File.separator;
     }
     
-
+    
     public Registration getMyRegistration() { return myRegistration; }
-
+    
     public boolean saveRegistration() { return saveRegistration(myRegistration); }
     public boolean saveRegistration(Registration registration) {
         boolean success = false;
@@ -109,12 +114,12 @@ public class RegistrationGleaner {
             return success;
         }
         log.info("Saving registration information for "+registration.getNode().get(0).getHostname()+" to "+
-                 props.getProperty("node.manager.app.home",".")+File.separator+this.registrationFile);
+                 props.getProperty(registrationPath+this.registrationFile));
         try{
             JAXBContext jc = JAXBContext.newInstance(Registration.class);
             Marshaller m = jc.createMarshaller();
             m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-            m.marshal(registration, new FileOutputStream(props.getProperty("node.manager.app.home",".")+File.separator+this.registrationFile));
+            m.marshal(registration, new FileOutputStream(registrationPath+this.registrationFile));
             
             success = true;
         }catch(Exception e) {
@@ -127,13 +132,32 @@ public class RegistrationGleaner {
             if( (null != (endpoint=props.getProperty("las.endpoint"))) &&
                 (new File(props.getProperty("las.app.home"))).exists() ) {
                 LasSistersGleaner lasSisterGleaner = new LasSistersGleaner(props); 
-                lasSisterGleaner.appendToMyDatasetsFromRegistration(myRegistration).saveDatasets();
+                lasSisterGleaner.appendToMyDatasetsFromRegistration(registration).saveDatasets();
             }
         }catch(Exception e) {
             log.error(e);
         }
         
         return success;
+    }
+    
+    public String toString() {
+        StringWriter sw = null;
+        if (myRegistration == null) {
+            log.error("Registration is ["+myRegistration+"]"); 
+            return null;
+        }
+        log.info("Writing registration information to String, for "+myRegistration.getNode().get(0).getHostname());
+        sw = new StringWriter();
+        try{
+            JAXBContext jc = JAXBContext.newInstance(Registration.class);
+            Marshaller m = jc.createMarshaller();
+            m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            m.marshal(myRegistration, sw);
+        }catch(Exception e) {
+            log.error(e);
+        }
+        return sw.toString();
     }
 
     
@@ -148,16 +172,19 @@ public class RegistrationGleaner {
         String endpoint = null;
         Node node = new Node();
         try{
-            String nodeHostname =props.getProperty("esgf_home","dunno");
+            String nodeHostname =props.getProperty("esgf.host","dunno");
 
             //************************************************
             //CORE
             //************************************************
             node.setHostname(nodeHostname);
-            node.setNamespace(props.getProperty("node.namespace","dunno"));
-            node.setOrganization(props.getProperty("esg.root.id","dunno"));
-            node.setSupportEmail(props.getProperty("mail.admin.address","dunno"));
-            node.setDN(props.getProperty("node.dn","dunno"));
+            node.setNamespace(props.getProperty("node.namespace"));
+            node.setOrganization(props.getProperty("esg.root.id"));
+            node.setSupportEmail(props.getProperty("mail.admin.address"));
+            node.setDN(props.getProperty("node.dn"));
+            node.setLongName(props.getProperty("node.long.name"));
+            node.setShortName(props.getProperty("node.short.name"));
+            node.setTimeStamp((new Date()).getTime());
 
             //What is this ?
             CA ca = new CA();
@@ -165,6 +192,10 @@ public class RegistrationGleaner {
             ca.setHash(props.getProperty("security.ca.hash","dunno"));
             ca.setDN(props.getProperty("security.ca.dn","dunno"));
             node.setCA(ca);
+
+            //************************************************
+            //Data
+            //************************************************
 
             try{
                 if( (null != (endpoint=props.getProperty("thredds.endpoint"))) &&
@@ -177,9 +208,10 @@ public class RegistrationGleaner {
                 log.error(t);
             }
 
-            //************************************************
+            //------------------------------------------------
             //GLOBUS SUPPORT TOOLS
-            //************************************************
+            //------------------------------------------------
+
             try{
                 if( (null != (endpoint=props.getProperty("myproxy.endpoint"))) &&
                     (new File(props.getProperty("thredds.app.home"))).exists() ) {
@@ -313,11 +345,11 @@ public class RegistrationGleaner {
     }
     
     public RegistrationGleaner loadMyRegistration() {
-        log.info("Loading my registration info from "+registrationFile);
+        log.info("Loading my registration info from "+registrationPath+registrationFile);
         try{
             JAXBContext jc = JAXBContext.newInstance(Registration.class);
             Unmarshaller u = jc.createUnmarshaller();
-            JAXBElement<Registration> root = u.unmarshal(new StreamSource(new File(this.registrationFile)),Registration.class);
+            JAXBElement<Registration> root = u.unmarshal(new StreamSource(new File(registrationPath+this.registrationFile)),Registration.class);
             myRegistration = root.getValue();
         }catch(Exception e) {
             log.error(e);
@@ -347,7 +379,8 @@ public class RegistrationGleaner {
                 (new RegistrationGleaner()).createMyRegistration().saveRegistration();
             }else if(args[0].equals("load")) {
                 System.out.println(args[0]+"ing...");
-                (new RegistrationGleaner()).loadMyRegistration().saveRegistration();
+                //(new RegistrationGleaner()).loadMyRegistration().saveRegistration();
+                System.out.println((new RegistrationGleaner()).loadMyRegistration());
             }else {
                 System.out.println("illegal arg: "+args[0]);
             }
