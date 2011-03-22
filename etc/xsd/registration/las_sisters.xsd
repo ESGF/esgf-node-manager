@@ -1,0 +1,24 @@
+<xsd:schema attributeFormDefault="unqualified" elementFormDefault="qualified" version="0.2"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.esgf.org/registry"
+            xmlns:tns="http://www.esgf.org/registry">
+  
+  <xsd:attributeGroup name="LasServerAttributes">
+    <xsd:attribute name="name" type="xsd:string" use="required"/>
+    <xsd:attribute name="url"  type="xsd:string" use="required"/>
+  </xsd:attributeGroup>
+  
+  <xsd:element name="las_server">
+    <xsd:complexType>
+      <xsd:attributeGroup ref="tns:LasServerAttributes"/>
+    </xsd:complexType>
+  </xsd:element>
+  
+  <xsd:element name="datasets">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="tns:las_server" minOccurs="1" maxOccurs="unbounded"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  
+</xsd:schema>

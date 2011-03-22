@@ -99,7 +99,9 @@ init() {
 
     node_dist_url=${esg_dist_url}/esgf-node-manager/esgf-node-manager-${esgf_node_manager_version}.tar.gz
     node_manager_app_context_root=esgf-node-manager
-    node_manager_app_home=${tomcat_install_dir}/webapps/${node_manager_app_context_root}
+
+    get_property node_manager_app_home ${tomcat_install_dir}/webapps/${node_manager_app_context_root}
+    write_as_property node_manager_app_home
 
     esgf_node_manager_version=${esgf_node_manager_version:-"0.4.1"}
     esgf_node_manager_db_version=${esgf_node_manager_db_version:-"0.1.4"}

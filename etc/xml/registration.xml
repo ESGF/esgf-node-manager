@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Node xmlns="http://www.esgf.org/registry" DN="/O=Argonne/OU=ESG/CN=host@esgnode-1.anl.gov" Hostname="esgnode-1.anl.gov" SupportEmail="esg-support@anl.gov" Namespace="org.esgf.anl" Organization="ANL">
-    <GatewayNode>
-        <CA DN="" endpoint="https://esg-1.anl.gov:2111/myproxy" hash="abcdef"/>
-        <OpenIDProvider DN="O=VeriSign, CN=OpenID@esgnode-1.anl.gov" endpoint="https://esgnode-1.anl.gov:443/openid"/>
-        <GatewayPortal DN="" endpoint="http://esg.portal.gov"/>
-        <AttributeService DN="" endpoint="https://esgnode-1.anl.gov:443/attribute">
-            <group description="Argonne Climate Research" name="ANL_Research"/>
-            <group description="A Test Group 2" name="Test_Group2"/>
-            <group description="A Test Group 3" name="Test_Group3"/>
+<Registration xmlns="http://www.esgf.org/registry">
+    <Node DN="OU=pcmdi O=esgf HOST=esg-test1@llnl.gov" Hostname="malcolm.llnl.gov" SupportEmail="gavin@llnl.gov" Namespace="gov.llnl" Organization="PCMDI">
+        <CA DN="dunno" endpoint="malcolm.llnl.gov" hash="dunno"/>
+        <OpenIDProvider endpoint="dunno"/>
+        <IndexService DN="dunno" endpoint="dunno"/>
+        <AttributeService endpoint="dunno">
+            <group description="group-description0" name="group-name0"/>
+            <group description="group-description1" name="group-name1"/>
         </AttributeService>
-        <AuthorizationService DN="" endpoint="https://esgnode-1.anl.gov:443/authZ"/>
-    </GatewayNode>
-    <DataNode policyNode="">
-        <OAIRepository DN="" endpoint=""/>
-        <ThreddsService DN="O=VeriSign, CN=Thredds@esgnode-1.anl.gov" endpoint="http://esgnode-1.anl.gov:1234/"/>
-        <GridFTPService endpoint="gsiftp://esgnode-1.anl.gov:2811" ServiceType="Download"/>
-    </DataNode>
-</Node>
+        <AuthorizationService endpoint="authsvc-endpoint"/>
+        <OAIRepository endpoint="oairepo-endpoint"/>
+        <ThreddsService endpoint="thredds-endpoint"/>
+        <GridFTPService endpoint="gftp-endpoint" ServiceType="Download"/>
+        <LASService endpoint="dunno"/>
+        <MyProxyService DN="mproxy-dn" endpoint="mproxy-endpoint"/>
+    </Node>
+</Registration>

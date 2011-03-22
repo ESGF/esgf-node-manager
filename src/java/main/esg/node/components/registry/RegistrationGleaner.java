@@ -86,9 +86,18 @@ public class RegistrationGleaner {
 
     private Registration myRegistration = null;
     private String registrationFile = "registration.xml";
+    private Properties props = null;
 
+    public RegistrationGleaner() { this.init(); }
 
-    public RegistrationGleaner() {}
+    public void init() {
+        try {
+            this.props = new ESGFProperties();
+        } catch(Exception e) {
+            log.error(e);
+        }        
+    }
+    
 
     public Registration getMyRegistration() { return myRegistration; }
 
@@ -99,17 +108,21 @@ public class RegistrationGleaner {
             log.error("Registration is ["+registration+"]"); 
             return success;
         }
-        log.info("Saving registration information for "+registration.getNode().get(0).getHostname());
+        log.info("Saving registration information for "+registration.getNode().get(0).getHostname()+" to "+
+                 props.getProperty("node.manager.app.home",".")+File.separator+this.registrationFile);
         try{
             JAXBContext jc = JAXBContext.newInstance(Registration.class);
             Marshaller m = jc.createMarshaller();
             m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-            m.marshal(registration, new FileOutputStream(this.registrationFile));
+            m.marshal(registration, new FileOutputStream(props.getProperty("node.manager.app.home",".")+File.separator+this.registrationFile));
             success = true;
+            
+            LasSistersGleaner lasSisterGleaner = new LasSistersGleaner(props); 
+            lasSisterGleaner.appendToMyDatasetsFromRegistration(myRegistration).saveDatasets();
         }catch(Exception e) {
-            e.printStackTrace();
+            log.error(e);
         }
-	
+        
         return success;
     }
 
@@ -123,7 +136,6 @@ public class RegistrationGleaner {
         log.info("Creating my registration representation...");
         Node node = new Node();
         try{
-            Properties props = new ESGFProperties();
             String nodeHostname =props.getProperty("security.openid.host","dunno");
 
             //************************************************
@@ -144,7 +156,7 @@ public class RegistrationGleaner {
 
             ThreddsService tds = new ThreddsService();
             tds.setEndpoint("thredds-endpoint");
-            tds.setDN("thredds-dn");
+            //tds.setDN("thredds-dn");
             node.setThreddsService(tds);
 
             //************************************************
@@ -182,7 +194,7 @@ public class RegistrationGleaner {
             //************************************************
             LASService las = new LASService();
             las.setEndpoint(props.getProperty("compute.endpoint","dunno"));
-            las.setDN(props.getProperty("compute.dn","dunno"));
+            //las.setDN(props.getProperty("compute.dn","dunno"));
             node.setLASService(las);
 			
             //************************************************
@@ -190,12 +202,12 @@ public class RegistrationGleaner {
             //************************************************
             OpenIDProvider openid = new OpenIDProvider();
             openid.setEndpoint(props.getProperty("idp.identity.service","dunno"));
-            openid.setDN(props.getProperty("idp.identity.service.dn","dunno"));
+            //openid.setDN(props.getProperty("idp.identity.service.dn","dunno"));
             node.setOpenIDProvider(openid);
 
             AttributeService attrSvc = new AttributeService();
             attrSvc.setEndpoint(props.getProperty("idp.attribute.service","dunno"));
-            attrSvc.setDN(props.getProperty("idp.attribute.service.dn","dunno"));
+            //attrSvc.setDN(props.getProperty("idp.attribute.service.dn","dunno"));
 	    
             // enforces max number of groups to be 64
             String groupNameBase = "group-name";
@@ -216,7 +228,7 @@ public class RegistrationGleaner {
 	    
             AuthorizationService authSvc = new AuthorizationService();
             authSvc.setEndpoint("authsvc-endpoint");
-            authSvc.setDN("authsvc-dn");
+            //authSvc.setDN("authsvc-dn");
             node.setAuthorizationService(authSvc);
             
             //************************************************
@@ -224,7 +236,7 @@ public class RegistrationGleaner {
             //************************************************
             OAIRepository oaiRepo = new OAIRepository();
             oaiRepo.setEndpoint("oairepo-endpoint");
-            oaiRepo.setDN("oairepo-dn");
+            //oaiRepo.setDN("oairepo-dn");
             node.setOAIRepository(oaiRepo);			
 
         } catch(Exception e) {

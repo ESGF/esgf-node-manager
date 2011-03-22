@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<datasets xmlns="http://www.esgf.org/registry">
+    <las_server url="dunno" name="malcolm.llnl.gov"/>
+</datasets>
