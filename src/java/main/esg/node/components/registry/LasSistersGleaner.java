@@ -84,7 +84,7 @@ public class LasSistersGleaner {
 
     private static final Log log = LogFactory.getLog(LasSistersGleaner.class);
 
-    private Datasets myDatasets = null;
+    private Datasets datasets = null;
     private String sistersFile = "esgcet_sisters.xml";
     private Properties props = null;
     private String defaultLocation = null;
@@ -109,9 +109,9 @@ public class LasSistersGleaner {
         }
     }
     
-    public Datasets getMyDatasets() { return myDatasets; }
+    public Datasets getMyDatasets() { return datasets; }
     
-    public boolean saveDatasets() { return saveDatasets(myDatasets); }
+    public boolean saveDatasets() { return saveDatasets(datasets); }
     public synchronized boolean saveDatasets(Datasets datasets) {
         boolean success = false;
         if (datasets == null) {
@@ -142,7 +142,7 @@ public class LasSistersGleaner {
         log.info("Creating my LAS Datasets representation...");
         try{
             LASService service = null; //the LASService entry from the registration -via-> node
-            LasServer sister = null;  //Local datasets xml element
+            LasServer sister = null;   //Local datasets xml element
 
             //TODO: NEED TO DEDUP ENTRIES!!!
             for(Node node : registration.getNode()) {
@@ -150,7 +150,7 @@ public class LasSistersGleaner {
                 sister = new LasServer();
                 sister.setName(node.getHostname());
                 sister.setUrl(service.getEndpoint());
-                myDatasets.getLasServer().add(sister);
+                datasets.getLasServer().add(sister);
             }
 
         } catch(Exception e) {
@@ -170,7 +170,7 @@ public class LasSistersGleaner {
             JAXBContext jc = JAXBContext.newInstance(Datasets.class);
             Unmarshaller u = jc.createUnmarshaller();
             JAXBElement<Datasets> root = u.unmarshal(new StreamSource(new File(props.getProperty("las.xml.config.dir",defaultLocation)+File.separator+this.sistersFile)),Datasets.class);
-            myDatasets = root.getValue();
+            datasets = root.getValue();
         }catch(Exception e) {
             log.error(e);
         }
