@@ -84,8 +84,8 @@ public class RegistrationGleaner {
 
     private static final Log log = LogFactory.getLog(RegistrationGleaner.class);
 
+    private static final String registrationFile = "registration.xml";
     private Registration myRegistration = null;
-    private String registrationFile = "registration.xml";
     private Properties props = null;
 
     public RegistrationGleaner() { this.init(); }
@@ -134,9 +134,11 @@ public class RegistrationGleaner {
     */
     public RegistrationGleaner createMyRegistration() {
         log.info("Creating my registration representation...");
+        String endpointDir = null;
+        String endpoint = null;
         Node node = new Node();
         try{
-            String nodeHostname =props.getProperty("security.openid.host","dunno");
+            String nodeHostname =props.getProperty("esgf_home","dunno");
 
             //************************************************
             //CORE
@@ -149,15 +151,21 @@ public class RegistrationGleaner {
 
             //What is this ?
             CA ca = new CA();
-            ca.setEndpoint(props.getProperty("security.openid.host","dunno"));
+            ca.setEndpoint(props.getProperty("esgf.host","dunno"));
             ca.setHash(props.getProperty("security.ca.hash","dunno"));
             ca.setDN(props.getProperty("security.ca.dn","dunno"));
             node.setCA(ca);
 
-            ThreddsService tds = new ThreddsService();
-            tds.setEndpoint("thredds-endpoint");
-            //tds.setDN("thredds-dn");
-            node.setThreddsService(tds);
+            try{
+                if( (null != (endpoint=props.getProperty("thredds.endpoint"))) &&
+                    (new File(props.getProperty("thredds.app.home"))).exists() ) {
+                    ThreddsService tds = new ThreddsService();
+                    tds.setEndpoint(endpoint);
+                    node.setThreddsService(tds);
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
 
             //************************************************
             //GLOBUS SUPPORT TOOLS
@@ -184,52 +192,85 @@ public class RegistrationGleaner {
             //************************************************
             //INDEX
             //************************************************
-            IndexService idx = new IndexService();
-            idx.setEndpoint(props.getProperty("index.service","dunno"));
-            idx.setDN(props.getProperty("index.service.dn","dunno"));
-            node.setIndexService(idx);
+            
+            try{
+                if( (null != (endpoint=props.getProperty("search.endpoint"))) &&
+                    (new File(props.getProperty("search.app.home"))).exists() ) {
+                    IndexService idx = new IndexService();
+                    idx.setEndpoint(endpoint);
+                    node.setIndexService(idx);
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
 
             //************************************************
             //COMPUTE
             //************************************************
-            LASService las = new LASService();
-            las.setEndpoint(props.getProperty("compute.endpoint","dunno"));
-            //las.setDN(props.getProperty("compute.dn","dunno"));
-            node.setLASService(las);
-			
+
+            try{
+                if( (null != (endpoint=props.getProperty("las.endpoint"))) &&
+                    (new File(props.getProperty("las.app.home"))).exists() ) {
+                    LASService las = new LASService();
+                    las.setEndpoint(endpoint);
+                    node.setLASService(las);
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
+
             //************************************************
             //IDP (security)
             //************************************************
-            OpenIDProvider openid = new OpenIDProvider();
-            openid.setEndpoint(props.getProperty("idp.identity.service","dunno"));
-            //openid.setDN(props.getProperty("idp.identity.service.dn","dunno"));
-            node.setOpenIDProvider(openid);
 
-            AttributeService attrSvc = new AttributeService();
-            attrSvc.setEndpoint(props.getProperty("idp.attribute.service","dunno"));
-            //attrSvc.setDN(props.getProperty("idp.attribute.service.dn","dunno"));
-	    
-            // enforces max number of groups to be 64
-            String groupNameBase = "group-name";
-            String groupDescriptionBase = "group-description";
-            String tmpName, tmpDesc;
-            for(int i = 0; i < 2; i++) {
-                tmpName = groupNameBase+i;
-                tmpDesc = groupDescriptionBase+i;
-                if ((tmpName == null) && (tmpDesc == null)) {
-                    break;
+            try{
+                if( (null != (endpoint=props.getProperty("idp.identity.endpoint"))) &&
+                    (new File(props.getProperty("idp.identity.app.home"))).exists() ) {
+                    OpenIDProvider openid = new OpenIDProvider();
+                    openid.setEndpoint(endpoint);
+                    node.setOpenIDProvider(openid);
                 }
-                Group newGroup = new Group();
-                newGroup.setName(tmpName);
-                newGroup.setDescription(tmpDesc);
-                attrSvc.getGroup().add(newGroup);
+            }catch(Throwable t) {
+                log.error(t);
             }
-            node.setAttributeService(attrSvc);
+
+
+            try{
+                if( (null != (endpoint=props.getProperty("idp.attrib.endpoint"))) &&
+                    (new File(props.getProperty("idp.attrib.app.home"))).exists() ) {
+                    AttributeService attrSvc = new AttributeService();
+                    attrSvc.setEndpoint(endpoint);
+                    
+                    String groupNameBase = "group-name";
+                    String groupDescriptionBase = "group-description";
+                    String tmpName, tmpDesc;
+                    for(int i = 0; i < 2; i++) {
+                        tmpName = groupNameBase+i;
+                        tmpDesc = groupDescriptionBase+i;
+                        if ((tmpName == null) && (tmpDesc == null)) {
+                            break;
+                        }
+                        Group newGroup = new Group();
+                        newGroup.setName(tmpName);
+                        newGroup.setDescription(tmpDesc);
+                        attrSvc.getGroup().add(newGroup);
+                    }
+                    node.setAttributeService(attrSvc);
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
 	    
-            AuthorizationService authSvc = new AuthorizationService();
-            authSvc.setEndpoint("authsvc-endpoint");
-            //authSvc.setDN("authsvc-dn");
-            node.setAuthorizationService(authSvc);
+            try{
+                if( (null != (endpoint=props.getProperty("idp.authz.endpoint"))) &&
+                    (new File(props.getProperty("idp.authz.app.home"))).exists() ) {
+                    AuthorizationService authzSvc = new AuthorizationService();
+                    authzSvc.setEndpoint(endpoint);
+                    node.setAuthorizationService(authzSvc);
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
             
             //************************************************
             //INDEX DEPRECATED SERVICE
