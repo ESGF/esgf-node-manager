@@ -115,10 +115,10 @@ public class RegistrationGleaner {
             Marshaller m = jc.createMarshaller();
             m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             m.marshal(registration, new FileOutputStream(props.getProperty("node.manager.app.home",".")+File.separator+this.registrationFile));
-            success = true;
             
             LasSistersGleaner lasSisterGleaner = new LasSistersGleaner(props); 
             lasSisterGleaner.appendToMyDatasetsFromRegistration(myRegistration).saveDatasets();
+            success = true;
         }catch(Exception e) {
             log.error(e);
         }
@@ -170,25 +170,39 @@ public class RegistrationGleaner {
             //************************************************
             //GLOBUS SUPPORT TOOLS
             //************************************************
-            MyProxyService mproxy = new MyProxyService();
-            mproxy.setEndpoint("mproxy-endpoint");
-            mproxy.setDN("mproxy-dn");
-            node.setMyProxyService(mproxy);
-				    	    
-            GridFTPService gftp = new GridFTPService();
-            gftp.setEndpoint("gftp-endpoint");
-            String serviceType = "gftp-svctype";
-            if (serviceType != null) {
-                if (serviceType.equals(GridFTPServiceType.REPLICATION.value())) {
-                    gftp.setServiceType(GridFTPServiceType.REPLICATION);
-                }else{
-                    gftp.setServiceType(GridFTPServiceType.DOWNLOAD);
+            try{
+                if( (null != (endpoint=props.getProperty("myproxy.endpoint"))) &&
+                    (new File(props.getProperty("thredds.app.home"))).exists() ) {
+                    MyProxyService mproxy = new MyProxyService();
+                    mproxy.setEndpoint(endpoint);
+                    mproxy.setDN(props.getProperty("mproxy.dn"));
+                    node.setMyProxyService(mproxy);
                 }
-            }else {
-                gftp.setServiceType(GridFTPServiceType.DOWNLOAD);
+            }catch(Throwable t) {
+                log.error(t);
             }
-            node.setGridFTPService(gftp);
-
+            
+            try{
+                if( (null != (endpoint=props.getProperty("gridftp.endpoint"))) &&
+                    (new File(props.getProperty("gridftp.app.home"))).exists() ) {
+                    GridFTPService gftp = new GridFTPService();
+                    gftp.setEndpoint(endpoint);
+                    String serviceType = "gftp-svctype";
+                    if (serviceType != null) {
+                        if (serviceType.equals(GridFTPServiceType.REPLICATION.value())) {
+                            gftp.setServiceType(GridFTPServiceType.REPLICATION);
+                        }else{
+                            gftp.setServiceType(GridFTPServiceType.DOWNLOAD);
+                        }
+                    }else {
+                        gftp.setServiceType(GridFTPServiceType.DOWNLOAD);
+                    }
+                    node.setGridFTPService(gftp);
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
+            
             //************************************************
             //INDEX
             //************************************************
@@ -275,10 +289,9 @@ public class RegistrationGleaner {
             //************************************************
             //INDEX DEPRECATED SERVICE
             //************************************************
-            OAIRepository oaiRepo = new OAIRepository();
-            oaiRepo.setEndpoint("oairepo-endpoint");
-            //oaiRepo.setDN("oairepo-dn");
-            node.setOAIRepository(oaiRepo);			
+            //OAIRepository oaiRepo = new OAIRepository();
+            //oaiRepo.setEndpoint("oairepo-endpoint");
+            //node.setOAIRepository(oaiRepo);			
 
         } catch(Exception e) {
             log.error(e);
