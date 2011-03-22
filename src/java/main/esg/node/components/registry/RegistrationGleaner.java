@@ -79,7 +79,9 @@ import org.apache.commons.logging.impl.*;
    Description:
    
    Encapsulates the logic for fetching and generating this local
-   node's registration form, as defined by the registration.xsd.
+   node's registration form, as defined by the registration.xsd.  (The
+   LasSistersGleaner is also used to further create the
+   las_servers.xml derivative file.)
 
 */
 public class RegistrationGleaner {
@@ -132,7 +134,7 @@ public class RegistrationGleaner {
             if( (null != (endpoint=props.getProperty("las.endpoint"))) &&
                 (new File(props.getProperty("las.app.home"))).exists() ) {
                 LasSistersGleaner lasSisterGleaner = new LasSistersGleaner(props); 
-                lasSisterGleaner.appendToMyDatasetsFromRegistration(registration).saveDatasets();
+                lasSisterGleaner.appendToMyLasServersFromRegistration(registration).saveLasServers();
             }
         }catch(Exception e) {
             log.error(e);

@@ -77,15 +77,16 @@ import org.apache.commons.logging.impl.*;
    Description:
    
    Encapsulates the logic for fetching and generating this local
-   node's LAS Sisters file as defined by las_sisters.xsd
+   node's LAS Sisters file as defined by las_servers.xsd
 
 */
 public class LasSistersGleaner {
 
     private static final Log log = LogFactory.getLog(LasSistersGleaner.class);
 
-    private Datasets datasets = null;
-    private String sistersFile = "esgcet_sisters.xml";
+    private LasServers servers = null;
+    private String sistersFile = "las_servers.xml";
+    private String sistersPath = null;
     private Properties props = null;
     private String defaultLocation = null;
 
@@ -102,28 +103,30 @@ public class LasSistersGleaner {
                 defaultLocation = "/tmp";
                 log.warn("ESGF_HOME environment var not set!");
             }
+            sistersPath = props.getProperty("las.xml.config.dir",defaultLocation)+File.separator;
 
-            datasets = new Datasets();
+            servers = new LasServers();
+
         } catch(Exception e) {
             log.error(e);
         }
     }
     
-    public Datasets getMyDatasets() { return datasets; }
+    public LasServers getMyLasServers() { return servers; }
     
-    public boolean saveDatasets() { return saveDatasets(datasets); }
-    public synchronized boolean saveDatasets(Datasets datasets) {
+    public boolean saveLasServers() { return saveLasServers(servers); }
+    public synchronized boolean saveLasServers(LasServers servers) {
         boolean success = false;
-        if (datasets == null) {
-            log.error("Datasets is ["+datasets+"]"); 
+        if (servers == null) {
+            log.error("LasServers is ["+servers+"]"); 
             return success;
         }
-        log.info("Saving LAS Datasets information to "+props.getProperty("las.xml.config.dir",defaultLocation));
+        log.info("Saving LAS LasServers information to "+sistersPath+sistersFile);
         try{
-            JAXBContext jc = JAXBContext.newInstance(Datasets.class);
+            JAXBContext jc = JAXBContext.newInstance(LasServers.class);
             Marshaller m = jc.createMarshaller();
             m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-            m.marshal(datasets, new FileOutputStream(props.getProperty("las.xml.config.dir",defaultLocation)+File.separator+this.sistersFile));
+            m.marshal(servers, new FileOutputStream(sistersPath+sistersFile));
             success = true;
         }catch(Exception e) {
             log.error(e);
@@ -138,11 +141,11 @@ public class LasSistersGleaner {
        node service information.  Takes that information and
        creates a local representation of this node's registration.
     */
-    public synchronized LasSistersGleaner appendToMyDatasetsFromRegistration(Registration registration) {
-        log.info("Creating my LAS Datasets representation...");
+    public synchronized LasSistersGleaner appendToMyLasServersFromRegistration(Registration registration) {
+        log.info("Creating my LAS LasServers representation...");
         try{
             LASService service = null; //the LASService entry from the registration -via-> node
-            LasServer sister = null;   //Local datasets xml element
+            LasServer sister = null;   //Local servers xml element
 
             //TODO: NEED TO DEDUP ENTRIES!!!
             for(Node node : registration.getNode()) {
@@ -150,7 +153,7 @@ public class LasSistersGleaner {
                 sister = new LasServer();
                 sister.setName(node.getHostname());
                 sister.setUrl(service.getEndpoint());
-                datasets.getLasServer().add(sister);
+                servers.getLasServer().add(sister);
             }
 
         } catch(Exception e) {
@@ -161,16 +164,16 @@ public class LasSistersGleaner {
     }
     
     public void clear() {
-        if(this.datasets != null) this.datasets = new Datasets();
+        if(this.servers != null) this.servers = new LasServers();
     }
 
-    public synchronized LasSistersGleaner loadMyDatasets() {
-        log.info("Loading my LAS Datasets info from "+sistersFile);
+    public synchronized LasSistersGleaner loadMyLasServers() {
+        log.info("Loading my LAS LasServers info from "+sistersPath+sistersFile);
         try{
-            JAXBContext jc = JAXBContext.newInstance(Datasets.class);
+            JAXBContext jc = JAXBContext.newInstance(LasServers.class);
             Unmarshaller u = jc.createUnmarshaller();
-            JAXBElement<Datasets> root = u.unmarshal(new StreamSource(new File(props.getProperty("las.xml.config.dir",defaultLocation)+File.separator+this.sistersFile)),Datasets.class);
-            datasets = root.getValue();
+            JAXBElement<LasServers> root = u.unmarshal(new StreamSource(new File(sistersPath+sistersFile)),LasServers.class);
+            servers = root.getValue();
         }catch(Exception e) {
             log.error(e);
         }
@@ -181,18 +184,18 @@ public class LasSistersGleaner {
     // Not really used methods but here for completeness
     //****************************************************************
 
-    public Datasets createDatasetsFromString(String sistersContent) {
-        log.info("Loading my LAS Datasets info from \n"+sistersContent+"\n");
-        Datasets fromContentDatasets = null;
+    public LasServers createLasServersFromString(String lasServersContentString) {
+        log.info("Loading my LAS LasServers info from \n"+lasServersContentString+"\n");
+        LasServers fromContentLasServers = null;
         try{
-            JAXBContext jc = JAXBContext.newInstance(Datasets.class);
+            JAXBContext jc = JAXBContext.newInstance(LasServers.class);
             Unmarshaller u = jc.createUnmarshaller();
-            JAXBElement<Datasets> root = u.unmarshal(new StreamSource(new StringReader(sistersContent)),Datasets.class);
-            fromContentDatasets = root.getValue();
+            JAXBElement<LasServers> root = u.unmarshal(new StreamSource(new StringReader(lasServersContentString)),LasServers.class);
+            fromContentLasServers = root.getValue();
         }catch(Exception e) {
             log.error(e);
         }
-        return fromContentDatasets;
+        return fromContentLasServers;
     }
 
 }

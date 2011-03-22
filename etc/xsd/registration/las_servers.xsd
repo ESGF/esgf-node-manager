@@ -13,7 +13,7 @@
     </xsd:complexType>
   </xsd:element>
   
-  <xsd:element name="datasets">
+  <xsd:element name="las_servers">
     <xsd:complexType>
       <xsd:sequence>
         <xsd:element ref="tns:las_server" minOccurs="1" maxOccurs="unbounded"/>
