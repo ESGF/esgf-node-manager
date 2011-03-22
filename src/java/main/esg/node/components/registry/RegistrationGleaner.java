@@ -123,6 +123,7 @@ public class RegistrationGleaner {
         
         //pull from registry to create las sisters file.
         try{
+            String endpoint=null;
             if( (null != (endpoint=props.getProperty("las.endpoint"))) &&
                 (new File(props.getProperty("las.app.home"))).exists() ) {
                 LasSistersGleaner lasSisterGleaner = new LasSistersGleaner(props); 
