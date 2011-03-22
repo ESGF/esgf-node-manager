@@ -116,9 +116,18 @@ public class RegistrationGleaner {
             m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             m.marshal(registration, new FileOutputStream(props.getProperty("node.manager.app.home",".")+File.separator+this.registrationFile));
             
-            LasSistersGleaner lasSisterGleaner = new LasSistersGleaner(props); 
-            lasSisterGleaner.appendToMyDatasetsFromRegistration(myRegistration).saveDatasets();
             success = true;
+        }catch(Exception e) {
+            log.error(e);
+        }
+        
+        //pull from registry to create las sisters file.
+        try{
+            if( (null != (endpoint=props.getProperty("las.endpoint"))) &&
+                (new File(props.getProperty("las.app.home"))).exists() ) {
+                LasSistersGleaner lasSisterGleaner = new LasSistersGleaner(props); 
+                lasSisterGleaner.appendToMyDatasetsFromRegistration(myRegistration).saveDatasets();
+            }
         }catch(Exception e) {
             log.error(e);
         }
