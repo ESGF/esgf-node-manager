@@ -271,7 +271,7 @@ public class RegistrationGleaner {
                     (new File(props.getProperty("publisher.app.home"))).exists() ) {
                     PublishingService pub = new PublishingService();
                     pub.setEndpoint(endpoint);
-                    node.setPublisherService(pub);
+                    node.setPublishingService(pub);
                 }
             }catch(Throwable t) {
                 log.error(t);
