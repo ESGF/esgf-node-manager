@@ -93,6 +93,7 @@ public class RegistrationGleaner {
     private String registrationPath = null;
     private Registration myRegistration = null;
     private Properties props = null;
+    private RegistrationGleanerHelperDAO helperDAO = null;
 
     public RegistrationGleaner() { this.init(); }
 
@@ -338,16 +339,7 @@ public class RegistrationGleaner {
                     (new File(props.getProperty("security.app.home"))).exists() ) {
                     AttributeService attrSvc = new AttributeService();
                     attrSvc.setEndpoint(endpoint);
-             
-                    //------------------------
-                    //NOTE: must write code to update groups according to the database contents
-                    //      this one I know is always there (at least initially by default)
-                    Group newGroup = new Group();
-                    newGroup.setName("wheel");
-                    newGroup.setDescription("Administrator Group");
-                    attrSvc.getGroup().add(newGroup);
-                    //------------------------
-                    
+                    loadAttributeServiceGroups(attrSvc);
                     node.setAttributeService(attrSvc);
                 }
             }catch(Throwable t) {
@@ -396,6 +388,18 @@ public class RegistrationGleaner {
             log.error(e);
         }
         return fromContentRegistration;
+    }
+
+    //Delegate out to our helper so we can get things out of the
+    //esgf_security.group database table
+    private void loadAttributeServiceGroups(AttributeService attrSvc) {
+        //lazy instantiate this guy... Because it is only used when
+        //this service is available, which is not on every node, so
+        //don't waste memory :-) -gavin
+        if (helperDAO == null) {
+            helperDAO = new RegistrationGleanerHelperDAO(props);
+        }
+        helperDAO.loadAttributeServiceGroups(attrSvc);
     }
 
     //Allow this class to be used as a command line tool for bootstrapping this node.
