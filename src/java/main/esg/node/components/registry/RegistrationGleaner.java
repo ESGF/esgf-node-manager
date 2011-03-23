@@ -214,6 +214,18 @@ public class RegistrationGleaner {
                 log.error(t);
             }
 
+            try{
+                if( (null != (endpoint=props.getProperty("relyingparty.endpoint"))) &&
+                    (new File(props.getProperty("relyingparty.app.home"))).exists() ) {
+                    RelyingPartyService rps = new RelyingPartyService();
+                    rps.setEndpoint(endpoint);
+                    node.setRelyingPartyService(rps);
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
+
+
             //------------------------------------------------
             //GLOBUS SUPPORT TOOLS
             //------------------------------------------------

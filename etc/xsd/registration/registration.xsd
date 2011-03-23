@@ -108,6 +108,12 @@ That does make it more wordy, and require and reconstruction. -->
       </xsd:complexType>
     </xsd:element>
 
+    <xsd:element name="RelyingPartyService">
+      <xsd:complexType>
+          <xsd:attributeGroup ref="tns:ServiceAttributes"/>
+      </xsd:complexType>
+    </xsd:element>
+
     <xsd:element name="PEMCert">
       <xsd:complexType>
         <xsd:element name="cert" type="xsd:string"/>
@@ -150,6 +156,7 @@ That does make it more wordy, and require and reconstruction. -->
             <xsd:element ref="tns:LASService" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:MyProxyService" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:PublishingService" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="tns:RelyingPartyService" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:PEMCert" minOccurs="0" maxOccurs="1"/>
         </xsd:all>
         <xsd:attributeGroup ref="tns:ResourceAttributes"/>
