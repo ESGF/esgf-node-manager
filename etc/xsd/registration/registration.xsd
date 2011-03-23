@@ -102,6 +102,12 @@ That does make it more wordy, and require and reconstruction. -->
         </xsd:complexType>
     </xsd:element>
 
+    <xsd:element name="PublishingService">
+      <xsd:complexType>
+          <xsd:attributeGroup ref="tns:ServiceAttributes"/>
+      </xsd:complexType>
+    </xsd:element>
+
     <xsd:element name="PEMCert">
       <xsd:complexType>
         <xsd:element name="cert" type="xsd:string"/>

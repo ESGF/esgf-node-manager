@@ -174,18 +174,22 @@ public class RegistrationGleaner {
         String endpoint = null;
         Node node = new Node();
         try{
-            String nodeHostname =props.getProperty("esgf.host","dunno");
+            String nodeHostname =props.getProperty("esgf.host");
 
             //************************************************
             //CORE
             //************************************************
-            node.setHostname(nodeHostname);
-            node.setNamespace(props.getProperty("node.namespace"));
+
+            //Query the user for...
             node.setOrganization(props.getProperty("esg.root.id"));
-            node.setSupportEmail(props.getProperty("mail.admin.address"));
-            node.setDN(props.getProperty("node.dn"));
             node.setLongName(props.getProperty("node.long.name"));
             node.setShortName(props.getProperty("node.short.name"));
+            node.setSupportEmail(props.getProperty("mail.admin.address"));
+            
+            //Pulled from system or install
+            node.setHostname(nodeHostname);
+            node.setDN(props.getProperty("node.dn")); //zoiks
+            node.setNamespace(props.getProperty("node.namespace")); //zoiks
             node.setTimeStamp((new Date()).getTime());
 
             //What is this ?
@@ -216,7 +220,7 @@ public class RegistrationGleaner {
 
             try{
                 if( (null != (endpoint=props.getProperty("myproxy.endpoint"))) &&
-                    (new File(props.getProperty("thredds.app.home"))).exists() ) {
+                    (new File(props.getProperty("myproxy.app.home"))).exists() ) { //zoiks
                     MyProxyService mproxy = new MyProxyService();
                     mproxy.setEndpoint(endpoint);
                     mproxy.setDN(props.getProperty("mproxy.dn"));
@@ -252,11 +256,22 @@ public class RegistrationGleaner {
             //************************************************
             
             try{
-                if( (null != (endpoint=props.getProperty("search.endpoint"))) &&
-                    (new File(props.getProperty("search.app.home"))).exists() ) {
+                if( (null != (endpoint=props.getProperty("index.endpoint"))) &&
+                    (new File(props.getProperty("index.app.home"))).exists() ) {
                     IndexService idx = new IndexService();
                     idx.setEndpoint(endpoint);
                     node.setIndexService(idx);
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
+
+            try{
+                if( (null != (endpoint=props.getProperty("publisher.endpoint"))) &&
+                    (new File(props.getProperty("publisher.app.home"))).exists() ) {
+                    PublishingService pub = new PublishingService();
+                    pub.setEndpoint(endpoint);
+                    node.setPublisherService(pub);
                 }
             }catch(Throwable t) {
                 log.error(t);
@@ -281,9 +296,10 @@ public class RegistrationGleaner {
             //IDP (security)
             //************************************************
 
+            //esgf-idp
             try{
-                if( (null != (endpoint=props.getProperty("idp.identity.endpoint"))) &&
-                    (new File(props.getProperty("idp.identity.app.home"))).exists() ) {
+                if( (null != (endpoint=props.getProperty("idp.service.endpoint"))) &&
+                    (new File(props.getProperty("idp.app.home"))).exists() ) {
                     OpenIDProvider openid = new OpenIDProvider();
                     openid.setEndpoint(endpoint);
                     node.setOpenIDProvider(openid);
@@ -292,36 +308,10 @@ public class RegistrationGleaner {
                 log.error(t);
             }
 
-
+            //esgf-security
             try{
-                if( (null != (endpoint=props.getProperty("idp.attrib.endpoint"))) &&
-                    (new File(props.getProperty("idp.attrib.app.home"))).exists() ) {
-                    AttributeService attrSvc = new AttributeService();
-                    attrSvc.setEndpoint(endpoint);
-                    
-                    String groupNameBase = "group-name";
-                    String groupDescriptionBase = "group-description";
-                    String tmpName, tmpDesc;
-                    for(int i = 0; i < 2; i++) {
-                        tmpName = groupNameBase+i;
-                        tmpDesc = groupDescriptionBase+i;
-                        if ((tmpName == null) && (tmpDesc == null)) {
-                            break;
-                        }
-                        Group newGroup = new Group();
-                        newGroup.setName(tmpName);
-                        newGroup.setDescription(tmpDesc);
-                        attrSvc.getGroup().add(newGroup);
-                    }
-                    node.setAttributeService(attrSvc);
-                }
-            }catch(Throwable t) {
-                log.error(t);
-            }
-	    
-            try{
-                if( (null != (endpoint=props.getProperty("idp.authz.endpoint"))) &&
-                    (new File(props.getProperty("idp.authz.app.home"))).exists() ) {
+                if( (null != (endpoint=props.getProperty("security.authz.service.endpoint"))) &&
+                    (new File(props.getProperty("security.app.home"))).exists() ) {
                     AuthorizationService authzSvc = new AuthorizationService();
                     authzSvc.setEndpoint(endpoint);
                     node.setAuthorizationService(authzSvc);
@@ -329,6 +319,29 @@ public class RegistrationGleaner {
             }catch(Throwable t) {
                 log.error(t);
             }
+
+            //esgf-security
+            try{
+                if( (null != (endpoint=props.getProperty("security.attribute.service.endpoint"))) &&
+                    (new File(props.getProperty("security.app.home"))).exists() ) {
+                    AttributeService attrSvc = new AttributeService();
+                    attrSvc.setEndpoint(endpoint);
+             
+                    //------------------------
+                    //NOTE: must write code to update groups according to the database contents
+                    //      this one I know is always there (at least initially by default)
+                    Group newGroup = new Group();
+                    newGroup.setName("wheel");
+                    newGroup.setDescription("Administrator Group");
+                    attrSvc.getGroup().add(newGroup);
+                    //------------------------
+                    
+                    node.setAttributeService(attrSvc);
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
+	    
             
             //************************************************
             //INDEX DEPRECATED SERVICE
