@@ -12,6 +12,8 @@ That does make it more wordy, and require and reconstruction. -->
         <!-- If DN is not set, it is assumed that the services uses the host certificate,
         and hence DN of the Node element is used in white listing -->
         <xsd:attribute name="DN" type="xsd:string"/>
+        <xsd:attribute name="Version" type="xsd:string"/>
+
     </xsd:attributeGroup>
 
     <xsd:element name="CA">

@@ -252,7 +252,7 @@ public class RegistrationGleaner {
                     (new File(props.getProperty("gridftp.app.home"))).exists() ) {
                     GridFTPService gftp = new GridFTPService();
                     gftp.setEndpoint(endpoint);
-                    String serviceType = "gftp-svctype";
+                    String serviceType = props.getProperty("gridftp.service.type");
                     if (serviceType != null) {
                         if (serviceType.equals(GridFTPServiceType.REPLICATION.value())) {
                             gftp.setServiceType(GridFTPServiceType.REPLICATION);
