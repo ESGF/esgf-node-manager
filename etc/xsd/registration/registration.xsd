@@ -137,9 +137,11 @@ That does make it more wordy, and require and reconstruction. -->
         unless overridden by the DN attribute in the service -->
         <xsd:attribute name="DN" type="xsd:string" use="required"/>
 
-        <xsd:attribute name="LongName" type="xsd:string" use="required"/>
         <xsd:attribute name="ShortName" type="xsd:string" use="required"/>
+        <xsd:attribute name="LongName" type="xsd:string"/>
         <xsd:attribute name="TimeStamp" type="xsd:long" use="required"/>
+        <xsd:attribute name="Version" type="xsd:string" use="required"/>
+        <xsd:attribute name="Release" type="xsd:string"/>
 
     </xsd:attributeGroup>
 

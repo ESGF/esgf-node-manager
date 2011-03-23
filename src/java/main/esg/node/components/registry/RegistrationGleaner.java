@@ -196,6 +196,8 @@ public class RegistrationGleaner {
             node.setDN(props.getProperty("node.dn")); //zoiks
             node.setNamespace(props.getProperty("node.namespace")); //zoiks
             node.setTimeStamp((new Date()).getTime());
+            node.setVersion(props.getProperty("version"));
+            node.setRelease(props.getProperty("release"));
 
             //What is this ?
             CA ca = new CA();
