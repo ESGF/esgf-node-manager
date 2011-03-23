@@ -95,11 +95,15 @@ public class RegistrationGleaner {
     private Properties props = null;
     private RegistrationGleanerHelperDAO helperDAO = null;
 
-    public RegistrationGleaner() { this.init(); }
+    public RegistrationGleaner() { this(null); }
+    public RegistrationGleaner(Properties props) { 
+        this.props = props;
+        this.init(); 
+    }
 
     public void init() {
         try {
-            this.props = new ESGFProperties();
+            if(props == null) this.props = new ESGFProperties();
         } catch(Exception e) {
             log.error(e);
         }
@@ -346,6 +350,10 @@ public class RegistrationGleaner {
                 log.error(t);
             }
 	    
+            PEMCert cert = new PEMCert();
+            cert.setCert("PLACE HOLDER STRING FOR PEM DATA (ZOIKS)");
+            node.setPEMCert(cert);
+            
             
             //************************************************
             //INDEX DEPRECATED SERVICE
