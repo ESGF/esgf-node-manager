@@ -222,9 +222,9 @@ public class RegistrationGleaner {
             try{
                 if( (null != (endpoint=props.getProperty("relyingparty.endpoint"))) &&
                     (new File(props.getProperty("relyingparty.app.home"))).exists() ) {
-                    RelyingPartyService rps = new RelyingPartyService();
-                    rps.setEndpoint(endpoint);
-                    node.setRelyingPartyService(rps);
+                    RelyingPartyService orp = new RelyingPartyService();
+                    orp.setEndpoint(endpoint);
+                    node.setRelyingPartyService(orp);
                 }
             }catch(Throwable t) {
                 log.error(t);
