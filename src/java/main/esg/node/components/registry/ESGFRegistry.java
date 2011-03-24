@@ -56,6 +56,16 @@
 ***************************************************************************/
 package esg.node.components.registry;
 
+import java.util.Properties;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
+
+import esg.node.core.*;
+
 /**
    Description:
    
@@ -66,9 +76,70 @@ package esg.node.components.registry;
    and collection.
    
 */
-
-public class ESGFRegistry {
+public class ESGFRegistry extends AbstractDataNodeComponent {
     
-    public ESGFRegistry() {}
+    private static Log log = LogFactory.getLog(ESGFRegistry.class);
+    private Properties props = null;
+    private boolean isBusy = false;
+    private RegistrationGleaner gleaner = null;
+
+
+    public ESGFRegistry(String name) {
+        super(name);
+        log.debug("Instantiating ESGFRegistry...");
+    }
+    
+    public void init() {
+        log.info("Initializing ESGFRegistry...");
+        props = getDataNodeManager().getMatchingProperties("*");
+        gleaner = new RegistrationGleaner(props);
+        startRegistry();
+    }
+
+    private synchronized boolean fetchNodeInfo() {
+        log.trace("Registry's fetchNodeInfo() called....");
+        return true;
+    }
+    
+    private void startRegistry() {
+        log.trace("launching registry timer");
+        long delay  = Long.parseLong(props.getProperty("registry.initialDelay"));
+        long period = Long.parseLong(props.getProperty("registry.period"));
+        log.trace("registry delay:  "+delay+" sec");
+        log.trace("registry period: "+period+" sec");
+	
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+                public final void run() {
+                    //log.trace("Checking for any new node information... [busy? "+ESGFRegistry.this.isBusy+"]");
+                    if(!ESGFRegistry.this.isBusy) {
+                        ESGFRegistry.this.isBusy = true;
+                        if(fetchNodeInfo()) {
+                            //TODO
+                            gleaner.createMyRegistration().saveRegistration();
+                        }
+                        ESGFRegistry.this.isBusy = false;
+                    }
+                }
+            },delay*1000,period*1000);
+    }
+
+    //When peer discovery messages are encountered grab those events
+    //and collect the peer's information and incorporate it into our
+    //own world view. The data should be prep'ed for query
+    public boolean handleESGQueuedEvent(ESGEvent event) {
+        log.trace("handling enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
+        //TODO: Pull out our registration information and push it to peers.
+
+        event.setData(gleaner.toString());
+        enqueueESGEvent(event);
+        return true;
+    }
+
+    //Listen out for Joins from comm.  TODO: grab the peer
+    //datastructure from comm and poke at it accordingly
+    public void handleESGEvent(ESGEvent event) {
+        super.handleESGEvent(event);
+    }
 
 }

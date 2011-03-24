@@ -65,6 +65,7 @@ import esg.node.connection.ESGConnectionManager;
 import esg.node.components.notification.ESGNotifier;
 import esg.node.components.monitoring.ESGMonitor;
 import esg.node.components.metrics.ESGMetrics;
+import esg.node.components.registry.ESGFRegistry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -104,6 +105,9 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
 	
 	ESGMetrics metrics = new ESGMetrics("METRICS");
 	registerComponent(metrics);
+
+	ESGFRegistry registry = new ESGFRegistry("REGISTRY");
+	registerComponent(registry);
 	
 	log.info("Connecting core components");
 
@@ -114,10 +118,12 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
 	connect("DNODE_SVC","NOTIFER");
 	connect("DNODE_SVC","MONITOR");
 	connect("DNODE_SVC","METRICS");
+	connect("DNODE_SVC","REGISITRY");
 
 	connect("NOTIFIER","CONN_MGR");
 	connect("MONITOR","CONN_MGR");
 	connect("METRICS","CONN_MGR");
+	connect("REGISTRY","CONN_MGR"); 
     }
 
     public void init() {

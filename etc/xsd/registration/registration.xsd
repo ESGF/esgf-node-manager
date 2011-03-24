@@ -130,7 +130,7 @@ That does make it more wordy, and require and reconstruction. -->
         <!-- Oragnization namespace org.esgf.badc, etc -->
         <xsd:attribute name="Namespace" type="xsd:string" use="required"/>
         <!-- Address to send requests to -->
-        <xsd:attribute name="SupportEmail" type="xsd:string" use="required"/>
+        <xsd:attribute name="SupportEmail" type="xsd:string"/>
         <!-- Hostname, full domain name, and unique identifier -->
         <xsd:attribute name="Hostname" type="xsd:string" use="required"/>
         <!-- Host Certificate DN, will be used as default identity for all services,

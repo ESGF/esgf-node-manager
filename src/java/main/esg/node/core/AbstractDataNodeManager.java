@@ -158,13 +158,13 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 	    key = (String)keys.nextElement();
 	    //log.trace("inspecting: "+key);
 	    try{
-		if(key.matches(regex)) {
-		    //log.trace("matched: adding...");
-		    matchProps.put(key, props.getProperty(key));
-		}
+            if(key.matches(regex)) {
+                //log.trace("matched: adding...");
+                matchProps.put(key, props.getProperty(key));
+            }
 	    }catch(PatternSyntaxException ex) {
-		log.error(ex.getMessage(),ex);
-		break;
+            log.error(ex.getMessage(),ex);
+            break;
 	    }
 	}
 	propCache.put(regex,matchProps);
