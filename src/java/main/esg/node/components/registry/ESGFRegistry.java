@@ -64,6 +64,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import esg.common.util.ESGFProperties;
 import esg.node.core.*;
 
 /**
@@ -91,9 +92,15 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     
     public void init() {
         log.info("Initializing ESGFRegistry...");
-        props = getDataNodeManager().getMatchingProperties("*");
-        gleaner = new RegistrationGleaner(props);
-        startRegistry();
+        try{
+            //props = getDataNodeManager().getMatchingProperties("*");
+            props = new ESGFProperties();
+            gleaner = new RegistrationGleaner(props);
+            startRegistry();
+        }catch(java.io.IOException e) {
+            System.out.println("Damn ESGFRegistry can't fire up... :-(");
+            log.error(e);
+        }
     }
 
     private synchronized boolean fetchNodeInfo() {
@@ -103,8 +110,8 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     
     private void startRegistry() {
         log.trace("launching registry timer");
-        long delay  = Long.parseLong(props.getProperty("registry.initialDelay"));
-        long period = Long.parseLong(props.getProperty("registry.period"));
+        long delay  = Long.parseLong(props.getProperty("registry.initialDelay","8"));
+        long period = Long.parseLong(props.getProperty("registry.period","86405"));
         log.trace("registry delay:  "+delay+" sec");
         log.trace("registry period: "+period+" sec");
 	

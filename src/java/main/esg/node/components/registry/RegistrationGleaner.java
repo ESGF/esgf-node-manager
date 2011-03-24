@@ -120,8 +120,7 @@ public class RegistrationGleaner {
             log.error("Registration is ["+registration+"]"); 
             return success;
         }
-        log.info("Saving registration information for "+registration.getNode().get(0).getHostname()+" to "+
-                 props.getProperty(registrationPath+this.registrationFile));
+        log.info("Saving registration information for to "+ registrationPath+this.registrationFile);
         try{
             JAXBContext jc = JAXBContext.newInstance(Registration.class);
             Marshaller m = jc.createMarshaller();
