@@ -87,6 +87,9 @@ import org.apache.commons.logging.impl.*;
 public class RegistrationGleaner {
 
     private static final Log log = LogFactory.getLog(RegistrationGleaner.class);
+
+    //NOTE: IF OTHER STATES BECOME APPARENT MAKE AN ENUM...
+    public static final String NOT_AVAILABLE = "NOT_AVAILABLE";
     
     private static final String registrationFile = "registration.xml";
     private static final boolean DEBUG=true;
@@ -384,7 +387,7 @@ public class RegistrationGleaner {
             File certfile = new File(certfilename);
             if(!certfile.exists()) {
                 log.warn("Could not find "+certfile.getCanonicalPath());
-                return "<NOT FOUND>";
+                return NOT_AVAILABLE;
             }
             
             //NOTE: should do this with NIO buffers and specify the right charset
