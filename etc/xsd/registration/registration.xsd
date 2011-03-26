@@ -11,8 +11,8 @@ That does make it more wordy, and require and reconstruction. -->
         <xsd:attribute name="endpoint" type="xsd:string" use="required"/>
         <!-- If DN is not set, it is assumed that the services uses the host certificate,
         and hence DN of the Node element is used in white listing -->
-        <xsd:attribute name="DN" type="xsd:string"/>
-        <xsd:attribute name="Version" type="xsd:string"/>
+        <xsd:attribute name="dn" type="xsd:string"/>
+        <xsd:attribute name="version" type="xsd:string"/>
 
     </xsd:attributeGroup>
 
@@ -118,7 +118,7 @@ That does make it more wordy, and require and reconstruction. -->
 
     <xsd:element name="PEMCert">
       <xsd:complexType>
-        <xsd:element name="cert" type="xsd:string"/>
+        <xsd:element name="Cert" type="xsd:string"/>
       </xsd:complexType>
     </xsd:element>
 
@@ -126,22 +126,22 @@ That does make it more wordy, and require and reconstruction. -->
 
     <xsd:attributeGroup name="ResourceAttributes">
         <!-- Name of organization -->
-        <xsd:attribute name="Organization" type="xsd:string" use="required"/>
+        <xsd:attribute name="organization" type="xsd:string" use="required"/>
         <!-- Oragnization namespace org.esgf.badc, etc -->
-        <xsd:attribute name="Namespace" type="xsd:string" use="required"/>
+        <xsd:attribute name="namespace" type="xsd:string" use="required"/>
         <!-- Address to send requests to -->
-        <xsd:attribute name="SupportEmail" type="xsd:string"/>
+        <xsd:attribute name="supportEmail" type="xsd:string"/>
         <!-- Hostname, full domain name, and unique identifier -->
-        <xsd:attribute name="Hostname" type="xsd:string" use="required"/>
+        <xsd:attribute name="hostname" type="xsd:string" use="required"/>
         <!-- Host Certificate DN, will be used as default identity for all services,
         unless overridden by the DN attribute in the service -->
-        <xsd:attribute name="DN" type="xsd:string" use="required"/>
+        <xsd:attribute name="dn" type="xsd:string" use="required"/>
 
-        <xsd:attribute name="ShortName" type="xsd:string" use="required"/>
-        <xsd:attribute name="LongName" type="xsd:string"/>
-        <xsd:attribute name="TimeStamp" type="xsd:long" use="required"/>
-        <xsd:attribute name="Version" type="xsd:string" use="required"/>
-        <xsd:attribute name="Release" type="xsd:string"/>
+        <xsd:attribute name="shortName" type="xsd:string" use="required"/>
+        <xsd:attribute name="longName" type="xsd:string"/>
+        <xsd:attribute name="timeStamp" type="xsd:long" use="required"/>
+        <xsd:attribute name="version" type="xsd:string" use="required"/>
+        <xsd:attribute name="release" type="xsd:string"/>
 
     </xsd:attributeGroup>
 

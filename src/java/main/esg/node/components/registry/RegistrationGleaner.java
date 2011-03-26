@@ -192,7 +192,7 @@ public class RegistrationGleaner {
             
             //Pulled from system or install
             node.setHostname(nodeHostname);
-            node.setDN(props.getProperty("node.dn")); //zoiks
+            node.setDn(props.getProperty("node.dn")); //zoiks
             node.setNamespace(props.getProperty("node.namespace")); //zoiks
             node.setTimeStamp((new Date()).getTime());
             node.setVersion(props.getProperty("version"));
@@ -202,7 +202,7 @@ public class RegistrationGleaner {
             CA ca = new CA();
             ca.setEndpoint(props.getProperty("esgf.host","dunno"));
             ca.setHash(props.getProperty("security.ca.hash","dunno"));
-            ca.setDN(props.getProperty("security.ca.dn","dunno"));
+            ca.setDn(props.getProperty("security.ca.dn","dunno"));
             node.setCA(ca);
 
             //************************************************
@@ -241,7 +241,7 @@ public class RegistrationGleaner {
                     (new File(props.getProperty("myproxy.app.home"))).exists() ) { //zoiks
                     MyProxyService mproxy = new MyProxyService();
                     mproxy.setEndpoint(endpoint);
-                    mproxy.setDN(props.getProperty("mproxy.dn"));
+                    mproxy.setDn(props.getProperty("mproxy.dn"));
                     node.setMyProxyService(mproxy);
                 }
             }catch(Throwable t) {
@@ -352,7 +352,7 @@ public class RegistrationGleaner {
             }
 	    
             PEMCert cert = new PEMCert();
-            cert.setCert("PLACE HOLDER STRING FOR PEM DATA (ZOIKS)");
+            cert.setCert(fetchMyPemCert());
             node.setPEMCert(cert);
             
             
@@ -372,6 +372,36 @@ public class RegistrationGleaner {
         return this;
     }
     
+    private String fetchMyPemCert() {
+        log.info("Fetching PEM Certificate...");
+        
+        byte[] buffer = null;
+        java.io.BufferedInputStream f = null;
+
+        try {
+            
+            String certfilename = "/etc/grid-security/hostcert.pem";
+            File certfile = new File(certfilename);
+            if(!certfile.exists()) {
+                log.warn("Could not find "+certfile.getCanonicalPath());
+                return "<NOT FOUND>";
+            }
+            
+            //NOTE: should do this with NIO buffers and specify the right charset
+            //so that the buffer size is accurate... put on list of TOODs -gavin
+            buffer = new byte[(int) certfile.length()];
+            f = new java.io.BufferedInputStream(new java.io.FileInputStream(certfile));
+            f.read(buffer);
+        }catch(java.io.IOException ex) {
+            log.error(ex);
+            buffer = new byte[0];
+        } finally {
+            if (f != null) try { f.close(); } catch (java.io.IOException ignored) { }
+        }
+        log.info("Certificate Fetched!");
+        return new String(buffer);
+    }
+
     public RegistrationGleaner loadMyRegistration() {
         log.info("Loading my registration info from "+registrationPath+registrationFile);
         try{
