@@ -151,7 +151,7 @@ public class LasSistersGleaner {
             for(Node node : registration.getNode()) {
                 service = node.getLASService();
                 sister = new LasServer();
-                sister.setName(node.getHostname());
+                sister.setName(node.getShortName());
                 sister.setUrl(service.getEndpoint());
                 servers.getLasServer().add(sister);
             }
