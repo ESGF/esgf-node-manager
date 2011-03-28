@@ -89,7 +89,7 @@ import esg.common.ESGInvalidObjectStateException;
 
 public class NotificationDAO implements Serializable {
 
-    private static final String notificationQuery = "SELECT DISTINCT d.user_id, d.email, ds.name, d.url, fv.mod_time FROM dataset as ds, file as f, esgf_node_manager.access_logging as d, file_version as fv WHERE ds.id=f.dataset_id and fv.file_id=f.id and d.url=fv.url and fv.mod_time>d.date_fetched AND d.date_fetched > (SELECT distinct MAX(notify_time) FROM esgf_node_manager.notification_run_log where id = ? ) ORDER BY d.email";
+    private static final String notificationQuery = "SELECT DISTINCT d.user_id, d.email, ds.name, d.url, fv.mod_time FROM dataset as ds, file as f, esgf_node_manager.access_logging as d, file_version as fv WHERE ds.id=f.dataset_id and fv.file_id=f.id and d.url=fv.url and fv.mod_time>d.date_fetched AND d.date_fetched > (SELECT distinct MAX(notify_time) FROM esgf_node_manager.notification_run_log where id = ? ) ORDER BY d.user_id";
     private static final String markTimeQuery      = "UPDATE esgf_node_manager.notification_run_log SET notify_time = ? WHERE id = ?";
     private static final String regCheckEntryQuery = "SELECT COUNT(*) FROM esgf_node_manager.notification_run_log WHERE id = ?";
     private static final String regAddEntryQuery   = "INSERT INTO esgf_node_manager.notification_run_log (id, notify_time) VALUES ( ? , ? )";
@@ -100,6 +100,7 @@ public class NotificationDAO implements Serializable {
     private QueryRunner queryRunner = null;
     private ResultSetHandler<List<NotificationDAO.NotificationRecipientInfo> > handler = null;
     private String nodeID = null;
+    private Map<String,String> emailResolverCache = null;
 
     public NotificationDAO(DataSource dataSource,String nodeID) {
 	this.setDataSource(dataSource);
@@ -123,6 +124,12 @@ public class NotificationDAO implements Serializable {
 
     //Initialize result set handlers...
     public void init() {
+        
+        //TODO: Put a *bound* on cache this to some reasonable length so
+        //it doesn't get crazy large, or even better yet use something
+        //like EHCache, perhaps? (maybe overkill)
+        emailResolverCache = new HashMap<String,String>(); 
+
 	log.trace("Setting up result handler");
 	handler = new ResultSetHandler<List<NotificationDAO.NotificationRecipientInfo> > () {
 	    public List<NotificationDAO.NotificationRecipientInfo> handle(ResultSet rs) throws SQLException {
@@ -135,6 +142,12 @@ public class NotificationDAO implements Serializable {
 
 		    String userid = rs.getString(1);
 		    String userAddress = rs.getString(2);
+
+            //Do the email resolution only if email is not available and not already cached
+            if( (null != userid) && (null == userAddress) && (null == (userAddress = emailResolverCache.get(userid)) ) ) {
+                //zoiks //userAddress = openid2email(userid); //phil's resolver (uses SAML)
+                emailResolverCache.put(userid,userAddress);
+            }
 		    
 		    //Create a new object PER NEW EMAIL ADDRESS...
 		    if( (lastUserAddress == null) || (!lastUserAddress.equals(userAddress)) ) {
