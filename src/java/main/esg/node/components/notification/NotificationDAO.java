@@ -86,6 +86,7 @@ import org.apache.commons.logging.impl.*;
 import esg.common.Utils;
 import esg.common.ESGInvalidObjectStateException;
 
+//import esg.security.OpenId2EmailAddressResolution;
 
 public class NotificationDAO implements Serializable {
 
@@ -130,6 +131,9 @@ public class NotificationDAO implements Serializable {
         //like EHCache, perhaps? (maybe overkill)
         emailResolverCache = new HashMap<String,String>(); 
 
+        //openid2Email = new OpenId2EmailAddressResolution();
+        //openid2Email.init(attributeQueryIssuer,yadisPropertiesFilename,attributeServiceClientPropertiesFilename);
+            
         log.trace("Setting up result handler");
         handler = new ResultSetHandler<List<NotificationDAO.NotificationRecipientInfo> > () {
             public List<NotificationDAO.NotificationRecipientInfo> handle(ResultSet rs) throws SQLException {
@@ -142,12 +146,17 @@ public class NotificationDAO implements Serializable {
 
                     String userid = rs.getString(1);
                     String userAddress = rs.getString(2);
-
+                    
                     //Do the email resolution only if email is not available and not already cached
-                    if( (null != userid) && (null == userAddress) && (null == (userAddress = emailResolverCache.get(userid)) ) ) {
-                        //zoiks //userAddress = openid2email(userid); //phil's resolver (uses SAML)
-                        emailResolverCache.put(userid,userAddress);
-                    }
+                    //if( (null != userid) && (null == userAddress) && (null == (userAddress = emailResolverCache.get(userid)) ) ) {
+                    //    try{
+                    //        userAddress = openid2email.resolve(userid); //phil's resolver (uses SAML)
+                    //        emailResolverCache.put(userid,userAddress);
+                    //    }catch (Throwable e) {
+                    //        log.warn("Cannot perform openid2email resolution: "+e.getMessage());
+                    //        log.error(e);
+                    //    }
+                    //}
             
                     //Create a new object PER NEW EMAIL ADDRESS...
                     if( (lastUserAddress == null) || (!lastUserAddress.equals(userAddress)) ) {
