@@ -127,7 +127,7 @@ public class AccessLoggingFilter implements Filter {
     public void init(FilterConfig filterConfig) throws ServletException {
         log.debug("Initializing filter: "+this.getClass().getName());
         this.filterConfig = filterConfig;
-        dbProperties = new Properties();
+        dbProperties = new ESGFProperties();
         System.out.println("FilterConfig is : "+filterConfig);
         System.out.println("db.protocol is  : "+filterConfig.getInitParameter("db.protocol"));
         dbProperties.put("db.protocol",filterConfig.getInitParameter("db.protocol"));
@@ -136,10 +136,11 @@ public class AccessLoggingFilter implements Filter {
         dbProperties.put("db.database",filterConfig.getInitParameter("db.database"));
         dbProperties.put("db.user",filterConfig.getInitParameter("db.user"));
         dbProperties.put("db.password",filterConfig.getInitParameter("db.password"));
+        dbProperties.put("db.driver",filterConfig.getInitParameter("db.driver"));
 
         log.trace("Database parameters: "+dbProperties);
 
-        DatabaseResource.init(filterConfig.getInitParameter("db.driver")).setupDataSource(dbProperties);
+        DatabaseResource.init(dbProperties.getProperty("db.driver","org.postgresql.Driver")).setupDataSource(dbProperties);
         DatabaseResource.getInstance().showDriverStats();
         accessLoggingDAO = new AccessLoggingDAO(DatabaseResource.getInstance().getDataSource());
         
