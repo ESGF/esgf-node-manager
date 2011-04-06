@@ -113,6 +113,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
 import esg.common.db.DatabaseResource;
+import esg.common.util.ESGFProperties;
 
 public class AccessLoggingFilter implements Filter {
 
