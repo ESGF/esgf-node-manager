@@ -128,7 +128,9 @@ public class AccessLoggingFilter implements Filter {
     public void init(FilterConfig filterConfig) throws ServletException {
         log.debug("Initializing filter: "+this.getClass().getName());
         this.filterConfig = filterConfig;
-        dbProperties = new ESGFProperties();
+        try{
+            dbProperties = new ESGFProperties();
+        }catch (java.io.IOException e) { log.error(e); }
         System.out.println("FilterConfig is : "+filterConfig);
         System.out.println("db.protocol is  : "+filterConfig.getInitParameter("db.protocol"));
         dbProperties.put("db.protocol",filterConfig.getInitParameter("db.protocol"));
