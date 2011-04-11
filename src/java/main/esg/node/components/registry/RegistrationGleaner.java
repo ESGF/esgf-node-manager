@@ -261,15 +261,15 @@ public class RegistrationGleaner {
                     //GridFTPServiceType.DOWNLOAD (END-USER)
                     String configLabels = null;
                     if( null != (configLabels=props.getProperty("gridftp.config"))) {
-                        for(String configLabel : configLabels.split(" ")) {
+                        for(String configLabel : configLabels.split("\\s+")) {
                             Configuration gftpConfig = new Configuration();
                             if(configLabel.equalsIgnoreCase("bdm")) {
                                 gftpConfig.setServiceType(GridFTPServiceType.REPLICATION);
-                                gftpConfig.setPort("2812");
+                                gftpConfig.setPort(props.getProperty("gridftp.bdm.server.port","2812"));
                             }
                             if(configLabel.equalsIgnoreCase("end-user")) {
                                 gftpConfig.setServiceType(GridFTPServiceType.DOWNLOAD);
-                                gftpConfig.setPort("2811");
+                                gftpConfig.setPort(props.getProperty("gridftp.server.port","2811"));//(standard gsiftp port)
                             }
                             gftp.getConfiguration().add(gftpConfig);
                         }
