@@ -256,16 +256,25 @@ public class RegistrationGleaner {
                     (new File(props.getProperty("gridftp.app.home"))).exists() ) {
                     GridFTPService gftp = new GridFTPService();
                     gftp.setEndpoint(endpoint);
-                    String serviceType = props.getProperty("gridftp.service.type");
-                    if (serviceType != null) {
-                        if (serviceType.equals(GridFTPServiceType.REPLICATION.value())) {
-                            gftp.setServiceType(GridFTPServiceType.REPLICATION);
-                        }else{
-                            gftp.setServiceType(GridFTPServiceType.DOWNLOAD);
+                    
+                    //GridFTPServiceType.REPLICATION (BDM)
+                    //GridFTPServiceType.DOWNLOAD (END-USER)
+                    String configLabels = null;
+                    if( null != (configLabels=props.getProperty("gridftp.config"))) {
+                        for(String configLabel : configLabels.split(" ")) {
+                            Configuration gftpConfig = new Configuration();
+                            if(configLabel.equalsIgnoreCase("bdm")) {
+                                gftpConfig.setServiceType(GridFTPServiceType.REPLICATION);
+                                gftpConfig.setPort("2812");
+                            }
+                            if(configLabel.equalsIgnoreCase("end-user")) {
+                                gftpConfig.setServiceType(GridFTPServiceType.DOWNLOAD);
+                                gftpConfig.setPort("2811");
+                            }
+                            gftp.getConfiguration().add(gftpConfig);
                         }
-                    }else {
-                        gftp.setServiceType(GridFTPServiceType.DOWNLOAD);
                     }
+
                     node.setGridFTPService(gftp);
                 }
             }catch(Throwable t) {
