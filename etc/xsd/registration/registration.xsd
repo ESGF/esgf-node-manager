@@ -83,7 +83,7 @@ That does make it more wordy, and require and reconstruction. -->
             <xsd:attributeGroup ref="tns:ServiceAttributes"/>
         </xsd:complexType>
     </xsd:element>
-
+    
     <xsd:simpleType name="GridFTPServiceType">
         <xsd:restriction base="xsd:string">
             <xsd:enumeration value="Replication"/>
@@ -91,10 +91,19 @@ That does make it more wordy, and require and reconstruction. -->
         </xsd:restriction>
     </xsd:simpleType>
 
+    <xsd:element name=Configuration>
+        <xsd:complexType>
+            <xsd:attribute name="serviceType" type="tns:GridFTPServiceType use=required"/>
+            <xsd:attribute name="port" type="xsd:string" use="required"/>
+        </xsd:complexType>
+    </xsd:element>
+
     <xsd:element name="GridFTPService">
         <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="tns:Configuration" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
             <xsd:attributeGroup ref="tns:ServiceAttributes"/>
-            <xsd:attribute name="ServiceType" type="tns:GridFTPServiceType"/>
         </xsd:complexType>
     </xsd:element>
 
