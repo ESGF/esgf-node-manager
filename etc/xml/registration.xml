@@ -1,18 +1,84 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Registration xmlns="http://www.esgf.org/registry">
-    <Node DN="OU=pcmdi O=esgf HOST=esg-test1@llnl.gov" Hostname="malcolm.llnl.gov" SupportEmail="gavin@llnl.gov" Namespace="gov.llnl" Organization="PCMDI">
-        <CA DN="dunno" endpoint="malcolm.llnl.gov" hash="dunno"/>
-        <OpenIDProvider endpoint="dunno"/>
-        <IndexService DN="dunno" endpoint="dunno"/>
-        <AttributeService endpoint="dunno">
-            <group description="group-description0" name="group-name0"/>
-            <group description="group-description1" name="group-name1"/>
-        </AttributeService>
-        <AuthorizationService endpoint="authsvc-endpoint"/>
-        <OAIRepository endpoint="oairepo-endpoint"/>
-        <ThreddsService endpoint="thredds-endpoint"/>
-        <GridFTPService endpoint="gftp-endpoint" ServiceType="Download"/>
-        <LASService endpoint="dunno"/>
-        <MyProxyService DN="mproxy-dn" endpoint="mproxy-endpoint"/>
-    </Node>
+<Registration>
+  <Node supportEmail="gavin@llnl.gov"
+        dn="/O=Grid/OU=GlobusTest/OU=simpleCA-pcmdi3.llnl.gov/CN=esgf-node1.llnl.gov"
+        shortName="ESGF-NODE-1"
+        longName="PCMDI ESGF NODE ONE"
+        timeStamp="1302578816957"
+        version="v1.0.2"
+        release="Stuyvesant">
+    <CA hash="dunno" endpoint="dunno" dn="dunno"/>
+    <OpenIDProvider endpoint="https://esgf-node1.llnl.gov/esgf-idp/idp/openidServer.htm"/>
+    <IndexService endpoint="http://esgf-node1.llnl.gov/esg-search/rest/search"/>
+    <AttributeService endpoint="https://esgf-node1.llnl.gov/esgf-security/saml/soap/secure/attributeService.htm">
+      <Group name="wheel" description="Administrator Group"/>
+      <Group name="NASA OBS" description=""/>
+      <Group name="ORNL OBS" description=""/>
+      <Group name="CMIP5 Research" description=""/>
+    </AttributeService>
+    <AuthorizationService endpoint="https://esgf-node1.llnl.gov/esgf-security/saml/soap/secure/authorizationService.htm"/>
+    <ThreddsService endpoint="http://esgf-node1.llnl.gov/thredds"/>
+    <GridFTPService endpoint="gsiftp://esgf-node1.llnl.gov">
+      <Configuration serviceType="Replication" port="2812"/>
+      <Configuration serviceType="Download" port="2811"/>
+    </GridFTPService>
+    <LASService endpoint="http://esgf-node1.llnl.gov/las"/>
+    <MyProxyService endpoint="pcmdi3.llnl.gov"/>
+    <PublishingService endpoint="https://esgf-node1.llnl.gov/esg-search/remote/secure/client-cert/hessian/publishingService"/>
+    <RelyingPartyService endpoint="https://esgf-node1.llnl.gov/OpenidRelyingParty"/>
+    <PEMCert>
+      <Cert>
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 1 (0x1)
+        Signature Algorithm: sha1WithRSAEncryption
+        Issuer: O=Grid, OU=GlobusTest, OU=simpleCA-esgf-node1.llnl.gov, CN=Globus Simple CA
+        Validity
+            Not Before: Apr 10 05:51:28 2011 GMT
+            Not After : Apr  9 05:51:28 2012 GMT
+        Subject: O=Grid, OU=GlobusTest, OU=simpleCA-esgf-node1.llnl.gov, CN=host/esgf-node1.llnl.gov
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+            RSA Public Key: (1024 bit)
+                Modulus (1024 bit):
+                    00:d9:c8:09:8c:fa:46:0a:bf:e6:77:60:9f:1f:96:
+                    4c:9c:a4:f4:e7:ff:45:ff:1e:dd:56:1b:7a:93:23:
+                    76:7c:7e:a7:32:84:7b:9c:83:a3:86:71:0b:d6:f6:
+                    91:4e:d2:2a:53:fa:23:d5:20:b8:03:66:d3:38:f2:
+                    44:71:59:fb:d8:28:e6:09:08:60:aa:67:a4:8d:99:
+                    4c:d6:42:a5:b9:9e:e6:ef:4a:56:81:3e:9e:19:c1:
+                    14:97:e2:be:c5:f6:31:a4:f1:55:b8:6d:a5:62:94:
+                    58:b4:8f:ac:58:9f:a3:47:48:0f:30:fa:62:fc:55:
+                    82:ce:0a:f1:da:5f:87:a9:c5
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            Netscape Cert Type:
+                SSL Client, SSL Server, S/MIME, Object Signing
+    Signature Algorithm: sha1WithRSAEncryption
+        d5:0d:a7:91:08:34:69:5f:47:b9:4e:1d:e9:5a:6a:e2:33:9f:
+        ee:ee:b6:e4:61:f3:db:7d:c9:db:d6:ba:85:a6:23:0d:85:e7:
+        3d:7e:0f:97:86:4b:62:e7:5a:7d:d5:28:df:75:60:48:0e:d7:
+        a7:9a:7d:0c:33:04:52:c6:14:ba:77:04:32:87:21:31:4c:40:
+        30:a6:43:42:06:5a:99:cc:b1:11:8d:e9:c8:f1:5a:ef:9e:dd:
+        47:1f:3e:ac:60:e0:2c:fd:bd:b1:84:62:8e:d5:59:f7:98:ee:
+        27:eb:8d:f8:f0:aa:bc:cf:0c:be:ba:06:d2:73:37:29:39:63:
+        bd:39
+-----BEGIN CERTIFICATE-----
+MIICXzCCAcigAwIBAgIBATANBgkqhkiG9w0BAQUFADBmMQ0wCwYDVQQKEwRHcmlk
+MRMwEQYDVQQLEwpHbG9idXNUZXN0MSUwIwYDVQQLExxzaW1wbGVDQS1lc2dmLW5v
+ZGUxLmxsbmwuZ292MRkwFwYDVQQDExBHbG9idXMgU2ltcGxlIENBMB4XDTExMDQx
+MDA1NTEyOFoXDTEyMDQwOTA1NTEyOFowbjENMAsGA1UEChMER3JpZDETMBEGA1UE
+CxMKR2xvYnVzVGVzdDElMCMGA1UECxMcc2ltcGxlQ0EtZXNnZi1ub2RlMS5sbG5s
+LmdvdjEhMB8GA1UEAxMYaG9zdC9lc2dmLW5vZGUxLmxsbmwuZ292MIGfMA0GCSqG
+SIb3DQEBAQUAA4GNADCBiQKBgQDZyAmM+kYKv+Z3YJ8flkycpPTn/0X/Ht1WG3qT
+I3Z8fqcyhHucg6OGcQvW9pFO0ipT+iPVILgDZtM48kRxWfvYKOYJCGCqZ6SNmUzW
+QqW5nubvSlaBPp4ZwRSX4r7F9jGk8VW4baVilFi0j6xYn6NHSA8w+mL8VYLOCvHa
+X4epxQIDAQABoxUwEzARBglghkgBhvhCAQEEBAMCBPAwDQYJKoZIhvcNAQEFBQAD
+gYEA1Q2nkQg0aV9HuU4d6Vpq4jOf7u625GHz233J29a6haYjDYXnPX4Pl4ZLYuda
+fdUo33VgSA7Xp5p9DDMEUsYUuncEMochMUxAMKZDQgZamcyxEY3pyPFa757dRx8+
+rGDgLP29sYRijtVZ95juJ+uN+PCqvM8MvroG0nM3KTljvTk=
+-----END CERTIFICATE-----
+      </Cert>
+    </PEMCert>
+  </Node>
 </Registration>
