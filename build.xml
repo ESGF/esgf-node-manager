@@ -322,6 +322,27 @@ Builds the project via ant (obviously).
     </xjc>
   </target>
 
+   <!--
+   NOTE: If you get this error that means you have your CLASSPATH set and
+   which may have jaxb jars therein.  To get rid of this and be able to
+   compile please unset your CLASSAPTH before running ant. 
+   The error is strange because it is exactly the opposite.  You have
+   too may jaxb's in your classpath.  This build sets up all the
+   classpath you need to build this project.  :-) -gavin
+
+   gen_jaxb_registration:
+
+   BUILD FAILED
+   /Users/cue/projects/esgf-node-manager/build.xml:318: java.lang.ClassNotFoundException: There's no JAXB 2.2 API in the classpath
+   	at com.sun.tools.xjc.ClassLoaderBuilder.createProtectiveClassLoader(ClassLoaderBuilder.java:82)
+   	at com.sun.tools.xjc.XJCTask.createClassLoader(XJCTask.java:79)
+   	at com.sun.istack.tools.ProtectedTask.execute(ProtectedTask.java:46)
+   	at org.apache.tools.ant.UnknownElement.execute(UnknownElement.java:291)
+   	at sun.reflect.GeneratedMethodAccessor4.invoke(Unknown Source)
+   	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+   	at java.lang.reflect.Method.invoke(Method.java:597)
+   -->
+
   <!--
       ************************************************************
       Build & Compilation....
