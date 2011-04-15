@@ -116,6 +116,8 @@ import esg.common.db.DatabaseResource;
 import esg.common.util.ESGFProperties;
 
 public class AccessLoggingFilter implements Filter {
+    
+    final static String AUTHORIZATION_REQUEST_ATTRIBUTE = "eske.model.security.AuthorizationToken"; // legacy value compatible with old TDS filter
 
     private static Log log = LogFactory.getLog(AccessLoggingFilter.class);
     
@@ -182,6 +184,11 @@ public class AccessLoggingFilter implements Filter {
                          FilterChain chain) throws IOException, ServletException {
         
         if(filterConfig == null) return;
+        
+        // only proceed if the request has been authorized
+        final Boolean requestIsAuthorized = (Boolean)request.getAttribute(AUTHORIZATION_REQUEST_ATTRIBUTE);
+        log.debug("AUTHORIZATION_REQUEST_ATTRIBUTE="+requestIsAuthorized);
+        if (requestIsAuthorized==null || requestIsAuthorized==false) return;        
 
         boolean success = false;
         int id=-1;
