@@ -46,7 +46,8 @@ CREATE TABLE access_logging (
     batch_update_time double precision,
     date_fetched double precision NOT NULL,
     success boolean,
-    duration double precision
+    duration double precision,
+    user_id_hash character varying NOT NULL
 );
 
 

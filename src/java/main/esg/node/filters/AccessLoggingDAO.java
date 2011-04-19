@@ -75,13 +75,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import esg.common.QuickHash;
+
 public class AccessLoggingDAO implements Serializable {
 
     //TODO figure out what these queries should be!
     private static final String getNextPrimaryKeyValQuery = "select nextval('esgf_node_manager.access_logging_id_seq')";
     private static final String accessLoggingIngressQuery = 
-        "insert into esgf_node_manager.access_logging (id, user_id, email, url, file_id, remote_addr, user_agent, service_type, batch_update_time, date_fetched, success) "+
-        "values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        "insert into esgf_node_manager.access_logging (id, user_id, user_id_hash, email, url, file_id, remote_addr, user_agent, service_type, batch_update_time, date_fetched, success) "+
+        "values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     private static final String accessLoggingEgressQuery = 
         "update esgf_node_manager.access_logging set success = ?, duration = ? where id = ?";
     
@@ -90,9 +92,15 @@ public class AccessLoggingDAO implements Serializable {
     private DataSource dataSource = null;
     private QueryRunner queryRunner = null;
     private ResultSetHandler<Integer> idResultSetHandler = null;
+    private QuickHash quickHash = null;
     
     public AccessLoggingDAO(DataSource dataSource) {
         this.setDataSource(dataSource);
+        try{
+            this.quickHash = new QuickHash("SHA1");
+        }catch(java.security.NoSuchAlgorithmException e) {
+            log.error(e);
+        }
     }
     
     //Not preferred constructor but here for serialization requirement.
@@ -133,7 +141,7 @@ public class AccessLoggingDAO implements Serializable {
             //That is the bit of information we really want to also have.
             //What we really need is an absolute id for a file!!!
             numRecordsInserted = queryRunner.update(accessLoggingIngressQuery,
-                                                    id,userID,email,url,fileID,remoteAddress,userAgent,serviceType,batchUpdateTime,dateFetched,false);
+                                                    id,userID,quickHash.sum(userID),email,url,fileID,remoteAddress,userAgent,serviceType,batchUpdateTime,dateFetched,false);
         }catch(SQLException ex) {
             log.error(ex);
         }

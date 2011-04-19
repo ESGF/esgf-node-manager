@@ -60,7 +60,7 @@
 
    Needed to write a quick hash thingy for quick generation of
    'unique' keys etc.
-
+   
 **/
 package esg.common;
 
@@ -74,20 +74,37 @@ import java.math.BigInteger;
 
 
 public class QuickHash {
-    public static String sum(String plaintext) throws NoSuchAlgorithmException {
-        return sum("SHA1",plaintext);
+    
+    MessageDigest m = null;
+                                                
+    public QuickHash(String algo) throws NoSuchAlgorithmException {
+        m = MessageDigest.getInstance(algo);
     }
-    public static String sum(String algo,String plaintext) throws NoSuchAlgorithmException {
-        MessageDigest m = MessageDigest.getInstance(algo);
-        byte[] data = plaintext.getBytes(); 
+
+    public String sum(String plaintext) {
+        byte[] data = null;
+        try {
+            data = plaintext.getBytes("UTF-8"); 
+        }catch(Throwable t) {t.printStackTrace();}
         m.update(data,0,data.length);
         BigInteger i = new BigInteger(1,m.digest());
         return String.format("%1$032X", i);
     }
     
     public static void main(String[] args) {
-        long start = System.currentTimeMillis();
-        try { System.out.println(args[0]+" -> "+QuickHash.sum(args[1],args[0])); } catch(Throwable t) { System.out.println(t.getMessage()); }
-        System.out.println(System.currentTimeMillis() - start);
+        try { 
+            String val = null;
+            String hash = null;
+            QuickHash quickHash = new QuickHash(args[1]);
+            for(int i=0;i<1;i++) {
+                val=args[0]+(i%1);
+                System.out.print(val+" -> ");
+                long start = System.currentTimeMillis();
+                hash=quickHash.sum(val); 
+                System.out.println(hash+" -> t="+(System.currentTimeMillis() - start));
+            }
+        } catch(Throwable t) { 
+            System.out.println(t.getMessage()); 
+        }
     }
 }
