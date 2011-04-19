@@ -142,7 +142,7 @@ public class AccessLoggingFilter implements Filter {
         dbProperties.put("db.user",filterConfig.getInitParameter("db.user"));
         dbProperties.put("db.password",filterConfig.getInitParameter("db.password"));
         dbProperties.put("db.driver",filterConfig.getInitParameter("db.driver"));
-
+        
         log.trace("Database parameters: "+dbProperties);
 
         DatabaseResource.init(dbProperties.getProperty("db.driver","org.postgresql.Driver")).setupDataSource(dbProperties);
@@ -185,11 +185,6 @@ public class AccessLoggingFilter implements Filter {
         
         if(filterConfig == null) return;
         
-        // only proceed if the request has been authorized
-        final Boolean requestIsAuthorized = (Boolean)request.getAttribute(AUTHORIZATION_REQUEST_ATTRIBUTE);
-        log.debug("AUTHORIZATION_REQUEST_ATTRIBUTE="+requestIsAuthorized);
-        if (requestIsAuthorized==null || requestIsAuthorized==false) return;        
-
         boolean success = false;
         int id=-1;
 
@@ -216,6 +211,15 @@ public class AccessLoggingFilter implements Filter {
                 Matcher m = urlPattern.matcher(url);
                 
                 if(m.matches()) {
+
+                    // only proceed if the request has been authorized
+                    final Boolean requestIsAuthorized = (Boolean)request.getAttribute(AUTHORIZATION_REQUEST_ATTRIBUTE);
+                    log.debug("AUTHORIZATION_REQUEST_ATTRIBUTE="+requestIsAuthorized);
+                    if (requestIsAuthorized==null || requestIsAuthorized==false) {
+                        log.warn("UnAuthorized Request for: "+req.getRequestURL().toString().trim());
+                        chain.doFilter(request, response);
+                        return;
+                    }
 
                     log.debug("Executing filter on: "+url);
 
@@ -272,7 +276,7 @@ public class AccessLoggingFilter implements Filter {
             }else{
                 log.error("DAO is null :["+accessLoggingDAO+"]");
                 HttpServletResponse resp = (HttpServletResponse)response;
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Invalid State Of ESG Access Logging Filter");
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Invalid State Of ESG Access Logging Filter: DAO=["+accessLoggingDAO+"]");
             }
                     
         }catch(Throwable t) {
