@@ -130,18 +130,21 @@ public class AccessLoggingFilter implements Filter {
     public void init(FilterConfig filterConfig) throws ServletException {
         log.debug("Initializing filter: "+this.getClass().getName());
         this.filterConfig = filterConfig;
+        Properties esgfProperties = null;
         try{
-            dbProperties = new ESGFProperties();
+            esgfProperties = new ESGFProperties();
         }catch (java.io.IOException e) { log.error(e); }
-        System.out.println("FilterConfig is : "+filterConfig);
-        System.out.println("db.protocol is  : "+filterConfig.getInitParameter("db.protocol"));
-        dbProperties.put("db.protocol",filterConfig.getInitParameter("db.protocol"));
-        dbProperties.put("db.host",filterConfig.getInitParameter("db.host"));
-        dbProperties.put("db.port",filterConfig.getInitParameter("db.port"));
-        dbProperties.put("db.database",filterConfig.getInitParameter("db.database"));
-        dbProperties.put("db.user",filterConfig.getInitParameter("db.user"));
-        dbProperties.put("db.password",filterConfig.getInitParameter("db.password"));
-        dbProperties.put("db.driver",filterConfig.getInitParameter("db.driver"));
+        String value = null;
+        dbProperties = new Properties();
+        log.debug("FilterConfig is : ["+filterConfig+"]");
+        log.debug("db.protocol is  : ["+filterConfig.getInitParameter("db.protocol")+"]");
+        dbProperties.put("db.protocol",((null != (value = filterConfig.getInitParameter("db.protocol"))) ? value : esgfProperties.get("db.protocol")));
+        dbProperties.put("db.host",((null != (value = filterConfig.getInitParameter("db.host"))) ? value : esgfProperties.get("db.host")));
+        dbProperties.put("db.port",((null != (value = filterConfig.getInitParameter("db.port"))) ? value : esgfProperties.get("db.port")));
+        dbProperties.put("db.database",((null != (value = filterConfig.getInitParameter("db.database"))) ? value : esgfProperties.get("db.database")));
+        dbProperties.put("db.user",((null != (value = filterConfig.getInitParameter("db.user"))) ? value : esgfProperties.get("db.user")));
+        dbProperties.put("db.password",((null != (value = filterConfig.getInitParameter("db.password"))) ? value : esgfProperties.get("db.password")));
+        dbProperties.put("db.driver",((null != (value = filterConfig.getInitParameter("db.driver"))) ? value : esgfProperties.get("db.driver")));
         
         log.trace("Database parameters: "+dbProperties);
 
