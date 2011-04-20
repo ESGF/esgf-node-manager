@@ -97,15 +97,15 @@ config_file=${esg_root_dir}/config/esgf.properties
 init() {
     #[ -n "${envfile}" ] && [ -e "${envfile}" ] && source ${envfile} && ((VERBOSE)) && printf "node manager: sourcing environment from: ${envfile} \n"
 
+    esgf_node_manager_version=${esgf_node_manager_version:-"0.4.6"}
+    esgf_node_manager_db_version=${esgf_node_manager_db_version:-"0.1.5"}
+    esgf_node_manager_egg_file=esgf_node_manager-${esgf_node_manager_db_version}-py${python_version}.egg
+
     node_dist_url=${esg_dist_url}/esgf-node-manager/esgf-node-manager-${esgf_node_manager_version}.tar.gz
     node_manager_app_context_root=esgf-node-manager
 
     get_property node_manager_app_home ${tomcat_install_dir}/webapps/${node_manager_app_context_root}
     write_as_property node_manager_app_home
-
-    esgf_node_manager_version=${esgf_node_manager_version:-"0.4.6"}
-    esgf_node_manager_db_version=${esgf_node_manager_db_version:-"0.1.4"}
-    esgf_node_manager_egg_file=esgf_node_manager-${esgf_node_manager_db_version}-py${python_version}.egg
 
     #Database information....
     node_db_name=${node_db_name:-"esgcet"}
