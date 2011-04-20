@@ -67,6 +67,8 @@ import java.util.Properties;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
@@ -75,24 +77,42 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import esg.common.QuickHash;
+
 public class AccessLoggingDAO implements Serializable {
 
     //TODO figure out what these queries should be!
     private static final String getNextPrimaryKeyValQuery = "select nextval('esgf_node_manager.access_logging_id_seq')";
     private static final String accessLoggingIngressQuery = 
-        "insert into esgf_node_manager.access_logging (id, user_id, email, url, file_id, remote_addr, user_agent, service_type, batch_update_time, date_fetched, success) "+
-        "values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        "insert into esgf_node_manager.access_logging (id, user_id, user_id_hash, user_idp, email, url, file_id, remote_addr, user_agent, service_type, batch_update_time, date_fetched, success) "+
+        "values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     private static final String accessLoggingEgressQuery = 
         "update esgf_node_manager.access_logging set success = ?, duration = ? where id = ?";
     
     private static final Log log = LogFactory.getLog(AccessLoggingDAO.class);
+
+    //URL Pattern: http[s]*?://([^:/]*)(:(?:[0-9]*))?/([^:/]*/)*(.*$)
+    //group 1 = host <<---what we want
+    //group 2 = port
+    //group 3 = path
+    //group 4 = file
+    //We want to pull out group1, the host
+    //userid = openid
+    private static final String regex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/(.*/)*(.*$)";
+    private static final Pattern urlPattern = Pattern.compile(regex,Pattern.CASE_INSENSITIVE);
     
     private DataSource dataSource = null;
     private QueryRunner queryRunner = null;
     private ResultSetHandler<Integer> idResultSetHandler = null;
+    private QuickHash quickHash = null;
     
     public AccessLoggingDAO(DataSource dataSource) {
         this.setDataSource(dataSource);
+        try{
+            this.quickHash = new QuickHash("SHA1");
+        }catch(java.security.NoSuchAlgorithmException e) {
+            log.error(e);
+        }
     }
     
     //Not preferred constructor but here for serialization requirement.
@@ -133,7 +153,7 @@ public class AccessLoggingDAO implements Serializable {
             //That is the bit of information we really want to also have.
             //What we really need is an absolute id for a file!!!
             numRecordsInserted = queryRunner.update(accessLoggingIngressQuery,
-                                                    id,userID,email,url,fileID,remoteAddress,userAgent,serviceType,batchUpdateTime,dateFetched,false);
+                                                    id,userID,quickHash.sum(userID),userIdp(userID),email,url,fileID,remoteAddress,userAgent,serviceType,batchUpdateTime,dateFetched,false);
         }catch(SQLException ex) {
             log.error(ex);
         }
@@ -156,6 +176,21 @@ public class AccessLoggingDAO implements Serializable {
             log.error(ex);
         }
         return ret;
+    }
+
+    //NOTE: w.r.t performance... we could move the Matcher off the
+    //stack on make it final on the heap so we don't have to
+    //instantiate it per call.  That may be faster ,but at the cost of
+    //concurrency since we would then have to make this static.
+    //However, right now the call to logIngressInfo that calls this is
+    //sync'd so we could sync this to and there won't be any extra
+    //penalty.  Think about it... Right now let's save optimization
+    //for later. -gavin
+    private String userIdp(String userid) {
+        String idpHostname = "<no-idp>";
+        Matcher m = urlPattern.matcher(userid);
+        if(m.find()) idpHostname=m.group(1);
+        return idpHostname;
     }
     
     public String toString() {
