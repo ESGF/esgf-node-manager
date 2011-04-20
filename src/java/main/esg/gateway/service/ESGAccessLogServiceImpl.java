@@ -87,7 +87,7 @@ public class ESGAccessLogServiceImpl implements ESGAccessLogService {
     private QueryRunner queryRunner = null;
     private ResultSetHandler<List<String[]>> resultSetHandler = null;
     private int limit = 999;
-    private static final String accessLogQuery = "SELECT id, user_id, user_id_hash, url, file_id, remote_addr, user_agent, service_type, batch_update_time, date_fetched, success, duration FROM esgf_node_manager.access_logging WHERE date_fetched >= ? AND date_fetched < ? ORDER BY date_fetched ASC LIMIT ?";
+    private static final String accessLogQuery = "SELECT id, user_id_hash, user_idp, url, file_id, remote_addr, user_agent, service_type, batch_update_time, date_fetched, success, duration FROM esgf_node_manager.access_logging WHERE date_fetched >= ? AND date_fetched < ? ORDER BY date_fetched ASC LIMIT ?";
         
     public ESGAccessLogServiceImpl() {
 	log.trace("Instantiating ESGAccessLogService implementation");

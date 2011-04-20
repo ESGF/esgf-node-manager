@@ -47,7 +47,8 @@ CREATE TABLE access_logging (
     date_fetched double precision NOT NULL,
     success boolean,
     duration double precision,
-    user_id_hash character varying NOT NULL
+    user_id_hash character varying,
+    user_idp character varying
 );
 
 
