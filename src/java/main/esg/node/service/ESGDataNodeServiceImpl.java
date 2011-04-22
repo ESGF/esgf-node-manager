@@ -1,67 +1,67 @@
 /***************************************************************************
-*                                                                          *
-*  Organization: Lawrence Livermore National Lab (LLNL)                    *
-*   Directorate: Computation                                               *
-*    Department: Computing Applications and Research                       *
-*      Division: S&T Global Security                                       *
-*        Matrix: Atmospheric, Earth and Energy Division                    *
-*       Program: PCMDI                                                     *
-*       Project: Earth Systems Grid (ESG) Data Node Software Stack         *
-*  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
-*                                                                          *
-****************************************************************************
-*                                                                          *
-*   Copyright (c) 2009, Lawrence Livermore National Security, LLC.         *
-*   Produced at the Lawrence Livermore National Laboratory                 *
-*   Written by: Gavin M. Bell (gavin@llnl.gov)                             *
-*   LLNL-CODE-420962                                                       *
-*                                                                          *
-*   All rights reserved. This file is part of the:                         *
-*   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
-*                                                                          *
-*   For details, see http://esgf.org/esg-node/                    *
-*   Please also read this link                                             *
-*    http://esgf.org/LICENSE                                      *
-*                                                                          *
-*   * Redistribution and use in source and binary forms, with or           *
-*   without modification, are permitted provided that the following        *
-*   conditions are met:                                                    *
-*                                                                          *
-*   * Redistributions of source code must retain the above copyright       *
-*   notice, this list of conditions and the disclaimer below.              *
-*                                                                          *
-*   * Redistributions in binary form must reproduce the above copyright    *
-*   notice, this list of conditions and the disclaimer (as noted below)    *
-*   in the documentation and/or other materials provided with the          *
-*   distribution.                                                          *
-*                                                                          *
-*   Neither the name of the LLNS/LLNL nor the names of its contributors    *
-*   may be used to endorse or promote products derived from this           *
-*   software without specific prior written permission.                    *
-*                                                                          *
-*   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS    *
-*   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT      *
-*   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS      *
-*   FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE    *
-*   LIVERMORE NATIONAL SECURITY, LLC, THE U.S. DEPARTMENT OF ENERGY OR     *
-*   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,           *
-*   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT       *
-*   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF       *
-*   USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND    *
-*   ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,     *
-*   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT     *
-*   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF     *
-*   SUCH DAMAGE.                                                           *
-*                                                                          *
-***************************************************************************/
+ *                                                                          *
+ *  Organization: Lawrence Livermore National Lab (LLNL)                    *
+ *   Directorate: Computation                                               *
+ *    Department: Computing Applications and Research                       *
+ *      Division: S&T Global Security                                       *
+ *        Matrix: Atmospheric, Earth and Energy Division                    *
+ *       Program: PCMDI                                                     *
+ *       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
+ *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
+ *                                                                          *
+ ****************************************************************************
+ *                                                                          *
+ *   Copyright (c) 2009, Lawrence Livermore National Security, LLC.         *
+ *   Produced at the Lawrence Livermore National Laboratory                 *
+ *   Written by: Gavin M. Bell (gavin@llnl.gov)                             *
+ *   LLNL-CODE-420962                                                       *
+ *                                                                          *
+ *   All rights reserved. This file is part of the:                         *
+ *   Earth System Grid Federation (ESGF) Data Node Software Stack           *
+ *                                                                          *
+ *   For details, see http://esgf.org/esg-node/                             *
+ *   Please also read this link                                             *
+ *    http://esgf.org/LICENSE                                               *
+ *                                                                          *
+ *   * Redistribution and use in source and binary forms, with or           *
+ *   without modification, are permitted provided that the following        *
+ *   conditions are met:                                                    *
+ *                                                                          *
+ *   * Redistributions of source code must retain the above copyright       *
+ *   notice, this list of conditions and the disclaimer below.              *
+ *                                                                          *
+ *   * Redistributions in binary form must reproduce the above copyright    *
+ *   notice, this list of conditions and the disclaimer (as noted below)    *
+ *   in the documentation and/or other materials provided with the          *
+ *   distribution.                                                          *
+ *                                                                          *
+ *   Neither the name of the LLNS/LLNL nor the names of its contributors    *
+ *   may be used to endorse or promote products derived from this           *
+ *   software without specific prior written permission.                    *
+ *                                                                          *
+ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS    *
+ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT      *
+ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS      *
+ *   FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE    *
+ *   LIVERMORE NATIONAL SECURITY, LLC, THE U.S. DEPARTMENT OF ENERGY OR     *
+ *   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,           *
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT       *
+ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF       *
+ *   USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND    *
+ *   ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,     *
+ *   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT     *
+ *   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF     *
+ *   SUCH DAMAGE.                                                           *
+ *                                                                          *
+ ***************************************************************************/
 
 /**
    Description:
 
-        ----------------------------------------------------
-      THIS CLASS RECEIVES ALL *INGRESS* CALLS *FROM* GATEWAY(s)!!
-        ----------------------------------------------------
-           (I don't think I can make this any clearer)
+   ----------------------------------------------------
+   THIS CLASS RECEIVES ALL *INGRESS* CALLS *FROM* GATEWAY(s)!!
+   ----------------------------------------------------
+   (I don't think I can make this any clearer)
 
 
 **/
@@ -89,19 +89,19 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     
 
     public ESGDataNodeServiceImpl() {
-	log.info("ESGDataNodeServiceImpl instantiated...");
-	setMyName("DNODE_SVC");
-	boot();
+        log.info("ESGDataNodeServiceImpl instantiated...");
+        setMyName("DNODE_SVC");
+        boot();
     }
 
     //******************************
     //Bootstrap the entire system...
     //******************************
     public void boot() {
-	log.trace("Bootstrapping System...");
-	datanodeMgr = new ESGDataNodeManager();
-	datanodeMgr.registerComponent(this);
-	datanodeMgr.init();
+        log.trace("Bootstrapping System...");
+        datanodeMgr = new ESGDataNodeManager();
+        datanodeMgr.registerComponent(this);
+        datanodeMgr.init();
     }
     //******************************
     
@@ -120,15 +120,15 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     //open the door for us to be DOS-ed by folks maliciously sending
     //us huge events that flood our system.
     private boolean amAvailable() { 
-	boolean ret = false;
-	ret = (connMgr == null) ? false : connMgr.amAvailable(); 
-	log.trace("amAvailable() -> "+ret);
-	return ret;
+        boolean ret = false;
+        ret = (connMgr == null) ? false : connMgr.amAvailable(); 
+        log.trace("amAvailable() -> "+ret);
+        return ret;
     }
     
     public void unregister() {
-	//Intentionally a NO-OP
-	log.warn("Balking... What does it mean to unregister the service itself?... exactly... no can do ;-)");
+        //Intentionally a NO-OP
+        log.warn("Balking... What does it mean to unregister the service itself?... exactly... no can do ;-)");
     }
     //------------------------------------------------------------
 
@@ -139,95 +139,95 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     //------------------------------------------------------------
     //Remote (ingress) calls to method...
     public boolean ping() { 
-	log.trace("DataNode service got \"ping\"");
-	return amAvailable(); 
+        log.trace("DataNode service got \"ping\"");
+        return amAvailable(); 
     }
 
     //TODO: Think about the performance implications of having a synchronious return value
     //Remote (ingress) calls to method...
     public boolean notify(ESGRemoteEvent evt_) {
-	log.trace("DataNode service got \"notify\" call with event: ["+evt_+"]");
-	boolean ret = false;
+        log.trace("DataNode service got \"notify\" call with event: ["+evt_+"]");
+        boolean ret = false;
 
-	//zoiks: revisit this p2p chicken b4 egg issue
-	//if(!amAvailable()) {
-	//    log.warn("Dropping ingress notification event on the floor, I am NOT available. ["+evt_+"]");
-	//    return ret;
-	//}
+        //zoiks: revisit this p2p chicken b4 egg issue
+        //if(!amAvailable()) {
+        //    log.warn("Dropping ingress notification event on the floor, I am NOT available. ["+evt_+"]");
+        //    return ret;
+        //}
 
-	//Inspect the message type...
-	if(evt_.getMessageType() != ESGRemoteEvent.NOTIFY) {
-	    log.trace("Registration called with wrong event type... dropping on floor...");
-	    return ret;
-	}
-	
-	//TODO: Do Event Inspection, etc...
-	
-	return ret;
+        //Inspect the message type...
+        if(evt_.getMessageType() != ESGRemoteEvent.NOTIFY) {
+            log.trace("Registration called with wrong event type... dropping on floor...");
+            return ret;
+        }
+    
+        //TODO: Do Event Inspection, etc...
+    
+        return ret;
     }
 
     //ingress registration request... returns a registration event to the remote caller's (peer's) notify method.
     public boolean register(ESGRemoteEvent evt) {
-	log.trace("DataNode service got \"register\" call from datanode with event: ["+evt+"]");
-	boolean ret = false;
-	
-	//zoiks: revisit this p2p chicken b4 egg issue
-	//if(!amAvailable()) {
-	//    log.warn("Dropping ingress notification event on the floor, I am NOT available. ["+evt_+"]");
-	//    return ret;
-	//}
+        log.trace("DataNode service got \"register\" call from datanode with event: ["+evt+"]");
+        boolean ret = false;
+    
+        //zoiks: revisit this p2p chicken b4 egg issue
+        //if(!amAvailable()) {
+        //    log.warn("Dropping ingress notification event on the floor, I am NOT available. ["+evt_+"]");
+        //    return ret;
+        //}
 
-	//Inspect the message type...
-	if(evt.getMessageType() != ESGRemoteEvent.REGISTER) {
-	    log.trace("Registration called with wrong event type... dropping on floor...");
-	    return ret;
-	}
-	
-	try {
-	    ESGPeer registrant = new BasicPeer(evt.getSource());
-	    ret = datanodeMgr.registerPeer(registrant);
-	}catch (Throwable t) {
-	    log.error(t);
-	}
-	return ret;
+        //Inspect the message type...
+        if(evt.getMessageType() != ESGRemoteEvent.REGISTER) {
+            log.trace("Registration called with wrong event type... dropping on floor...");
+            return ret;
+        }
+    
+        try {
+            ESGPeer registrant = new BasicPeer(evt.getSource());
+            ret = datanodeMgr.registerPeer(registrant);
+        }catch (Throwable t) {
+            log.error(t);
+        }
+        return ret;
     }
 
     
 
     //Ingress event handling from remote 'client'
     public void handleESGRemoteEvent(ESGRemoteEvent evt_) {
-	log.trace("DataNode service got \"handleESGRemoteEvent\" call with event: ["+evt_+"]");
-	if(!amAvailable()) {
-	    log.warn("Dropping ingress notification event on the floor, I am NOT available. ["+evt_+"]");
-	}
-	
-	//Being a nice guy and rerouting you to right method
-	//I may be being too nice... consider taking this out if abused.
-	ESGEvent evt = null;
-	if(evt_.getMessageType() == ESGRemoteEvent.NOOP) { 
-	    log.trace("GOT NOOP REMOTE EVENT"); 
-	}else if(evt_.getMessageType() == ESGRemoteEvent.UNREGISTER) { 
-	    log.trace("GOT UNREGISTER REMOTE EVENT"); 
-	}else if(evt_.getMessageType() == ESGRemoteEvent.HEALTH) { 
-	    log.trace("GOT HEALTH REMOTE EVENT"); 
-	    evt = new ESGEvent(this);
-	    evt.setRemoteEvent(evt_);
-	    enqueueESGEvent("MONITOR",new ESGEvent(evt_));
-	}else if(evt_.getMessageType() == ESGRemoteEvent.METRICS) { 
-	    log.trace("GOT METRICS REMOTE EVENT");
-	    evt = new ESGEvent(this);
-	    evt.setRemoteEvent(evt_);
-	    enqueueESGEvent("METRICS",evt);
-	}else {
-	    log.trace("DO NOT RECOGNIZE THIS MESSAGE TYPE: "+evt_);
-	}
-	
+        log.trace("DataNode service got \"handleESGRemoteEvent\" call with event: ["+evt_+"]");
+        if(!amAvailable()) {
+            log.warn("Dropping ingress notification event on the floor, I am NOT available. ["+evt_+"]");
+        }
+    
+        //Being a nice guy and rerouting you to right method
+        //I may be being too nice... consider taking this out if abused.
+        ESGEvent evt = null;
+        if(evt_.getMessageType() == ESGRemoteEvent.NOOP) { 
+            log.trace("GOT NOOP REMOTE EVENT"); 
+        }else if(evt_.getMessageType() == ESGRemoteEvent.UNREGISTER) { 
+            log.trace("GOT UNREGISTER REMOTE EVENT"); 
+        }else if(evt_.getMessageType() == ESGRemoteEvent.HEALTH) { 
+            log.trace("GOT HEALTH REMOTE EVENT"); 
+            evt = new ESGEvent(this);
+            evt.setRemoteEvent(evt_);
+            enqueueESGEvent("MONITOR",new ESGEvent(evt_));
+        }else if(evt_.getMessageType() == ESGRemoteEvent.METRICS) { 
+            log.trace("GOT METRICS REMOTE EVENT");
+            evt = new ESGEvent(this);
+            evt.setRemoteEvent(evt_);
+            enqueueESGEvent("METRICS",evt);
+        }else {
+            log.trace("DO NOT RECOGNIZE THIS MESSAGE TYPE: "+evt_);
+        }
+    
 
-	//TODO: Grab this remote event, inspect the payload and stuff
-	//it into an esg event and fire it off to listeners to handle.
-	//Example... if the payload was the Catalog xml then JAXB it
-	//and send the object form as the payload for others to use
-	//(for example)
+        //TODO: Grab this remote event, inspect the payload and stuff
+        //it into an esg event and fire it off to listeners to handle.
+        //Example... if the payload was the Catalog xml then JAXB it
+        //and send the object form as the payload for others to use
+        //(for example)
     }
 
 
@@ -235,24 +235,24 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     //Internal 'Control' Event handling... (for join events) needs connection manager!
     //--------------------------------------------
     public void handleESGEvent(ESGEvent esgEvent) {
-	//we only care about join events
-	if(!(esgEvent instanceof ESGJoinEvent)) return;
+        //we only care about join events
+        if(!(esgEvent instanceof ESGJoinEvent)) return;
 
-	ESGJoinEvent event = (ESGJoinEvent)esgEvent;
-	
-	//we only care bout Gateways joining
-	if(!(event.getJoiner() instanceof ESGConnectionManager)) return;
+        ESGJoinEvent event = (ESGJoinEvent)esgEvent;
+    
+        //we only care bout Gateways joining
+        if(!(event.getJoiner() instanceof ESGConnectionManager)) return;
 
-	if(event.hasJoined()) {
-	    log.trace("Detected That The ESGConnectionManager Has Joined: "+event.getJoiner().getName());
-	    connMgr = (ESGConnectionManager)event.getJoiner();
-	    addESGQueueListener(connMgr);
-	}else {
-	    log.trace("Detected That The ESGConnectionManager Has Left: "+event.getJoiner().getName());
-	    removeESGQueueListener(connMgr);
-	    connMgr = null;	    
-	}
-	log.trace("connMgr = "+connMgr);
+        if(event.hasJoined()) {
+            log.trace("Detected That The ESGConnectionManager Has Joined: "+event.getJoiner().getName());
+            connMgr = (ESGConnectionManager)event.getJoiner();
+            addESGQueueListener(connMgr);
+        }else {
+            log.trace("Detected That The ESGConnectionManager Has Left: "+event.getJoiner().getName());
+            removeESGQueueListener(connMgr);
+            connMgr = null;     
+        }
+        log.trace("connMgr = "+connMgr);
     }
 
 

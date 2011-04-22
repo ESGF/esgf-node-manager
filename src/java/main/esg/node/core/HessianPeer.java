@@ -6,7 +6,7 @@
 *      Division: S&T Global Security                                       *
 *        Matrix: Atmospheric, Earth and Energy Division                    *
 *       Program: PCMDI                                                     *
-*       Project: Earth Systems Grid (ESG) Data Node Software Stack         *
+*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
 *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
 *                                                                          *
 ****************************************************************************
@@ -17,11 +17,11 @@
 *   LLNL-CODE-420962                                                       *
 *                                                                          *
 *   All rights reserved. This file is part of the:                         *
-*   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
+*   Earth System Grid Federation (ESGF) Data Node Software Stack           *
 *                                                                          *
-*   For details, see http://esgf.org/esg-node/                    *
+*   For details, see http://esgf.org/esg-node/                             *
 *   Please also read this link                                             *
-*    http://esgf.org/LICENSE                                      *
+*    http://esgf.org/LICENSE                                               *
 *                                                                          *
 *   * Redistribution and use in source and binary forms, with or           *
 *   without modification, are permitted provided that the following        *
@@ -87,14 +87,14 @@ public abstract class HessianPeer extends ESGPeer {
     private HessianProxyFactory factory;
    
     public HessianPeer(String serviceURL, int type) throws java.net.MalformedURLException { 
-	super(serviceURL,type); 
-	this.factory = new HessianProxyFactory();
+        super(serviceURL,type); 
+        this.factory = new HessianProxyFactory();
     }
     
     //From the super-class the default type is set to "DATA_NODE_PEER"
     public HessianPeer(String serviceURL) throws java.net.MalformedURLException { 
-	super(serviceURL); 
-	this.factory = new HessianProxyFactory();
+        super(serviceURL); 
+        this.factory = new HessianProxyFactory();
     }
     protected HessianProxyFactory getFactory() { return factory; }
 
@@ -102,22 +102,22 @@ public abstract class HessianPeer extends ESGPeer {
     //use of the hessian "factory.". Also Note, all RPC
     //mechanisms follow the same basic mechanics 
     //protected Object factoryCreate(Class serviceClass) throws ESGException {
-    //	return this.factoryCreate(serviceClass,null);
+    //  return this.factoryCreate(serviceClass,null);
     //}
 
     //TODO: make this a "generics" function...
     protected Object factoryCreate(Class serviceClass,String serviceURL) throws ESGException { 
-	log.trace("factoryCreate -> serviceClass: "+serviceClass+" , serviceURL: "+serviceURL);
-	if (serviceURL == null) serviceURL = getServiceURL();
-	Object endpoint = null;
-	try{
-	    endpoint = factory.create(serviceClass, serviceURL); 
-	}catch(Exception e) {
-	    log.error(e);
-	    e.printStackTrace();
-	    throw new ESGException(e);
-	}
-	return endpoint;
+        log.trace("factoryCreate -> serviceClass: "+serviceClass+" , serviceURL: "+serviceURL);
+        if (serviceURL == null) serviceURL = getServiceURL();
+        Object endpoint = null;
+        try{
+            endpoint = factory.create(serviceClass, serviceURL); 
+        }catch(Exception e) {
+            log.error(e);
+            e.printStackTrace();
+            throw new ESGException(e);
+        }
+        return endpoint;
     }
     
     
