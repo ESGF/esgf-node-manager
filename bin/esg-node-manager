@@ -199,9 +199,8 @@ setup_node_manager() {
     #make room for new install
     if (( force_install )) ; then
         echo "Removing Previous Installation of the ESGF Node Manager... (${node_dist_dir})" && \
-            clean_node_manager_webapp_subsystem && \
-            echo "Removing Previous Installation of the ESGF Node Manager DB module... (${esgf_node_manager_egg_file})" && \
-            clean_node_manager_database_subsystem_installation
+            (rm -rf ${node_dist_dir} && echo "[OK]" || (echo "[FAILED]" && checked_done 1)) && \
+            clean_node_manager_webapp_subsystem
     fi
     
     echo "unpacking ${node_dist_file}..."
@@ -424,6 +423,8 @@ clean_node_manager_database_subsystem_installation() {
             echo "[VERIFIED]"
 
             backup_db esgcet node_manager
+            [ $? != 0 ] && echo "unable to successfully backup database... will NOT proceed with database removal" && return 2
+
             echo "removing esgf_node_manager.* schema and tables and DATA"
             ${cdat_home}/bin/esgf_security_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@localhost:${postgress_port}/esgcet -d 0
             [ $? != 0 ] && echo "ERROR: Unable to remove ${tomcat_install_dir}/webapps/${node_manager_app_context_root}" && return 1
