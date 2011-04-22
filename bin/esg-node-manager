@@ -198,8 +198,10 @@ setup_node_manager() {
     
     #make room for new install
     if (( force_install )) ; then
-        echo "Removing Previous Installation of the ESGF Node Manager..."
-        [ -d "${node_dist_dir}" ] && rm -rf ${node_dist_dir} || echo "WARNING: Strange, can't locate previous install @ ${node_dist_dir}"
+        echo "Removing Previous Installation of the ESGF Node Manager... (${node_dist_dir})" && \
+            clean_node_manager_webapp_subsystem && \
+            echo "Removing Previous Installation of the ESGF Node Manager DB module... (${esgf_node_manager_egg_file})" && \
+            clean_node_manager_database_subsystem_installation
     fi
     
     echo "unpacking ${node_dist_file}..."
