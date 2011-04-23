@@ -1,71 +1,71 @@
 /***************************************************************************
-*                                                                          *
-*  Organization: Lawrence Livermore National Lab (LLNL)                    *
-*   Directorate: Computation                                               *
-*    Department: Computing Applications and Research                       *
-*      Division: S&T Global Security                                       *
-*        Matrix: Atmospheric, Earth and Energy Division                    *
-*       Program: PCMDI                                                     *
-*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
-*  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
-*                                                                          *
-****************************************************************************
-*                                                                          *
-*   Copyright (c) 2009, Lawrence Livermore National Security, LLC.         *
-*   Produced at the Lawrence Livermore National Laboratory                 *
-*   Written by: Gavin M. Bell (gavin@llnl.gov)                             *
-*   LLNL-CODE-420962                                                       *
-*                                                                          *
-*   All rights reserved. This file is part of the:                         *
-*   Earth System Grid Federation (ESGF) Data Node Software Stack           *
-*                                                                          *
-*   For details, see http://esgf.org/esg-node/                             *
-*   Please also read this link                                             *
-*    http://esgf.org/LICENSE                                               *
-*                                                                          *
-*   * Redistribution and use in source and binary forms, with or           *
-*   without modification, are permitted provided that the following        *
-*   conditions are met:                                                    *
-*                                                                          *
-*   * Redistributions of source code must retain the above copyright       *
-*   notice, this list of conditions and the disclaimer below.              *
-*                                                                          *
-*   * Redistributions in binary form must reproduce the above copyright    *
-*   notice, this list of conditions and the disclaimer (as noted below)    *
-*   in the documentation and/or other materials provided with the          *
-*   distribution.                                                          *
-*                                                                          *
-*   Neither the name of the LLNS/LLNL nor the names of its contributors    *
-*   may be used to endorse or promote products derived from this           *
-*   software without specific prior written permission.                    *
-*                                                                          *
-*   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS    *
-*   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT      *
-*   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS      *
-*   FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE    *
-*   LIVERMORE NATIONAL SECURITY, LLC, THE U.S. DEPARTMENT OF ENERGY OR     *
-*   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,           *
-*   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT       *
-*   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF       *
-*   USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND    *
-*   ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,     *
-*   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT     *
-*   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF     *
-*   SUCH DAMAGE.                                                           *
-*                                                                          *
-***************************************************************************/
+ *                                                                          *
+ *  Organization: Lawrence Livermore National Lab (LLNL)                    *
+ *   Directorate: Computation                                               *
+ *    Department: Computing Applications and Research                       *
+ *      Division: S&T Global Security                                       *
+ *        Matrix: Atmospheric, Earth and Energy Division                    *
+ *       Program: PCMDI                                                     *
+ *       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
+ *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
+ *                                                                          *
+ ****************************************************************************
+ *                                                                          *
+ *   Copyright (c) 2009, Lawrence Livermore National Security, LLC.         *
+ *   Produced at the Lawrence Livermore National Laboratory                 *
+ *   Written by: Gavin M. Bell (gavin@llnl.gov)                             *
+ *   LLNL-CODE-420962                                                       *
+ *                                                                          *
+ *   All rights reserved. This file is part of the:                         *
+ *   Earth System Grid Federation (ESGF) Data Node Software Stack           *
+ *                                                                          *
+ *   For details, see http://esgf.org/esg-node/                             *
+ *   Please also read this link                                             *
+ *    http://esgf.org/LICENSE                                               *
+ *                                                                          *
+ *   * Redistribution and use in source and binary forms, with or           *
+ *   without modification, are permitted provided that the following        *
+ *   conditions are met:                                                    *
+ *                                                                          *
+ *   * Redistributions of source code must retain the above copyright       *
+ *   notice, this list of conditions and the disclaimer below.              *
+ *                                                                          *
+ *   * Redistributions in binary form must reproduce the above copyright    *
+ *   notice, this list of conditions and the disclaimer (as noted below)    *
+ *   in the documentation and/or other materials provided with the          *
+ *   distribution.                                                          *
+ *                                                                          *
+ *   Neither the name of the LLNS/LLNL nor the names of its contributors    *
+ *   may be used to endorse or promote products derived from this           *
+ *   software without specific prior written permission.                    *
+ *                                                                          *
+ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS    *
+ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT      *
+ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS      *
+ *   FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE    *
+ *   LIVERMORE NATIONAL SECURITY, LLC, THE U.S. DEPARTMENT OF ENERGY OR     *
+ *   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,           *
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT       *
+ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF       *
+ *   USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND    *
+ *   ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,     *
+ *   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT     *
+ *   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF     *
+ *   SUCH DAMAGE.                                                           *
+ *                                                                          *
+ ***************************************************************************/
 
 /**
    Description:
 
-        This is essentially the wrapped stubs to the peer(s).
-        This (node) side of the rpc call where calls
-        ORIGINATE. (from ESGPeer -to-> ESGPeer's Node Manger Service "node").
+   This is essentially the wrapped stubs to the peer(s).
+   This (node) side of the rpc call where calls
+   ORIGINATE. (from ESGPeer -to-> ESGPeer's Node Manger Service "node").
 
-        ----------------------------------------------------
-        THIS CLASS REPRESNTS *EGRESS* CALLS TO THE ESGPeer!!
-        ----------------------------------------------------
-           (I don't think I can make this any clearer)
+   ----------------------------------------------------
+   THIS CLASS REPRESNTS *EGRESS* CALLS TO THE ESGPeer!!
+   ----------------------------------------------------
+   (I don't think I can make this any clearer)
 
 **/
 package esg.node.core;
@@ -93,14 +93,14 @@ public class BasicPeer extends HessianPeer {
     private boolean pingState = false;
 
     public BasicPeer(String serviceURL, int type) throws java.net.MalformedURLException { 
-	super(serviceURL,type); 
-	peerEventListeners = new ArrayList<ESGPeerListener>();
+        super(serviceURL,type); 
+        peerEventListeners = new ArrayList<ESGPeerListener>();
     }
     
     //From the super-dooper-class the default type is set to "ESGPeer.PEER" ;-)
     public BasicPeer(String serviceURL) throws java.net.MalformedURLException { 
-	super(serviceURL); 
-	peerEventListeners = new ArrayList<ESGPeerListener>();
+        super(serviceURL); 
+        peerEventListeners = new ArrayList<ESGPeerListener>();
     }
     
     /**
@@ -113,35 +113,35 @@ public class BasicPeer extends HessianPeer {
        available or even present for communication.
     */
     public void init() {
-	log.trace("4)) Peer init attempting to create handle to endpoint");
-	if(isValid) {
-	    log.info("I am already valid... :-)");
-	    return;
-	}
+        log.trace("4)) Peer init attempting to create handle to endpoint");
+        if(isValid) {
+            log.info("I am already valid... :-)");
+            return;
+        }
 
-    //I am not a valid object if I don't have a name
-    if(getName() == null || (getName().equals(DataNodeComponent.ANONYMOUS)) ) {
-        log.warn("Cannot initialize Peer DataNode with name/serviceURL ["+getName()+"]");
-        isValid = false;
-        return;
-    }
+        //I am not a valid object if I don't have a name
+        if(getName() == null || (getName().equals(DataNodeComponent.ANONYMOUS)) ) {
+            log.warn("Cannot initialize Peer DataNode with name/serviceURL ["+getName()+"]");
+            isValid = false;
+            return;
+        }
 
-    try {
-        //The call to our superclass to create the proper stub object to remote service.
-        datanodeService = (ESGDataNodeService)factoryCreate(ESGDataNodeService.class, getServiceURL());
-        log.trace("Peer DataNode Service handle is ["+datanodeService+"]");
-    }catch(Exception ex) {
-        log.warn("Could not connect to peer @ serviceURL ["+getServiceURL()+"]",ex);
-        isAvailable = false;
-    }
+        try {
+            //The call to our superclass to create the proper stub object to remote service.
+            datanodeService = (ESGDataNodeService)factoryCreate(ESGDataNodeService.class, getServiceURL());
+            log.trace("Peer DataNode Service handle is ["+datanodeService+"]");
+        }catch(Exception ex) {
+            log.warn("Could not connect to peer @ serviceURL ["+getServiceURL()+"]",ex);
+            isAvailable = false;
+        }
     
-    if(datanodeService != null) {
-        log.trace(getName()+" Peer Proxy properly initialized");
-        isValid = true;
-    }else {
-        log.warn(getName()+" Proxy NOT properly initialized");
-        isValid = false;
-    }
+        if(datanodeService != null) {
+            log.trace(getName()+" Peer Proxy properly initialized");
+            isValid = true;
+        }else {
+            log.warn(getName()+" Proxy NOT properly initialized");
+            isValid = false;
+        }
     }
 
     //The way to talk back to the connection manager, pretty much who this listener at the very least is
