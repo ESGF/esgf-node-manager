@@ -71,10 +71,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
 public class ESGDataNodeManager extends AbstractDataNodeManager {
 
     private static Log log = LogFactory.getLog(ESGDataNodeManager.class);
     private ESGConnectionManager connMgr = null;
+
+    private static final Pattern peerSvcRootPattern = Pattern.compile("(?:.*://)*([^/]*)[/]*",Pattern.CASE_INSENSITIVE);
 
     //TODO: the logic of the system, pulling in the components from a
     //config file and managing them.
@@ -91,16 +96,38 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
     
 
         try{
+            //NOTES: ESGF_PEER_SVC_ROOT should be the hostname of the
+            //machine but it turns out that we need to be flexible to
+            //take other values users mayb put in here, such as the
+            //url to the "main" front-end service.  So we need to cull
+            //out the hostname.
+            String myHostname = null;
+            try {
+                myHostname = getNodeProperty("esgf.host",java.net.InetAddress.getLocalHost().getCanonicalHostName());
+                System.out.println(" Manager says, \"I am ["+myHostname+"]\"");
+            }catch(java.net.UnknownHostException ex) {log.error(ex); }
+            
             String defaultPeer = System.getenv().get("ESGF_PEER_SVC_ROOT");
+            String defaultPeerName=null;
+            
             if(null != defaultPeer) {
-                ESGPeer peer = new BasicPeer("http://"+defaultPeer+"/esgf-node-manager/node", ESGPeer.PEER);
-                log.trace("1)) Created default peer attempting to register it");
-                registerPeer(peer);
-            }else{
-                log.error("The Default Peer is: ["+defaultPeer+"]: Hint - set ESGF_PEER_SVC_ROOT in /etc/esg.env");
+                Matcher peerSvcNameMatcher = peerSvcRootPattern.matcher(defaultPeer);
+                if (peerSvcNameMatcher.find()) { defaultPeerName = peerSvcNameMatcher.group(1); }
+                System.out.println(" Mangager says, \"My Default Peer is ["+defaultPeerName+"]\"");
+                
+                if((null != defaultPeerName) && !(defaultPeerName.equalsIgnoreCase(myHostname))) {
+                    ESGPeer peer = new BasicPeer("http://"+defaultPeerName+"/esgf-node-manager/node", ESGPeer.PEER);
+                    log.trace("1)) Created default peer attempting to register it");
+                    registerPeer(peer);
+                }else{
+                    if(defaultPeerName.equalsIgnoreCase(myHostname)) {
+                        log.warn("You may not set yourself as your peer ;-)... when bootstrapping this puts you in passive peer mode - waiting to be contacted.");
+                    }else{
+                        log.error("The Default Peer is: ["+defaultPeer+"]: Hint - set ESGF_PEER_SVC_ROOT in /etc/esg.env");
+                    }
+                }
             }
         }catch(java.net.MalformedURLException e) {log.error(e); }
-        
         
         ESGNotifier notifier = new ESGNotifier("NOTIFIER");
         registerComponent(notifier);

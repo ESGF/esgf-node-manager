@@ -73,7 +73,7 @@ import org.apache.commons.logging.impl.*;
 
 import esg.common.service.ESGRemoteEvent;
 
-public abstract class ESGPeer extends AbstractDataNodeComponent{
+public abstract class ESGPeer extends AbstractDataNodeComponent {
     
     //TODO: Okay this should totally be an ENUM!!!!!
     public static final int PEER  = 1;
@@ -85,6 +85,8 @@ public abstract class ESGPeer extends AbstractDataNodeComponent{
     protected boolean isValid = false;
     protected boolean isAvailable = false;
 
+    //This pattern is what allows us to enforce that p2p service endpoint integrity.
+    //You can only talk to the esgf-node-manager/node p2p web service.
     private static Pattern hostPattern = Pattern.compile("http[s]?://([^:/]*)(?::(?:[0-9]*))?/.*[/]*esgf-node-manager/(node)");
     
     public ESGPeer(String serviceURL, int type) throws java.net.MalformedURLException { 
@@ -97,7 +99,7 @@ public abstract class ESGPeer extends AbstractDataNodeComponent{
             host = hostMatcher.group(1);
             typeString = hostMatcher.group(2);
         }else {
-            throw new java.net.MalformedURLException("This ["+serviceURL+"] is not a legal ESG datanode URL");
+            throw new java.net.MalformedURLException("This ["+serviceURL+"] is not a legal ESGF Node URL");
         }
         setMyName(serviceURL);
         this.peerType = type;

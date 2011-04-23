@@ -60,7 +60,7 @@
 
         This is essentially the wrapped stubs to the peer(s).
         This (node) side of the rpc call where calls
-        ORIGINATE. (from DataNode -to-> ESGPeer).
+        ORIGINATE. (from ESGPeer -to-> ESGPeer's Node Manger Service "node").
 
         ----------------------------------------------------
         THIS CLASS REPRESNTS *EGRESS* CALLS TO THE ESGPeer!!
@@ -97,7 +97,7 @@ public class BasicPeer extends HessianPeer {
 	peerEventListeners = new ArrayList<ESGPeerListener>();
     }
     
-    //From the super-dooper-class the default type is set to "DATA_NODE_PEER" ;-)
+    //From the super-dooper-class the default type is set to "ESGPeer.PEER" ;-)
     public BasicPeer(String serviceURL) throws java.net.MalformedURLException { 
 	super(serviceURL); 
 	peerEventListeners = new ArrayList<ESGPeerListener>();
@@ -222,7 +222,8 @@ public class BasicPeer extends HessianPeer {
         boolean ret = false;
         String myLocation = null;
         try{
-            myLocation = "http://"+InetAddress.getLocalHost().getCanonicalHostName()+"/esg-node/datanode";
+            //myLocation = "http://"+InetAddress.getLocalHost().getCanonicalHostName()+"/esgf-node-manager/node";
+            myLocation = "http://"+InetAddress.getLocalHost().getHostAddress()+"/esgf-node-manager/node";
         }catch (java.net.UnknownHostException ex) {
             log.error("Could not build proper location string for myself",ex);
             return ret;
@@ -257,7 +258,8 @@ public class BasicPeer extends HessianPeer {
 
         String myLocation = null;
         try{
-            myLocation = "http://"+InetAddress.getLocalHost().getCanonicalHostName()+"/esg-node/datanode";
+            //myLocation = "http://"+InetAddress.getLocalHost().getCanonicalHostName()+"/esgf-node-manager/node";
+            myLocation = "http://"+InetAddress.getLocalHost().getHostAddress()+"/esgf-node-manager/node";
         }catch (java.net.UnknownHostException ex) {
             log.error("Could not build proper location string for myself",ex);
             return ret;

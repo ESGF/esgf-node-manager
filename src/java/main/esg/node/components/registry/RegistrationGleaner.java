@@ -65,6 +65,8 @@ import javax.xml.bind.Unmarshaller;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Date;
@@ -97,6 +99,8 @@ public class RegistrationGleaner {
     private Registration myRegistration = null;
     private Properties props = null;
     private RegistrationGleanerHelperDAO helperDAO = null;
+    private String configDir = null;
+    private String nodeTypeValue = "-1"; //TODO: yes, yes... turn this into enums strings in xsd - later.
 
     public RegistrationGleaner() { this(null); }
     public RegistrationGleaner(Properties props) { 
@@ -111,6 +115,26 @@ public class RegistrationGleaner {
             log.error(e);
         }
         registrationPath = props.getProperty("node.manager.app.home",".")+File.separator;
+
+        if (null != (configDir = System.getenv().get("ESGF_HOME"))) {
+            configDir = configDir+File.separator+"config";
+            nodeTypeValue = null;
+            try {
+                File configTypeFile = new File(configDir+File.separator+"config_type");
+                if(configTypeFile.exists()) {
+                    BufferedReader in = new BufferedReader(new FileReader(configTypeFile));
+                    try{
+                        nodeTypeValue = in.readLine().trim();
+                    }catch(java.io.IOException ex) {
+                        log.error(ex);
+                    }finally {
+                        if(null != in) in.close();
+                    }
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
+        }
     }
     
     
@@ -200,6 +224,7 @@ public class RegistrationGleaner {
             node.setTimeStamp((new Date()).getTime());
             node.setVersion(props.getProperty("version"));
             node.setRelease(props.getProperty("release"));
+            node.setNodeType(nodeTypeValue);
 
             //What is this ?
             CA ca = new CA();
@@ -317,6 +342,22 @@ public class RegistrationGleaner {
                     LASService las = new LASService();
                     las.setEndpoint(endpoint);
                     node.setLASService(las);
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
+
+            //************************************************
+            //Web Front-End
+            //************************************************
+
+            //esgf-web-fe
+            try{
+                if( (null != (endpoint=props.getProperty("web.fe.service.endpoint"))) &&
+                    (new File(props.getProperty("web.fe.app.home"))).exists() ) {
+                    FrontEnd webfe = new FrontEnd();
+                    webfe.setEndpoint(endpoint);
+                    node.setFrontEnd(webfe);
                 }
             }catch(Throwable t) {
                 log.error(t);
