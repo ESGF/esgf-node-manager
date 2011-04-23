@@ -59,7 +59,7 @@
    Description:
 
    ----------------------------------------------------
-   THIS CLASS RECEIVES ALL *INGRESS* CALLS *FROM* GATEWAY(s)!!
+   THIS CLASS RECEIVES ALL *INGRESS* CALLS *FROM* PEERS(s)!!
    ----------------------------------------------------
    (I don't think I can make this any clearer)
 
@@ -108,17 +108,17 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     public void init() { log.trace("no-op initialization"); }
 
     //------------------------------------------------------------
-    //We will consider this object not valid if there are no gateways
+    //We will consider this object not valid if there are no peers
     //to communicate with. That would be because:
-    //1) There are no gateway proxy objects available for us to use
-    //2) If the gateway proxy objects we DO have are no longer valid
+    //1) There are no peer proxy objects available for us to use
+    //2) If the peer proxy objects we DO have are no longer valid
     //(we just need one to be valid for us to be available) 
 
     //NOTE: review this policy! *for now* good enough as we are only
-    //planning on having a 1:1 between data node and gateways... but
-    //we could imagine having just one gateway that is valid holding
-    //open the door for us to be DOS-ed by folks maliciously sending
-    //us huge events that flood our system.
+    //planning on having a 1:1 among peer nodes... but we could
+    //imagine having just one node that is valid holding open the
+    //door for us to be DOS-ed by folks maliciously sending us huge
+    //events that flood our system.
     private boolean amAvailable() { 
         boolean ret = false;
         ret = (connMgr == null) ? false : connMgr.amAvailable(); 
@@ -240,7 +240,7 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 
         ESGJoinEvent event = (ESGJoinEvent)esgEvent;
     
-        //we only care bout Gateways joining
+        //we only care bout peer joining
         if(!(event.getJoiner() instanceof ESGConnectionManager)) return;
 
         if(event.hasJoined()) {

@@ -74,11 +74,9 @@ import org.apache.commons.logging.impl.*;
 import esg.common.service.ESGRemoteEvent;
 
 public abstract class ESGPeer extends AbstractDataNodeComponent{
-
+    
     //TODO: Okay this should totally be an ENUM!!!!!
-    public static final int DEFAULT_GATEWAY = 1;
-    public static final int GATEWAY = 2;
-    public static final int DATA_NODE_PEER  = 4;
+    public static final int PEER  = 1;
     private int peerType = 0;
 
     private static final Log log = LogFactory.getLog(ESGPeer.class);
@@ -87,7 +85,7 @@ public abstract class ESGPeer extends AbstractDataNodeComponent{
     protected boolean isValid = false;
     protected boolean isAvailable = false;
 
-    private static Pattern hostPattern = Pattern.compile("http://([^/ ]*)/.*[/]*esg-node/(datanode)");
+    private static Pattern hostPattern = Pattern.compile("http[s]?://([^:/]*)(?::(?:[0-9]*))?/.*[/]*esgf-node-manager/(node)");
     
     public ESGPeer(String serviceURL, int type) throws java.net.MalformedURLException { 
         //TODO: regex out the IP and set as name
@@ -107,8 +105,9 @@ public abstract class ESGPeer extends AbstractDataNodeComponent{
         System.out.println("===> Setting up connection to: "+serviceURL);
     }
     
-    public ESGPeer(String name) throws java.net.MalformedURLException { this(name,DATA_NODE_PEER); }
+    public ESGPeer(String name) throws java.net.MalformedURLException { this(name,PEER); }
     public int getPeerType() { return peerType; }
+    public void setPeerType(int peerType) { this.peerType = peerType; }
 
     public abstract void init();
     protected void setServiceURL(String serviceURL) { this.serviceURL = serviceURL; }
@@ -142,7 +141,7 @@ public abstract class ESGPeer extends AbstractDataNodeComponent{
 
 
     //-----------------------------------------------------------------
-    //Overriding superclass to perform gateway object specific unregistration
+    //Overriding superclass to perform peer specific unregistration
     //from the data node manager. (unrelated to RPC, internal management)
     //-----------------------------------------------------------------
     public void unregister() {

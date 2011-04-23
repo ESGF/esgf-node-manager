@@ -89,14 +89,19 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
         connMgr = new ESGConnectionManager("CONN_MGR");
         registerComponent(connMgr);
     
-        try{
-            String gatewaySvcRoot = System.getenv().get("ESG_GATEWAY_SVC_ROOT");
-            if(null == gatewaySvcRoot) log.error("The Default Gateway is: ["+gatewaySvcRoot+"]: Hint - set ESG_GATEWAY_SVC_ROOT in /etc/esg.env");
-            ESGPeer peer = new BasicPeer("http://"+gatewaySvcRoot+"/datanode", ESGPeer.DEFAULT_GATEWAY);
-            log.trace("1)) Created default peer attempting to register it");
-            registerPeer(peer);
-        }catch(java.net.MalformedURLException e) {log.error(e); }
 
+        try{
+            String defaultPeer = System.getenv().get("ESGF_PEER_SVC_ROOT");
+            if(null != defaultPeer) {
+                ESGPeer peer = new BasicPeer("http://"+defaultPeer+"/esgf-node-manager/node", ESGPeer.PEER);
+                log.trace("1)) Created default peer attempting to register it");
+                registerPeer(peer);
+            }else{
+                log.error("The Default Peer is: ["+defaultPeer+"]: Hint - set ESGF_PEER_SVC_ROOT in /etc/esg.env");
+            }
+        }catch(java.net.MalformedURLException e) {log.error(e); }
+        
+        
         ESGNotifier notifier = new ESGNotifier("NOTIFIER");
         registerComponent(notifier);
 
