@@ -76,6 +76,7 @@ import java.util.Set;
 import java.util.regex.PatternSyntaxException;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 
 //TODO: think about if we want this dependence on an outside package...
 //may want to move the datasource managing to the ESGDataNodeManager subclass
@@ -100,6 +101,13 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
         propCache = new HashMap<String,Properties>();
         loadProperties();
 
+        //NOTE: A quick lil short circuit to take database out of loop
+        //so can test without having a database installed -gavin
+        if(Boolean.valueOf(props.getProperty("esgf.test.no_db"))) {
+            System.out.println("HEADS UP!!! Detected property esgf.test.no_db is "+props.getProperty("esgf.test.no_db")+" so NOT initializing database resources");
+            return;
+        }
+
         //Parcel out the database properties... and setup database connection pool.
         DatabaseResource.init(props.getProperty("db.driver")).setupDataSource(getMatchingProperties("^db.*"));
     }
@@ -117,6 +125,9 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
             propCache.clear();
             props = new ESGFProperties();
             log.trace("Properties of esgf.properties file: "+props);
+            log.trace("Loaded "+props.size()+" Properties");
+        }catch(FileNotFoundException ex) {
+            log.error("Could not find esgf.properties file!!!");
         }catch(IOException ex) {
             log.error("Problem loading node's property file!", ex);
         }catch(NullPointerException ex) {
@@ -125,7 +136,6 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
         }finally {
             try { if(in != null) in.close(); } catch (IOException ex) { log.error(ex); }
         }
-        log.trace("Loaded "+props.size()+" Properties");
     }
     
     public String getNodeProperty(String key) {
@@ -329,7 +339,11 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
         fireESGEvent(unjoinEvent);
     }
 
-    protected void sendAllLoadedNotification() {
+    //TODO think about the visibility of this method... was protected
+    //but making public so can be called.  Have to trust that the caller
+    //is truly only calling when things are indeed all done being loaded!!
+    //revisit this issue!!
+    public void sendAllLoadedNotification() {
         log.trace("Sending All-Loaded Notification Broadcast...");
         ESGSystemEvent allLoadedEvent = new ESGSystemEvent(this,ESGSystemEvent.ALL_LOADED);
         fireESGEvent(allLoadedEvent);

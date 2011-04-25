@@ -70,25 +70,140 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import esg.node.core.*;
+
 public class ESGSimpleComponentTest {
     private static final Log log = LogFactory.getLog(ESGSimpleComponentTest.class);
+
+    private static AbstractDataNodeManager testDnm = null;
     
     public ESGSimpleComponentTest() {
 	log.trace("Instantiating Test Case for ESGSimpleComponentTest");
     }
     
     @BeforeClass
-    public static void initialSetup() { }
+    public static void initialSetup() {
+        testDnm = new AbstractDataNodeManager() {
+                public void init() {
+                    System.out.println("Initializing anon test node manager class");
+                }
+            };
+    }
 
     @Before
-    public void setup() {
+    public void setup() { }
 
+    @Test
+    public void testEventPassingThroughComponents() {
+        System.out.println("TEST SIMPLE COMPONENTS");
+
+        //Create components... and name them (unique names)...
+        System.out.print("making thing1: ");
+	ESGSimpleComponent thing1 = new ESGSimpleComponent("THING1") {
+                public void handleESGEvent(ESGEvent esgEvent) {
+                    //we only care about system all loaded events
+                    if(!(esgEvent instanceof ESGSystemEvent)) return;
+                    ESGSystemEvent event = (ESGSystemEvent)esgEvent;
+                    if(event.getEventType() == ESGSystemEvent.ALL_LOADED) {
+                        System.out.println(getName()+" Got All Aboard Signal...");
+                        startGeneratingEvents(30);
+                    }
+                }
+
+                //Doing some work...
+                private void startGeneratingEvents(int numOfEvents) {
+                    System.out.println("Generating "+numOfEvents+" events to push through system...");
+                    ESGEvent testEvent = null;
+                    for(int i=0; i < numOfEvents; i++) {
+                        testEvent = new ESGEvent(this, "THIS IS MY DATA", "TestEvent #"+i);
+                        System.out.println(getName()+" Sending "+testEvent);
+                        enqueueESGEvent(testEvent);
+                    }
+                }
+            };
+        System.out.println("[OK]");
+
+        System.out.print("making thing2: ");
+        ESGSimpleComponent thing2 = new ESGSimpleComponent("THING2");
+        System.out.println("[OK]");
+
+        System.out.print("making thing3: ");
+        ESGSimpleComponent thing3 = new ESGSimpleComponent("THING3") {
+                int count = 0;
+                //HERE We show that we can listen for "system" events
+                //and based on that decide to add a component to
+                //ourselves to route messages to.  In this example we
+                //listen for JOIN events and then discern which
+                //components have joined and attach to for pushing
+                //queued events to. (Notice: No "connect" call from us to
+                //thing4 but we can do it ourselves here)
+                public void handleESGEvent(ESGEvent esgEvent) {
+                    //we only care about join events
+                    if(!(esgEvent instanceof ESGJoinEvent)) return;
+
+                    ESGJoinEvent event = (ESGJoinEvent)esgEvent;
+
+                    if(!(event.getJoiner() instanceof ESGSimpleComponent)) return;
+
+                    ESGSimpleComponent component = (ESGSimpleComponent)event.getJoiner();
+                    if(event.hasJoined()) {
+                        System.out.println(getName()+" Detected That A Simple Component Has Joined: ["+component.getName()+"]");
+                        if(component.getName().equals("THING4")) {
+                            System.out.println(this.getName()+" says, YES! I have been waiting for you!! ["+component.getName()+"]");
+                            //This is what "connect" does under the cover :-)
+                            addESGQueueListener(component);
+                            //------------------------
+                            //Dispatch and do stuff from here...
+                            //------------------------
+                        }else {
+                            System.out.println(getName()+" says, Nah... I Don't want ["+component.getName()+"]");
+                        }
+                    }else {
+                        System.out.println("Detected That Simple Component ["+component.getName()+"] Has Left :-(");
+                        removeESGQueueListener(component);
+                    }
+                    component = null;
+                }
+
+                //This is where we deal with message flows through the system.
+                public boolean handleESGQueuedEvent(ESGEvent event) {
+                    System.out.println(getName()+" one more stop to end...! "+event);
+                    super.handleESGQueuedEvent(event);
+                    return true;
+                }
+            };
+        System.out.println("[OK]");
+
+        System.out.print("making thing4: ");
+        ESGSimpleComponent thing4 = new ESGSimpleComponent("THING4") {
+                public boolean handleESGQueuedEvent(ESGEvent event) {
+                    System.out.println(getName()+" End of the road... "+event);
+                    super.handleESGQueuedEvent(event);
+                    return true;
+                }
+            };
+        System.out.println("[OK]");
+
+        //Register components to data node manager...
+        System.out.println("Registering things 1-4... ");
+        testDnm.registerComponent(thing1);
+        testDnm.registerComponent(thing2);
+        testDnm.registerComponent(thing3);
+        testDnm.registerComponent(thing4);
+        System.out.println("[OK]");
+
+        //Connect components together so that they may pass messages...
+        System.out.println("Connecting things 1-3...");
+        testDnm.connect("THING1","THING2");
+        testDnm.connect("THING2","THING3");
+
+        //Broadcast to all that all components have been connected...
+        testDnm.sendAllLoadedNotification();
+        System.out.println("Test Node Manager has "+testDnm.numOfComponents()+"components registered");
     }
 
     @Test
-    public void testSimpleComponent() {
-	
-    }
+    public void testMessagePassing() { }
 
     @After
     public void tearDown() { }

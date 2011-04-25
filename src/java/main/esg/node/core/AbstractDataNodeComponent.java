@@ -189,7 +189,13 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     }
     protected void enqueueESGEvent(String destinationListenerName, ESGEvent esgEvent) {
         log.trace("Enqueuing Event: "+esgEvent+" --to--> "+destinationListenerName);
-        esgQueueListenersMap.get(destinationListenerName).getESGEventQueue().enqueueEvent(esgEvent);
+        ESGQueueListener nextHop = esgQueueListenersMap.get(destinationListenerName);
+        if(nextHop != null) {
+            nextHop.getESGEventQueue().enqueueEvent(esgEvent);
+        }else{
+            log.warn("Sorry "+myName+" ,there isn't another component for you to dispatch to!");
+            log.warn("      Dropping event, "+esgEvent+" on the floor :-(");
+        }
     }
 
     //-------------------------------------------

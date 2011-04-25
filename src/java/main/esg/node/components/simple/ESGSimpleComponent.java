@@ -94,12 +94,12 @@ public class ESGSimpleComponent extends AbstractDataNodeComponent {
        Initialization method for this component
      */
     public void init() {
-	log.info("Initializing ESGSimpleComponent");
+	log.info("Initializing ESGSimpleComponent: "+getName());
 	props = getDataNodeManager().getMatchingProperties("^simple.*");
     }
 
     public void handleESGEvent(ESGEvent event) {
-	log.trace(getName()+" Handing Event: "+event.getMessage());
+	log.trace(getName()+" Handling Event: "+event.getMessage());
     }
 
     /**
