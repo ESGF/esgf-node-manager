@@ -110,14 +110,14 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
         if(dataNodeManager == null) return;
         dataNodeManager.removeComponent(this);
         dataNodeManager = null;
-
+        
         //TODO: Add an abstract method or make one of the two that we
         //have abstract so that the component subclass can be called
         //to stop it's life cycle appropriately.
     }
 
 
-    //*******************************************
+    //*******************************************    
     //-------------------------------------------
     //Subscribe/Unsubscribe ESGListeners ("system" events)
     //-------------------------------------------
@@ -157,6 +157,22 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
 
     //*******************************************
     //-------------------------------------------
+    //Queue Listener Query methods...
+    //-------------------------------------------
+    public int numOfESGQueueListeners() {
+        return esgQueueListenersMap.size();
+    }
+    
+    public String[] getESGQueueListenerList() {
+        String[] esgQueueListenerNames = new String[esgQueueListenersMap.size()];
+        int index = 0;
+        for(String queuelistenerName : esgQueueListenersMap.keySet()) {
+            esgQueueListenerNames[index++] = queuelistenerName;
+        }
+        return esgQueueListenerNames;
+    }
+
+    //-------------------------------------------
     //Subscribe/Unsubscribe ESG Queue Listeners ("application" events)
     //-------------------------------------------
     public void addESGQueueListener(ESGQueueListener listener) {
@@ -173,6 +189,11 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     public void removeESGQueueListener(String listenerName) {
         log.trace("Removing Queue Listener named: "+listenerName+" from "+this.getName());
         esgQueueListenersMap.remove(listenerName);
+    }
+    
+    public void removeAllESGQueueListeners() {
+        log.trace("Removing ALL ("+esgQueueListenersMap.size()+": ["+getESGQueueListenerList()+"]) Queue Listeners from "+this.getName());
+        esgQueueListenersMap.clear();
     }
 
     //--------------------------------------------

@@ -73,5 +73,6 @@ public interface DataNodeComponent extends ESGListener, ESGQueueListener{
     public void removeESGListener(ESGListener listener);
     public void addESGQueueListener(ESGQueueListener listener);
     public void removeESGQueueListener(ESGQueueListener listener);
+    public void removeAllESGQueueListeners();
 
 }

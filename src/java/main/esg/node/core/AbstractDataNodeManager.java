@@ -221,6 +221,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
             log.trace("No component mapping to "+componentName+" (nothing to remove)");
             return;
         }
+        component.removeAllESGQueueListeners();
         component.removeESGListener(this);
         sendUnjoinNotification(component);
     
