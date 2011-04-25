@@ -222,7 +222,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
             return;
         }
         component.removeAllESGQueueListeners();
-        component.removeESGListener(this);
+        component.removeAllESGListeners();
         sendUnjoinNotification(component);
     
         //TODO: add a call for the component to shut itself down

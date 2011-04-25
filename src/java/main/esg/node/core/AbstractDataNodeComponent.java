@@ -113,11 +113,28 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
         
         //TODO: Add an abstract method or make one of the two that we
         //have abstract so that the component subclass can be called
-        //to stop it's life cycle appropriately.
+        //to stop it's life cycle appropriately. (see:
+        //AbstractDataNodeManager.removeComponent()).
     }
 
 
     //*******************************************    
+    //-------------------------------------------
+    //Queue Listener Query methods...
+    //-------------------------------------------
+    public int numOfESGListeners() {
+        return esgListeners.size();
+    }
+    
+    public String[] getESGListenerNames() {
+        String[] esgListenerNames = new String[esgListeners.size()];
+        int index = 0;
+        for(String esgListenerName : esgQueueListenersMap.keySet()) {
+            esgListenerNames[index++] = esgListenerName;
+        }
+        return esgListenerNames;
+    }
+
     //-------------------------------------------
     //Subscribe/Unsubscribe ESGListeners ("system" events)
     //-------------------------------------------
@@ -130,6 +147,11 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     public void removeESGListener(ESGListener listener) {
         log.trace("Removing Listener: "+listener);
         esgListeners.remove(listener);
+    }
+
+    public void removeAllESGListeners() {
+        log.trace("Removing ALL ("+esgListeners.size()+") ESG Listeners from "+this.getName());
+        esgListeners.clear();
     }
 
     //--------------------------------------------
@@ -163,7 +185,7 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
         return esgQueueListenersMap.size();
     }
     
-    public String[] getESGQueueListenerList() {
+    public String[] getESGQueueListenerNames() {
         String[] esgQueueListenerNames = new String[esgQueueListenersMap.size()];
         int index = 0;
         for(String queuelistenerName : esgQueueListenersMap.keySet()) {
@@ -192,7 +214,7 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     }
     
     public void removeAllESGQueueListeners() {
-        log.trace("Removing ALL ("+esgQueueListenersMap.size()+": ["+getESGQueueListenerList()+"]) Queue Listeners from "+this.getName());
+        log.trace("Removing ALL ("+esgQueueListenersMap.size()+": ["+getESGQueueListenerNames()+"]) Queue Listeners from "+this.getName());
         esgQueueListenersMap.clear();
     }
 
