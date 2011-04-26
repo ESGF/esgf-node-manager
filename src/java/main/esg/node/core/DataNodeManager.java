@@ -73,6 +73,9 @@ public interface DataNodeManager extends ESGListener {
     public int numOfComponents();
     public String[] getComponentNames();
 
+    //....not sure if I should be exposing this... (not simtech approved) -gavin
+    public DataNodeComponent getComponent(String componentName);
+
     //Peer focused methods...
     public boolean registerPeer(ESGPeer peer);
     public boolean hasPeer(String peerName);

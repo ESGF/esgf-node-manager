@@ -77,6 +77,7 @@ import esg.node.core.ESGEvent;
 import esg.node.core.ESGJoinEvent;
 import esg.node.core.ESGPeer;
 import esg.node.core.BasicPeer;
+import esg.node.core.ESGSystemEvent;
 import esg.node.connection.ESGConnectionManager;
 import esg.common.service.ESGRemoteEvent;
 
@@ -137,36 +138,13 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     //------------------------------------------------------------
     //Remote service interface implementation ping, notify & handleESGRemoteEvent
     //------------------------------------------------------------
-    //Remote (ingress) calls to method...
+    //Ingress calls to check RPC working method...
     public boolean ping() { 
         log.trace("DataNode service got \"ping\"");
         return amAvailable(); 
     }
 
-    //TODO: Think about the performance implications of having a synchronious return value
-    //Remote (ingress) calls to method...
-    public boolean notify(ESGRemoteEvent evt_) {
-        log.trace("DataNode service got \"notify\" call with event: ["+evt_+"]");
-        boolean ret = false;
-
-        //zoiks: revisit this p2p chicken b4 egg issue
-        //if(!amAvailable()) {
-        //    log.warn("Dropping ingress notification event on the floor, I am NOT available. ["+evt_+"]");
-        //    return ret;
-        //}
-
-        //Inspect the message type...
-        if(evt_.getMessageType() != ESGRemoteEvent.NOTIFY) {
-            log.trace("Registration called with wrong event type... dropping on floor...");
-            return ret;
-        }
-    
-        //TODO: Do Event Inspection, etc...
-    
-        return ret;
-    }
-
-    //ingress registration request... returns a registration event to the remote caller's (peer's) notify method.
+    //Ingress registration request... returns a registration event to the remote caller's (peer's) notify method.
     public boolean register(ESGRemoteEvent evt) {
         log.trace("DataNode service got \"register\" call from datanode with event: ["+evt+"]");
         boolean ret = false;
@@ -192,8 +170,6 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
         return ret;
     }
 
-    
-
     //Ingress event handling from remote 'client'
     public void handleESGRemoteEvent(ESGRemoteEvent evt_) {
         log.trace("DataNode service got \"handleESGRemoteEvent\" call with event: ["+evt_+"]");
@@ -206,18 +182,28 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
         ESGEvent evt = null;
         if(evt_.getMessageType() == ESGRemoteEvent.NOOP) { 
             log.trace("GOT NOOP REMOTE EVENT"); 
+        }else if(evt_.getMessageType() != ESGRemoteEvent.REGISTER) {
+            log.trace("GOT REGISTER REMOTE EVENT");
+            evt = new ESGEvent(this);
+            evt.setRemoteEvent(evt_);
+            enqueueESGEvent("REGISTRY",evt);
         }else if(evt_.getMessageType() == ESGRemoteEvent.UNREGISTER) { 
             log.trace("GOT UNREGISTER REMOTE EVENT"); 
+            evt = new ESGEvent(this);
+            evt.setRemoteEvent(evt_);
+            enqueueESGEvent("REGISTRY",evt);
         }else if(evt_.getMessageType() == ESGRemoteEvent.HEALTH) { 
             log.trace("GOT HEALTH REMOTE EVENT"); 
             evt = new ESGEvent(this);
             evt.setRemoteEvent(evt_);
-            enqueueESGEvent("MONITOR",new ESGEvent(evt_));
+            enqueueESGEvent("MONITOR",evt);
         }else if(evt_.getMessageType() == ESGRemoteEvent.METRICS) { 
             log.trace("GOT METRICS REMOTE EVENT");
             evt = new ESGEvent(this);
             evt.setRemoteEvent(evt_);
             enqueueESGEvent("METRICS",evt);
+        }else if(evt_.getMessageType() == ESGRemoteEvent.APPLICATION) { 
+            log.trace("GOT APPLICATION REMOTE EVENT");
         }else {
             log.trace("DO NOT RECOGNIZE THIS MESSAGE TYPE: "+evt_);
         }
@@ -232,10 +218,18 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 
 
     //--------------------------------------------
-    //Internal 'Control' Event handling... (for join events) needs connection manager!
+    //Internal 'Control' Event handling... (for join events) This service wants handle to connection manager
     //--------------------------------------------
     public void handleESGEvent(ESGEvent esgEvent) {
-        //we only care about join events
+        //we only care about join events... err... sort of :-)
+
+        if((esgEvent instanceof ESGSystemEvent) && 
+           (((ESGSystemEvent)esgEvent).getEventType() == ESGSystemEvent.ALL_LOADED) &&
+           (connMgr == null) ) {
+            log.trace("I must have missed you in the load sequence CONN_MGR... got you now");
+            connMgr = (ESGConnectionManager)getDataNodeManager().getComponent("CONN_MGR");
+        }
+
         if(!(esgEvent instanceof ESGJoinEvent)) return;
 
         ESGJoinEvent event = (ESGJoinEvent)esgEvent;

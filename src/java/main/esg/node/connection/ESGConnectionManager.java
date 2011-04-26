@@ -261,7 +261,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 		//was successful or not.(see handlePeerEvent below)
 		peer.addPeerListener(this);
 		unavailablePeers.put(peer.getName(),peer);
-		peer.notifyToPeer();
+		//peer.notifyToPeer();
 		
 	    }else{
 		log.warn("Dropping "+peer+"... (no null service urls accepted)");

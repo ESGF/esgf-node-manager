@@ -236,8 +236,8 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
         removeComponent(component.getName());
     }
 
-    //TODO: Maybe think about opening up the visibility of this method.
-    protected DataNodeComponent getComponent(String name) {
+    //TODO: Maybe think about the visibility of this method.
+    public DataNodeComponent getComponent(String name) {
         return components.get(name);
     }
     

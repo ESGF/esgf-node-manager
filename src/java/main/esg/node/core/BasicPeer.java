@@ -113,7 +113,7 @@ public class BasicPeer extends HessianPeer {
        available or even present for communication.
     */
     public void init() {
-        log.trace("4)) Peer init attempting to create handle to endpoint");
+        log.trace("4)) Peer init attempting to create handle to endpoint: ["+getName()+"]");
         if(isValid) {
             log.info("I am already valid... :-)");
             return;
@@ -206,45 +206,7 @@ public class BasicPeer extends HessianPeer {
         return isAvailable;
         //FYI: the isAvailable() method is defined in super-superclass)
     }
-    
-    //-------------------------------------------------------------
-    //This is called to present this endpoint (the peer) with notification that 
-    //they have been properly registered into this data node
-    //-------------------------------------------------------------
-    //(yes, it looks like I am falling into the copy paste trap with
-    //the registerToPeer method, but the truth is that in the scheme
-    //of things these methods get called relatively infrequently so
-    //I'd like to put this info on the stack so it will get cleaned up
-    //when this method pops out of scope (off the stack) so I don't
-    //have to worry about things lingering in memory longer than
-    //necessary.)
-    public boolean notifyToPeer() {
-        boolean ret = false;
-        String myLocation = null;
-        try{
-            //myLocation = "http://"+InetAddress.getLocalHost().getCanonicalHostName()+"/esgf-node-manager/node";
-            myLocation = "http://"+InetAddress.getLocalHost().getHostAddress()+"/esgf-node-manager/node";
-        }catch (java.net.UnknownHostException ex) {
-            log.error("Could not build proper location string for myself",ex);
-            return ret;
-        }
-    
-        ESGRemoteEvent notificationEvent = new ESGRemoteEvent(myLocation,ESGRemoteEvent.NOTIFY,Utils.nextSeq());
-    
-        try {
-            log.trace("Making Remote Call to \"notify\" method, sending: "+notificationEvent);
-            if(datanodeService.notify(notificationEvent)) {
-                fireConnectionAvailable();
-                ret = true;
-            }
-        }catch (RuntimeException ex) {
-            log.error("Problem calling \"notify\" on ["+getServiceURL()+"] "+ex.getMessage());
-            fireConnectionFailed(ex);
-            ret = false;
-        }
-        return ret;
-    }
-    
+        
 
     //Present the peer with this client's identity and thus
     //callback address for making calls back to the data node

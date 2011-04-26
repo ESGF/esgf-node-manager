@@ -103,7 +103,7 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
             //out the hostname.
             String myHostname = null;
             try {
-                myHostname = getNodeProperty("esgf.host",java.net.InetAddress.getLocalHost().getCanonicalHostName());
+                myHostname = getNodeProperty("esgf.host",java.net.InetAddress.getLocalHost().getHostAddress());
                 System.out.println(" Manager says, \"I am ["+myHostname+"]\"");
             }catch(java.net.UnknownHostException ex) {log.error(ex); }
             
@@ -129,6 +129,9 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
             }
         }catch(java.net.MalformedURLException e) {log.error(e); }
         
+        ESGFRegistry registry = new ESGFRegistry("REGISTRY");
+        registerComponent(registry);
+    
         ESGNotifier notifier = new ESGNotifier("NOTIFIER");
         registerComponent(notifier);
 
@@ -138,24 +141,21 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
         ESGMetrics metrics = new ESGMetrics("METRICS");
         registerComponent(metrics);
 
-        ESGFRegistry registry = new ESGFRegistry("REGISTRY");
-        registerComponent(registry);
-    
         log.info("Connecting core components");
 
         //Now build the "FSM" connections.
         //Ingress messages from the network come in through the DNODE_SVC
         //The DNODE_SVC then routes the message to the appropriate 
     
+        connect("DNODE_SVC","REGISTRY");
         connect("DNODE_SVC","NOTIFER");
         connect("DNODE_SVC","MONITOR");
         connect("DNODE_SVC","METRICS");
-        connect("DNODE_SVC","REGISITRY");
 
+        connect("REGISTRY","CONN_MGR"); 
         connect("NOTIFIER","CONN_MGR");
         connect("MONITOR","CONN_MGR");
         connect("METRICS","CONN_MGR");
-        connect("REGISTRY","CONN_MGR"); 
     }
 
     public void init() {

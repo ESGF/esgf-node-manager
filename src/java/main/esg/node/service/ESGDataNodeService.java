@@ -85,14 +85,6 @@ public interface ESGDataNodeService {
     public boolean register(ESGRemoteEvent evt);
 
     /**
-       Upon successfull registration with peer that peer calls us back
-       with notify to let us know that registration is complete.
-
-       @param evt remote event appropriate for notification
-    */
-    public boolean notify(ESGRemoteEvent evt);
-    
-    /**
        The basic inter-peer message passing method. Outside of the
        registration handshake process, this is the method that is
        called for all other communication.

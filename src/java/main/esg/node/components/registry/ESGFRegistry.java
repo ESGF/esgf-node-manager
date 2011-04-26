@@ -65,7 +65,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
 import esg.common.util.ESGFProperties;
+import esg.common.service.ESGRemoteEvent;
+import esg.node.connection.ESGConnectionManager;
 import esg.node.core.*;
+import esg.common.generated.registration.*;
 
 /**
    Description:
@@ -83,7 +86,6 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     private Properties props = null;
     private boolean isBusy = false;
     private RegistrationGleaner gleaner = null;
-
 
     public ESGFRegistry(String name) {
         super(name);
@@ -131,22 +133,50 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             },delay*1000,period*1000);
     }
 
-    //When peer discovery messages are encountered grab those events
-    //and collect the peer's information and incorporate it into our
-    //own world view. The data should be prep'ed for query
+    //When peer registration messages are encountered grab those
+    //events and collect the peer's registration information and
+    //incorporate it into our own world view.
     public boolean handleESGQueuedEvent(ESGEvent event) {
         log.trace("handling enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
-        //TODO: Pull out our registration information and push it to peers.
 
-        event.setData(gleaner.toString());
+        //Pull out our registration information (parse the xml string
+        //payload into object form via the gleaner) and send the event
+        //on its way (the connection manager should be downstream this
+        //event path
+        event.setData(gleaner.createRegistrationFromString((String)event.getRemoteEvent().getPayload()));
+
         enqueueESGEvent(event);
         return true;
     }
 
     //Listen out for Joins from comm.  TODO: grab the peer
     //datastructure from comm and poke at it accordingly
-    public void handleESGEvent(ESGEvent event) {
-        super.handleESGEvent(event);
+    public void handleESGEvent(ESGEvent esgEvent) {
+        //we only care about join events... err... sort of :-)
+
+        //Note: should not be so myopic in dealing with system
+        //events. There may be others that need to be acted
+        //upon... but I am in Brody mode now -gavin
+        if((esgEvent instanceof ESGSystemEvent) && 
+           (((ESGSystemEvent)esgEvent).getEventType() == ESGSystemEvent.ALL_LOADED) ) {
+            log.trace("I must have missed you in the load sequence CONN_MGR... I got you now");
+            addESGQueueListener(getDataNodeManager().getComponent("CONN_MGR"));            
+        }
+
+        if(!(esgEvent instanceof ESGJoinEvent)) return;
+
+        ESGJoinEvent event = (ESGJoinEvent)esgEvent;
+    
+        //we only care bout peer joining
+        if(!(event.getJoiner() instanceof ESGConnectionManager)) return;
+
+        if(event.hasJoined()) {
+            log.trace("Detected That The ESGConnectionManager Has Joined: "+event.getJoiner().getName());
+            addESGQueueListener(event.getJoiner());
+        }else {
+            log.trace("Detected That The ESGConnectionManager Has Left: "+event.getJoiner().getName());
+            removeESGQueueListener(event.getJoiner());
+        }
     }
 
 }
