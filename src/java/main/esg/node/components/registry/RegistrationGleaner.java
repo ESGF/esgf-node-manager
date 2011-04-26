@@ -198,7 +198,7 @@ public class RegistrationGleaner {
             //to saveRegistration since that would potentially be
             //called much less often
             myChecksum = quickHash.sum(sw.toString());
-            log.trace("Checksum of xml is: "+myChecksum);
+            log.trace("Checksum of xml string is: "+myChecksum);
         }catch(Exception e) {
             log.error(e);
         }

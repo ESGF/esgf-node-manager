@@ -59,6 +59,14 @@ package esg.node.components.registry;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Collections;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.Comparator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -86,18 +94,23 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     private Properties props = null;
     private boolean isBusy = false;
     private RegistrationGleaner gleaner = null;
+    private Map<String,String> processedMap = null;
+    private NodeHostnameComparator nodecomp = null;
 
     public ESGFRegistry(String name) {
         super(name);
         log.debug("Instantiating ESGFRegistry...");
+
     }
     
     public void init() {
         log.info("Initializing ESGFRegistry...");
         try{
-            //props = getDataNodeManager().getMatchingProperties("*");
+            //props = getDataNodeManager().getMatchingProperties("*"); //TODO: figure the right regex for only what is needed
             props = new ESGFProperties();
             gleaner = new RegistrationGleaner(props);
+            nodecomp = new NodeHostnameComparator();
+            processedMap = Collections.synchronizedMap(new HashMap<String,String>()); //TODO: may want to persist this and then bring it back.
             startRegistry();
         }catch(java.io.IOException e) {
             System.out.println("Damn ESGFRegistry can't fire up... :-(");
@@ -133,16 +146,57 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             },delay*1000,period*1000);
     }
 
+    private void mergeNodes(List<Node> myList, List<Node> otherList) {
+        //Sort lists by hostname (natural) ascending order a -> z
+        //where a compareTo z is < 0 iff a is before z
+        Collections.sort(myList,nodecomp);
+        Collections.sort(otherList,nodecomp);
+        
+        Set<Node> newNodes = new TreeSet<Node>(nodecomp);
+
+        for(int i=0, j=0; i<otherList.size();) {
+            if( (nodecomp.compare(myList.get(i),otherList.get(j))) == 0 ) {
+                if((myList.get(i)).getTimeStamp() > (otherList.get(j)).getTimeStamp()) {
+                    newNodes.add(myList.get(i));
+                }else {
+                    newNodes.add(otherList.get(j));
+                }
+                i++;
+                j++;
+            }else if ( (nodecomp.compare(myList.get(i),otherList.get(j))) < 0 ) {
+                //zoiks
+            }else{
+                //zoiks
+            }
+        }
+
+        myList.clear();
+        myList.addAll(newNodes); //because using set they are 
+    }
+
     //When peer registration messages are encountered grab those
     //events and collect the peer's registration information and
     //incorporate it into our own world view.
     public boolean handleESGQueuedEvent(ESGEvent event) {
         log.trace("handling enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
-
-
+        
+        
         String payloadChecksum  = event.getRemoteEvent().getPayloadChecksum();
         String sourceServiceURL = event.getRemoteEvent().getSource();
+        
+        //TODO: Heck no, I should NOT be using string comparison for
+        //this...  I need to revisit the typing of the remote event
+        //for type of the checksum.  The thing is I don't want to use
+        //BigInteger because I don't know how portable that is and I
+        //want the event object as type simple as can be.  Right now
+        //using the string representation of the checksum... maybe
+        //that's good enough for the type complexity trade off?
 
+        String lastChecksum = processedMap.get(sourceServiceURL);
+        if( (lastChecksum != null) && (lastChecksum.equals(payloadChecksum)) ) {
+            log.trace("I have seen this payload before, there is nothing new to learn... dropping event on floor ["+event+"]");
+        }
+        
         //zoiks: use gleaner to get local registration object to modify.
         //       periodically write modified structure to file (getting a new checksum)
         //       back the list of nodes with a datastructure that can ...
@@ -153,9 +207,19 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         //payload into object form via the gleaner) and send the event
         //on its way (the connection manager should be downstream this
         //event path
-        event.setData(gleaner.createRegistrationFromString((String)event.getRemoteEvent().getPayload()));
 
-        enqueueESGEvent(event);
+        Registration myRegistration = gleaner.getMyRegistration();
+        Registration peerRegistration = gleaner.createRegistrationFromString((String)event.getRemoteEvent().getPayload());
+
+        List<Node> myNodes = myRegistration.getNode();
+        List<Node> peerNodes = peerRegistration.getNode();
+        
+        mergeNodes(myNodes,peerNodes);
+        gleaner.saveRegistration();
+
+        processedMap.put(sourceServiceURL, payloadChecksum);
+        enqueueESGEvent(new ESGEvent(this,gleaner.toString(),gleaner.getMyChecksum()));
+
         return true;
     }
 
@@ -189,4 +253,13 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         }
     }
 
+    //------------------------------------------------------------
+    //Utility inner class... comparator for hostnames
+    //------------------------------------------------------------
+    private class NodeHostnameComparator implements Comparator<Node> {
+        public int compare(Node a, Node b) {
+            return a.getHostname().compareTo(b.getHostname());
+        }
+    }
+    
 }
