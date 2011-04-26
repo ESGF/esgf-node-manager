@@ -83,6 +83,7 @@ public class ESGRemoteEvent implements java.io.Serializable {
     private int    messageType = -1;
     private Object payload = null;
     private long   seqNum = 0L;
+    private int    ttl = -1;
     private String checksum = null;
 
     public ESGRemoteEvent(String source, int messageType, Object payload, Long seqNum) {
