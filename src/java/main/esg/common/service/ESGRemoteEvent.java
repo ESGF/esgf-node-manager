@@ -103,11 +103,13 @@ public class ESGRemoteEvent implements java.io.Serializable {
     public String getSource()  { return source;  }
     public int    getMessageType() { return messageType; }
     public long   getSeqNum() { return seqNum; }
+    public int    getTTL() { return ttl; }
     public Object getPayload() { return payload; }
     public String getPayloadChecksum() { return checksum; }
+
     public void   setPayload(Object obj) { this.payload = obj; }
 
-    public String toString() { return "RE - s:["+source+"] m:["+messageType+"] n:["+seqNum+"] p:["+payload+"]"; }
-    
+    public String toString() { return "RE - s:["+source+"] m:["+messageType+"] n:["+seqNum+"] t:["+ttl+"] p:["+payload+"]"; }
+
 }
 
