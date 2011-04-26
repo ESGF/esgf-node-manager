@@ -83,6 +83,7 @@ public class ESGRemoteEvent implements java.io.Serializable {
     private int    messageType = -1;
     private Object payload = null;
     private long   seqNum = 0L;
+    private String checksum = null;
 
     public ESGRemoteEvent(String source, int messageType, Object payload, Long seqNum) {
         this.source  = source;
@@ -102,6 +103,7 @@ public class ESGRemoteEvent implements java.io.Serializable {
     public int    getMessageType() { return messageType; }
     public long   getSeqNum() { return seqNum; }
     public Object getPayload() { return payload; }
+    public String getPayloadChecksum() { return checksum; }
     public void   setPayload(Object obj) { this.payload = obj; }
 
     public String toString() { return "RE - s:["+source+"] m:["+messageType+"] n:["+seqNum+"] p:["+payload+"]"; }

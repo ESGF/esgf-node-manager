@@ -58,6 +58,8 @@ package esg.node.components.registry;
 
 import esg.common.generated.registration.*;
 import esg.common.util.ESGFProperties;
+import esg.common.QuickHash;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.Marshaller;
@@ -97,6 +99,8 @@ public class RegistrationGleaner {
     private static final boolean DEBUG=true;
     private String registrationPath = null;
     private Registration myRegistration = null;
+    private QuickHash quickHash = null;
+    private String myChecksum = null;
     private Properties props = null;
     private RegistrationGleanerHelperDAO helperDAO = null;
     private String configDir = null;
@@ -120,6 +124,7 @@ public class RegistrationGleaner {
             configDir = configDir+File.separator+"config";
             nodeTypeValue = null;
             try {
+                quickHash = new QuickHash("SHA1");
                 File configTypeFile = new File(configDir+File.separator+"config_type");
                 if(configTypeFile.exists()) {
                     BufferedReader in = new BufferedReader(new FileReader(configTypeFile));
@@ -139,7 +144,8 @@ public class RegistrationGleaner {
     
     
     public Registration getMyRegistration() { return myRegistration; }
-    
+    public String getMyChecksum() { return myChecksum; }
+
     public boolean saveRegistration() { return saveRegistration(myRegistration); }
     public boolean saveRegistration(Registration registration) {
         boolean success = false;
@@ -153,7 +159,6 @@ public class RegistrationGleaner {
             Marshaller m = jc.createMarshaller();
             m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             m.marshal(registration, new FileOutputStream(registrationPath+this.registrationFile));
-            
             success = true;
         }catch(Exception e) {
             log.error(e);
@@ -175,22 +180,29 @@ public class RegistrationGleaner {
     }
     
     public String toString() {
-        StringWriter sw = null;
+        String out = null;
         if (myRegistration == null) {
             log.error("Registration is ["+myRegistration+"]"); 
             return null;
         }
         log.info("Writing registration information to String, for "+myRegistration.getNode().get(0).getHostname());
-        sw = new StringWriter();
         try{
+            StringWriter sw = new StringWriter();
             JAXBContext jc = JAXBContext.newInstance(Registration.class);
             Marshaller m = jc.createMarshaller();
             m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             m.marshal(myRegistration, sw);
+
+            out = sw.toString();
+            //NOTE: Hopefully this isn't to slow... may have to move
+            //to saveRegistration since that would potentially be
+            //called much less often
+            myChecksum = quickHash.sum(sw.toString());
+            log.trace("Checksum of xml is: "+myChecksum);
         }catch(Exception e) {
             log.error(e);
         }
-        return sw.toString();
+        return out;
     }
 
     

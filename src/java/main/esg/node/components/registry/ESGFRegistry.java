@@ -139,6 +139,16 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     public boolean handleESGQueuedEvent(ESGEvent event) {
         log.trace("handling enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
 
+
+        String payloadChecksum  = event.getRemoteEvent().getPayloadChecksum();
+        String sourceServiceURL = event.getRemoteEvent().getSource();
+
+        //zoiks: use gleaner to get local registration object to modify.
+        //       periodically write modified structure to file (getting a new checksum)
+        //       back the list of nodes with a datastructure that can ...
+        //       have another datastructure with checksum and source service url
+        //       to see if we should even do anything at all.
+        
         //Pull out our registration information (parse the xml string
         //payload into object form via the gleaner) and send the event
         //on its way (the connection manager should be downstream this

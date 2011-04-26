@@ -81,6 +81,10 @@ public class QuickHash {
         m = MessageDigest.getInstance(algo);
     }
 
+    public QuickHash() throws NoSuchAlgorithmException {
+        this("SHA1");
+    }
+
     public String sum(String plaintext) {
         byte[] data = null;
         try {
