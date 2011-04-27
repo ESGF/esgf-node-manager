@@ -65,6 +65,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.TreeSet;
 import java.util.Comparator;
 
@@ -125,7 +126,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     
     private void startRegistry() {
         log.trace("launching registry timer");
-        long delay  = Long.parseLong(props.getProperty("registry.initialDelay","8"));
+        long delay  = Long.parseLong(props.getProperty("registry.initialDelay","0"));
         long period = Long.parseLong(props.getProperty("registry.period","86405"));
         log.trace("registry delay:  "+delay+" sec");
         log.trace("registry period: "+period+" sec");
@@ -146,7 +147,8 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             },delay*1000,period*1000);
     }
 
-    private void mergeNodes(List<Node> myList, List<Node> otherList) {
+    //(Indeed this algorithm is not the most parsimoneous on memory....)
+    private Set<Node>  mergeNodes(List<Node> myList, List<Node> otherList) {
         //Sort lists by hostname (natural) ascending order a -> z
         //where a compareTo z is < 0 iff a is before z
         //This algorithm is not in-place, uses terciary list.
@@ -154,6 +156,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         Collections.sort(otherList,nodecomp);
         
         Set<Node> newNodes = new TreeSet<Node>(nodecomp);
+        Set<Node> updatedNodes = new HashSet<Node>();
         
         int i=0;
         int j=0;
@@ -163,6 +166,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     newNodes.add(myList.get(i));
                 }else {
                     newNodes.add(otherList.get(j));
+                    updatedNodes.add(otherList.get(j));
                 }
                 i++;
                 j++;
@@ -171,6 +175,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 i++;
             }else{
                 newNodes.add(otherList.get(j));
+                updatedNodes.add(otherList.get(j));
                 j++;
             }
         }
@@ -181,9 +186,12 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         }
         while( j < otherList.size() ) {
             newNodes.add(otherList.get(j));
+            updatedNodes.add(otherList.get(j));
         }
         myList.clear();
         myList.addAll(newNodes); //because using set they are 
+        newNodes.clear();
+        return updatedNodes;
     }
 
     //When peer registration messages are encountered grab those
@@ -206,7 +214,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
 
         String lastChecksum = processedMap.get(sourceServiceURL);
         if( (lastChecksum != null) && (lastChecksum.equals(payloadChecksum)) ) {
-            log.trace("I have seen this payload before, there is nothing new to learn... dropping event on floor ["+event+"]");
+            log.trace("I have seen this payload before, from the same dude... there is nothing new to learn... dropping event on floor ["+event+"]");
         }
         
         //zoiks: use gleaner to get local registration object to modify.
@@ -226,33 +234,38 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         List<Node> myNodes = myRegistration.getNode();
         List<Node> peerNodes = peerRegistration.getNode();
         
-        mergeNodes(myNodes,peerNodes);
+        Set<Node> updatedNodes = mergeNodes(myNodes,peerNodes);
         gleaner.saveRegistration();
 
         processedMap.put(sourceServiceURL, payloadChecksum);
-        enqueueESGEvent(new ESGEvent(this,gleaner.toString(),gleaner.getMyChecksum()));
 
+        log.trace("Sending off event with registry update digest data");
+        enqueueESGEvent(new ESGEvent(this,
+                                     new RegistryUpdateDigest(gleaner.toString(), 
+                                                              gleaner.getMyChecksum(),
+                                                              updatedNodes),
+                                     "Updated / Merged Registration State"));
         return true;
     }
-
+    
     //Listen out for Joins from comm.  TODO: grab the peer
     //datastructure from comm and poke at it accordingly
     public void handleESGEvent(ESGEvent esgEvent) {
         //we only care about join events... err... sort of :-)
-
+        
         //Note: should not be so myopic in dealing with system
         //events. There may be others that need to be acted
         //upon... but I am in Brody mode now -gavin
         if((esgEvent instanceof ESGSystemEvent) && 
            (((ESGSystemEvent)esgEvent).getEventType() == ESGSystemEvent.ALL_LOADED) ) {
             log.trace("I must have missed you in the load sequence CONN_MGR... I got you now");
-            addESGQueueListener(getDataNodeManager().getComponent("CONN_MGR"));            
+            addESGQueueListener(getDataNodeManager().getComponent("CONN_MGR"));
         }
-
+        
         if(!(esgEvent instanceof ESGJoinEvent)) return;
-
+        
         ESGJoinEvent event = (ESGJoinEvent)esgEvent;
-    
+        
         //we only care bout peer joining
         if(!(event.getJoiner() instanceof ESGConnectionManager)) return;
 
