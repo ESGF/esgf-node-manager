@@ -149,12 +149,15 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     private void mergeNodes(List<Node> myList, List<Node> otherList) {
         //Sort lists by hostname (natural) ascending order a -> z
         //where a compareTo z is < 0 iff a is before z
+        //This algorithm is not in-place, uses terciary list.
         Collections.sort(myList,nodecomp);
         Collections.sort(otherList,nodecomp);
         
         Set<Node> newNodes = new TreeSet<Node>(nodecomp);
-
-        for(int i=0, j=0; i<otherList.size();) {
+        
+        int i=0;
+        int j=0;
+        while ((i < myList.size()) && (j < otherList.size())) {
             if( (nodecomp.compare(myList.get(i),otherList.get(j))) == 0 ) {
                 if((myList.get(i)).getTimeStamp() > (otherList.get(j)).getTimeStamp()) {
                     newNodes.add(myList.get(i));
@@ -164,12 +167,21 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 i++;
                 j++;
             }else if ( (nodecomp.compare(myList.get(i),otherList.get(j))) < 0 ) {
-                //zoiks
+                newNodes.add(myList.get(i));
+                i++;
             }else{
-                //zoiks
+                newNodes.add(otherList.get(j));
+                j++;
             }
         }
 
+        //Now let's copy over what's left over...
+        while( i < myList.size() ) {
+            newNodes.add(myList.get(i));
+        }
+        while( j < otherList.size() ) {
+            newNodes.add(otherList.get(j));
+        }
         myList.clear();
         myList.addAll(newNodes); //because using set they are 
     }
