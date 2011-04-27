@@ -66,6 +66,7 @@ import esg.node.components.notification.ESGNotifier;
 import esg.node.components.monitoring.ESGMonitor;
 import esg.node.components.metrics.ESGMetrics;
 import esg.node.components.registry.ESGFRegistry;
+import esg.common.Utils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -116,7 +117,7 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
                 System.out.println(" Mangager says, \"My Default Peer is ["+defaultPeerName+"]\"");
                 
                 if((null != defaultPeerName) && !(defaultPeerName.equalsIgnoreCase(myHostname))) {
-                    ESGPeer peer = new BasicPeer("http://"+defaultPeerName+"/esgf-node-manager/node", ESGPeer.PEER);
+                    ESGPeer peer = new BasicPeer(Utils.asServiceUrl(defaultPeerName), ESGPeer.PEER);
                     log.trace("1)) Created default peer attempting to register it");
                     registerPeer(peer);
                 }else{

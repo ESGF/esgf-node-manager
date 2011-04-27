@@ -147,7 +147,7 @@ public class RegistrationGleaner {
     public String getMyChecksum() { return myChecksum; }
 
     public boolean saveRegistration() { return saveRegistration(myRegistration); }
-    public boolean saveRegistration(Registration registration) {
+    public synchronized boolean saveRegistration(Registration registration) {
         boolean success = false;
         if (registration == null) {
             log.error("Registration is ["+registration+"]"); 
@@ -178,7 +178,50 @@ public class RegistrationGleaner {
         
         return success;
     }
-    
+
+    //NOTE: In anticipation that checksumming for every call to
+    //toString maybe a bit laborious and slow I am breaking up this
+    //call into a "regular" toString and on that does the checksum
+    //calcuation in addition to that. I don't want to optimize too
+    //early, but the nature of toString and how frequenly it is
+    //potentially called makes this a relatively justified defensive
+    //maneuver, right? :-) The real thing I wanted to do was to put
+    //this checksumming in the saveRegistration... however, currently
+    //saveRegistration streams to the file and thus not holding the
+    //whole file in memory, which for large files may be desireable.
+    //However, we are not talking about huge files, Howevever, this
+    //call could be done frequenly enough that constantly allocating
+    //and gc'ing space for this string may make the JVM not so happy?
+    //I am not sure, so I am leaving these options still open.  Time
+    //vs. Space...  Thus... optimize this out later.... -gavin
+    //public String toCheckedString() {
+    //    String out = this.toString();
+    //    if(out == null) return out;
+    //
+    //    myChecksum = quickHash.sum(sw.toString());
+    //    log.trace("Checksum of xml string is: "+myChecksum);
+    //    return out;
+    //}
+    //
+    //public String toString() {
+    //    StringWriter sw = null;
+    //    if (myRegistration == null) {
+    //        log.error("Registration is ["+myRegistration+"]");
+    //        return null;
+    //    }
+    //    log.info("Writing registration information to String, for "+myRegistration.getNode().get(0).getHostname());
+    //    sw = new StringWriter();
+    //    try{
+    //        JAXBContext jc = JAXBContext.newInstance(Registration.class);
+    //        Marshaller m = jc.createMarshaller();
+    //        m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+    //        m.marshal(myRegistration, sw);
+    //    }catch(Exception e) {
+    //        log.error(e);
+    //    }
+    //    return sw.toString();
+    //}
+
     public String toString() {
         String out = null;
         if (myRegistration == null) {
@@ -197,6 +240,7 @@ public class RegistrationGleaner {
             //NOTE: Hopefully this isn't to slow... may have to move
             //to saveRegistration since that would potentially be
             //called much less often
+            log.trace("Checksumming xml content...");
             myChecksum = quickHash.sum(sw.toString());
             log.trace("Checksum of xml string is: "+myChecksum);
         }catch(Exception e) {

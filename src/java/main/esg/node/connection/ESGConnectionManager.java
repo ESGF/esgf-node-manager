@@ -77,6 +77,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.List;
 
+import esg.common.Utils;
 import esg.common.service.ESGRemoteEvent;
 import esg.node.core.ESGPeerListener;
 import esg.node.core.ESGDataNodeManager;
@@ -87,7 +88,9 @@ import esg.node.core.ESGEventHelper;
 import esg.node.core.ESGJoinEvent;
 import esg.node.core.ESGPeerEvent;
 import esg.node.core.ESGPeer;
-
+import esg.node.core.BasicPeer;
+import esg.common.generated.registration.*;
+import esg.node.components.registry.RegistryUpdateDigest;
 
 public class ESGConnectionManager extends AbstractDataNodeComponent implements ESGPeerListener {
 
@@ -201,12 +204,43 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         super.unregister();
     }
 
+    //Helper method containing the details of the Gossip protocol dispatch logic
+    private boolean sendNewRegistryState(String xmlDocument, String xmlChecksum) {
+        //TODO: zoiks
+        //Generate suitable remote event...
+
+        //Randomly select two peers to send to (if you have more than
+        //two peers at your disposal of course)
+        //retry to send state until you have sent data out to TWO succesfully
+        //If you exhaust your retries and could not get events sent return false;
+        return true;
+    }
+
     //--------------------------------------------
     //Event handling...
     //--------------------------------------------
 
     public boolean handleESGQueuedEvent(ESGEvent event) {
         log.trace("["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
+
+        if(event.getData() instanceof RegistryUpdateDigest) {
+            log.trace("Getting update information regarding internal representation of the federation");
+            RegistryUpdateDigest rud = (RegistryUpdateDigest)event.getData();
+
+            //Add all the newly discovered peers that I don't already
+            //know are active... but they are not fully "available"
+            //yet.
+            ESGPeer peer = null;
+            String peerServiceUrl = null;
+            for(Node node : rud.updatedNodes()) {
+                peer = peers.get(peerServiceUrl = Utils.asServiceUrl(node.getHostname()));
+                try{
+                    if (peer == null) unavailablePeers.put(peerServiceUrl, peer = new BasicPeer(peerServiceUrl, ESGPeer.PEER));
+                }catch(java.net.MalformedURLException e) {log.error(e); }
+            }
+            return sendNewRegistryState(rud.xmlDocument(), rud.xmlChecksum());
+        }
+
 
         ESGRemoteEvent rEvent=null;
         String targetAddress = null;
@@ -227,10 +261,9 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             return false;
         }
 
-
         //TODO: have the ESGEventHelper create the remote event properly (TTL, etc...)
-        targetPeer.handleESGRemoteEvent(ESGEventHelper.createOutboundEvent(event));
-        event = null; //gc hint!
+        //targetPeer.handleESGRemoteEvent(ESGEventHelper.createNATOutboundEvent(event));
+        //event = null; //gc hint!
     
         return true;
     }

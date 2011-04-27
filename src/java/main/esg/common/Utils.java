@@ -101,4 +101,8 @@ public class Utils {
         return myHostname;
     }
 
+    public static String asServiceUrl(String hostname) {
+        return "http://"+hostname+"/esgf-node-manager/node";
+    }
+
 }

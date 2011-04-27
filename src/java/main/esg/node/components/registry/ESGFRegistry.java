@@ -253,9 +253,9 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     public void handleESGEvent(ESGEvent esgEvent) {
         //we only care about join events... err... sort of :-)
         
-        //Note: should not be so myopic in dealing with system
-        //events. There may be others that need to be acted
-        //upon... but I am in Brody mode now -gavin
+        //Note: I should not be so myopic in dealing with system
+        //events. There may be others that need to be acted upon that
+        //I am now ignoring but I am in Brody mode now -gavin
         if((esgEvent instanceof ESGSystemEvent) && 
            (((ESGSystemEvent)esgEvent).getEventType() == ESGSystemEvent.ALL_LOADED) ) {
             log.trace("I must have missed you in the load sequence CONN_MGR... I got you now");
@@ -263,19 +263,21 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         }
         
         if(!(esgEvent instanceof ESGJoinEvent)) return;
-        
-        ESGJoinEvent event = (ESGJoinEvent)esgEvent;
-        
-        //we only care bout peer joining
-        if(!(event.getJoiner() instanceof ESGConnectionManager)) return;
+        //we only care bout peer joining beyond this point...
 
-        if(event.hasJoined()) {
-            log.trace("Detected That The ESGConnectionManager Has Joined: "+event.getJoiner().getName());
-            addESGQueueListener(event.getJoiner());
-        }else {
-            log.trace("Detected That The ESGConnectionManager Has Left: "+event.getJoiner().getName());
-            removeESGQueueListener(event.getJoiner());
+        ESGJoinEvent event = (ESGJoinEvent)esgEvent;
+
+        if(event.getJoiner() instanceof ESGConnectionManager) {
+
+            if(event.hasJoined()) {
+                log.trace("Detected That The ESGConnectionManager Has Joined: "+event.getJoiner().getName());
+                addESGQueueListener(event.getJoiner());
+            }else {
+                log.trace("Detected That The ESGConnectionManager Has Left: "+event.getJoiner().getName());
+                removeESGQueueListener(event.getJoiner());
+            }
         }
+
     }
 
     //------------------------------------------------------------
