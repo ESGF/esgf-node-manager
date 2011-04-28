@@ -207,32 +207,6 @@ public class BasicPeer extends HessianPeer {
         //FYI: the isAvailable() method is defined in super-superclass)
     }
         
-
-    //Present the peer with this client's identity and thus
-    //callback address for making calls back to the data node
-    //services for sending notifications
-    public boolean registerToPeer() { 
-        boolean ret = false;
-        if(!isValid  || !isAvailable) {
-            log.warn("May not issue \"register\" rpc call unless object has been initialized to be made valid and ping has been issued to make sure I am available!!!");
-            return ret;
-        }
-
-        ESGRemoteEvent registrationEvent = new ESGRemoteEvent(ESGEventHelper.getMyServiceUrl(),ESGRemoteEvent.REGISTER,Utils.nextSeq());
-    
-        try {
-            log.trace("Making Remote Call to \"register\" method, sending: "+registrationEvent);
-            if(datanodeService.register(registrationEvent)) {
-                ret = true;
-            }
-        }catch (RuntimeException ex) {
-            log.error("Problem calling \"register\" on ["+getServiceURL()+"] "+ex.getMessage());
-            fireConnectionFailed(ex);
-            ret = false;
-        }
-        return ret;
-    }
-
     public void handleESGRemoteEvent(ESGRemoteEvent evt) {
         try {
             log.trace("Making Remote Call to remote \"handleESGRemoteEvent\" method, sending: "+evt);

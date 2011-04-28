@@ -160,14 +160,17 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         //This will transition from active map to inactive map
         timer.schedule(new TimerTask() { 
                 public final void run() {
-                    ESGConnectionManager.this.registerToPeers();
+
+                    //zoiks... 
+                    //ESGConnectionManager.this.sendNewRegistryState(
                 }
             },0,10*1000);
     }
     private void registerToPeers() {
         Collection<? extends ESGPeer> peers_ = peers.values();
         for(ESGPeer peer: peers_) {
-            peer.registerToPeer();
+            //zoiks...
+            //peer.registerToPeer();
         }
     }
 

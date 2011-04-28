@@ -124,17 +124,13 @@ public abstract class ESGPeer extends AbstractDataNodeComponent {
     //override me (all services should have a "ping" remote method! according to me! :-)
     public abstract boolean ping();
 
-    //Present the peer with a token and callback address for 
-    //making calls back to the data node services.
-    public abstract boolean registerToPeer();
-
     //Send the represented ESGPeer endpoint an event object
     public abstract void handleESGRemoteEvent(ESGRemoteEvent evt);
+    //-----------------------------------------------------------------
+
 
     //Add listener for handling this peer's events
     public abstract void addPeerListener(ESGPeerListener listener);
-    //-----------------------------------------------------------------
-    
 
 
     //-----------------------------------------------------------------

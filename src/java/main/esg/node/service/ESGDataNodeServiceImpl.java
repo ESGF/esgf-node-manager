@@ -136,38 +136,12 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 
     
     //------------------------------------------------------------
-    //Remote service interface implementation ping, notify & handleESGRemoteEvent
+    //Remote service interface implementation ping & handleESGRemoteEvent
     //------------------------------------------------------------
     //Ingress calls to check RPC working method...
     public boolean ping() { 
         log.trace("DataNode service got \"ping\"");
         return amAvailable(); 
-    }
-
-    //Ingress registration request... returns a registration event to the remote caller's (peer's) notify method.
-    public boolean register(ESGRemoteEvent evt) {
-        log.trace("DataNode service got \"register\" call from datanode with event: ["+evt+"]");
-        boolean ret = false;
-    
-        //zoiks: revisit this p2p chicken b4 egg issue
-        //if(!amAvailable()) {
-        //    log.warn("Dropping ingress notification event on the floor, I am NOT available. ["+evt_+"]");
-        //    return ret;
-        //}
-
-        //Inspect the message type...
-        if(evt.getMessageType() != ESGRemoteEvent.REGISTER) {
-            log.trace("Registration called with wrong event type... dropping on floor...");
-            return ret;
-        }
-    
-        try {
-            ESGPeer registrant = new BasicPeer(evt.getSource());
-            ret = datanodeMgr.registerPeer(registrant);
-        }catch (Throwable t) {
-            log.error(t);
-        }
-        return ret;
     }
 
     //Ingress event handling from remote 'client'

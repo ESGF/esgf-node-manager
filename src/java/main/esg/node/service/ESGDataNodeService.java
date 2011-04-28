@@ -78,13 +78,6 @@ public interface ESGDataNodeService {
     public boolean ping();
 
     /**
-       Initiate p2p contact... Asked to be registerd with target peer.
-
-       @param evt remote event appropriate for registration
-    */
-    public boolean register(ESGRemoteEvent evt);
-
-    /**
        The basic inter-peer message passing method. Outside of the
        registration handshake process, this is the method that is
        called for all other communication.
