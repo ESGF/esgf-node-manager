@@ -218,16 +218,7 @@ public class BasicPeer extends HessianPeer {
             return ret;
         }
 
-        String myLocation = null;
-        try{
-            //myLocation = "http://"+InetAddress.getLocalHost().getCanonicalHostName()+"/esgf-node-manager/node";
-            myLocation = "http://"+InetAddress.getLocalHost().getHostAddress()+"/esgf-node-manager/node";
-        }catch (java.net.UnknownHostException ex) {
-            log.error("Could not build proper location string for myself",ex);
-            return ret;
-        }
-    
-        ESGRemoteEvent registrationEvent = new ESGRemoteEvent(myLocation,ESGRemoteEvent.REGISTER,Utils.nextSeq());
+        ESGRemoteEvent registrationEvent = new ESGRemoteEvent(ESGEventHelper.getMyServiceUrl(),ESGRemoteEvent.REGISTER,Utils.nextSeq());
     
         try {
             log.trace("Making Remote Call to \"register\" method, sending: "+registrationEvent);
