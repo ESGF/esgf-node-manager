@@ -73,6 +73,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Date;
 import java.util.Properties;
+import java.util.HashMap;
 import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.logging.Log;
@@ -99,6 +100,7 @@ public class RegistrationGleaner {
     private static final boolean DEBUG=true;
     private String registrationPath = null;
     private Registration myRegistration = null;
+    private HashMap<String,Node> myNodeMap = null;
     private QuickHash quickHash = null;
     private String myChecksum = null;
     private Properties props = null;
@@ -146,7 +148,7 @@ public class RegistrationGleaner {
     public Registration getMyRegistration() { return myRegistration; }
     public String getMyChecksum() { return myChecksum; }
 
-    public boolean saveRegistration() { return saveRegistration(myRegistration); }
+    public boolean saveRegistration() { sync(); return saveRegistration(myRegistration); }
     public synchronized boolean saveRegistration(Registration registration) {
         boolean success = false;
         if (registration == null) {
@@ -237,6 +239,7 @@ public class RegistrationGleaner {
             m.marshal(myRegistration, sw);
 
             out = sw.toString();
+            sync();
             //NOTE: Hopefully this isn't to slow... may have to move
             //to saveRegistration since that would potentially be
             //called much less often
@@ -510,7 +513,15 @@ public class RegistrationGleaner {
         log.info("Certificate Fetched!");
         return new String(buffer);
     }
-
+    
+    public void sync() {
+        if(null == myRegistration) return;
+        if(null == myNodeMap) myNodeMap = new HashMap<String,Node>();
+        for(Node node : myRegistration.getNode()) {
+            myNodeMap.put(node.getHostname(),node);
+        }
+    }
+    
     public RegistrationGleaner loadMyRegistration() {
         log.info("Loading my registration info from "+registrationPath+registrationFile);
         try{
@@ -518,10 +529,16 @@ public class RegistrationGleaner {
             Unmarshaller u = jc.createUnmarshaller();
             JAXBElement<Registration> root = u.unmarshal(new StreamSource(new File(registrationPath+this.registrationFile)),Registration.class);
             myRegistration = root.getValue();
+            sync();
         }catch(Exception e) {
             log.error(e);
         }
         return this;
+    }
+
+    public boolean removeNode(String nodeHostname) {
+        sync();
+        return myRegistration.getNode().remove(myNodeMap.get(nodeHostname));
     }
 
     public Registration createRegistrationFromString(String registrationContent) {
