@@ -73,6 +73,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import esg.common.Utils;
 import esg.common.util.ESGFProperties;
 import esg.common.service.ESGRemoteEvent;
 import esg.node.connection.ESGConnectionManager;
@@ -237,6 +238,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         Set<Node> updatedNodes = mergeNodes(myNodes,peerNodes);
         gleaner.saveRegistration();
 
+        log.info("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
         processedMap.put(sourceServiceURL, payloadChecksum);
 
         log.trace("Sending off event with registry update digest data");
@@ -267,8 +269,15 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
 
         ESGJoinEvent event = (ESGJoinEvent)esgEvent;
 
-        if(event.getJoiner() instanceof ESGConnectionManager) {
+        if(event.getJoiner() instanceof ESGPeer) {
+            if(event.hasLeft()) {
+                log.trace("Detected That A Peer Node Has Left: "+event.getJoiner().getName());
+                processedMap.remove(event.getJoiner().getName());
+                gleaner.removeNode(Utils.asHostname(event.getJoiner().getName()));
+            }
+        }
 
+        if(event.getJoiner() instanceof ESGConnectionManager) {
             if(event.hasJoined()) {
                 log.trace("Detected That The ESGConnectionManager Has Joined: "+event.getJoiner().getName());
                 addESGQueueListener(event.getJoiner());
