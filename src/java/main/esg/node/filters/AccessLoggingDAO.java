@@ -91,7 +91,7 @@ public class AccessLoggingDAO implements Serializable {
     
     private static final Log log = LogFactory.getLog(AccessLoggingDAO.class);
 
-    //URL Pattern: http[s]*?://([^:/]*)(:(?:[0-9]*))?/([^:/]*/)*(.*$)
+    //URL Pattern: "http[s]?://([^:/]*)(:(?:[0-9]*))?/(.*/)*(.*$)"
     //group 1 = host <<---what we want
     //group 2 = port
     //group 3 = path
