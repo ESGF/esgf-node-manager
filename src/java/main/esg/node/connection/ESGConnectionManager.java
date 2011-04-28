@@ -208,7 +208,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     private boolean sendNewRegistryState(String xmlDocument, String xmlChecksum) {
         //TODO: zoiks
         //Generate suitable remote event...
-
+        
         //Randomly select two peers to send to (if you have more than
         //two peers at your disposal of course)
         //retry to send state until you have sent data out to TWO succesfully
@@ -235,12 +235,15 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             for(Node node : rud.updatedNodes()) {
                 peer = peers.get(peerServiceUrl = Utils.asServiceUrl(node.getHostname()));
                 try{
-                    if (peer == null) unavailablePeers.put(peerServiceUrl, peer = new BasicPeer(peerServiceUrl, ESGPeer.PEER));
+                    if (peer == null) getDataNodeManager().registerPeer(new BasicPeer(peerServiceUrl, ESGPeer.PEER));
                 }catch(java.net.MalformedURLException e) {log.error(e); }
             }
             return sendNewRegistryState(rud.xmlDocument(), rud.xmlChecksum());
         }
-
+        
+        //--------------------
+        //Routing of events...
+        //--------------------
 
         ESGRemoteEvent rEvent=null;
         String targetAddress = null;
@@ -261,9 +264,9 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             return false;
         }
 
-        //TODO: have the ESGEventHelper create the remote event properly (TTL, etc...)
-        //targetPeer.handleESGRemoteEvent(ESGEventHelper.createNATOutboundEvent(event));
-        //event = null; //gc hint!
+        //TODO: have the ESGEventHelper create the remote event properly (TTL decrementing, etc...)
+        targetPeer.handleESGRemoteEvent(ESGEventHelper.createOutboundEvent(rEvent));
+        event = null; //gc hint!
     
         return true;
     }
