@@ -249,19 +249,6 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 //values or something
                 if(lastIdx == idx) { rechooseIndexCount++; continue;}
 
-                //Notice: I am going to the data node manager instead
-                //of using the local datastructures because I want an
-                //unbiased, pure, selection. Thus a single
-                //datastructure representing all nodes that I know of
-                //is preferred.  The side-effect of this is that I may
-                //be able to make contact on an inactive peer and thus
-                //wake her up again, making her active - and I don't
-                //have to do something less straightforward like merge
-                //the two data strucutres here that are only
-                //semantically here to enable the other mechanics of
-                //the node management.  This is not a management
-                //issue.
-
                 //NOTE: I can't check for "success" of the message
                 //getting to the peer so there could be the case where
                 //my bad luck has choosen two dead beat peers and I
@@ -274,7 +261,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 //reasonable notion that I am not sending messages to
                 //dead machines.... Okay I have convinced myself to use the local active data structure...
                 //
-                ((AbstractDataNodeManager)getDataNodeManager()).getPeers().get(idx).handleESGRemoteEvent(myRegistryState);
+                ((List<ESGPeer>)peers.values()).get(idx).handleESGRemoteEvent(myRegistryState);
                 lastIdx = idx;
                 numDispatchedPeers++;
             }
@@ -363,8 +350,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 //send us an event if the notify call to the endpoint
                 //was successful or not.(see handlePeerEvent below)
                 peer.addPeerListener(this);
-                unavailablePeers.put(peer.getName(),peer);
-                //peer.notifyToPeer();
+                peers.put(peer.getName(),peer);
         
             }else{
                 log.warn("Dropping "+peer+"... (no null service urls accepted)");
