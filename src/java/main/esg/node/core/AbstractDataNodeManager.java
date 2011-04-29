@@ -68,6 +68,7 @@ import org.apache.commons.logging.impl.*;
 import java.util.Properties;
 import java.util.Enumeration;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -293,9 +294,9 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
         return peers.get(peerName);
     }
 
-    //For getting the list of active peers...
+    //For getting the list of peers...
     public List<ESGPeer> getPeers() {
-        return new ArrayList<ESGPeer>(peers.values());
+        return Collections.unmodifiableList((List<ESGPeer>)peers.values());
     }
 
     public int numOfPeers() { return peers.size(); }

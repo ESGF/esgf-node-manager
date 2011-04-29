@@ -91,7 +91,7 @@ public class ESGEventHelper {
         return new ESGRemoteEvent(getMyServiceUrl(),rEvent.getMessageType(),in.getData(),rEvent.getSeqNum());
     }
 
-    public static ESGRemoteEvent createOutboundEvent(ESGRemoteEvent in) {
+    public static ESGRemoteEvent createProxiedOutboundEvent(ESGRemoteEvent in) {
         //Create the string for *our* callback address...
         return new ESGRemoteEvent(getMyServiceUrl(),in.getMessageType(),in.getPayload(),in.getSeqNum());
     }

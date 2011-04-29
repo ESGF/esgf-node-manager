@@ -74,6 +74,7 @@ import org.apache.commons.logging.impl.*;
 import esg.node.core.ESGDataNodeManager;
 import esg.node.core.AbstractDataNodeComponent;
 import esg.node.core.ESGEvent;
+import esg.node.core.ESGEventHelper;
 import esg.node.core.ESGJoinEvent;
 import esg.node.core.ESGPeer;
 import esg.node.core.BasicPeer;
@@ -87,11 +88,13 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     private static final Log log = LogFactory.getLog(ESGDataNodeServiceImpl.class);
     private ESGDataNodeManager datanodeMgr = null;
     private ESGConnectionManager connMgr = null;
+    private String myServiceUrl = null;
     
 
     public ESGDataNodeServiceImpl() {
         log.info("ESGDataNodeServiceImpl instantiated...");
         setMyName("DNODE_SVC");
+        myServiceUrl = ESGEventHelper.getMyServiceUrl();
         boot();
     }
 
@@ -146,6 +149,13 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 
     //Ingress event handling from remote 'client'
     public void handleESGRemoteEvent(ESGRemoteEvent evt_) {
+        //NOTE: This would potentially get called a lot!
+        //      May want to look at maybe a faster but equiv comparison
+        if(myServiceUrl.equalsIgnoreCase(evt_.getSource())) {
+            log.warn("I seem to be getting an incoming message from myself ["+myServiceUrl+"]: Dropping potential spoof");
+            return;
+        }
+        
         log.trace("DataNode service got \"handleESGRemoteEvent\" call with event: ["+evt_+"]");
         if(!amAvailable()) {
             log.warn("Dropping ingress notification event on the floor, I am NOT available. ["+evt_+"]");

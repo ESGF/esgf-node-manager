@@ -162,7 +162,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 public final void run() {
 
                     //zoiks... 
-                    //ESGConnectionManager.this.sendNewRegistryState(
+                    //ESGConnectionManager.this.sendOutNewRegistryState(...)
                 }
             },0,10*1000);
     }
@@ -208,14 +208,78 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     }
 
     //Helper method containing the details of the Gossip protocol dispatch logic
-    private boolean sendNewRegistryState(String xmlDocument, String xmlChecksum) {
-        //TODO: zoiks
-        //Generate suitable remote event...
-        
-        //Randomly select two peers to send to (if you have more than
-        //two peers at your disposal of course)
-        //retry to send state until you have sent data out to TWO succesfully
-        //If you exhaust your retries and could not get events sent return false;
+    //Basically - choose two random peers (that are not me) to send my state to.
+    private boolean sendOutNewRegistryState(String xmlDocument, String xmlChecksum) {
+
+        ESGRemoteEvent myRegistryState = new ESGRemoteEvent(ESGEventHelper.getMyServiceUrl(),
+                                                            ESGRemoteEvent.REGISTER,
+                                                            xmlDocument,
+                                                            xmlChecksum,
+                                                            Utils.nextSeq(),
+                                                            0);
+
+        int networkSizeLimit = 10000; //Essentially the total number of nodes to randomly choose from is between 0 and networkSizeLimit+1
+        int retries = 3; //how many times to try to get this event to [branchFactor] peers
+        int numDispatchedPeers = 0; //how many peers have successfully had events sent to them.
+        int branchFactor = 2; //how many peers we need to send to on the next hop
+        int idx = -1; // index into list of peer (stub) objects
+        int lastIdx = -1; //the last index value that you choose.
+        int rechooseLimit = 4; //number of times to select a peer that you haven't selected before
+
+        for(int i=0; i < retries; i++)  {
+            //It is possible, to randomly keep getting the same index
+            //number again and again to prevent that we try up to
+            //[rechooseLimit] times to select another peer If we hit
+            //the limit we re-try again up to [retries] times.
+            
+            //So if you are tremendously unlucky or in a situation
+            //where there is less than 1 other peer to send to, you
+            //will do this reselection a bounded number of times.
+            //Also if you have selected [branchFactor] distinct number
+            //of peers to dispatch to but they both were "bad" then
+            //you
+            int rechooseIndexCount = 0; 
+            while((numDispatchedPeers < branchFactor) || (rechooseIndexCount > rechooseLimit)) {
+                //Randomly select a peer to send our state to...
+                idx = ((int)(Math.random()*networkSizeLimit)) % peers.size();
+
+                //Notice that the following single step check works
+                //well because our branching factor is 2 otherwise
+                //we'd have to check in a SET of previously selected
+                //values or something
+                if(lastIdx == idx) { rechooseIndexCount++; continue;}
+
+                //Notice: I am going to the data node manager instead
+                //of using the local datastructures because I want an
+                //unbiased, pure, selection. Thus a single
+                //datastructure representing all nodes that I know of
+                //is preferred.  The side-effect of this is that I may
+                //be able to make contact on an inactive peer and thus
+                //wake her up again, making her active - and I don't
+                //have to do something less straightforward like merge
+                //the two data strucutres here that are only
+                //semantically here to enable the other mechanics of
+                //the node management.  This is not a management
+                //issue.
+
+                //NOTE: I can't check for "success" of the message
+                //getting to the peer so there could be the case where
+                //my bad luck has choosen two dead beat peers and I
+                //would not know and thus the message propagation
+                //would stop dead in its tracks.  Though, if I did
+                //such a thing the peers would send a signal to purge
+                //themselves from the active list, but still be in the
+                //node managers peer list.... so I thinkI need to
+                //recant the preceding paragraph.  I do want some
+                //reasonable notion that I am not sending messages to
+                //dead machines.... Okay I have convinced myself to use the local active data structure...
+                //
+                ((AbstractDataNodeManager)getDataNodeManager()).getPeers().get(idx).handleESGRemoteEvent(myRegistryState);
+                lastIdx = idx;
+                numDispatchedPeers++;
+            }
+            if(numDispatchedPeers >= branchFactor) break;
+        }
         return true;
     }
 
@@ -231,7 +295,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             RegistryUpdateDigest rud = (RegistryUpdateDigest)event.getData();
 
             //Add all the newly discovered peers that I don't already
-            //know are active... but they are not fully "available"
+            //know first hand are active... but they are not fully "available"
             //yet.
             ESGPeer peer = null;
             String peerServiceUrl = null;
@@ -241,7 +305,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                     if (peer == null) getDataNodeManager().registerPeer(new BasicPeer(peerServiceUrl, ESGPeer.PEER));
                 }catch(java.net.MalformedURLException e) {log.error(e); }
             }
-            return sendNewRegistryState(rud.xmlDocument(), rud.xmlChecksum());
+            return sendOutNewRegistryState(rud.xmlDocument(), rud.xmlChecksum());
         }
         
         //--------------------
@@ -268,7 +332,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         }
 
         //TODO: have the ESGEventHelper create the remote event properly (TTL decrementing, etc...)
-        targetPeer.handleESGRemoteEvent(ESGEventHelper.createOutboundEvent(rEvent));
+        targetPeer.handleESGRemoteEvent(ESGEventHelper.createProxiedOutboundEvent(rEvent));
         event = null; //gc hint!
     
         return true;
