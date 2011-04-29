@@ -318,8 +318,10 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             return false;
         }
 
-        //TODO: have the ESGEventHelper create the remote event properly (TTL decrementing, etc...)
-        targetPeer.handleESGRemoteEvent(ESGEventHelper.createProxiedOutboundEvent(rEvent));
+        rEvent.decTTL();
+        if(rEvent.isValid()) {
+            targetPeer.handleESGRemoteEvent(ESGEventHelper.createProxiedOutboundEvent(rEvent));
+        }
         event = null; //gc hint!
     
         return true;
