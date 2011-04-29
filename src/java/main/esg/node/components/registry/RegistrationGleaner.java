@@ -292,6 +292,17 @@ public class RegistrationGleaner {
             ca.setDn(props.getProperty("security.ca.dn","dunno"));
             node.setCA(ca);
 
+            try{
+                if( (null != (endpoint=props.getProperty("node.manager.endpoint"))) &&
+                    (new File(props.getProperty("node.manager.app.home"))).exists() ) {
+                    NodeManager nodeManager = new NodeManager();
+                    nodeManager.setEndpoint(endpoint);
+                    node.setNodeManager(nodeManager);
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
+
             //************************************************
             //Data
             //************************************************

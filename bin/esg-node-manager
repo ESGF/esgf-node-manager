@@ -106,6 +106,8 @@ init() {
 
     get_property node_manager_app_home ${tomcat_install_dir}/webapps/${node_manager_app_context_root}
     write_as_property node_manager_app_home
+    write_as_property node_manager_endpoint "http://${esgf_host}/${node_manager_app_context_root}"
+
 
     #Database information....
     node_db_name=${node_db_name:-"esgcet"}

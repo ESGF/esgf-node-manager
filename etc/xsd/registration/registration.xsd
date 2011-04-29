@@ -23,6 +23,12 @@ That does make it more wordy, and require and reconstruction. -->
         </xsd:complexType>
     </xsd:element>
 
+    <xsd:element name="NodeManager">
+        <xsd:complexType>
+            <xsd:attributeGroup ref="tns:ServiceAttributes"/>
+        </xsd:complexType>
+    </xsd:element>
+
     <xsd:element name="OpenIDProvider">
         <xsd:complexType>
             <xsd:attributeGroup ref="tns:ServiceAttributes"/>
@@ -165,8 +171,9 @@ That does make it more wordy, and require and reconstruction. -->
     <xsd:complexType name="Node">
         <xsd:all>
             <xsd:element ref="tns:CA" minOccurs="0" maxOccurs="1"/>
-            <xsd:element ref="tns:FrontEnd" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="tns:NodeManager" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:OpenIDProvider" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="tns:FrontEnd" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:IndexService" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:AttributeService" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:AuthorizationService" minOccurs="0" maxOccurs="1"/>
