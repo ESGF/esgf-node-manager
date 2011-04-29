@@ -166,6 +166,10 @@ public class RegistrationGleaner {
             log.error(e);
         }
         
+        //-----------------------------------------------
+        //Derivative xml file generation... (should be refactored, but in brody mode right now)
+        //-----------------------------------------------
+
         //pull from registry to create las sisters file.
         try{
             String endpoint=null;
@@ -174,6 +178,14 @@ public class RegistrationGleaner {
                 LasSistersGleaner lasSisterGleaner = new LasSistersGleaner(props); 
                 lasSisterGleaner.appendToMyLasServersFromRegistration(registration).saveLasServers();
             }
+        }catch(Exception e) {
+            log.error(e);
+        }
+        
+        //pull from registry to create idp whilelist file.
+        try{
+            IdpWhitelistGleaner idpWhitelistGleaner = new IdpWhitelistGleaner(props); 
+            idpWhitelistGleaner.appendToMyIdpWhitelistFromRegistration(registration).saveIdpWhitelist();
         }catch(Exception e) {
             log.error(e);
         }

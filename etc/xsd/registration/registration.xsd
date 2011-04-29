@@ -190,7 +190,6 @@ That does make it more wordy, and require and reconstruction. -->
         <xsd:attributeGroup ref="tns:ResourceAttributes"/>
     </xsd:complexType>
 
-    <!-- Unsure how to express that atleast one node type must be specified. -->
     <xsd:element name="Registration">
         <xsd:complexType>
             <xsd:sequence>

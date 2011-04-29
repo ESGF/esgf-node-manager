@@ -96,6 +96,7 @@ public class ESGEventHelper {
         return new ESGRemoteEvent(getMyServiceUrl(),in.getMessageType(),in.getPayload(),in.getSeqNum());
     }
 
+    //TODO: move this function into esg.common.Utils and change all calling code accordingly
     //Helper function to get MY service url
     public static String getMyServiceUrl() {
         String myLocation = null;
