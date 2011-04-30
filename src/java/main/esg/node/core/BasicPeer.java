@@ -87,7 +87,7 @@ import esg.common.Utils;
 public class BasicPeer extends HessianPeer {
 
     private static final Log log = LogFactory.getLog(BasicPeer.class);
-    private ESGDataNodeService datanodeService = null;
+    private ESGDataNodeService datanodeServiceStub = null;
     private List<ESGPeerListener> peerEventListeners = null;
     
     private boolean pingState = false;
@@ -128,14 +128,14 @@ public class BasicPeer extends HessianPeer {
 
         try {
             //The call to our superclass to create the proper stub object to remote service.
-            datanodeService = (ESGDataNodeService)factoryCreate(ESGDataNodeService.class, getServiceURL());
-            log.trace("Peer DataNode Service handle is ["+datanodeService+"]");
+            datanodeServiceStub = (ESGDataNodeService)factoryCreate(ESGDataNodeService.class, getServiceURL());
+            log.trace("Peer DataNode Service handle is ["+datanodeServiceStub+"]");
         }catch(Exception ex) {
             log.warn("Could not connect to peer @ serviceURL ["+getServiceURL()+"]",ex);
             isAvailable = false;
         }
     
-        if(datanodeService != null) {
+        if(datanodeServiceStub != null) {
             log.trace(getName()+" Peer Proxy properly initialized");
             isValid = true;
         }else {
@@ -176,7 +176,7 @@ public class BasicPeer extends HessianPeer {
         boolean response = false;
         try {
             //TODO see about changing the timeout so don't have to wait forever to fail!        
-            response = datanodeService.ping();
+            response = datanodeServiceStub.ping();
             pingState = (response  && isValid);
             log.trace( (response ? "[OK]" : "[BUSY]") );
         }catch (RuntimeException ex) {
@@ -209,8 +209,8 @@ public class BasicPeer extends HessianPeer {
         
     public void handleESGRemoteEvent(ESGRemoteEvent evt) {
         try {
-            log.trace("Making Remote Call to remote \"handleESGRemoteEvent\" method, sending: "+evt);
-            datanodeService.handleESGRemoteEvent(evt);
+            log.trace("Making Remote Call to "+serviceURL+"'s remote \"handleESGRemoteEvent\" method, sending: "+evt);
+            datanodeServiceStub.handleESGRemoteEvent(evt);
         }catch (RuntimeException ex) {
             log.error("Problem calling remote \"handleESGRemoteEvent\" on ["+getServiceURL()+"] "+ex.getMessage());
             fireConnectionFailed(ex);

@@ -259,15 +259,21 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 //node managers peer list.... so I thinkI need to
                 //recant the preceding paragraph.  I do want some
                 //reasonable notion that I am not sending messages to
-                //dead machines.... Okay I have convinced myself to use the local active data structure...
-                //
-                ((List<ESGPeer>)peers.values()).get(idx).handleESGRemoteEvent(myRegistryState);
+                //dead machines.... Okay I have convinced myself to
+                //use the local active data structure...  Rule of
+                //thumb, keep things local to this object as much as
+                //you can. And try to stay on the stack not heap (yes,
+                //in Java it's hard)
+
+                ESGPeer chosenPeer = ((List<ESGPeer>)peers.values()).get(idx);
+                log.trace("Selected: "+chosenPeer.getName());
+                choosenPeer.handleESGRemoteEvent(myRegistryState);
                 lastIdx = idx;
                 numDispatchedPeers++;
             }
             if(numDispatchedPeers >= branchFactor) break;
         }
-        return true;
+        return (numDispatchedPeers > 1); //I was at least able to get one off!
     }
 
     //--------------------------------------------
@@ -287,7 +293,22 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             ESGPeer peer = null;
             String peerServiceUrl = null;
             for(Node node : rud.updatedNodes()) {
-                peer = peers.get(peerServiceUrl = Utils.asServiceUrl(node.getHostname()));
+                
+                //Scenario A:
+                //This was the first way... Where we enforced the service url... maybe not a bad idea?
+                //peer = peers.get(peerServiceUrl = Utils.asServiceUrl(node.getHostname()));
+
+                //Scenario B: Get the service endpoint advertised by the peer in their registration...
+                //Check this node to see if it has an entry for a node manager... (required);
+                try{
+                    peerServiceUrl = node.getNodeManager().getEndpoint();
+                }catch (Throwable t) { 
+                    log.warn(node.getHostname()+" does not seem to be running a node manager can't be a peer... dropping'em"); 
+                    continue;
+                }
+                
+                peer = peers.get(peerServiceUrl);
+                //If we don't have you in our peer list then we'll add you... (indirectly)
                 try{
                     if (peer == null) getDataNodeManager().registerPeer(new BasicPeer(peerServiceUrl, ESGPeer.PEER));
                 }catch(java.net.MalformedURLException e) {log.error(e); }
