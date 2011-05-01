@@ -148,7 +148,7 @@ public class RegistrationGleaner {
     public Registration getMyRegistration() { return myRegistration; }
     public String getMyChecksum() { return myChecksum; }
 
-    public boolean saveRegistration() { sync(); return saveRegistration(myRegistration); }
+    public synchronized boolean saveRegistration() { sync(); return saveRegistration(myRegistration); }
     public synchronized boolean saveRegistration(Registration registration) {
         boolean success = false;
         if (registration == null) {
@@ -263,13 +263,15 @@ public class RegistrationGleaner {
         String endpointDir = null;
         String endpoint = null;
         Node node = new Node();
+        long timestamp=(new Date()).getTime();
+
         try{
             String nodeHostname =props.getProperty("esgf.host");
 
             //************************************************
             //CORE
             //************************************************
-
+            
             //Query the user for...
             node.setOrganization(props.getProperty("esg.root.id"));
             node.setLongName(props.getProperty("node.long.name"));
@@ -280,7 +282,7 @@ public class RegistrationGleaner {
             node.setHostname(nodeHostname);
             node.setDn(props.getProperty("node.dn")); //zoiks
             node.setNamespace(props.getProperty("node.namespace")); //zoiks
-            node.setTimeStamp((new Date()).getTime());
+            node.setTimeStamp(timestamp);
             node.setVersion(props.getProperty("version"));
             node.setRelease(props.getProperty("release"));
             node.setNodeType(nodeTypeValue);
@@ -492,6 +494,7 @@ public class RegistrationGleaner {
 
         myRegistration = new Registration();
         myRegistration.getNode().add(node);
+        myRegistration.setTimeStamp(timestamp);
         return this;
     }
     
@@ -549,7 +552,7 @@ public class RegistrationGleaner {
 
     public boolean removeNode(String nodeHostname) {
         sync();
-        return myRegistration.getNode().remove(myNodeMap.get(nodeHostname));
+        return myRegistration.getNode().remove(myNodeMap.remove(nodeHostname));
     }
 
     public Registration createRegistrationFromString(String registrationContent) {

@@ -62,6 +62,7 @@
 package esg.node.core;
 
 import java.util.EventObject;
+import java.util.Date;
 
 public class ESGJoinEvent extends ESGEvent {
 
@@ -70,6 +71,7 @@ public class ESGJoinEvent extends ESGEvent {
 
     private DataNodeComponent joiner = null;
     private boolean direction = false;
+    private long timestamp = -1L;
 
     public ESGJoinEvent(Object source, 
                         String message, 
@@ -77,11 +79,13 @@ public class ESGJoinEvent extends ESGEvent {
         super(source,message); 
         this.joiner = joiner;
         this.direction = direction;
+        this.timestamp = (new Date()).getTime();
     }
 
     public DataNodeComponent getJoiner() { return joiner; }
     public boolean hasJoined() { return direction == JOIN;   }
     public boolean hasLeft()   { return direction == UNJOIN; }
+    public long getTimeStamp() { return timestamp; }
 
     public String toString() {
         return super.toString()+" joiner:["+joiner.getClass().getName()+"] action:["+(direction ? "JOIN" : "UNJOIN")+"]";
