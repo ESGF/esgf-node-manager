@@ -97,6 +97,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     private boolean isBusy = false;
     private RegistrationGleaner gleaner = null;
     private Map<String,String> processedMap = null;
+    private Map<String,Long> removedMap = null;
     private NodeHostnameComparator nodecomp = null;
 
     public ESGFRegistry(String name) {
@@ -113,6 +114,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             gleaner = new RegistrationGleaner(props);
             nodecomp = new NodeHostnameComparator();
             processedMap = Collections.synchronizedMap(new HashMap<String,String>()); //TODO: may want to persist this and then bring it back.
+            removedMap = new Collections.synchronizedMap(new HashMap<String,Long>());
             startRegistry();
         }catch(java.io.IOException e) {
             System.out.println("Damn ESGFRegistry can't fire up... :-(");
@@ -120,15 +122,10 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         }
     }
 
-    private synchronized boolean fetchNodeInfo() {
-        log.trace("Registry's fetchNodeInfo() called....");
-        return true;
-    }
-    
     private void startRegistry() {
         log.trace("launching registry timer");
         long delay  = Long.parseLong(props.getProperty("registry.initialDelay","0"));
-        long period = Long.parseLong(props.getProperty("registry.period","86405"));
+        long period = Long.parseLong(props.getProperty("registry.period","86405")); //Daily
         log.trace("registry delay:  "+delay+" sec");
         log.trace("registry period: "+period+" sec");
 	
@@ -138,18 +135,68 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     //log.trace("Checking for any new node information... [busy? "+ESGFRegistry.this.isBusy+"]");
                     if(!ESGFRegistry.this.isBusy) {
                         ESGFRegistry.this.isBusy = true;
-                        if(fetchNodeInfo()) {
-                            //TODO
-                            gleaner.createMyRegistration().saveRegistration();
-                        }
+                        gleaner.createMyRegistration().saveRegistration();
                         ESGFRegistry.this.isBusy = false;
                     }
                 }
             },delay*1000,period*1000);
     }
 
-    //(Indeed this algorithm is not the most parsimoneous on memory....)
-    private Set<Node> mergeNodes(List<Node> myList, List<Node> otherList) {
+    //(Indeed this algorithm is not the most parsimoneous on memory,
+    //sort of.... thank goodness we are only talking about pointer
+    //storage!!!)
+    
+    /*Notes on the merge algorithm:
+
+      This algorithm is pretty much 'merge' from merge-sort.  The
+      registrations each contain a list of nodes.  These lists are
+      first storted by hostname via the nodecomp comparator.  Then
+      they are merged.  When nodes are equal i.e. have the same
+      hostname, a secondary test is done on time and the most recent
+      time wins.  (pretty straight forward).  The additional wrinkle
+      to this is as follows.
+
+      If there is something in the "other" list that is not in "my"
+      list then I don't just accept it, but I first check to see if it
+      is listed in my "removed" list (a list of nodes that I know to
+      have disappeared from the system because the connection manager
+      signaled this to me in an un-join event that indicated that a
+      node is AWOL and can't be accounted for anymore). So, if the
+      other registration timestamp is newer than the timestamp of when
+      the node was put in "removed" then the "other" node's
+      registration is more current than mine and I will incorporate
+      that new entry as well as remove it from my "removed" list.
+      Further down the process *my* newly updated registration
+      information is provided as an update to the connection manager
+      wrapped in an event containing the "registry update digest"
+      object.  The new updates are then taken by the connection
+      manager and added to the peer list that he maintains.
+
+      I am really tring to keep the task of updating the registry (the
+      "passive" portion of the gossip) separate from the "active"/push
+      portion of the gossip which, in this design, is done by the
+      connection manager (soon to be renamed the peer
+      manager... soon... one day... any day now...).  THIS object is
+      all about maintaining the representation of the network.  This
+      is the state that is being syncronized.  The connection manager
+      should be all about interacting with peers and peforming pushes
+      and getting status on connections and attendance.  
+      
+      I am depending pretty heavily on wall clock time here.  I should
+      probably implement vector clocks here to liberate me from time
+      skew issues.  All should be good.  The hope is that nodes don't
+      come up in such a way that there are any horrendous time/timing
+      issues.
+
+                                                       -gavin
+     */
+    private Set<Node> mergeNodes(Registration myRegistration, Registration otherRegistration) {
+
+        List<Node> myList = myRegistration.getNode();
+        List<Node> otherList = otherRegistration.getNode();
+        Long removedNodeTimeStamp = null;
+        String removedNodeHostname = null;
+
         //Sort lists by hostname (natural) ascending order a -> z
         //where a compareTo z is < 0 iff a is before z
         //This algorithm is not in-place, uses terciary list.
@@ -175,8 +222,12 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 newNodes.add(myList.get(i));
                 i++;
             }else{
-                newNodes.add(otherList.get(j));
-                updatedNodes.add(otherList.get(j));
+                if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
+                    (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
+                    removedMap.remove(removedNodeHostname);
+                    newNodes.add(otherList.get(j));
+                    updatedNodes.add(otherList.get(j));
+                }
                 j++;
             }
         }
@@ -186,8 +237,12 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             newNodes.add(myList.get(i));
         }
         while( j < otherList.size() ) {
-            newNodes.add(otherList.get(j));
-            updatedNodes.add(otherList.get(j));
+            if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
+                (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
+                removedMap.remove(removedNodeHostname);
+                newNodes.add(otherList.get(j));
+                updatedNodes.add(otherList.get(j));
+            }
         }
         myList.clear();
         myList.addAll(newNodes); //because using set they are 
@@ -232,10 +287,8 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         Registration myRegistration = gleaner.getMyRegistration();
         Registration peerRegistration = gleaner.createRegistrationFromString((String)event.getRemoteEvent().getPayload());
 
-        List<Node> myNodes = myRegistration.getNode();
-        List<Node> peerNodes = peerRegistration.getNode();
-        
-        Set<Node> updatedNodes = mergeNodes(myNodes,peerNodes);
+        Set<Node> updatedNodes = mergeNodes(myRegistration,peerRegistration);
+
         gleaner.saveRegistration();
 
         log.info("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
@@ -250,8 +303,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         return true;
     }
     
-    //Listen out for Joins from comm.  TODO: grab the peer
-    //datastructure from comm and poke at it accordingly
+    //Listen out for Joins from conn mgr  
     public void handleESGEvent(ESGEvent esgEvent) {
         //we only care about join events... err... sort of :-)
         
@@ -272,8 +324,11 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         if(event.getJoiner() instanceof ESGPeer) {
             if(event.hasLeft()) {
                 log.trace("Detected That A Peer Node Has Left: "+event.getJoiner().getName());
-                if(gleaner.removeNode(Utils.asHostname(event.getJoiner().getName()))) {
-                    processedMap.remove(event.getJoiner().getName());
+                String peerHostname = null;
+                String peerUrl = null;
+                if(gleaner.removeNode( peerHostname = Utils.asHostname(peerUrl = event.getJoiner().getName()))) {
+                    processedMap.remove(peerUrl);
+                    removedMap.put(peerHostname,event.getTimeStamp());
                 }
             }
         }
