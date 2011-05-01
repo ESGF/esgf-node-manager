@@ -209,7 +209,7 @@ public class BasicPeer extends HessianPeer {
         
     public void handleESGRemoteEvent(ESGRemoteEvent evt) {
         try {
-            log.trace("Making Remote Call to "+serviceURL+"'s remote \"handleESGRemoteEvent\" method, sending: "+evt);
+            log.trace("Making Remote Call to "+getServiceURL()+"'s remote \"handleESGRemoteEvent\" method, sending: "+evt);
             datanodeServiceStub.handleESGRemoteEvent(evt);
         }catch (RuntimeException ex) {
             log.error("Problem calling remote \"handleESGRemoteEvent\" on ["+getServiceURL()+"] "+ex.getMessage());

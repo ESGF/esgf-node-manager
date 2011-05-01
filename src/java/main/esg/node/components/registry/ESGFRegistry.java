@@ -149,7 +149,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     }
 
     //(Indeed this algorithm is not the most parsimoneous on memory....)
-    private Set<Node>  mergeNodes(List<Node> myList, List<Node> otherList) {
+    private Set<Node> mergeNodes(List<Node> myList, List<Node> otherList) {
         //Sort lists by hostname (natural) ascending order a -> z
         //where a compareTo z is < 0 iff a is before z
         //This algorithm is not in-place, uses terciary list.
@@ -272,8 +272,9 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         if(event.getJoiner() instanceof ESGPeer) {
             if(event.hasLeft()) {
                 log.trace("Detected That A Peer Node Has Left: "+event.getJoiner().getName());
-                processedMap.remove(event.getJoiner().getName());
-                gleaner.removeNode(Utils.asHostname(event.getJoiner().getName()));
+                if(gleaner.removeNode(Utils.asHostname(event.getJoiner().getName()))) {
+                    processedMap.remove(event.getJoiner().getName());
+                }
             }
         }
 

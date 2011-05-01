@@ -76,8 +76,10 @@ import java.util.Collections;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.List;
+import java.util.Properties;
 
 import esg.common.Utils;
+import esg.common.util.ESGFProperties;
 import esg.common.service.ESGRemoteEvent;
 import esg.node.core.ESGPeerListener;
 import esg.node.core.ESGDataNodeManager;
@@ -89,16 +91,19 @@ import esg.node.core.ESGJoinEvent;
 import esg.node.core.ESGPeerEvent;
 import esg.node.core.ESGPeer;
 import esg.node.core.BasicPeer;
+
 import esg.common.generated.registration.*;
 import esg.node.components.registry.RegistryUpdateDigest;
 
 public class ESGConnectionManager extends AbstractDataNodeComponent implements ESGPeerListener {
 
     private static final Log log = LogFactory.getLog(ESGConnectionManager.class);
-    
+
+    private Properties props = null;
+
     private Map<String,ESGPeer> peers = null;
     private Map<String,ESGPeer> unavailablePeers = null;
-    
+    private RegistryUpdateDigest lastRud = null;
 
     public ESGConnectionManager(String name) {
         super(name);
@@ -116,9 +121,15 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         //Once could imagine wanting to re-establish the connection manager.
         if(peers == null) peers = Collections.synchronizedMap(new HashMap<String,ESGPeer>());
         if(unavailablePeers == null) unavailablePeers = Collections.synchronizedMap(new HashMap<String,ESGPeer>());
-    
-        //periodicallyPingToPeers();
-        //periodicallyRegisterToPeers(); //zoiks: test method (not permanent)
+        
+        try{
+            props = new ESGFProperties();
+            //periodicallyPingToPeers();
+            periodicallyRegisterToPeers();
+        }catch(java.io.IOException e) {
+            System.out.println("Damn, ESGConnectionManager can't fire up... :-(");
+            log.error(e);
+        }
     }
 
     //--------------------------------------------
@@ -128,11 +139,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     public int numAvailablePeers() { return peers.size(); }
     public int numUnavailablePeers() { return unavailablePeers.size(); }
 
-    //--
-    //Communication maintenance... (this could become arbitrarily
-    //complex... leasing et. al. but for now we will just do periodic
-    //pings, and simple registration)
-    //--
+    
     
     private void periodicallyPingToPeers() {
         log.trace("Launching ping timer...");
@@ -141,7 +148,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 public final void run() {
                     ESGConnectionManager.this.pingToPeers();
                 }
-            },0,5*1000);
+            },5*1000,30*1000);
     }
     private void pingToPeers() {
         Collection<? extends ESGPeer> peers_ = peers.values();
@@ -150,30 +157,25 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         }
     }
 
-    //----
-    //Test code.
-    //----
-    private void periodicallyRegisterToPeers() {
-        log.trace("Launching registration timer...");
-        Timer timer = new Timer();
 
+    private void periodicallyRegisterToPeers() {
+        log.trace("Launching connection manager's registration timer...");
+        long delay  = Long.parseLong(props.getProperty("conn.mgr.initialDelay","10"));
+        long period = Long.parseLong(props.getProperty("conn.mgr.period","300"));
+        log.trace("registry delay:  "+delay+" sec");
+        log.trace("registry period: "+period+" sec");
+	
+        Timer timer = new Timer();
+        
         //This will transition from active map to inactive map
         timer.schedule(new TimerTask() { 
                 public final void run() {
-
-                    //zoiks... 
-                    //ESGConnectionManager.this.sendOutNewRegistryState(...)
+                    if (lastRud == null) return;
+                    sendOutRegistryState();
                 }
-            },0,10*1000);
+            },delay*1000,period*1000);
     }
-    private void registerToPeers() {
-        Collection<? extends ESGPeer> peers_ = peers.values();
-        for(ESGPeer peer: peers_) {
-            //zoiks...
-            //peer.registerToPeer();
-        }
-    }
-
+    
 
     //We will consider this communications closed (essentially making
     //this unavailable for ingress communication) if there are no
@@ -206,10 +208,17 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         unavailablePeers.clear(); unavailablePeers = null; //gc niceness
         super.unregister();
     }
-
+    
+    //Cached last registry data and checksum in lastRud.
+    //Send out the same info to another random pair of neighbors.
+    private synchronized boolean sendOutRegistryState() {
+        log.info("Sending out registry state to peers...");
+        return this.sendOutNewRegistryState(this.lastRud.xmlDocument(),this.lastRud.xmlChecksum());
+    }
+    
     //Helper method containing the details of the Gossip protocol dispatch logic
     //Basically - choose two random peers (that are not me) to send my state to.
-    private boolean sendOutNewRegistryState(String xmlDocument, String xmlChecksum) {
+    private synchronized boolean sendOutNewRegistryState(String xmlDocument, String xmlChecksum) {
 
         ESGRemoteEvent myRegistryState = new ESGRemoteEvent(ESGEventHelper.getMyServiceUrl(),
                                                             ESGRemoteEvent.REGISTER,
@@ -267,7 +276,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 
                 ESGPeer chosenPeer = ((List<ESGPeer>)peers.values()).get(idx);
                 log.trace("Selected: "+chosenPeer.getName());
-                choosenPeer.handleESGRemoteEvent(myRegistryState);
+                chosenPeer.handleESGRemoteEvent(myRegistryState);
                 lastIdx = idx;
                 numDispatchedPeers++;
             }
@@ -280,7 +289,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     //Event handling...
     //--------------------------------------------
 
-    public boolean handleESGQueuedEvent(ESGEvent event) {
+    public synchronized boolean handleESGQueuedEvent(ESGEvent event) {
         log.trace("["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
 
         if(event.getData() instanceof RegistryUpdateDigest) {
@@ -303,16 +312,23 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 try{
                     peerServiceUrl = node.getNodeManager().getEndpoint();
                 }catch (Throwable t) { 
-                    log.warn(node.getHostname()+" does not seem to be running a node manager can't be a peer... dropping'em"); 
+                    log.warn(node.getHostname()+" does not seem to be running a node manager thus, can't be a peer... dropping'em"); 
                     continue;
                 }
                 
                 peer = peers.get(peerServiceUrl);
-                //If we don't have you in our peer list then we'll add you... (indirectly)
+
+                //If we don't have you in our peer list then we'll add
+                //you... (indirectly) The act of registering this new
+                //peer fires off a join event which is caught here and
+                //handled below in the implementation of
+                //this.handleESGEvent where the peer is then added to
+                //the peers datastructure (map).
                 try{
                     if (peer == null) getDataNodeManager().registerPeer(new BasicPeer(peerServiceUrl, ESGPeer.PEER));
                 }catch(java.net.MalformedURLException e) {log.error(e); }
             }
+            lastRud=rud;
             return sendOutNewRegistryState(rud.xmlDocument(), rud.xmlChecksum());
         }
         
