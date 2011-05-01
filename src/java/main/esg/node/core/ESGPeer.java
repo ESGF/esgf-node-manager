@@ -77,6 +77,7 @@ public abstract class ESGPeer extends AbstractDataNodeComponent {
     
     //TODO: Okay this should totally be an ENUM!!!!!
     public static final int PEER  = 1;
+    public static final int DEFAULT_PEER  = 2;
     private int peerType = 0;
 
     private static final Log log = LogFactory.getLog(ESGPeer.class);

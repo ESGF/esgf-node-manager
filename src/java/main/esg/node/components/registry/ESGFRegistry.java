@@ -114,7 +114,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             gleaner = new RegistrationGleaner(props);
             nodecomp = new NodeHostnameComparator();
             processedMap = Collections.synchronizedMap(new HashMap<String,String>()); //TODO: may want to persist this and then bring it back.
-            removedMap = new Collections.synchronizedMap(new HashMap<String,Long>());
+            removedMap = Collections.synchronizedMap(new HashMap<String,Long>());
             startRegistry();
         }catch(java.io.IOException e) {
             System.out.println("Damn ESGFRegistry can't fire up... :-(");

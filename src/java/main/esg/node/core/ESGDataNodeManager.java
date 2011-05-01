@@ -117,7 +117,7 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
                 System.out.println(" Mangager says, \"My Default Peer is ["+defaultPeerName+"]\"");
                 
                 if((null != defaultPeerName) && !(defaultPeerName.equalsIgnoreCase(myHostname))) {
-                    ESGPeer peer = new BasicPeer(Utils.asServiceUrl(defaultPeerName), ESGPeer.PEER);
+                    ESGPeer peer = new BasicPeer(Utils.asServiceUrl(defaultPeerName), ESGPeer.DEFAULT_PEER);
                     log.trace("1)) Created default peer attempting to register it");
                     registerPeer(peer);
                 }else{

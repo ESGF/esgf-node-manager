@@ -104,6 +104,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     private Map<String,ESGPeer> peers = null;
     private Map<String,ESGPeer> unavailablePeers = null;
     private RegistryUpdateDigest lastRud = null;
+    private ESGPeer defaultPeer = null;
 
     public ESGConnectionManager(String name) {
         super(name);
@@ -213,6 +214,23 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     //Send out the same info to another random pair of neighbors.
     private synchronized boolean sendOutRegistryState() {
         log.info("Sending out registry state to peers...");
+        //Bootstrap condition...
+        if(lastRud == null && defaultPeer != null) {
+            //Damnit, I didn't want this dependency..!!!
+            esg.node.components.registry.RegistrationGleaner ephemeralGleaner = new esg.node.components.registry.RegistrationGleaner();
+            String registration = ephemeralGleaner.loadMyRegistration().toString();
+            defaultPeer.handleESGRemoteEvent(new ESGRemoteEvent(ESGEventHelper.getMyServiceUrl(),
+                                                                ESGRemoteEvent.REGISTER,
+                                                                registration,
+                                                                ephemeralGleaner.getMyChecksum(),
+                                                                Utils.nextSeq(),
+                                                                0));
+            log.info("Bootstrapping... sending my registration to: "+((List<ESGPeer>)peers.values()).get(0).getServiceURL());
+            log.info("My Registration is:"+ registration);
+            ephemeralGleaner = null; //gc niceness.
+            return true;
+        }
+        //delagate through with no so "new" state :-)
         return this.sendOutNewRegistryState(this.lastRud.xmlDocument(),this.lastRud.xmlChecksum());
     }
     
@@ -390,6 +408,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 //was successful or not.(see handlePeerEvent below)
                 peer.addPeerListener(this);
                 peers.put(peer.getName(),peer);
+                if (peer.getPeerType() == ESGPeer.DEFAULT_PEER) defaultPeer = peer;
         
             }else{
                 log.warn("Dropping "+peer+"... (no null service urls accepted)");
