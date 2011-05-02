@@ -85,8 +85,8 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
 
     public AbstractDataNodeComponent(String name) {
         this.myName = name;
-        this.esgListeners = new ArrayList<ESGListener>();
-        this.esgQueueListenersMap = new HashMap<String,ESGQueueListener>();
+        this.esgListeners = Collections.synchronizedList(new ArrayList<ESGListener>());
+        this.esgQueueListenersMap = Collections.synchronizedMap(new HashMap<String,ESGQueueListener>());
         this.eventQueue = new ESGQueue(this);
     }
     public AbstractDataNodeComponent() { this(DataNodeComponent.ANONYMOUS); }

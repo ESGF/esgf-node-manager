@@ -258,7 +258,7 @@ public class RegistrationGleaner {
        node service information.  Takes that information and
        creates a local representation of this node's registration.
     */
-    public RegistrationGleaner createMyRegistration() {
+    public synchronized RegistrationGleaner createMyRegistration() {
         log.info("Creating my registration representation...");
         String endpointDir = null;
         String endpoint = null;
@@ -536,7 +536,7 @@ public class RegistrationGleaner {
         }
     }
     
-    public RegistrationGleaner loadMyRegistration() {
+    public synchronized RegistrationGleaner loadMyRegistration() {
         log.info("Loading my registration info from "+registrationPath+registrationFile);
         try{
             JAXBContext jc = JAXBContext.newInstance(Registration.class);
@@ -550,7 +550,7 @@ public class RegistrationGleaner {
         return this;
     }
 
-    public boolean removeNode(String nodeHostname) {
+    public synchronized boolean removeNode(String nodeHostname) {
         sync();
         return myRegistration.getNode().remove(myNodeMap.remove(nodeHostname));
     }
