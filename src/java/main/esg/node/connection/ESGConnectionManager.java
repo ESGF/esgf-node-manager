@@ -355,7 +355,11 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 //the peers datastructure (map).
                 try{
                     if (peer == null) getDataNodeManager().registerPeer(new BasicPeer(peerServiceUrl, ESGPeer.PEER));
-                }catch(java.net.MalformedURLException e) {log.error(e); }
+                }catch(java.net.MalformedURLException e) {
+                    log.error(e); 
+                    log.error("This url was not recognized as a node manager url, no need to go further - Drop it like it's hot...");
+                    return false;
+                }
             }
             lastRud=rud;
             return sendOutNewRegistryState(rud.xmlDocument(), rud.xmlChecksum());
