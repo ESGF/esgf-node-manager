@@ -294,6 +294,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         String lastChecksum = processedMap.get(sourceServiceURL);
         if( (lastChecksum != null) && (lastChecksum.equals(payloadChecksum)) ) {
             log.trace("I have seen this payload before, from the same dude... there is nothing new to learn... dropping event on floor ["+event+"]");
+            return true; //handled... by not handling.
         }
         
         //zoiks: use gleaner to get local registration object to modify.
