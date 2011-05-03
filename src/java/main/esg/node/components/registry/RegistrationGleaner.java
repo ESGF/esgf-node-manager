@@ -107,6 +107,7 @@ public class RegistrationGleaner {
     private RegistrationGleanerHelperDAO helperDAO = null;
     private String configDir = null;
     private String nodeTypeValue = "-1"; //TODO: yes, yes... turn this into enums strings in xsd - later.
+    private boolean dirty = false;
 
     public RegistrationGleaner() { this(null); }
     public RegistrationGleaner(Properties props) { 
@@ -157,11 +158,13 @@ public class RegistrationGleaner {
         }
         log.info("Saving registration information for to "+ registrationPath+this.registrationFile);
         try{
+            if(dirty) registration.setTimeStamp((new Date()).getTime());
             JAXBContext jc = JAXBContext.newInstance(Registration.class);
             Marshaller m = jc.createMarshaller();
             m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             m.marshal(registration, new FileOutputStream(registrationPath+this.registrationFile));
             success = true;
+            dirty=false;
         }catch(Exception e) {
             log.error(e);
         }
@@ -244,14 +247,17 @@ public class RegistrationGleaner {
             //to saveRegistration since that would potentially be
             //called much less often
             log.trace("Checksumming xml content...");
+            String lastChecksum = myChecksum;
             myChecksum = quickHash.sum(sw.toString());
-            log.trace("Checksum of xml string is: "+myChecksum);
+            if(!myChecksum.equals(lastChecksum)) dirty = true;
+            log.trace("Checksum of xml string is: "+myChecksum+(dirty ? "(modified)" : "(unchanged"));
         }catch(Exception e) {
             log.error(e);
         }
         return out;
     }
 
+    public boolean isDirty() { return dirty; }
     
     /**
        Looks through the current system and gathers the configured
@@ -552,7 +558,8 @@ public class RegistrationGleaner {
 
     public synchronized boolean removeNode(String nodeHostname) {
         sync();
-        return myRegistration.getNode().remove(myNodeMap.remove(nodeHostname));
+        if (myRegistration.getNode().remove(myNodeMap.remove(nodeHostname))) { dirty = true; }
+        return dirty;
     }
 
     public Registration createRegistrationFromString(String registrationContent) {
