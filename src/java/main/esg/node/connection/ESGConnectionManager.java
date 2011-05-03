@@ -160,11 +160,11 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 
 
     private void periodicallyRegisterToPeers() {
-        log.trace("Launching connection manager's registration timer...");
+        log.trace("Launching connection manager's registration push timer...");
         long delay  = Long.parseLong(props.getProperty("conn.mgr.initialDelay","10"));
         long period = Long.parseLong(props.getProperty("conn.mgr.period","300"));
-        log.trace("registry delay:  "+delay+" sec");
-        log.trace("registry period: "+period+" sec");
+        log.trace("connection registration delay:  "+delay+" sec");
+        log.trace("connection registration period: "+period+" sec");
 	
         Timer timer = new Timer();
         
