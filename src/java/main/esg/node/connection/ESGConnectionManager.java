@@ -235,7 +235,9 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             return true;
         }
         //delagate through with no so "new" state :-)
-        return this.sendOutNewRegistryState(this.lastRud.xmlDocument(),this.lastRud.xmlChecksum());
+        if(lastRud != null) {
+            return this.sendOutNewRegistryState(this.lastRud.xmlDocument(),this.lastRud.xmlChecksum());
+        }
     }
     
     //Helper method containing the details of the Gossip protocol dispatch logic

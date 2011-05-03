@@ -257,6 +257,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 newNodes.add(otherList.get(j));
                 updatedNodes.add(otherList.get(j));
             }
+            j++;
         }
 
         log.trace("updatedNodes: ("+updatedNodes.size()+")");
