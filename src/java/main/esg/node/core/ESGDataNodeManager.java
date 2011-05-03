@@ -109,24 +109,28 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
             }catch(java.net.UnknownHostException ex) {log.error(ex); }
             
             String defaultPeer = System.getenv().get("ESGF_PEER_SVC_ROOT");
-            String defaultPeerName=null;
+            String defaultPeerHostname="";
+
+            String defaultPeerName=System.getenv().get("ESGF_PEER_NAME");
             
             if(null != defaultPeer) {
                 Matcher peerSvcNameMatcher = peerSvcRootPattern.matcher(defaultPeer);
-                if (peerSvcNameMatcher.find()) { defaultPeerName = peerSvcNameMatcher.group(1); }
-                System.out.println(" Mangager says, \"My Default Peer is ["+defaultPeerName+"]\"");
+                if (peerSvcNameMatcher.find()) { defaultPeerHostname = peerSvcNameMatcher.group(1); }
+                System.out.println(" Manager says, \"My Default Peer hostname is ["+defaultPeerHostname+"]\" aka ["+defaultPeerName+"]");
                 
-                if((null != defaultPeerName) && !(defaultPeerName.equalsIgnoreCase(myHostname))) {
-                    ESGPeer peer = new BasicPeer(Utils.asServiceUrl(defaultPeerName), ESGPeer.DEFAULT_PEER);
+                if((null != defaultPeerHostname) && !(defaultPeerHostname.equalsIgnoreCase(myHostname))) {
+                    ESGPeer peer = new BasicPeer(Utils.asServiceUrl(defaultPeerHostname), ESGPeer.DEFAULT_PEER);
                     log.trace("1)) Created default peer attempting to register it");
                     registerPeer(peer);
                 }else{
-                    if(defaultPeerName.equalsIgnoreCase(myHostname)) {
-                        log.warn("You may not set yourself as your peer ;-)... when bootstrapping this puts you in passive peer mode - waiting to be contacted.");
+                    if(myHostname.equalsIgnoreCase(defaultPeerHostname)) {
+                        log.warn("You may not set yourself as your peer ;-)... when bootstrapping, this puts you in passive peer mode - waiting to be contacted.");
                     }else{
-                        log.error("The Default Peer is: ["+defaultPeer+"]: Hint - set ESGF_PEER_SVC_ROOT in /etc/esg.env");
+                        log.error("The Default Peer is: ["+defaultPeerHostname+"]: Hint - set ESGF_PEER_SVC_ROOT in /etc/esg.env properly");
                     }
                 }
+            }else {
+                log.error("The Default Peer is: ["+defaultPeer+"]: Hint - set ESGF_PEER_SVC_ROOT in /etc/esg.env");
             }
         }catch(java.net.MalformedURLException e) {log.error(e); }
         
