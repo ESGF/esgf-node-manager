@@ -563,7 +563,7 @@ public class RegistrationGleaner {
     }
 
     public Registration createRegistrationFromString(String registrationContent) {
-        log.info("Loading my registration info from \n"+registrationContent+"\n");
+        log.trace("Creating registration info from String:\n"+registrationContent+"\n");
         Registration fromContentRegistration = null;
         try{
             JAXBContext jc = JAXBContext.newInstance(Registration.class);

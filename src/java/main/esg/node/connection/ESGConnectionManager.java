@@ -154,6 +154,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     private void pingToPeers() {
         Collection<? extends ESGPeer> peers_ = peers.values();
         for(ESGPeer peer: peers_) {
+            if(peer.equals(defaultPeer)) log.trace("(default peer)");
             peer.ping();
         }
     }
@@ -171,7 +172,6 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         //This will transition from active map to inactive map
         timer.schedule(new TimerTask() { 
                 public final void run() {
-                    if (lastRud == null) return;
                     sendOutRegistryState();
                 }
             },delay*1000,period*1000);
@@ -219,6 +219,10 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             //Damnit, I didn't want this dependency..!!!
             esg.node.components.registry.RegistrationGleaner ephemeralGleaner = new esg.node.components.registry.RegistrationGleaner();
             String registration = ephemeralGleaner.loadMyRegistration().toString();
+            if(registration == null) {
+                log.warn("(bootstrapping) Sorry no registration information yet available... check again later");
+                return false;
+            }
             defaultPeer.handleESGRemoteEvent(new ESGRemoteEvent(ESGEventHelper.getMyServiceUrl(),
                                                                 ESGRemoteEvent.REGISTER,
                                                                 registration,
@@ -237,7 +241,12 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     //Helper method containing the details of the Gossip protocol dispatch logic
     //Basically - choose two random peers (that are not me) to send my state to.
     private synchronized boolean sendOutNewRegistryState(String xmlDocument, String xmlChecksum) {
-
+        log.trace("Sending out NEW registry state...");
+        
+        if((peers.size()< 1) && (defaultPeer == null)) {
+            log.trace("No one to send to... you have no peers.  Nothing further to do so stopping, returning false");
+            return false;
+        }
         ESGRemoteEvent myRegistryState = new ESGRemoteEvent(ESGEventHelper.getMyServiceUrl(),
                                                             ESGRemoteEvent.REGISTER,
                                                             xmlDocument,

@@ -113,8 +113,8 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             props = new ESGFProperties();
             gleaner = new RegistrationGleaner(props);
             nodecomp = new NodeHostnameComparator();
-            processedMap = Collections.synchronizedMap(new HashMap<String,String>()); //TODO: may want to persist this and then bring it back.
-            removedMap = Collections.synchronizedMap(new HashMap<String,Long>());
+            processedMap = new HashMap<String,String>(); //TODO: may want to persist this and then bring it back.
+            removedMap = new HashMap<String,Long>();
             startRegistry();
         }catch(java.io.IOException e) {
             System.out.println("Damn ESGFRegistry can't fire up... :-(");
@@ -191,9 +191,14 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                                                        -gavin
      */
     private Set<Node> mergeNodes(Registration myRegistration, Registration otherRegistration) {
-
+        log.trace("merging registrations...");
+        
         List<Node> myList = myRegistration.getNode();
         List<Node> otherList = otherRegistration.getNode();
+
+        log.trace("mylist = ["+myList+"] - size ("+myList.size()+") "+myList.get(0).getHostname());
+        log.trace("otherList = ["+otherList+"] - size ("+otherList.size()+") "+otherList.get(0).getHostname());
+
         Long removedNodeTimeStamp = null;
         String removedNodeHostname = null;
 
@@ -202,13 +207,16 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         //This algorithm is not in-place, uses terciary list.
         Collections.sort(myList,nodecomp);
         Collections.sort(otherList,nodecomp);
-        
+
+        log.trace("Collections sorted...");
+
         Set<Node> newNodes = new TreeSet<Node>(nodecomp);
         Set<Node> updatedNodes = new HashSet<Node>();
         
         int i=0;
         int j=0;
         while ((i < myList.size()) && (j < otherList.size())) {
+            log.trace("In while loop");
             if( (nodecomp.compare(myList.get(i),otherList.get(j))) == 0 ) {
                 if((myList.get(i)).getTimeStamp() > (otherList.get(j)).getTimeStamp()) {
                     newNodes.add(myList.get(i));
@@ -232,10 +240,16 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             }
         }
 
-        //Now let's copy over what's left over...
+        log.trace("Now let's copy over what's left over...");
+        log.trace("myList.size() = "+myList.size());
+        log.trace("newNodes.size() = "+newNodes.size());
+        log.trace("index i = "+i);
+        log.trace("myList's ith object = "+myList.get(i));
+        log.trace("myList's ith value  = "+myList.get(i).getHostname());
         while( i < myList.size() ) {
             newNodes.add(myList.get(i));
         }
+        log.trace("I am stuck here");
         while( j < otherList.size() ) {
             if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
                 (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
@@ -244,9 +258,16 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 updatedNodes.add(otherList.get(j));
             }
         }
+
+        log.trace("updatedNodes: ("+updatedNodes.size()+")");
+        for(Node n : updatedNodes) {
+            log.trace("updated node - "+n.getHostname());
+        }
+        
         myList.clear();
         myList.addAll(newNodes); //because using set they are 
         newNodes.clear();
+        
         return updatedNodes;
     }
 
@@ -256,6 +277,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     public boolean handleESGQueuedEvent(ESGEvent event) {
         log.trace("handling enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
         
+        synchronized(gleaner) {
         
         String payloadChecksum  = event.getRemoteEvent().getPayloadChecksum();
         String sourceServiceURL = event.getRemoteEvent().getSource();
@@ -287,8 +309,13 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         Registration myRegistration = gleaner.getMyRegistration();
         Registration peerRegistration = gleaner.createRegistrationFromString((String)event.getRemoteEvent().getPayload());
 
+        log.trace("myRegistration = ["+myRegistration+"]");
+        log.trace("peerRegistration = ["+peerRegistration+"]");
+        
         Set<Node> updatedNodes = mergeNodes(myRegistration,peerRegistration);
 
+        log.trace("Nodes merged");
+        
         gleaner.saveRegistration();
 
         log.info("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
@@ -300,6 +327,8 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                                                               gleaner.getMyChecksum(),
                                                               updatedNodes),
                                      "Updated / Merged Registration State"));
+        }
+
         return true;
     }
     
@@ -326,9 +355,11 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 log.trace("Detected That A Peer Node Has Left: "+event.getJoiner().getName());
                 String peerHostname = null;
                 String peerUrl = null;
-                if(gleaner.removeNode( peerHostname = Utils.asHostname(peerUrl = event.getJoiner().getName()))) {
-                    processedMap.remove(peerUrl);
-                    removedMap.put(peerHostname,event.getTimeStamp());
+                synchronized(gleaner) {
+                    if(gleaner.removeNode( peerHostname = Utils.asHostname(peerUrl = event.getJoiner().getName()))) {
+                        processedMap.remove(peerUrl);
+                        removedMap.put(peerHostname,event.getTimeStamp());
+                    }
                 }
             }
         }

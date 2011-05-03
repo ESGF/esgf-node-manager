@@ -166,8 +166,12 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
         ESGEvent evt = null;
         if(evt_.getMessageType() == ESGRemoteEvent.NOOP) { 
             log.trace("GOT NOOP REMOTE EVENT"); 
-        }else if(evt_.getMessageType() != ESGRemoteEvent.REGISTER) {
+        }else if(evt_.getMessageType() == ESGRemoteEvent.REGISTER) {
             log.trace("GOT REGISTER REMOTE EVENT");
+            if(evt_.getPayload() == null) {
+                log.warn("Violation: Dropping null payload on floor (payload required)");
+                return;
+            }
             evt = new ESGEvent(this);
             evt.setRemoteEvent(evt_);
             enqueueESGEvent("REGISTRY",evt);
