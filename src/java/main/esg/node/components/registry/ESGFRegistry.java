@@ -216,7 +216,6 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         int i=0;
         int j=0;
         while ((i < myList.size()) && (j < otherList.size())) {
-            log.trace("In while loop");
             if( (nodecomp.compare(myList.get(i),otherList.get(j))) == 0 ) {
                 if((myList.get(i)).getTimeStamp() >= (otherList.get(j)).getTimeStamp()) {
                     newNodes.add(myList.get(i));
@@ -240,16 +239,10 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             }
         }
 
-        log.trace("Now let's copy over what's left over...");
-        log.trace("myList.size() = "+myList.size());
-        log.trace("newNodes.size() = "+newNodes.size());
-        log.trace("index i = "+i);
-        log.trace("myList's ith object = "+myList.get(i));
-        log.trace("myList's ith value  = "+myList.get(i).getHostname());
         while( i < myList.size() ) {
-            newNodes.add(myList.get(i));
+            newNodes.add(myList.get(i++));
         }
-        log.trace("I am stuck here");
+
         while( j < otherList.size() ) {
             if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
                 (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
