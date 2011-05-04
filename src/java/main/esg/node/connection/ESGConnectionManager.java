@@ -69,13 +69,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.List;
 import java.util.Properties;
 
 import esg.common.Utils;
@@ -238,6 +239,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         if(lastRud != null) {
             return this.sendOutNewRegistryState(this.lastRud.xmlDocument(),this.lastRud.xmlChecksum());
         }
+        return false;
     }
     
     //Helper method containing the details of the Gossip protocol dispatch logic
@@ -264,6 +266,8 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         int lastIdx = -1; //the last index value that you choose.
         int rechooseLimit = 4; //number of times to select a peer that you haven't selected before
 
+        List<ESGPeer> peerList = new ArrayList<ESGPeer>(peers.values());
+        
         for(int i=0; i < retries; i++)  {
             //It is possible, to randomly keep getting the same index
             //number again and again to prevent that we try up to
@@ -277,15 +281,19 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             //of peers to dispatch to but they both were "bad" then
             //you
             int rechooseIndexCount = 0; 
-            while((numDispatchedPeers < branchFactor) || (rechooseIndexCount > rechooseLimit)) {
+            while((numDispatchedPeers < branchFactor)) {
                 //Randomly select a peer to send our state to...
-                idx = ((int)(Math.random()*networkSizeLimit)) % peers.size();
+                idx = ((int)(Math.random()*networkSizeLimit)) % peerList.size();
 
                 //Notice that the following single step check works
                 //well because our branching factor is 2 otherwise
                 //we'd have to check in a SET of previously selected
                 //values or something
-                if(lastIdx == idx) { rechooseIndexCount++; continue;}
+                if(lastIdx == idx) { 
+                    if((++rechooseIndexCount % rechooseLimit) == 0) { break; }
+                    continue;
+                }
+                rechooseIndexCount = 0;
 
                 //NOTE: I can't check for "success" of the message
                 //getting to the peer so there could be the case where
@@ -303,7 +311,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 //you can. And try to stay on the stack not heap (yes,
                 //in Java it's hard)
 
-                ESGPeer chosenPeer = ((List<ESGPeer>)peers.values()).get(idx);
+                ESGPeer chosenPeer = peerList.get(idx);
                 log.trace("Selected: "+chosenPeer.getName());
                 chosenPeer.handleESGRemoteEvent(myRegistryState);
                 lastIdx = idx;
@@ -354,7 +362,9 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 //this.handleESGEvent where the peer is then added to
                 //the peers datastructure (map).
                 try{
-                    if (peer == null) getDataNodeManager().registerPeer(new BasicPeer(peerServiceUrl, ESGPeer.PEER));
+                    if ((peer == null) || !(Utils.getMyServiceUrl().equals(peerServiceUrl))) {
+                        getDataNodeManager().registerPeer(new BasicPeer(peerServiceUrl, ESGPeer.PEER));
+                    }
                 }catch(java.net.MalformedURLException e) {
                     log.error(e); 
                     log.error("This url was not recognized as a node manager url, no need to go further - Drop it like it's hot...");
@@ -413,8 +423,9 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         if(event.hasJoined()) {
             log.trace("6)) Detected That A Peer Component Has Joined: "+event.getJoiner().getName());
             ESGPeer peer = (ESGPeer)event.getJoiner();
-            String peerURL = peer.getServiceURL();
-            if(peerURL != null) {
+            String peerUrl = peer.getServiceURL();
+            if(Utils.getMyServiceUrl().equals(peerUrl)) { log.warn("I may not be my own peer ;-)"); return; }
+            if(peerUrl != null) {
         
                 //Have the newly joined peer (stub) attempt to contact
                 //it's endpoint to establish notification.  By adding

@@ -76,6 +76,7 @@ public class Utils {
     
     private static AtomicLong msgCounter = new AtomicLong(0);
     private static String myHostname = null;
+    private static String myServiceUrl = null;
     private static final String urlRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/(.*/)*(.*$)";
     private static final Pattern urlPattern = Pattern.compile(urlRegex,Pattern.CASE_INSENSITIVE);
 
@@ -104,6 +105,12 @@ public class Utils {
             log.error(ex);
         }
         return myHostname;
+    }
+
+    public static String getMyServiceUrl() {
+        if(myServiceUrl == null)
+            myServiceUrl = asServiceUrl(getFQDN());
+        return myServiceUrl;
     }
 
     public static String asServiceUrl(String hostname) {

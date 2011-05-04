@@ -218,7 +218,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         while ((i < myList.size()) && (j < otherList.size())) {
             log.trace("In while loop");
             if( (nodecomp.compare(myList.get(i),otherList.get(j))) == 0 ) {
-                if((myList.get(i)).getTimeStamp() > (otherList.get(j)).getTimeStamp()) {
+                if((myList.get(i)).getTimeStamp() >= (otherList.get(j)).getTimeStamp()) {
                     newNodes.add(myList.get(i));
                 }else {
                     newNodes.add(otherList.get(j));
@@ -323,6 +323,10 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         log.info("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
         processedMap.put(sourceServiceURL, payloadChecksum);
 
+        if(updatedNodes.isEmpty()) {
+            log.trace("No New Information To Share...");
+            return true;
+        }
         log.trace("Sending off event with registry update digest data");
         enqueueESGEvent(new ESGEvent(this,
                                      new RegistryUpdateDigest(gleaner.toString(), 

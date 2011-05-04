@@ -250,7 +250,7 @@ public class RegistrationGleaner {
             String lastChecksum = myChecksum;
             myChecksum = quickHash.sum(sw.toString());
             if(!myChecksum.equals(lastChecksum)) dirty = true;
-            log.trace("Checksum of xml string is: "+myChecksum+(dirty ? "(modified)" : "(unchanged"));
+            log.trace("Checksum of xml string is: "+myChecksum+(dirty ? " (modified)" : " (unchanged"));
         }catch(Exception e) {
             log.error(e);
         }
