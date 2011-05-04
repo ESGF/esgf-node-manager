@@ -136,6 +136,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     if(!ESGFRegistry.this.isBusy) {
                         ESGFRegistry.this.isBusy = true;
                         gleaner.createMyRegistration().saveRegistration();
+                        removedMap.clear();
                         ESGFRegistry.this.isBusy = false;
                     }
                 }
@@ -358,6 +359,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     if(gleaner.removeNode( peerHostname = Utils.asHostname(peerUrl = event.getJoiner().getName()))) {
                         processedMap.remove(peerUrl);
                         removedMap.put(peerHostname,event.getTimeStamp());
+                        gleaner.saveRegistration();
                     }
                 }
             }

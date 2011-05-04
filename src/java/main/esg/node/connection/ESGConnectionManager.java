@@ -126,7 +126,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         
         try{
             props = new ESGFProperties();
-            //periodicallyPingToPeers();
+            periodicallyPingToPeers();
             periodicallyRegisterToPeers();
         }catch(java.io.IOException e) {
             System.out.println("Damn, ESGConnectionManager can't fire up... :-(");
@@ -153,7 +153,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             },5*1000,30*1000);
     }
     private void pingToPeers() {
-        Collection<? extends ESGPeer> peers_ = peers.values();
+        Collection<? extends ESGPeer> peers_ = unavailablePeers.values();
         for(ESGPeer peer: peers_) {
             if(peer.equals(defaultPeer)) log.trace("(default peer)");
             peer.ping();
@@ -464,7 +464,11 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             if(peers.remove(peer.getName()) != null) {
                 log.trace("Transfering from active -to-> inactive list");
                 unavailablePeers.put(peer.getName(),peer);
+            }else if(unavailablePeers.remove(peer.getName()) != null) {
+                log.trace("Transfering from inactive -to-> outta here! :-)");
+                peer.unregister();
             }
+
             break;
         case ESGPeerEvent.CONNECTION_AVAILABLE:
             log.trace("Got ESGPeerEVent.CONNECTION_AVAILABLE from: "+peer.getName());
