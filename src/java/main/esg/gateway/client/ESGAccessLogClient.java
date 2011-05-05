@@ -85,6 +85,10 @@ public class ESGAccessLogClient {
         this(serviceHost, false);
     }
 
+    public ESGAccessLogClient(boolean secured) {
+        this(null,secured);
+    }
+
     public ESGAccessLogClient(String serviceHost, boolean secured) {
         log.trace("Instantiating ESGAccessLogClient");
         this.factory = new HessianProxyFactory();
