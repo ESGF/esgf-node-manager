@@ -75,14 +75,20 @@ public class ESGAccessLogClient {
     private HessianProxyFactory factory = null;
     private ESGAccessLogService currentEndpoint = null;
     private String currentServiceURL = null;
+    private boolean secured=true;
 
     public ESGAccessLogClient() {
-        log.trace("Instantiating ESGAccessLogClient");
-        this.factory = new HessianProxyFactory();
+        this(null,false);
+    }
+    
+    public ESGAccessLogClient(String serviceHost) {
+        this(serviceHost, false);
     }
 
-    public ESGAccessLogClient(String serviceHost) {
-        this();
+    public ESGAccessLogClient(String serviceHost, boolean secured) {
+        log.trace("Instantiating ESGAccessLogClient");
+        this.factory = new HessianProxyFactory();
+        this.secured = secured;
         this.setEndpoint(serviceHost);
     }
 
@@ -112,8 +118,12 @@ public class ESGAccessLogClient {
        @param serviceURL The url for the RPC target
     */
     public ESGAccessLogClient setEndpoint(String serviceHost) {
-        assert (serviceHost != null);
-        String serviceURL = "http://"+serviceHost+"/esgf-node-manager/accesslog";
+        if (serviceHost == null) {
+            System.out.println("ERROR: You have passed in a null ["+serviceHost+"] service host!!!!");
+            log.error("ERROR: You have passed in a null ["+serviceHost+"] service host!!!!");
+            return null;
+        }
+        String serviceURL = "http"+(secured ? "s" : "")+"://"+serviceHost+"/esgf-node-manager/accesslog";
         log.trace("Creating stub endpoint to : "+serviceURL);
         this.currentEndpoint = (ESGAccessLogService)factoryCreate(ESGAccessLogService.class,serviceURL);
         this.currentServiceURL=serviceURL;
