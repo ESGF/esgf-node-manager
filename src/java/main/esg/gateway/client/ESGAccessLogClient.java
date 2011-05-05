@@ -91,6 +91,11 @@ public class ESGAccessLogClient {
         this.secured = secured;
         this.setEndpoint(serviceHost);
     }
+    
+    public ESGAccessLogClient setSecured(boolean secured) {
+        this.secured = secured;
+        return this;
+    }
 
     /**
        Generic Hessian endpoint creation method (Straight up Hessian no frills)
