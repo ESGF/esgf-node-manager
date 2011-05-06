@@ -85,7 +85,7 @@ public class IdpWhitelistGleaner {
     
     private static final Log log = LogFactory.getLog(IdpWhitelistGleaner.class);
     private IdpWhitelist idps = null;
-    private String idpWhitelistFile = "idpWhiteList.xml";
+    private final String idpWhitelistFile = "idpWhiteList.xml";
     private String idpWhitelistPath = null;
     private Properties props = null;
     private String defaultLocation = null;
@@ -96,9 +96,12 @@ public class IdpWhitelistGleaner {
             if(props == null) this.props = new ESGFProperties();
             else this.props = props;
 
-            idpWhitelistPath = props.getProperty("node.manager.app.home",".")+File.separator;
-            if (!new File(idpWhitelistPath).exists()) {
-                log.warn("Could not locate "+idpWhitelistPath+" - will try to put in /tmp");
+            if (null != (idpWhitelistPath = System.getenv().get("ESGF_HOME"))) {
+                idpWhitelistPath = idpWhitelistPath+"/config/";
+            }
+
+            if (!(new File(idpWhitelistPath).exists())) {
+                log.warn("Could not locate ["+idpWhitelistPath+"] - will try to put in /tmp");
                 idpWhitelistPath = "/tmp/";
                 (new File(idpWhitelistPath)).mkdirs();
             }
