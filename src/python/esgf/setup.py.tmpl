@@ -1,7 +1,5 @@
 #!/usr/bin/env python
     
-import sys, os, re
-
 try:
     from setuptools import setup, find_packages
 except ImportError:
@@ -9,11 +7,7 @@ except ImportError:
     use_setuptools()
     from setuptools import setup, find_packages
 
-# Set the version string in esgf.esgf.__init__.py
-v = file(os.path.join(os.path.dirname(__file__), 'esgf_node_manager', '__init__.py'))
-VERSION = re.compile(r".*__version__ = '(.*?)'", re.S).match(v.read()).group(1)
-v.close()
-print "esgcet version =", VERSION
+VERSION = '@db_version_num@'
 
 setup(
     name = '@module@',
@@ -31,7 +25,6 @@ setup(
                     '@module@.schema_migration.versions': ['*.sql'],
                     },
     scripts = ['scripts/esgf_node_manager_initialize',
-               'scripts/esgf_accesslog',
                ],
     zip_safe = False,                   # Migration repository must be a directory
 )
