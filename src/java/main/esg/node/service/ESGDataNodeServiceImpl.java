@@ -144,7 +144,7 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     //Ingress calls to check RPC working method...
     public boolean ping() { 
         log.trace("DataNode service got \"ping\"");
-        return amAvailable(); 
+        return amAvailable();
     }
 
     //Ingress event handling from remote 'client'

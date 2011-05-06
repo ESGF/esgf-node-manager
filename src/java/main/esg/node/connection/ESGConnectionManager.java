@@ -201,15 +201,16 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     //that is valid holding open the door for us to be DOS-ed by folks
     //maliciously sending us huge events that flood our system.
     public boolean amAvailable() {
-        boolean amAvailable = false;
-        boolean haveValidPeerProxies = false;
-        if (peers.isEmpty()) { amAvailable = false; return false; }
-        Collection<? extends ESGPeer> peers_ = peers.values();
-        for(ESGPeer peer: peers_) {
-            haveValidPeerProxies |= peer.isAvailable();
-        }
-        amAvailable = (amAvailable || haveValidPeerProxies );
-        return amAvailable;
+        //boolean amAvailable = false;
+        //boolean haveValidPeerProxies = false;
+        //if (peers.isEmpty()) { amAvailable = false; return false; }
+        //Collection<? extends ESGPeer> peers_ = peers.values();
+        //for(ESGPeer peer: peers_) {
+        //    haveValidPeerProxies |= peer.isAvailable();
+        //}
+        //amAvailable = (amAvailable || haveValidPeerProxies );
+        //return amAvailable;
+        return true;
     }
     
     public void unregister() {
@@ -223,7 +224,6 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     //Cached last registry data and checksum in lastRud.
     //Send out the same info to another random pair of neighbors.
     private synchronized boolean sendOutRegistryState() {
-        log.info("Sending out registry state to peers...");
         //Bootstrap condition...
         if(lastRud == null && defaultPeer != null) {
             //Damnit, I didn't want this dependency..!!!
@@ -239,13 +239,14 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                                                                 ephemeralGleaner.getMyChecksum(),
                                                                 Utils.nextSeq(),
                                                                 0));
-            log.info("Bootstrapping... sending my registration to: "+((List<ESGPeer>)peers.values()).get(0).getServiceURL());
-            log.info("My Registration is:"+ registration);
+            log.info("Bootstrapping... sending out my registration... ");
+            log.trace("My Registration is:"+ registration);
             ephemeralGleaner = null; //gc niceness.
             return true;
         }
         //delagate through with no so "new" state :-)
         if(lastRud != null) {
+            log.trace("Using cached state...");
             return this.sendOutNewRegistryState(this.lastRud.xmlDocument(),this.lastRud.xmlChecksum());
         }
         return false;
@@ -254,10 +255,10 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     //Helper method containing the details of the Gossip protocol dispatch logic
     //Basically - choose two random peers (that are not me) to send my state to.
     private synchronized boolean sendOutNewRegistryState(String xmlDocument, String xmlChecksum) {
-        log.trace("Sending out NEW registry state...");
+        log.trace("Sending out registry state...");
         
         if((peers.size()< 1) && (defaultPeer == null)) {
-            log.trace("No one to send to... you have no peers.  Nothing further to do so stopping, returning false");
+            log.info("No one to send to... you have no peers.  Nothing further to do. waiting to be contacted... (I am probably my own default peer)");
             return false;
         }
         ESGRemoteEvent myRegistryState = new ESGRemoteEvent(ESGEventHelper.getMyServiceUrl(),
@@ -270,7 +271,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         //------------
         //If we have no peers we have to resort to using our defaultPeer...
         if((peers.size() == 0)  && (defaultPeer != null)) {
-            log.trace("You have no peers - resorting to harassing the default peer ["+defaultPeer.getServiceURL()+"]");
+            log.info("You have no peers - resorting to harassing the default peer ["+defaultPeer.getServiceURL()+"]");
             defaultPeer.handleESGRemoteEvent(myRegistryState);
             return true;
         }

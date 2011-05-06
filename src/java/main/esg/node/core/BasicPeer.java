@@ -180,10 +180,8 @@ public class BasicPeer extends HessianPeer {
             pingState = (response  && isValid);
             log.trace( (response ? "[OK]" : "[BUSY]") );
         }catch (RuntimeException ex) {
-            log.trace("[FAIL]");
-            log.error("Problem calling \"ping\" on ["+getServiceURL()+"] "+ex.getMessage());
-            log.error(ex);
-            ex.printStackTrace();
+            log.info("Could not call \"ping\" on ["+getServiceURL()+"] "+ex.getMessage());
+            log.trace(ex);
             response = false;
             fireConnectionFailed(ex);
         }
@@ -212,7 +210,7 @@ public class BasicPeer extends HessianPeer {
             log.trace("Making Remote Call to "+getServiceURL()+"'s remote \"handleESGRemoteEvent\" method, sending: "+evt);
             datanodeServiceStub.handleESGRemoteEvent(evt);
         }catch (RuntimeException ex) {
-            log.error("Problem calling remote \"handleESGRemoteEvent\" on ["+getServiceURL()+"] "+ex.getMessage());
+            log.error("Could not make call \"handleESGRemoteEvent\" on ["+getServiceURL()+"] "+ex.getMessage());
             fireConnectionFailed(ex);
         }
     }

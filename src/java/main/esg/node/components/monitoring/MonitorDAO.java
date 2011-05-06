@@ -237,7 +237,7 @@ public class MonitorDAO implements Serializable {
         this.setCPUInfo(info);
         this.setUptimeInfo(info);
         this.setXferInfo(info);
-        infoAsString(info);
+        log.trace(infoAsString(info));
         return info;
     }
 
@@ -429,10 +429,10 @@ public class MonitorDAO implements Serializable {
         info.xferInfo.put(MonitorInfo.XFER_AVG,"-1");   
     }
 
-    private void infoAsString(MonitorInfo info) {
+    private String infoAsString(MonitorInfo info) {
         if(info == null) {
             log.warn("MonitorInfo object is null: ["+info+"]");
-            return;
+            return null;
         }
     
         StringBuilder out = new StringBuilder();
@@ -443,7 +443,8 @@ public class MonitorDAO implements Serializable {
         out.append(" uptime: "+info.uptimeInfo+"\n");
         out.append(" xfer: "+info.xferInfo+"\n");
         out.append(" components: "+info.componentList+"\n");
-        System.out.println(out.toString());
+        //System.out.println(out.toString());
+        return out.toString();
     }
 
     //------------------------------------
