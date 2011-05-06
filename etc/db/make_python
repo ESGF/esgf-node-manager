@@ -85,7 +85,7 @@ make_python_egg() {
     installer_home=${ESG_USER_HOME:-$(getent passwd ${installer_uid} | awk -F : '{print $6}')}
     
     pushd ${basedir}/src/python/esgf
-    python setup.py bdist_egg
+    python ant_setup.py bdist_egg
     [ $? != 0 ] && echo "ERROR: could not run python setup" && popd >& /dev/null && return 1
     [ -e ${python_dist_dir}/${dist_file} ] && \
         mkdir -p ${basedir}/dist && \
@@ -106,8 +106,8 @@ cleanup_build_artifacts() {
         ${basedir}/src/python/esgf/SQLAlchemy-*.egg \
         ${basedir}/src/python/esgf/sqlalchemy_*.egg
     ret=$?
-    [ -e ${basedir}/src/python/esgf/setup.py.tmpl ] && [ -e ${basedir}/src/python/esgf/setup.py ] && rm -v ${basedir}/src/python/esgf/setup.py
-    [ -e ${basedir}/src/python/esgf/scripts/esgf_node_manager_initialize.tmpl ] && [ -e ${basedir}/src/python/esgf/scripts/esgf_node_manager_initialize ] && rm -v ${basedir}/src/python/esgf/scripts/esgf_node_manager_initialize
+    [ -e ${basedir}/src/python/esgf/setup.py.tmpl ] && [ -e ${basedir}/src/python/esgf/ant_setup.py ] && rm -v ${basedir}/src/python/esgf/ant_setup.py
+    [ -e ${basedir}/src/python/esgf/scripts/esgf_node_manager_initialize.tmpl ] && [ -e ${basedir}/src/python/esgf/scripts/ignore ] && rm -v ${basedir}/src/python/esgf/scripts/ignore
     popd >& /dev/null
     return ${ret}
 }

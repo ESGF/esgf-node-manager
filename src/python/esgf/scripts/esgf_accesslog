@@ -1,0 +1,156 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import time
+import getopt
+
+from esgf_node_manager.accesslog import getAccessLog
+from esgcet.publish import Hessian, RemoteCallException
+from esgcet.query import printResult
+
+usage = """Usage:
+    esgf_accesslog [options] [[starttime]:[endtime]]
+
+    List entries in an ESGF access log
+
+Arguments:
+
+    starttime: Start time (see Notes). If missing, start at the beginning of the log.
+    endtime: End time (see Notes). If missing, list to the last log entry.
+
+Options:
+
+    -c, --cert-file path:
+        Certificate file. Defaults to $HOME/.globus/certificate-file.
+
+    -h, --help:
+        Print a help message.
+
+    -k, --key-file:
+        Key file, if different from cert file. Defaults to the certificate file (--cert-file).
+
+    -r, --raw-output:
+        Print accesslog results without formatting. May speed up the output.
+
+    -s, --service-url:
+        Access log service URL, such as https://somehost.dom.gov/esgf-node-manager/accesslog.
+        Defaults to value of environment variable ESGF_ACCESSLOG_SERVICE.
+
+    -v, --verbose:
+        Verbose
+        
+Notes:
+
+    Times are in one of two forms:
+
+    (1) YYYYMMDDHHMMSS
+    (2) YYYYMMDD - short for YYYYMMDD000000
+
+    Examples:
+        
+        - List records for April, 2011:
+
+          esgf_accesslog 20110401:20110501
+
+        - List records for April 20, 2011 between 10 and 11 AM:
+
+          esgf_accesslog 20110420100000:20110420110000
+"""
+
+DAY_TIME_FORMAT = "%Y%m%d%H%M%S"
+DEFAULT_CERT = os.path.join(os.environ['HOME'], '.globus/certificate-file')
+EARLIEST_TIME = 0L
+LATEST_TIME = 253402286399L             # 9999-12-31 11:59:59
+
+def timeArg2Epochal(t):
+    if len(t) not in [0, 8,14]:
+        raise RuntimeError('Time must be YYYYMMDD or YYYYMMDDHHMMSS: %s'%t)
+    if len(t)==0:
+        return None
+    if len(t)==8:
+        t += '000000'
+    try:
+        structtime = time.strptime(t, DAY_TIME_FORMAT)
+    except:
+        raise RuntimeError('Time must be YYYYMMDD or YYYYMMDDHHMMSS: %s'%t)
+    epochaltime = time.mktime(structtime)
+    return long(epochaltime)
+
+def getTimeRange(timeargs):
+    if len(timeargs)==0:
+        return (EARLIEST_TIME, LATEST_TIME)
+    try:
+        startfield, endfield = timeargs[0].split(':')
+    except ValueError:
+        raise RuntimeError('Time range=%s, should have the form time1:time2'%timeargs)
+    starttime = timeArg2Epochal(startfield)
+    if starttime is None:
+        starttime = EARLIEST_TIME
+    endtime = timeArg2Epochal(endfield)
+    if endtime is None:
+        endtime =  LATEST_TIME
+    return (starttime, endtime)
+
+def main(argv):
+    
+    try:
+        args, lastargs = getopt.getopt(argv, "c:hk:rs:v", ['cert-file=', 'help', 'key-file=', 'raw-output', 'service-url=', 'verbose'])
+    except getopt.error:
+        print sys.exc_value
+        print usage
+        sys.exit(0)
+
+    certfile = DEFAULT_CERT
+    keyfile = None
+    rawoutput = False
+    serviceURL = None
+    verbose = False
+    for flag, arg in args:
+        if flag in ['-c', '--cert-file']:
+            certfile = arg
+        elif flag in ['-h', '--help']:
+            print usage
+            sys.exit(0)
+        elif flag in ['-k', '--key-file']:
+            keyfile = arg
+        elif flag in ['-r', '--raw-output']:
+            rawoutput = True
+        elif flag in ['-s', '--service-url']:
+            serviceURL = arg
+        elif flag in ['-v', '--verbose']:
+            verbose = True
+
+    if keyfile is None:
+        keyfile = certfile
+
+    if len(lastargs) not in [0,1]:
+        print 'Invalid time range:', lastargs
+        print usage
+        sys.exit(0)
+
+    if serviceURL is None:
+        serviceURL = os.environ.get('ESGF_ACCESSLOG_SERVICE')
+
+    if serviceURL is None:
+        print 'Must specify a service URL with --service-url.'
+        print usage
+        sys.exit(0)
+        
+    starttime, endtime = getTimeRange(lastargs)
+
+    if verbose:
+        print 'Time range = %d : %d'%(starttime, endtime)
+
+    metadata = getAccessLog(starttime, endtime, serviceURL, certfile, keyfile)
+
+    if not rawoutput:
+        headerList = metadata[0]
+        header = [item.split('|')[0] for item in headerList]
+        records = [tuple(item) for item in metadata[1:]]
+        printResult(header, records)
+    else:
+        print metadata
+
+if __name__=='__main__':
+    main(sys.argv[1:])
