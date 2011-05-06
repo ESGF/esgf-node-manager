@@ -222,6 +222,8 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
             log.trace("No component mapping to "+componentName+" (nothing to remove)");
             return;
         }
+        log.trace("Removing Component: ["+componentName+"]");
+
         component.removeAllESGQueueListeners();
         component.removeAllESGListeners();
         sendUnjoinNotification(component);
@@ -258,6 +260,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     public boolean registerPeer(ESGPeer peer) {
         if (peer == null) return false;
         log.trace("2)) Registering Peer in node manager: "+peer.getName());
+        ((AbstractDataNodeComponent)peer).setDataNodeManager(this);
         log.trace("3)) Initializing newly registered peer component: "+peer.getName());
         peer.init();
         if(peer.isValid()) {
@@ -279,7 +282,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
             log.trace("No peer mapping to "+peerName+" (nothing to remove)");
             return;
         }
-        log.trace("Removing Peer: "+peerName);
+        log.trace("Removing Peer: ["+peerName+"]");
         peer.removeESGListener(this);
         sendUnjoinNotification(peer);
     }

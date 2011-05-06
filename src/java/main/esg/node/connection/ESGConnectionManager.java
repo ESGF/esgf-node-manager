@@ -145,17 +145,26 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     
     private void periodicallyPingToPeers() {
         log.trace("Launching ping timer...");
+        long delay  = Long.parseLong(props.getProperty("conn.ping.initialDelay","5"));
+        long period = Long.parseLong(props.getProperty("conn.ping.period","30"));
+        log.trace("connection ping delay:  "+delay+" sec");
+        log.trace("connection ping period: "+period+" sec");
+       
         Timer timer = new Timer();
         timer.schedule(new TimerTask() { 
                 public final void run() {
                     ESGConnectionManager.this.pingToPeers();
                 }
-            },5*1000,30*1000);
+            },delay*1000,period*1000);
     }
     private void pingToPeers() {
         Collection<? extends ESGPeer> peers_ = unavailablePeers.values();
         for(ESGPeer peer: peers_) {
             if(peer.equals(defaultPeer)) log.trace("(default peer)");
+            //TODO: put in random selection and or heartbeat/leasing here...
+            //this is where the relationship maintenance code goes
+            //and detecting when folks fall out of the system.
+            //maybe ping should be expanded to put in lease negotiation proper.
             peer.ping();
         }
     }
@@ -258,6 +267,15 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                                                             Utils.nextSeq(),
                                                             0);
 
+        //------------
+        //If we have no peers we have to resort to using our defaultPeer...
+        if((peers.size() == 0)  && (defaultPeer != null)) {
+            log.trace("You have no peers - resorting to harassing the default peer ["+defaultPeer.getServiceURL()+"]");
+            defaultPeer.handleESGRemoteEvent(myRegistryState);
+            return true;
+        }
+        //------------
+
         int networkSizeLimit = 10000; //Essentially the total number of nodes to randomly choose from is between 0 and networkSizeLimit+1
         int retries = 3; //how many times to try to get this event to [branchFactor] peers
         int numDispatchedPeers = 0; //how many peers have successfully had events sent to them.
@@ -283,6 +301,11 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             int rechooseIndexCount = 0; 
             while((numDispatchedPeers < branchFactor)) {
                 //Randomly select a peer to send our state to...
+                if(peerList.size() == 0) {
+                    log.warn("no peers");
+                    break;
+                }
+
                 idx = ((int)(Math.random()*networkSizeLimit)) % peerList.size();
 
                 //Notice that the following single step check works
