@@ -164,7 +164,8 @@ That does make it more wordy, and require and reconstruction. -->
         <xsd:attribute name="version" type="xsd:string" use="required"/>
         <xsd:attribute name="release" type="xsd:string"/>
         <xsd:attribute name="nodeType" type="xsd:string"/>
-
+        <xsd:attribute name="adminPeer" type="xsd:string"/>
+        <xsd:attribute name="defaultPeer" type="xsd:string" use="required"/>
     </xsd:attributeGroup>
 
 
