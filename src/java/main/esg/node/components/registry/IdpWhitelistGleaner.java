@@ -1,4 +1,4 @@
-  /***************************************************************************
+/***************************************************************************
 *                                                                          *
 *  Organization: Lawrence Livermore National Lab (LLNL)                    *
 *   Directorate: Computation                                               *
@@ -57,6 +57,7 @@
 package esg.node.components.registry;
 
 import esg.common.generated.registration.*;
+import esg.common.generated.whitelist.*;
 import esg.common.util.ESGFProperties;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -76,57 +77,57 @@ import org.apache.commons.logging.impl.*;
 /**
    Description:
    
-   Encapsulates the logic for fetching and generating this local
-   node's LAS Sisters file as defined by las_servers.xsd
+   Simple xml list generator.  Creates an xml list of idp urls for
+   "trusted" federation members.
 
-*/
-public class LasSistersGleaner {
-
-    private static final Log log = LogFactory.getLog(LasSistersGleaner.class);
-
-    private LasServers servers = null;
-    private String sistersFile = "las_servers.xml";
-    private String sistersPath = null;
+**/
+public class IdpWhitelistGleaner {
+    
+    private static final Log log = LogFactory.getLog(IdpWhitelistGleaner.class);
+    private IdpWhitelist idps = null;
+    private final String idpWhitelistFile = "idpWhiteList.xml";
+    private String idpWhitelistPath = null;
     private Properties props = null;
     private String defaultLocation = null;
 
-    public LasSistersGleaner() { this(null); }
-    public LasSistersGleaner(Properties props) {
+    public IdpWhitelistGleaner() { this(null); }
+    public IdpWhitelistGleaner(Properties props) {
         try {
             if(props == null) this.props = new ESGFProperties();
             else this.props = props;
 
-            String base = System.getenv("ESGF_HOME");
-            if (base != null) {
-                defaultLocation = base+"/content/las/conf/server";
-            }else {
-                defaultLocation = "/tmp";
-                log.warn("ESGF_HOME environment var not set!");
+            if (null != (idpWhitelistPath = System.getenv().get("ESGF_HOME"))) {
+                idpWhitelistPath = idpWhitelistPath+"/config/";
             }
-            sistersPath = props.getProperty("las.xml.config.dir",defaultLocation)+File.separator;
 
-            servers = new LasServers();
+            if (!(new File(idpWhitelistPath).exists())) {
+                log.warn("Could not locate ["+idpWhitelistPath+"] - will try to put in /tmp");
+                idpWhitelistPath = "/tmp/";
+                (new File(idpWhitelistPath)).mkdirs();
+            }
+                
+            idps = new IdpWhitelist();
 
         } catch(Exception e) {
             log.error(e);
         }
     }
     
-    public LasServers getMyLasServers() { return servers; }
+    public IdpWhitelist getMyIdpWhitelist() { return idps; }
     
-    public boolean saveLasServers() { return saveLasServers(servers); }
-    public synchronized boolean saveLasServers(LasServers servers) {
+    public boolean saveIdpWhitelist() { return saveIdpWhitelist(idps); }
+    public synchronized boolean saveIdpWhitelist(IdpWhitelist idps) {
         boolean success = false;
-        if (servers == null) {
-            log.error("LasServers is ["+servers+"]"); 
+        if (idps == null) {
+            log.error("idps (whitelist) is ["+idps+"]"); 
             return success;
         }
-        log.info("Saving LAS LasServers information to "+sistersPath+sistersFile);
+        log.info("Saving IDP Whitelist information to "+idpWhitelistPath+idpWhitelistFile);
         try{
-            JAXBContext jc = JAXBContext.newInstance(LasServers.class);
+            JAXBContext jc = JAXBContext.newInstance(IdpWhitelist.class);
             Marshaller m = jc.createMarshaller();
             m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-            m.marshal(servers, new FileOutputStream(sistersPath+sistersFile));
+            m.marshal(idps, new FileOutputStream(idpWhitelistPath+idpWhitelistFile));
             success = true;
         }catch(Exception e) {
             log.error(e);
@@ -141,21 +142,13 @@ public class LasSistersGleaner {
        node service information.  Takes that information and
        creates a local representation of this node's registration.
     */
-    public synchronized LasSistersGleaner appendToMyLasServersFromRegistration(Registration registration) {
-        log.info("Creating my LAS LasServers representation...");
+    public synchronized IdpWhitelistGleaner appendToMyIdpWhitelistFromRegistration(Registration registration) {
+        log.info("Creating my IDP whitelist representation...");
         try{
-            LASService service = null; //the LASService entry from the registration -via-> node
-            LasServer sister = null;   //Local servers xml element
-
             //NOTE: Entries stored in the registration are dedup'ed so no worries here.
             for(Node node : registration.getNode()) {
-                service = node.getLASService();
-                sister = new LasServer();
-                sister.setName(node.getShortName());
-                sister.setUrl(service.getEndpoint());
-                servers.getLasServer().add(sister);
+                idps.getValue().add(node.getOpenIDProvider().getEndpoint());
             }
-
         } catch(Exception e) {
             log.error(e);
         }
@@ -164,16 +157,16 @@ public class LasSistersGleaner {
     }
     
     public void clear() {
-        if(this.servers != null) this.servers = new LasServers();
+        if(this.idps != null) this.idps = new IdpWhitelist();
     }
 
-    public synchronized LasSistersGleaner loadMyLasServers() {
-        log.info("Loading my LAS LasServers info from "+sistersPath+sistersFile);
+    public synchronized IdpWhitelistGleaner loadMyIdpWhitelist() {
+        log.info("Loading my IDP Whitelist info from "+idpWhitelistPath+idpWhitelistFile);
         try{
-            JAXBContext jc = JAXBContext.newInstance(LasServers.class);
+            JAXBContext jc = JAXBContext.newInstance(IdpWhitelist.class);
             Unmarshaller u = jc.createUnmarshaller();
-            JAXBElement<LasServers> root = u.unmarshal(new StreamSource(new File(sistersPath+sistersFile)),LasServers.class);
-            servers = root.getValue();
+            JAXBElement<IdpWhitelist> root = u.unmarshal(new StreamSource(new File(idpWhitelistPath+idpWhitelistFile)),IdpWhitelist.class);
+            idps = root.getValue();
         }catch(Exception e) {
             log.error(e);
         }
@@ -184,18 +177,18 @@ public class LasSistersGleaner {
     // Not really used methods but here for completeness
     //****************************************************************
 
-    public LasServers createLasServersFromString(String lasServersContentString) {
-        log.info("Loading my LAS LasServers info from \n"+lasServersContentString+"\n");
-        LasServers fromContentLasServers = null;
+    public IdpWhitelist createIdpWhitelistFromString(String idpWhitelistContentString) {
+        log.info("Loading my IDP Whitelist info from \n"+idpWhitelistContentString+"\n");
+        IdpWhitelist fromContentIdpWhitelist = null;
         try{
-            JAXBContext jc = JAXBContext.newInstance(LasServers.class);
+            JAXBContext jc = JAXBContext.newInstance(IdpWhitelist.class);
             Unmarshaller u = jc.createUnmarshaller();
-            JAXBElement<LasServers> root = u.unmarshal(new StreamSource(new StringReader(lasServersContentString)),LasServers.class);
-            fromContentLasServers = root.getValue();
+            JAXBElement<IdpWhitelist> root = u.unmarshal(new StreamSource(new StringReader(idpWhitelistContentString)),IdpWhitelist.class);
+            fromContentIdpWhitelist = root.getValue();
         }catch(Exception e) {
             log.error(e);
         }
-        return fromContentLasServers;
+        return fromContentIdpWhitelist;
     }
-
+    
 }

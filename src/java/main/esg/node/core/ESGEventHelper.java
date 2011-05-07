@@ -6,7 +6,7 @@
 *      Division: S&T Global Security                                       *
 *        Matrix: Atmospheric, Earth and Energy Division                    *
 *       Program: PCMDI                                                     *
-*       Project: Earth Systems Grid (ESG) Data Node Software Stack         *
+*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
 *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
 *                                                                          *
 ****************************************************************************
@@ -17,11 +17,11 @@
 *   LLNL-CODE-420962                                                       *
 *                                                                          *
 *   All rights reserved. This file is part of the:                         *
-*   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
+*   Earth System Grid Federation (ESGF) Data Node Software Stack           *
 *                                                                          *
-*   For details, see http://esgf.org/esg-node/                    *
+*   For details, see http://esgf.org/esg-node/                             *
 *   Please also read this link                                             *
-*    http://esgf.org/LICENSE                                      *
+*    http://esgf.org/LICENSE                                               *
 *                                                                          *
 *   * Redistribution and use in source and binary forms, with or           *
 *   without modification, are permitted provided that the following        *
@@ -78,35 +78,33 @@ public class ESGEventHelper {
     public ESGEventHelper() { }
 
 
-    public static ESGRemoteEvent createOutboundEvent(ESGEvent in) {
-	//Create the string for *our* callback address...
-	String myLocation = null;
-	try{
-	    myLocation = "http://"+java.net.InetAddress.getLocalHost().getCanonicalHostName()+"/esg-node/datanode";
-	}catch (java.net.UnknownHostException ex) {
-	    log.error("Could not build proper location string for myself",ex);
-	}
-	
-	ESGRemoteEvent rEvent = null;
-	if((rEvent = in.getRemoteEvent()) == null) {
-	    log.warn("The encountered event does not contain a remote event");
-	    return null;
-	}
-
-	return new ESGRemoteEvent(myLocation,rEvent.getMessageType(),in.getData(),rEvent.getSeqNum());
-	
+    //For ESGEvents with ESGRemoteEvents embedded...
+    //this unwraps the remote event but setting it up to be
+    //resent from HERE.  This allows for masquarading events
+    //essentially NAT'ong for events.
+    public static ESGRemoteEvent asMyRemoteEvent(ESGEvent in) {
+        ESGRemoteEvent rEvent = null;
+        if((rEvent = in.getRemoteEvent()) == null) {
+            log.warn("The encountered event does not contain a remote event");
+            return null;
+        }
+        return new ESGRemoteEvent(getMyServiceUrl(),rEvent.getMessageType(),in.getData(),rEvent.getSeqNum());
     }
 
-    public static ESGRemoteEvent createOutboundEvent(ESGRemoteEvent in) {
-	//Create the string for *our* callback address...
-	String myLocation = null;
-	try{
-	    myLocation = "http://"+java.net.InetAddress.getLocalHost().getCanonicalHostName()+"/esg-node/datanode";
-	}catch (java.net.UnknownHostException ex) {
-	    log.error("Could not build proper location string for myself",ex);
-	}
-	
-	return new ESGRemoteEvent(myLocation,in.getMessageType(),in.getPayload(),in.getSeqNum());	
-	
+    public static ESGRemoteEvent createProxiedOutboundEvent(ESGRemoteEvent in) {
+        //Create the string for *our* callback address...
+        return new ESGRemoteEvent(getMyServiceUrl(),in.getMessageType(),in.getPayload(),in.getSeqNum());
+    }
+
+    //TODO: move this function into esg.common.Utils and change all calling code accordingly
+    //Helper function to get MY service url
+    public static String getMyServiceUrl() {
+        String myLocation = null;
+        try{
+            myLocation = Utils.asServiceUrl(java.net.InetAddress.getLocalHost().getCanonicalHostName());
+        }catch (java.net.UnknownHostException ex) {
+            log.error("Could not build proper location string for myself",ex);
+        }
+        return myLocation;
     }
 }

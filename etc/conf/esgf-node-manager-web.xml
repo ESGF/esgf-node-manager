@@ -72,12 +72,12 @@
       <param-name>home-api</param-name>
       <param-value>esg.node.service.ESGDataNodeService</param-value>
     </init-param>
+    <load-on-startup>3</load-on-startup>
   </servlet>
 
   <servlet-mapping>
     <url-pattern>/node</url-pattern>
     <servlet-name>node</servlet-name>
-    <load-on-startup>1</load-on-startup>
   </servlet-mapping>
   <!-- ******************************************************** -->
 
@@ -97,12 +97,12 @@
       <param-name>home-api</param-name>
       <param-value>esg.gateway.service.ESGAccessLogService</param-value>
     </init-param>
+    <load-on-startup>1</load-on-startup>
   </servlet>
 
   <servlet-mapping>
     <url-pattern>/accesslog</url-pattern>
     <servlet-name>accesslog</servlet-name>
-    <load-on-startup>2</load-on-startup>
   </servlet-mapping>
   <!-- ******************************************************** -->
 

@@ -6,7 +6,7 @@
 *      Division: S&T Global Security                                       *
 *        Matrix: Atmospheric, Earth and Energy Division                    *
 *       Program: PCMDI                                                     *
-*       Project: Earth Systems Grid (ESG) Data Node Software Stack         *
+*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
 *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
 *                                                                          *
 ****************************************************************************
@@ -17,11 +17,11 @@
 *   LLNL-CODE-420962                                                       *
 *                                                                          *
 *   All rights reserved. This file is part of the:                         *
-*   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
+*   Earth System Grid Federation (ESGF) Data Node Software Stack           *
 *                                                                          *
-*   For details, see http://esgf.org/esg-node/                    *
+*   For details, see http://esgf.org/esg-node/                             *
 *   Please also read this link                                             *
-*    http://esgf.org/LICENSE                                      *
+*    http://esgf.org/LICENSE                                               *
 *                                                                          *
 *   * Redistribution and use in source and binary forms, with or           *
 *   without modification, are permitted provided that the following        *
@@ -62,6 +62,7 @@
 package esg.node.core;
 
 import java.util.EventObject;
+import java.util.Date;
 
 public class ESGJoinEvent extends ESGEvent {
 
@@ -70,21 +71,24 @@ public class ESGJoinEvent extends ESGEvent {
 
     private DataNodeComponent joiner = null;
     private boolean direction = false;
+    private long timestamp = -1L;
 
     public ESGJoinEvent(Object source, 
-			String message, 
-			DataNodeComponent joiner, boolean direction) { 
-	super(source,message); 
-	this.joiner = joiner;
-	this.direction = direction;
+                        String message, 
+                        DataNodeComponent joiner, boolean direction) { 
+        super(source,message); 
+        this.joiner = joiner;
+        this.direction = direction;
+        this.timestamp = (new Date()).getTime();
     }
 
     public DataNodeComponent getJoiner() { return joiner; }
     public boolean hasJoined() { return direction == JOIN;   }
     public boolean hasLeft()   { return direction == UNJOIN; }
+    public long getTimeStamp() { return timestamp; }
 
     public String toString() {
-	return super.toString()+" joiner:["+joiner.getClass().getName()+"] action:["+(direction ? "JOIN" : "UNJOIN")+"]";
+        return super.toString()+" joiner:["+joiner.getClass().getName()+"] action:["+(direction ? "JOIN" : "UNJOIN")+"]";
 
     }
 

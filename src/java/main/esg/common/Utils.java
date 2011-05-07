@@ -61,6 +61,9 @@
 **/
 package esg.common;
 
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
@@ -73,6 +76,9 @@ public class Utils {
     
     private static AtomicLong msgCounter = new AtomicLong(0);
     private static String myHostname = null;
+    private static String myServiceUrl = null;
+    private static final String urlRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/(.*/)*(.*$)";
+    private static final Pattern urlPattern = Pattern.compile(urlRegex,Pattern.CASE_INSENSITIVE);
 
 
     public static long nextSeq() { return msgCounter.getAndIncrement(); }
@@ -99,6 +105,22 @@ public class Utils {
             log.error(ex);
         }
         return myHostname;
+    }
+
+    public static String getMyServiceUrl() {
+        if(myServiceUrl == null)
+            myServiceUrl = asServiceUrl(getFQDN());
+        return myServiceUrl;
+    }
+
+    public static String asServiceUrl(String hostname) {
+        return "http://"+hostname+"/esgf-node-manager/node";
+    }
+
+    public static String asHostname(String serviceUrl) {
+        Matcher m = urlPattern.matcher(serviceUrl);
+        if(m.find()) return m.group(1);
+        return null;
     }
 
 }

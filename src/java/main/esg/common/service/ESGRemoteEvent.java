@@ -79,32 +79,49 @@ public class ESGRemoteEvent implements java.io.Serializable {
     public static final int METRICS    = 32;
     public static final int APPLICATION = 64;
 
-    private String source  = null;
+    private String source  = null; //This value is the complete URL of the originating node service
     private int    messageType = -1;
     private Object payload = null;
+    private String checksum = null;
     private long   seqNum = 0L;
+    private int    ttl = 1; //a good spread in a network about the size of 2^5ish nodes
 
-    public ESGRemoteEvent(String source, int messageType, Object payload, Long seqNum) {
+    public ESGRemoteEvent(String source, int messageType, Object payload, String checksum, Long seqNum, int ttl) {
         this.source  = source;
         this.messageType = messageType;
-        this.seqNum = seqNum;
         this.payload = payload;
+        this.checksum = checksum;
+        this.seqNum = seqNum;
+        this.ttl = ttl;
     }
 
-    public ESGRemoteEvent(String source, int messageType,long seqNum) {
-        this(source,messageType,null,seqNum);
+    public ESGRemoteEvent(String source, int messageType, Object payload, long seqNum, int ttl) {
+        this(source,messageType,payload,null,seqNum,ttl);
+    }
+    
+    public ESGRemoteEvent(String source, int messageType, Object payload, long seqNum) {
+        this(source,messageType,payload,null,seqNum,1);
     }
 
-    public ESGRemoteEvent(String source) { this(source,NOOP,null,-1L); }
+    public ESGRemoteEvent(String source, int messageType, long seqNum) {
+        this(source,messageType,null,null,seqNum,1);
+    }
 
+    public ESGRemoteEvent(String source) { this(source,NOOP,null,null,-1L,1); }
 
+    //Accessors...
     public String getSource()  { return source;  }
     public int    getMessageType() { return messageType; }
-    public long   getSeqNum() { return seqNum; }
     public Object getPayload() { return payload; }
-    public void   setPayload(Object obj) { this.payload = obj; }
+    public String getPayloadChecksum() { return checksum; }
+    public long   getSeqNum() { return seqNum; }
+    public int    getTTL() { return ttl; }
 
-    public String toString() { return "RE - s:["+source+"] m:["+messageType+"] n:["+seqNum+"] p:["+payload+"]"; }
-    
+    //call me before sending on to next hop
+    public void decTTL() { ttl--; }
+    public boolean isValid() { return (this.ttl > 0); }
+
+    public String toString() { return "RE - s:["+source+"] m:["+messageType+"] n:["+seqNum+"] t:["+ttl+"] p:["+payload+"]"; }
+
 }
 

@@ -124,9 +124,10 @@ public class ESGGatewayServiceImpl implements ESGGatewayService {
 	try {
 	    ESGRemoteEvent registrationResponseEvent = new ESGRemoteEvent(myLocation,ESGRemoteEvent.REGISTER,Utils.nextSeq());
 	    log.trace("Completing Registration By Making Remote Call to \"notify\" method, sending: "+registrationResponseEvent);
-	    if(datanodeService.notify(registrationResponseEvent))
-		log.trace("Registration Request Successfully Submitted...");
-	    else
+        //Since no longer as of 2011-04-25 supporting notify method on the datanode service... 
+	    //if(datanodeService.notify(registrationResponseEvent))
+		//log.trace("Registration Request Successfully Submitted...");
+	    //else
 		log.trace("Registration Request Rejected");
 	}catch (HessianRuntimeException ex) {
 	    log.error("Problem calling \"register\" on ["+evt.getSource()+"] "+ex.getMessage());

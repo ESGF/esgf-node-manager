@@ -58,6 +58,8 @@ package esg.node.components.registry;
 
 import esg.common.generated.registration.*;
 import esg.common.util.ESGFProperties;
+import esg.common.QuickHash;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.Marshaller;
@@ -65,10 +67,13 @@ import javax.xml.bind.Unmarshaller;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Date;
 import java.util.Properties;
+import java.util.HashMap;
 import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.logging.Log;
@@ -95,8 +100,14 @@ public class RegistrationGleaner {
     private static final boolean DEBUG=true;
     private String registrationPath = null;
     private Registration myRegistration = null;
+    private HashMap<String,Node> myNodeMap = null;
+    private QuickHash quickHash = null;
+    private String myChecksum = null;
     private Properties props = null;
     private RegistrationGleanerHelperDAO helperDAO = null;
+    private String configDir = null;
+    private String nodeTypeValue = "-1"; //TODO: yes, yes... turn this into enums strings in xsd - later.
+    private boolean dirty = false;
 
     public RegistrationGleaner() { this(null); }
     public RegistrationGleaner(Properties props) { 
@@ -111,13 +122,35 @@ public class RegistrationGleaner {
             log.error(e);
         }
         registrationPath = props.getProperty("node.manager.app.home",".")+File.separator;
+
+        if (null != (configDir = System.getenv().get("ESGF_HOME"))) {
+            configDir = configDir+File.separator+"config";
+            nodeTypeValue = null;
+            try {
+                quickHash = new QuickHash("SHA1");
+                File configTypeFile = new File(configDir+File.separator+"config_type");
+                if(configTypeFile.exists()) {
+                    BufferedReader in = new BufferedReader(new FileReader(configTypeFile));
+                    try{
+                        nodeTypeValue = in.readLine().trim();
+                    }catch(java.io.IOException ex) {
+                        log.error(ex);
+                    }finally {
+                        if(null != in) in.close();
+                    }
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
+        }
     }
     
     
     public Registration getMyRegistration() { return myRegistration; }
-    
-    public boolean saveRegistration() { return saveRegistration(myRegistration); }
-    public boolean saveRegistration(Registration registration) {
+    public String getMyChecksum() { return myChecksum; }
+
+    public synchronized boolean saveRegistration() { sync(); return saveRegistration(myRegistration); }
+    public synchronized boolean saveRegistration(Registration registration) {
         boolean success = false;
         if (registration == null) {
             log.error("Registration is ["+registration+"]"); 
@@ -125,16 +158,21 @@ public class RegistrationGleaner {
         }
         log.info("Saving registration information for to "+ registrationPath+this.registrationFile);
         try{
+            if(dirty) registration.setTimeStamp((new Date()).getTime());
             JAXBContext jc = JAXBContext.newInstance(Registration.class);
             Marshaller m = jc.createMarshaller();
             m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             m.marshal(registration, new FileOutputStream(registrationPath+this.registrationFile));
-            
             success = true;
+            dirty=false;
         }catch(Exception e) {
             log.error(e);
         }
         
+        //-----------------------------------------------
+        //Derivative xml file generation... (should be refactored, but in brody mode right now)
+        //-----------------------------------------------
+
         //pull from registry to create las sisters file.
         try{
             String endpoint=null;
@@ -147,46 +185,111 @@ public class RegistrationGleaner {
             log.error(e);
         }
         
+        //pull from registry to create idp whilelist file.
+        try{
+            IdpWhitelistGleaner idpWhitelistGleaner = new IdpWhitelistGleaner(props); 
+            idpWhitelistGleaner.appendToMyIdpWhitelistFromRegistration(registration).saveIdpWhitelist();
+        }catch(Exception e) {
+            log.error(e);
+        }
+        
         return success;
     }
-    
+
+    //NOTE: In anticipation that checksumming for every call to
+    //toString maybe a bit laborious and slow I am breaking up this
+    //call into a "regular" toString and on that does the checksum
+    //calcuation in addition to that. I don't want to optimize too
+    //early, but the nature of toString and how frequenly it is
+    //potentially called makes this a relatively justified defensive
+    //maneuver, right? :-) The real thing I wanted to do was to put
+    //this checksumming in the saveRegistration... however, currently
+    //saveRegistration streams to the file and thus not holding the
+    //whole file in memory, which for large files may be desireable.
+    //However, we are not talking about huge files, Howevever, this
+    //call could be done frequenly enough that constantly allocating
+    //and gc'ing space for this string may make the JVM not so happy?
+    //I am not sure, so I am leaving these options still open.  Time
+    //vs. Space...  Thus... optimize this out later.... -gavin
+    //public String toCheckedString() {
+    //    String out = this.toString();
+    //    if(out == null) return out;
+    //
+    //    myChecksum = quickHash.sum(sw.toString());
+    //    log.trace("Checksum of xml string is: "+myChecksum);
+    //    return out;
+    //}
+    //
+    //public String toString() {
+    //    StringWriter sw = null;
+    //    if (myRegistration == null) {
+    //        log.error("Registration is ["+myRegistration+"]");
+    //        return null;
+    //    }
+    //    log.info("Writing registration information to String, for "+myRegistration.getNode().get(0).getHostname());
+    //    sw = new StringWriter();
+    //    try{
+    //        JAXBContext jc = JAXBContext.newInstance(Registration.class);
+    //        Marshaller m = jc.createMarshaller();
+    //        m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+    //        m.marshal(myRegistration, sw);
+    //    }catch(Exception e) {
+    //        log.error(e);
+    //    }
+    //    return sw.toString();
+    //}
+
     public String toString() {
-        StringWriter sw = null;
+        String out = null;
         if (myRegistration == null) {
             log.error("Registration is ["+myRegistration+"]"); 
             return null;
         }
         log.info("Writing registration information to String, for "+myRegistration.getNode().get(0).getHostname());
-        sw = new StringWriter();
         try{
+            StringWriter sw = new StringWriter();
             JAXBContext jc = JAXBContext.newInstance(Registration.class);
             Marshaller m = jc.createMarshaller();
             m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             m.marshal(myRegistration, sw);
+
+            out = sw.toString();
+            sync();
+            //NOTE: Hopefully this isn't to slow... may have to move
+            //to saveRegistration since that would potentially be
+            //called much less often
+            log.trace("Checksumming xml content...");
+            String lastChecksum = myChecksum;
+            myChecksum = quickHash.sum(sw.toString());
+            if(!myChecksum.equals(lastChecksum)) dirty = true;
+            log.trace("Checksum of xml string is: "+myChecksum+(dirty ? " (modified)" : " (unchanged"));
         }catch(Exception e) {
             log.error(e);
         }
-        return sw.toString();
+        return out;
     }
 
+    public boolean isDirty() { return dirty; }
     
     /**
        Looks through the current system and gathers the configured
        node service information.  Takes that information and
        creates a local representation of this node's registration.
     */
-    public RegistrationGleaner createMyRegistration() {
+    public synchronized RegistrationGleaner createMyRegistration() {
         log.info("Creating my registration representation...");
         String endpointDir = null;
         String endpoint = null;
         Node node = new Node();
+        long timestamp=(new Date()).getTime();
+
         try{
             String nodeHostname =props.getProperty("esgf.host");
 
             //************************************************
             //CORE
             //************************************************
-
+            
             //Query the user for...
             node.setOrganization(props.getProperty("esg.root.id"));
             node.setLongName(props.getProperty("node.long.name"));
@@ -197,9 +300,10 @@ public class RegistrationGleaner {
             node.setHostname(nodeHostname);
             node.setDn(props.getProperty("node.dn")); //zoiks
             node.setNamespace(props.getProperty("node.namespace")); //zoiks
-            node.setTimeStamp((new Date()).getTime());
+            node.setTimeStamp(timestamp);
             node.setVersion(props.getProperty("version"));
             node.setRelease(props.getProperty("release"));
+            node.setNodeType(nodeTypeValue);
 
             //What is this ?
             CA ca = new CA();
@@ -207,6 +311,17 @@ public class RegistrationGleaner {
             ca.setHash(props.getProperty("security.ca.hash","dunno"));
             ca.setDn(props.getProperty("security.ca.dn","dunno"));
             node.setCA(ca);
+
+            try{
+                if( (null != (endpoint=props.getProperty("node.manager.endpoint"))) &&
+                    (new File(props.getProperty("node.manager.app.home"))).exists() ) {
+                    NodeManager nodeManager = new NodeManager();
+                    nodeManager.setEndpoint(endpoint);
+                    node.setNodeManager(nodeManager);
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
 
             //************************************************
             //Data
@@ -323,6 +438,22 @@ public class RegistrationGleaner {
             }
 
             //************************************************
+            //Web Front-End
+            //************************************************
+
+            //esgf-web-fe
+            try{
+                if( (null != (endpoint=props.getProperty("web.fe.service.endpoint"))) &&
+                    (new File(props.getProperty("web.fe.app.home"))).exists() ) {
+                    FrontEnd webfe = new FrontEnd();
+                    webfe.setEndpoint(endpoint);
+                    node.setFrontEnd(webfe);
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
+
+            //************************************************
             //IDP (security)
             //************************************************
 
@@ -381,6 +512,7 @@ public class RegistrationGleaner {
 
         myRegistration = new Registration();
         myRegistration.getNode().add(node);
+        myRegistration.setTimeStamp(timestamp);
         return this;
     }
     
@@ -413,22 +545,37 @@ public class RegistrationGleaner {
         log.info("Certificate Fetched!");
         return new String(buffer);
     }
-
-    public RegistrationGleaner loadMyRegistration() {
+    
+    public void sync() {
+        if(null == myRegistration) return;
+        if(null == myNodeMap) myNodeMap = new HashMap<String,Node>();
+        for(Node node : myRegistration.getNode()) {
+            myNodeMap.put(node.getHostname(),node);
+        }
+    }
+    
+    public synchronized RegistrationGleaner loadMyRegistration() {
         log.info("Loading my registration info from "+registrationPath+registrationFile);
         try{
             JAXBContext jc = JAXBContext.newInstance(Registration.class);
             Unmarshaller u = jc.createUnmarshaller();
             JAXBElement<Registration> root = u.unmarshal(new StreamSource(new File(registrationPath+this.registrationFile)),Registration.class);
             myRegistration = root.getValue();
+            sync();
         }catch(Exception e) {
             log.error(e);
         }
         return this;
     }
 
+    public synchronized boolean removeNode(String nodeHostname) {
+        sync();
+        if (myRegistration.getNode().remove(myNodeMap.remove(nodeHostname))) { dirty = true; }
+        return dirty;
+    }
+
     public Registration createRegistrationFromString(String registrationContent) {
-        log.info("Loading my registration info from \n"+registrationContent+"\n");
+        log.trace("Creating registration info from String:\n"+registrationContent+"\n");
         Registration fromContentRegistration = null;
         try{
             JAXBContext jc = JAXBContext.newInstance(Registration.class);
