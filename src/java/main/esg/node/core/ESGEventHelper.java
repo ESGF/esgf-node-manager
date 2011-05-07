@@ -88,23 +88,12 @@ public class ESGEventHelper {
             log.warn("The encountered event does not contain a remote event");
             return null;
         }
-        return new ESGRemoteEvent(getMyServiceUrl(),rEvent.getMessageType(),in.getData(),rEvent.getSeqNum());
+        return new ESGRemoteEvent(Utils.getMyServiceUrl(),rEvent.getMessageType(),in.getData(),rEvent.getSeqNum());
     }
 
     public static ESGRemoteEvent createProxiedOutboundEvent(ESGRemoteEvent in) {
         //Create the string for *our* callback address...
-        return new ESGRemoteEvent(getMyServiceUrl(),in.getMessageType(),in.getPayload(),in.getSeqNum());
+        return new ESGRemoteEvent(Utils.getMyServiceUrl(),in.getMessageType(),in.getPayload(),in.getSeqNum());
     }
 
-    //TODO: move this function into esg.common.Utils and change all calling code accordingly
-    //Helper function to get MY service url
-    public static String getMyServiceUrl() {
-        String myLocation = null;
-        try{
-            myLocation = Utils.asServiceUrl(java.net.InetAddress.getLocalHost().getCanonicalHostName());
-        }catch (java.net.UnknownHostException ex) {
-            log.error("Could not build proper location string for myself",ex);
-        }
-        return myLocation;
-    }
 }

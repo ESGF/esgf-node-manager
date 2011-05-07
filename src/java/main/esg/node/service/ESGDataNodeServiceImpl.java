@@ -74,13 +74,13 @@ import org.apache.commons.logging.impl.*;
 import esg.node.core.ESGDataNodeManager;
 import esg.node.core.AbstractDataNodeComponent;
 import esg.node.core.ESGEvent;
-import esg.node.core.ESGEventHelper;
 import esg.node.core.ESGJoinEvent;
 import esg.node.core.ESGPeer;
 import esg.node.core.BasicPeer;
 import esg.node.core.ESGSystemEvent;
 import esg.node.connection.ESGConnectionManager;
 import esg.common.service.ESGRemoteEvent;
+import esg.common.Utils;
 
 public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent 
     implements ESGDataNodeService {
@@ -94,7 +94,7 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     public ESGDataNodeServiceImpl() {
         log.info("ESGDataNodeServiceImpl instantiated...");
         setMyName("DNODE_SVC");
-        myServiceUrl = ESGEventHelper.getMyServiceUrl();
+        myServiceUrl = Utils.getMyServiceUrl();
         boot();
     }
 

@@ -233,7 +233,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 log.warn("(bootstrapping) Sorry no registration information yet available... check again later");
                 return false;
             }
-            defaultPeer.handleESGRemoteEvent(new ESGRemoteEvent(ESGEventHelper.getMyServiceUrl(),
+            defaultPeer.handleESGRemoteEvent(new ESGRemoteEvent(Utils.getMyServiceUrl(),
                                                                 ESGRemoteEvent.REGISTER,
                                                                 registration,
                                                                 ephemeralGleaner.getMyChecksum(),
@@ -261,7 +261,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             log.info("No one to send to... you have no peers.  Nothing further to do. waiting to be contacted... (I am probably my own default peer)");
             return false;
         }
-        ESGRemoteEvent myRegistryState = new ESGRemoteEvent(ESGEventHelper.getMyServiceUrl(),
+        ESGRemoteEvent myRegistryState = new ESGRemoteEvent(Utils.getMyServiceUrl(),
                                                             ESGRemoteEvent.REGISTER,
                                                             xmlDocument,
                                                             xmlChecksum,
