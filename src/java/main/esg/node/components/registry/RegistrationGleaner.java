@@ -305,7 +305,7 @@ public class RegistrationGleaner {
             node.setRelease(props.getProperty("release"));
             node.setNodeType(nodeTypeValue);
             node.setDefaultPeer(props.getProperty("esgf.default.peer","pcmdi3.llnl.gov"));
-            node.setAdminPeer(props.getProperty("esgf.admin.peer"));
+            node.setAdminPeer(props.getProperty("myproxy.endpoint"));
 
             //What is this ?
             CA ca = new CA();
