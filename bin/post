@@ -90,7 +90,7 @@ done
 
 manifest_file=${manifest_file:-$0.manif}
 esg_dist_url="rainbow.llnl.gov:/pcmdi_web/dist$( ((devel == 1)) && echo "/devel" || echo "")"
-current_dir=${current_dir:="esg_node"}
+current_dir=${current_dir:="esgf-node-manager"}
 xfer_user=${xfer_user:-""}
 
 [ -n "${xfer_user}" ] && xfer_user+="@" && echo "[${xfer_user}${esg_dist_url}]"
