@@ -268,6 +268,6 @@ public abstract class AbstractDataNodeComponent implements DataNodeComponent {
     //in the data node manager.  Unregistering will explicitly take us
     //out of the data node manager.  (TODO: look into making the data
     //node manager use phatom references to components).
-    protected void finalize() throws Throwable { super.finalize(); unregister(); }
+    //protected void finalize() throws Throwable { super.finalize(); unregister(); }
 
 }
