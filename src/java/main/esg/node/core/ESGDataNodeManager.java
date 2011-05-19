@@ -102,7 +102,7 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
             try {
                 myHostname = getNodeProperty("esgf.host",java.net.InetAddress.getLocalHost().getHostAddress());
                 myDefaultPeer = getNodeProperty("esgf.default.peer");
-                if(myDefaultPeer.equalsIgnoreCase("self")) { 
+                if(myDefaultPeer.equalsIgnoreCase("self") || myDefaultPeer.equalsIgnoreCase("localhost")) { 
                     myDefaultPeer = myHostname; 
                 }
                 
