@@ -1,59 +1,59 @@
 /***************************************************************************
-*                                                                          *
-*  Organization: Lawrence Livermore National Lab (LLNL)                    *
-*   Directorate: Computation                                               *
-*    Department: Computing Applications and Research                       *
-*      Division: S&T Global Security                                       *
-*        Matrix: Atmospheric, Earth and Energy Division                    *
-*       Program: PCMDI                                                     *
-*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
-*  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
-*                                                                          *
-****************************************************************************
-*                                                                          *
-*   Copyright (c) 2009, Lawrence Livermore National Security, LLC.         *
-*   Produced at the Lawrence Livermore National Laboratory                 *
-*   Written by: Gavin M. Bell (gavin@llnl.gov)                             *
-*   LLNL-CODE-420962                                                       *
-*                                                                          *
-*   All rights reserved. This file is part of the:                         *
-*   Earth System Grid Federation (ESGF) Data Node Software Stack           *
-*                                                                          *
-*   For details, see http://esgf.org/esg-node/                             *
-*   Please also read this link                                             *
-*    http://esgf.org/LICENSE                                               *
-*                                                                          *
-*   * Redistribution and use in source and binary forms, with or           *
-*   without modification, are permitted provided that the following        *
-*   conditions are met:                                                    *
-*                                                                          *
-*   * Redistributions of source code must retain the above copyright       *
-*   notice, this list of conditions and the disclaimer below.              *
-*                                                                          *
-*   * Redistributions in binary form must reproduce the above copyright    *
-*   notice, this list of conditions and the disclaimer (as noted below)    *
-*   in the documentation and/or other materials provided with the          *
-*   distribution.                                                          *
-*                                                                          *
-*   Neither the name of the LLNS/LLNL nor the names of its contributors    *
-*   may be used to endorse or promote products derived from this           *
-*   software without specific prior written permission.                    *
-*                                                                          *
-*   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS    *
-*   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT      *
-*   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS      *
-*   FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE    *
-*   LIVERMORE NATIONAL SECURITY, LLC, THE U.S. DEPARTMENT OF ENERGY OR     *
-*   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,           *
-*   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT       *
-*   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF       *
-*   USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND    *
-*   ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,     *
-*   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT     *
-*   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF     *
-*   SUCH DAMAGE.                                                           *
-*                                                                          *
-***************************************************************************/
+ *                                                                          *
+ *  Organization: Lawrence Livermore National Lab (LLNL)                    *
+ *   Directorate: Computation                                               *
+ *    Department: Computing Applications and Research                       *
+ *      Division: S&T Global Security                                       *
+ *        Matrix: Atmospheric, Earth and Energy Division                    *
+ *       Program: PCMDI                                                     *
+ *       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
+ *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
+ *                                                                          *
+ ****************************************************************************
+ *                                                                          *
+ *   Copyright (c) 2009, Lawrence Livermore National Security, LLC.         *
+ *   Produced at the Lawrence Livermore National Laboratory                 *
+ *   Written by: Gavin M. Bell (gavin@llnl.gov)                             *
+ *   LLNL-CODE-420962                                                       *
+ *                                                                          *
+ *   All rights reserved. This file is part of the:                         *
+ *   Earth System Grid Federation (ESGF) Data Node Software Stack           *
+ *                                                                          *
+ *   For details, see http://esgf.org/esg-node/                             *
+ *   Please also read this link                                             *
+ *    http://esgf.org/LICENSE                                               *
+ *                                                                          *
+ *   * Redistribution and use in source and binary forms, with or           *
+ *   without modification, are permitted provided that the following        *
+ *   conditions are met:                                                    *
+ *                                                                          *
+ *   * Redistributions of source code must retain the above copyright       *
+ *   notice, this list of conditions and the disclaimer below.              *
+ *                                                                          *
+ *   * Redistributions in binary form must reproduce the above copyright    *
+ *   notice, this list of conditions and the disclaimer (as noted below)    *
+ *   in the documentation and/or other materials provided with the          *
+ *   distribution.                                                          *
+ *                                                                          *
+ *   Neither the name of the LLNS/LLNL nor the names of its contributors    *
+ *   may be used to endorse or promote products derived from this           *
+ *   software without specific prior written permission.                    *
+ *                                                                          *
+ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS    *
+ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT      *
+ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS      *
+ *   FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE    *
+ *   LIVERMORE NATIONAL SECURITY, LLC, THE U.S. DEPARTMENT OF ENERGY OR     *
+ *   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,           *
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT       *
+ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF       *
+ *   USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND    *
+ *   ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,     *
+ *   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT     *
+ *   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF     *
+ *   SUCH DAMAGE.                                                           *
+ *                                                                          *
+ ***************************************************************************/
 package esg.node.components.registry;
 
 import java.util.Properties;
@@ -130,7 +130,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         final long period = Long.parseLong(props.getProperty("registry.period","1800")); //every 30 mins
         log.trace("registry delay:  "+delay+" sec");
         log.trace("registry period: "+period+" sec");
-	
+    
         lastDispatchTime = (new Date()).getTime();
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
@@ -228,8 +228,8 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
       come up in such a way that there are any horrendous time/timing
       issues.
 
-                                                       -gavin
-     */
+      -gavin
+    */
     private Set<Node> mergeNodes(Registration myRegistration, Registration otherRegistration) {
         log.trace("merging registrations...");
         
@@ -313,60 +313,60 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         
         synchronized(gleaner) {
         
-        String payloadChecksum  = event.getRemoteEvent().getPayloadChecksum();
-        String sourceServiceURL = event.getRemoteEvent().getSource();
+            String payloadChecksum  = event.getRemoteEvent().getPayloadChecksum();
+            String sourceServiceURL = event.getRemoteEvent().getSource();
         
-        //TODO: Heck no, I should NOT be using string comparison for
-        //this...  I need to revisit the typing of the remote event
-        //for type of the checksum.  The thing is I don't want to use
-        //BigInteger because I don't know how portable that is and I
-        //want the event object as type simple as can be.  Right now
-        //using the string representation of the checksum... maybe
-        //that's good enough for the type complexity trade off?
+            //TODO: Heck no, I should NOT be using string comparison for
+            //this...  I need to revisit the typing of the remote event
+            //for type of the checksum.  The thing is I don't want to use
+            //BigInteger because I don't know how portable that is and I
+            //want the event object as type simple as can be.  Right now
+            //using the string representation of the checksum... maybe
+            //that's good enough for the type complexity trade off?
 
-        String lastChecksum = processedMap.get(sourceServiceURL);
-        if( (lastChecksum != null) && (lastChecksum.equals(payloadChecksum)) ) {
-            log.trace("I have seen this payload before, from the same dude... there is nothing new to learn... dropping event on floor ["+event+"]");
-            return true; //handled... by not handling.
-        }
+            String lastChecksum = processedMap.get(sourceServiceURL);
+            if( (lastChecksum != null) && (lastChecksum.equals(payloadChecksum)) ) {
+                log.trace("I have seen this payload before, from the same dude... there is nothing new to learn... dropping event on floor ["+event+"]");
+                return true; //handled... by not handling.
+            }
         
-        //zoiks: use gleaner to get local registration object to modify.
-        //       periodically write modified structure to file (getting a new checksum)
-        //       back the list of nodes with a datastructure that can ...
-        //       have another datastructure with checksum and source service url
-        //       to see if we should even do anything at all.
+            //zoiks: use gleaner to get local registration object to modify.
+            //       periodically write modified structure to file (getting a new checksum)
+            //       back the list of nodes with a datastructure that can ...
+            //       have another datastructure with checksum and source service url
+            //       to see if we should even do anything at all.
         
-        //Pull out our registration information (parse the xml string
-        //payload into object form via the gleaner) and send the event
-        //on its way (the connection manager should be downstream this
-        //event path
+            //Pull out our registration information (parse the xml string
+            //payload into object form via the gleaner) and send the event
+            //on its way (the connection manager should be downstream this
+            //event path
 
-        Registration myRegistration = gleaner.getMyRegistration();
-        Registration peerRegistration = gleaner.createRegistrationFromString((String)event.getRemoteEvent().getPayload());
+            Registration myRegistration = gleaner.getMyRegistration();
+            Registration peerRegistration = gleaner.createRegistrationFromString((String)event.getRemoteEvent().getPayload());
 
-        log.trace("myRegistration = ["+myRegistration+"]");
-        log.trace("peerRegistration = ["+peerRegistration+"]");
+            log.trace("myRegistration = ["+myRegistration+"]");
+            log.trace("peerRegistration = ["+peerRegistration+"]");
         
-        Set<Node> updatedNodes = mergeNodes(myRegistration,peerRegistration);
+            Set<Node> updatedNodes = mergeNodes(myRegistration,peerRegistration);
 
-        log.trace("Nodes merged");
+            log.trace("Nodes merged");
         
-        gleaner.saveRegistration();
+            gleaner.saveRegistration();
 
-        log.info("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
-        processedMap.put(sourceServiceURL, payloadChecksum);
+            log.info("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
+            processedMap.put(sourceServiceURL, payloadChecksum);
 
-        if(updatedNodes.isEmpty()) {
-            log.trace("No New Information To Share...");
-            return true;
-        }
-        log.trace("Sending off event with registry update digest data");
-        enqueueESGEvent(new ESGEvent(this,
-                                     new RegistryUpdateDigest(gleaner.toString(), 
-                                                              gleaner.getMyChecksum(),
-                                                              updatedNodes),
-                                     "Updated / Merged Registration State"));
-        lastDispatchTime = (new Date()).getTime();
+            if(updatedNodes.isEmpty()) {
+                log.trace("No New Information To Share...");
+                return true;
+            }
+            log.trace("Sending off event with registry update digest data");
+            enqueueESGEvent(new ESGEvent(this,
+                                         new RegistryUpdateDigest(gleaner.toString(), 
+                                                                  gleaner.getMyChecksum(),
+                                                                  updatedNodes),
+                                         "Updated / Merged Registration State"));
+            lastDispatchTime = (new Date()).getTime();
         }
 
         return true;
