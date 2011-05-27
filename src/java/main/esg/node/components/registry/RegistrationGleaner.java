@@ -122,10 +122,28 @@ public class RegistrationGleaner {
             log.error(e);
         }
         registrationPath = props.getProperty("node.manager.app.home",".")+File.separator;
+        readMyNodeType();
+    }
 
+    /**
+       The node type value returned is a string of an int
+       that represents a bit vector corresponding to an installation type
+       see the esg-node install script for the values.
+       <p>
+       DATA_BIT=4<br>
+       INDEX_BIT=8<br>
+       IDP_BIT=16<br>
+       COMPUTE_BIT=32<br>
+    */
+    public String getMyNodeType() { return nodeTypeValue; }
+
+    /**
+       Reads the node type from the configuration file that contains it
+     */
+    private String readMyNodeType() {
+        nodeTypeValue = null;
         if (null != (configDir = System.getenv().get("ESGF_HOME"))) {
             configDir = configDir+File.separator+"config";
-            nodeTypeValue = null;
             try {
                 quickHash = new QuickHash("SHA1");
                 File configTypeFile = new File(configDir+File.separator+"config_type");
@@ -133,6 +151,7 @@ public class RegistrationGleaner {
                     BufferedReader in = new BufferedReader(new FileReader(configTypeFile));
                     try{
                         nodeTypeValue = in.readLine().trim();
+                        log.trace("node type = "+nodeTypeValue);
                     }catch(java.io.IOException ex) {
                         log.error(ex);
                     }finally {
@@ -143,6 +162,7 @@ public class RegistrationGleaner {
                 log.error(t);
             }
         }
+        return nodeTypeValue;
     }
     
     
@@ -156,7 +176,7 @@ public class RegistrationGleaner {
             log.error("Registration is ["+registration+"]"); 
             return success;
         }
-        log.info("Saving registration information for to "+ registrationPath+this.registrationFile);
+        log.info("Saving registration information to "+ registrationPath+this.registrationFile);
         try{
             if(dirty) registration.setTimeStamp((new Date()).getTime());
             JAXBContext jc = JAXBContext.newInstance(Registration.class);
@@ -179,18 +199,30 @@ public class RegistrationGleaner {
             if( (null != (endpoint=props.getProperty("las.endpoint"))) &&
                 (new File(props.getProperty("las.app.home"))).exists() ) {
                 LasSistersGleaner lasSisterGleaner = new LasSistersGleaner(props); 
+                log.trace("registration="+registration);
+                log.trace("registration has ("+registration.getNode().size()+") nodes");
+                log.trace("lasSisterGleaner="+lasSisterGleaner);
+                log.trace("endpoint="+endpoint);
                 lasSisterGleaner.appendToMyLasServersFromRegistration(registration).saveLasServers();
+            }else{
+                log.warn("Could not get las information to save for some reason");
             }
         }catch(Exception e) {
             log.error(e);
+            log.trace("props="+props);
+            if(log.isTraceEnabled()) e.printStackTrace();
         }
         
         //pull from registry to create idp whilelist file.
         try{
             IdpWhitelistGleaner idpWhitelistGleaner = new IdpWhitelistGleaner(props); 
+            log.trace("registration="+registration);
+            log.trace("idpWhitelistGleaner="+idpWhitelistGleaner);
             idpWhitelistGleaner.appendToMyIdpWhitelistFromRegistration(registration).saveIdpWhitelist();
         }catch(Exception e) {
             log.error(e);
+            log.trace("props="+props);
+            if(log.isTraceEnabled()) e.printStackTrace();
         }
         
         return success;
@@ -303,9 +335,9 @@ public class RegistrationGleaner {
             node.setTimeStamp(timestamp);
             node.setVersion(props.getProperty("version"));
             node.setRelease(props.getProperty("release"));
-            node.setNodeType(nodeTypeValue);
+            node.setNodeType(readMyNodeType());
             node.setDefaultPeer(props.getProperty("esgf.default.peer","pcmdi3.llnl.gov"));
-            node.setAdminPeer(props.getProperty("myproxy.endpoint"));
+            node.setAdminPeer(props.getProperty("myproxy.endpoint").split(":",2)[0]); //remove port if present
 
             //What is this ?
             CA ca = new CA();
@@ -432,8 +464,12 @@ public class RegistrationGleaner {
                 if( (null != (endpoint=props.getProperty("las.endpoint"))) &&
                     (new File(props.getProperty("las.app.home"))).exists() ) {
                     LASService las = new LASService();
+                    log.trace("Setting LAS endpoint to "+endpoint);
                     las.setEndpoint(endpoint);
+                    log.trace("Setting LAS service to "+las);
                     node.setLASService(las);
+                }else {
+                    log.trace("Could not set las information in node ["+node+"]");
                 }
             }catch(Throwable t) {
                 log.error(t);

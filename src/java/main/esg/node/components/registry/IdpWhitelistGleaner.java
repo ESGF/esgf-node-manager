@@ -144,13 +144,17 @@ public class IdpWhitelistGleaner {
     */
     public synchronized IdpWhitelistGleaner appendToMyIdpWhitelistFromRegistration(Registration registration) {
         log.info("Creating my IDP whitelist representation...");
+        log.error("Registration is ["+registration+"]");
         try{
             //NOTE: Entries stored in the registration are dedup'ed so no worries here.
+            log.trace("Registration has ("+registration.getNode().size()+") nodes");
             for(Node node : registration.getNode()) {
                 idps.getValue().add(node.getOpenIDProvider().getEndpoint());
             }
         } catch(Exception e) {
             log.error(e);
+            e.printStackTrace();
+            if(log.isTraceEnabled()) e.printStackTrace();
         }
         
         return this;

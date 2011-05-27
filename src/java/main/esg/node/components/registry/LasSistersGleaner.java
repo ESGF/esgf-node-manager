@@ -143,14 +143,18 @@ public class LasSistersGleaner {
     */
     public synchronized LasSistersGleaner appendToMyLasServersFromRegistration(Registration registration) {
         log.info("Creating my LAS LasServers representation...");
+        log.error("Registration is ["+registration+"]");
         try{
             LASService service = null; //the LASService entry from the registration -via-> node
             LasServer sister = null;   //Local servers xml element
 
             //NOTE: Entries stored in the registration are dedup'ed so no worries here.
+            log.trace("Registration has ("+registration.getNode().size()+") nodes");
             for(Node node : registration.getNode()) {
                 service = node.getLASService();
+                log.trace("service="+service);
                 sister = new LasServer();
+                log.trace("sister="+sister);
                 sister.setName(node.getShortName());
                 sister.setUrl(service.getEndpoint());
                 servers.getLasServer().add(sister);
@@ -158,6 +162,7 @@ public class LasSistersGleaner {
 
         } catch(Exception e) {
             log.error(e);
+            e.printStackTrace();
         }
         
         return this;

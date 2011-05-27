@@ -68,6 +68,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.TreeSet;
 import java.util.Comparator;
+import java.util.Date;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -99,6 +100,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     private Map<String,String> processedMap = null;
     private Map<String,Long> removedMap = null;
     private NodeHostnameComparator nodecomp = null;
+    private long lastDispatchTime = -1L;
 
     public ESGFRegistry(String name) {
         super(name);
@@ -125,29 +127,56 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     private void startRegistry() {
         log.trace("launching registry timer");
         long delay  = Long.parseLong(props.getProperty("registry.initialDelay","0"));
-        long period = Long.parseLong(props.getProperty("registry.period","1800")); //every 30 mins
+        final long period = Long.parseLong(props.getProperty("registry.period","1800")); //every 30 mins
         log.trace("registry delay:  "+delay+" sec");
         log.trace("registry period: "+period+" sec");
 	
+        lastDispatchTime = (new Date()).getTime();
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
                 public final void run() {
-                    //log.trace("Checking for any new node information... [busy? "+ESGFRegistry.this.isBusy+"]");
-                    if(!ESGFRegistry.this.isBusy) {
-                        ESGFRegistry.this.isBusy = true;
-                        synchronized(gleaner) {
+                    //If I have not dispatched any information to
+                    //another peer in "period" seconds then touch the
+                    //registry (give a new timestamp and thus a new
+                    //checksum) and send out to share my view with
+                    //others. The idea here is to only send out your
+                    //state if you have been inactive for more than
+                    //"period" time - anecdotal evidence that the
+                    //network has reached quiescence.  This avoids the
+                    //case where some node has already pushed their
+                    //state after quiescense and as such starts the
+                    //gossip dominoes, which gets here and you send
+                    //out your state, but without this conditional
+                    //here, then I would in turn send out my state
+                    //after the blind elapsing of the period and the
+                    //do the gossip cascade again... it makes for a
+                    //noisier network.  So now nodes will deal with
+                    //one cascade at a time-ish. ;-)
 
-                            //"touch" the registration.xml file (update timestamp via call to createMyRegistration, and resave)
-                            gleaner.createMyRegistration().saveRegistration();
+                    //Sidebar: There could potentially cause a race condition on
+                    //lastDispatchTime since longs are not required to
+                    //be dealt with in an atomic way by the VM, but it
+                    //won't hurt a thing.
+                    //-gavin
+                    if (((new Date()).getTime() - lastDispatchTime) > (period*1000)) {
+                        if(!ESGFRegistry.this.isBusy) {
+                            ESGFRegistry.this.isBusy = true;
 
-                            log.trace("Sending off event with registry update digest data [from registry timer - \"touched\" registration]");
-                            enqueueESGEvent(new ESGEvent(this,
-                                                         new RegistryUpdateDigest(gleaner.toString(), 
-                                                                                  gleaner.getMyChecksum(),
-                                                                                  new HashSet<Node>()),
-                                                         "Updated / Merged Registration State"));
+                            synchronized(gleaner) {
+                                //"touch" the registration.xml file (update timestamp via call to createMyRegistration, and resave)
+                                gleaner.createMyRegistration().saveRegistration();
+
+                                log.trace("Sending off event with registry update digest data [from registry timer - \"touched\" registration]");
+                                enqueueESGEvent(new ESGEvent(this,
+                                                             new RegistryUpdateDigest(gleaner.toString(), 
+                                                                                      gleaner.getMyChecksum(),
+                                                                                      new HashSet<Node>()),
+                                                             "Touched Registration State"));
+                            }
+                            ESGFRegistry.this.isBusy = false;
                         }
-                        ESGFRegistry.this.isBusy = false;
+                    }else{
+                        log.trace("won't touch and send state - too soon after last dispatch (quiescence, for me, was not reached)");
                     }
                 }
             },delay*1000,period*1000);
@@ -337,6 +366,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                                                               gleaner.getMyChecksum(),
                                                               updatedNodes),
                                      "Updated / Merged Registration State"));
+        lastDispatchTime = (new Date()).getTime();
         }
 
         return true;
