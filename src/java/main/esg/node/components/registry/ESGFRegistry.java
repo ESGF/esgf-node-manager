@@ -125,7 +125,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     private void startRegistry() {
         log.trace("launching registry timer");
         long delay  = Long.parseLong(props.getProperty("registry.initialDelay","0"));
-        long period = Long.parseLong(props.getProperty("registry.period","86405")); //Daily
+        long period = Long.parseLong(props.getProperty("registry.period","1800")); //every 30 mins
         log.trace("registry delay:  "+delay+" sec");
         log.trace("registry period: "+period+" sec");
 	
@@ -135,8 +135,18 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     //log.trace("Checking for any new node information... [busy? "+ESGFRegistry.this.isBusy+"]");
                     if(!ESGFRegistry.this.isBusy) {
                         ESGFRegistry.this.isBusy = true;
-                        gleaner.createMyRegistration().saveRegistration();
-                        removedMap.clear();
+                        synchronized(gleaner) {
+
+                            //"touch" the registration.xml file (update timestamp via call to createMyRegistration, and resave)
+                            gleaner.createMyRegistration().saveRegistration();
+
+                            log.trace("Sending off event with registry update digest data [from registry timer - \"touched\" registration]");
+                            enqueueESGEvent(new ESGEvent(this,
+                                                         new RegistryUpdateDigest(gleaner.toString(), 
+                                                                                  gleaner.getMyChecksum(),
+                                                                                  new HashSet<Node>()),
+                                                         "Updated / Merged Registration State"));
+                        }
                         ESGFRegistry.this.isBusy = false;
                     }
                 }
@@ -351,17 +361,19 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         ESGJoinEvent event = (ESGJoinEvent)esgEvent;
 
         if(event.getJoiner() instanceof ESGPeer) {
+            String peerUrl = null;
+            String peerHostname = Utils.asHostname(peerUrl = event.getJoiner().getName());
             if(event.hasLeft()) {
                 log.trace("Detected That A Peer Node Has Left: "+event.getJoiner().getName());
-                String peerHostname = null;
-                String peerUrl = null;
                 synchronized(gleaner) {
-                    if(gleaner.removeNode( peerHostname = Utils.asHostname(peerUrl = event.getJoiner().getName()))) {
+                    if(gleaner.removeNode(peerHostname)) {
                         processedMap.remove(peerUrl);
                         removedMap.put(peerHostname,event.getTimeStamp());
                         gleaner.saveRegistration();
                     }
                 }
+            }else if(event.hasJoined()) {
+                removedMap.remove(peerHostname);
             }
         }
 
