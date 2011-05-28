@@ -131,7 +131,6 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         log.trace("registry delay:  "+delay+" sec");
         log.trace("registry period: "+period+" sec");
     
-        lastDispatchTime = (new Date()).getTime();
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
                 public final void run() {
@@ -172,6 +171,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                                                                                       gleaner.getMyChecksum(),
                                                                                       new HashSet<Node>()),
                                                              "Touched Registration State"));
+                                lastDispatchTime = (new Date()).getTime();
                             }
                             ESGFRegistry.this.isBusy = false;
                         }
@@ -350,7 +350,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             Set<Node> updatedNodes = mergeNodes(myRegistration,peerRegistration);
 
             log.trace("Nodes merged");
-        
+
             gleaner.saveRegistration();
 
             log.info("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
