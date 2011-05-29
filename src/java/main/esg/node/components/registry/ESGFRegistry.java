@@ -165,7 +165,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                                 //"touch" the registration.xml file (update timestamp via call to createMyRegistration, and resave)
                                 gleaner.createMyRegistration().saveRegistration();
 
-                                log.trace("Sending off event with registry update digest data [from registry timer - \"touched\" registration]");
+                                log.trace("Sending off event with registry update digest (rud) data [from registry timer - \"touched\" registration]");
                                 enqueueESGEvent(new ESGEvent(this,
                                                              new RegistryUpdateDigest(gleaner.toString(), 
                                                                                       gleaner.getMyChecksum(),

@@ -182,6 +182,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         //This will transition from active map to inactive map
         timer.schedule(new TimerTask() { 
                 public final void run() {
+                    log.trace("Re-Pushing My Last Registry State");
                     sendOutRegistryState();
                 }
             },delay*1000,period*1000);
