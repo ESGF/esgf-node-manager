@@ -173,7 +173,7 @@ public class RegistrationGleaner {
     public synchronized boolean saveRegistration(Registration registration) {
         boolean success = false;
         if (registration == null) {
-            log.error("Registration is ["+registration+"]"); 
+            log.error("Registration is null ? ["+registration+"]"); 
             return success;
         }
         log.info("Saving registration information to "+ registrationPath+this.registrationFile);
@@ -199,10 +199,10 @@ public class RegistrationGleaner {
             if( (null != (endpoint=props.getProperty("las.endpoint"))) &&
                 (new File(props.getProperty("las.app.home"))).exists() ) {
                 LasSistersGleaner lasSisterGleaner = new LasSistersGleaner(props); 
-                log.trace("registration="+registration);
+                log.trace("My LAS endpoint = ["+endpoint+"]");
+                log.trace("Current Registration = ["+registration+"]");
                 log.trace("registration has ("+registration.getNode().size()+") nodes");
                 log.trace("lasSisterGleaner="+lasSisterGleaner);
-                log.trace("endpoint="+endpoint);
                 lasSisterGleaner.appendToMyLasServersFromRegistration(registration).saveLasServers();
             }else{
                 log.warn("Could not get las information to save for some reason");
@@ -585,6 +585,7 @@ public class RegistrationGleaner {
     }
     
     public void sync() {
+        log.trace("sync'ing...");
         if(null == myRegistration) return;
         if(null == myNodeMap) myNodeMap = new HashMap<String,Node>();
         for(Node node : myRegistration.getNode()) {

@@ -119,7 +119,7 @@ public class IdpWhitelistGleaner {
     public synchronized boolean saveIdpWhitelist(IdpWhitelist idps) {
         boolean success = false;
         if (idps == null) {
-            log.error("idps (whitelist) is ["+idps+"]"); 
+            log.error("idps (whitelist) is null ? ["+idps+"]"); 
             return success;
         }
         log.info("Saving IDP Whitelist information to "+idpWhitelistPath+idpWhitelistFile);
@@ -146,11 +146,23 @@ public class IdpWhitelistGleaner {
         log.info("Creating my IDP whitelist representation...");
         log.error("Registration is ["+registration+"]");
         try{
-            //NOTE: Entries stored in the registration are dedup'ed so no worries here.
-            log.trace("Registration has ("+registration.getNode().size()+") nodes");
+            OpenIDProvider idp = null;  //The OpenidProvider service entry from registration
+
+            //NOTE: Entries stored in the registration are dedup'ed so no worries here ;-)
+            int numNodes = registration.getNode().size();
+            int idpNodes = 0;
+            log.trace("Registration has ("+numNodes+") nodes");
             for(Node node : registration.getNode()) {
-                idps.getValue().add(node.getOpenIDProvider().getEndpoint());
+                //TODO - put in sanity check for nodeType integrity
+                idp = node.getOpenIDProvider();
+                if (null == idp) {
+                    log.trace(node.getShortName()+" does not run an OpenIDProvider service.");
+                    continue;
+                }
+                idps.getValue().add(idp.getEndpoint());
+                idpNodes++;
             }
+            log.trace(idpNodes+" of "+numNodes+" gleaned");
         } catch(Exception e) {
             log.error(e);
             e.printStackTrace();
@@ -160,8 +172,9 @@ public class IdpWhitelistGleaner {
         return this;
     }
     
-    public void clear() {
+    public IdpWhitelistGleaner clear() {
         if(this.idps != null) this.idps = new IdpWhitelist();
+        return this;
     }
 
     public synchronized IdpWhitelistGleaner loadMyIdpWhitelist() {

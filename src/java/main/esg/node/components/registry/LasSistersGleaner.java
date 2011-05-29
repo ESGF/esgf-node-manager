@@ -148,18 +148,24 @@ public class LasSistersGleaner {
             LASService service = null; //the LASService entry from the registration -via-> node
             LasServer sister = null;   //Local servers xml element
 
-            //NOTE: Entries stored in the registration are dedup'ed so no worries here.
-            log.trace("Registration has ("+registration.getNode().size()+") nodes");
+            //NOTE: Entries stored in the registration are dedup'ed so no worries here ;-)
+            int numNodes = registration.getNode().size();
+            int lasNodes = 0;
+            log.trace("Registration has ("+numNodes+") nodes");
             for(Node node : registration.getNode()) {
+                //TODO - put in sanity check for nodeType integrity
                 service = node.getLASService();
-                log.trace("service="+service);
+                if (null == service) {
+                    log.trace(node.getShortName()+" does not run an LAS service.");
+                    continue;
+                }
                 sister = new LasServer();
-                log.trace("sister="+sister);
                 sister.setName(node.getShortName());
                 sister.setUrl(service.getEndpoint());
                 servers.getLasServer().add(sister);
+                lasNodes++;
             }
-
+            log.trace(lasNodes+" of "+numNodes+" gleaned");
         } catch(Exception e) {
             log.error(e);
             e.printStackTrace();
@@ -167,9 +173,10 @@ public class LasSistersGleaner {
         
         return this;
     }
-    
-    public void clear() {
+
+    public LasSistersGleaner clear() {
         if(this.servers != null) this.servers = new LasServers();
+        return this;
     }
 
     public synchronized LasSistersGleaner loadMyLasServers() {
