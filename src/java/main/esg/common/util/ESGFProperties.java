@@ -50,16 +50,19 @@ package esg.common.util;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
+
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 public class ESGFProperties extends Properties {
     
-    private final Log LOG = LogFactory.getLog(this.getClass());
+    private final Log log = LogFactory.getLog(this.getClass());
 
     /**
      * 
@@ -75,8 +78,72 @@ public class ESGFProperties extends Properties {
         File propertyFile = new File( System.getenv().get("ESGF_HOME")+"/config/esgf.properties" );
         if (!propertyFile.exists()) propertyFile = new File("/esg/config/esgf.properties");
         this.load( new FileInputStream(propertyFile) );
-        if (LOG.isInfoEnabled()) LOG.info("Loading properties from file: "+propertyFile.getAbsolutePath());
+        if (log.isInfoEnabled()) log.info("Loading properties from file: "+propertyFile.getAbsolutePath());
 
     }
+
+    private String securityAdminPassword = null;
+
+    public String getAdminPassword() { return this.getAdminPassword(false); }
+    public String getAdminPassword(boolean force) { 
+        if((securityAdminPassword == null) || force) {
+            securityAdminPassword = readFromFile(".esgf_pass"); 
+        }
+        return securityAdminPassword;
+    }
+    public String loadAdminPasswordAs(String propertyKey) {
+        return loadAdminPasswordAs(propertyKey,false);
+    }
+    public String loadAdminPasswordAs(String propertyKey, boolean force) {
+        this.setProperty(propertyKey,getAdminPassword(force));
+        return this.getProperty(propertyKey);
+    }
+
+    private String securityDatabasePassword = null;
+
+    public String getDatabasePassword() { return this.getDatabasePassword(false); }
+    public String getDatabasePassword(boolean force) { 
+        if((securityDatabasePassword == null) || force) {
+            securityDatabasePassword = readFromFile(".esgf_pass"); 
+        }
+        return securityDatabasePassword;
+    }
+    public String loadDatabasePasswordAs(String propertyKey) {
+        return loadDatabasePasswordAs(propertyKey,false);
+    }
+    public String loadDatabasePasswordAs(String propertyKey, boolean force) {
+        this.setProperty(propertyKey,getDatabasePassword(force));
+        return this.getProperty(propertyKey);
+    }
+
+
+    /**
+       Reads a single-line config file in ESGF_HOME/config directory
+     */
+    private String readFromFile(String filename) {
+        String value = null;
+        String configDir = null;
+        if (null != (configDir = System.getenv().get("ESGF_HOME"))) {
+            configDir = configDir+File.separator+"config";
+            try {
+                File configFile = new File(configDir+File.separator+filename);
+                if(configFile.exists()) {
+                    BufferedReader in = new BufferedReader(new FileReader(configFile));
+                    try{
+                        value = in.readLine().trim();
+                        log.trace("data = "+value);
+                    }catch(java.io.IOException ex) {
+                        log.error(ex);
+                    }finally {
+                        if(null != in) in.close();
+                    }
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
+        }
+        return value;
+    }
+
 
 }
