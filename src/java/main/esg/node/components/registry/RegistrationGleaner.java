@@ -178,7 +178,7 @@ public class RegistrationGleaner {
         }
         log.info("Saving registration information to "+ registrationPath+this.registrationFile);
         try{
-            if(dirty) registration.setTimeStamp((new Date()).getTime());
+            registration.setTimeStamp((new Date()).getTime());
             JAXBContext jc = JAXBContext.newInstance(Registration.class);
             Marshaller m = jc.createMarshaller();
             m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
@@ -277,7 +277,7 @@ public class RegistrationGleaner {
             log.error("Registration is ["+myRegistration+"]"); 
             return null;
         }
-        log.info("Writing registration information to String, for "+myRegistration.getNode().get(0).getHostname());
+        log.trace("Writing registration information to String, for "+myRegistration.getNode().get(0).getHostname());
         try{
             StringWriter sw = new StringWriter();
             JAXBContext jc = JAXBContext.newInstance(Registration.class);
@@ -293,8 +293,8 @@ public class RegistrationGleaner {
             log.trace("Checksumming xml content...");
             String lastChecksum = myChecksum;
             myChecksum = quickHash.sum(sw.toString());
-            if(!myChecksum.equals(lastChecksum)) dirty = true;
-            log.trace("Checksum of xml string is: "+myChecksum+(dirty ? " (modified)" : " (unchanged"));
+            dirty = (!myChecksum.equals(lastChecksum));
+            log.debug("Checksum of xml string is: "+myChecksum+(dirty ? " (modified)" : " (unchanged"));
         }catch(Exception e) {
             log.error(e);
         }
@@ -555,7 +555,7 @@ public class RegistrationGleaner {
     }
     
     private String fetchMyPemCert() {
-        log.info("Fetching PEM Certificate...");
+        log.trace("Fetching PEM Certificate...");
         
         byte[] buffer = null;
         java.io.BufferedInputStream f = null;
@@ -580,7 +580,7 @@ public class RegistrationGleaner {
         } finally {
             if (f != null) try { f.close(); } catch (java.io.IOException ignored) { }
         }
-        log.info("Certificate Fetched!");
+        log.trace("Certificate Fetched!");
         return new String(buffer);
     }
     

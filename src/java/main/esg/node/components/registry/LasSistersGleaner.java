@@ -121,7 +121,7 @@ public class LasSistersGleaner {
             log.error("LasServers is ["+servers+"]"); 
             return success;
         }
-        log.info("Saving LAS LasServers information to "+sistersPath+sistersFile);
+        log.trace("Saving LAS LasServers information to "+sistersPath+sistersFile);
         try{
             JAXBContext jc = JAXBContext.newInstance(LasServers.class);
             Marshaller m = jc.createMarshaller();
@@ -142,8 +142,8 @@ public class LasSistersGleaner {
        creates a local representation of this node's registration.
     */
     public synchronized LasSistersGleaner appendToMyLasServersFromRegistration(Registration registration) {
-        log.info("Creating my LAS LasServers representation...");
-        log.error("Registration is ["+registration+"]");
+        log.trace("Creating my LAS LasServers representation...");
+        log.trace("Registration is ["+registration+"]");
         try{
             LASService service = null; //the LASService entry from the registration -via-> node
             LasServer sister = null;   //Local servers xml element

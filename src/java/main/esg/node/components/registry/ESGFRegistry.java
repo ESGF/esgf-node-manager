@@ -165,9 +165,9 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                                 //"touch" the registration.xml file (update timestamp via call to createMyRegistration, and resave)
                                 gleaner.createMyRegistration().saveRegistration();
 
-                                log.trace("Sending off event with registry update digest (rud) data [from registry timer - \"touched\" registration]");
+                                log.debug("Triggering event with registry update digest (rud) data [from registry timer - \"touched\" registration]");
                                 enqueueESGEvent(new ESGEvent(this,
-                                                             new RegistryUpdateDigest(gleaner.toString(), 
+                                                             new RegistryUpdateDigest(gleaner.toString(),
                                                                                       gleaner.getMyChecksum(),
                                                                                       new HashSet<Node>()),
                                                              "Touched Registration State"));
@@ -176,7 +176,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                             ESGFRegistry.this.isBusy = false;
                         }
                     }else{
-                        log.trace("won't touch and send state - too soon after last dispatch (quiescence, for me, was not reached)");
+                        log.debug("Won't touch and send state - too soon after last dispatch (quiescence, for me, was not reached)");
                     }
                 }
             },delay*1000,period*1000);
@@ -295,7 +295,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
 
         log.trace("updatedNodes: ("+updatedNodes.size()+")");
         for(Node n : updatedNodes) {
-            log.trace("updated node - "+n.getHostname());
+            log.debug("updating registry with info on: "+n.getHostname());
         }
         
         myList.clear();
@@ -346,7 +346,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
 
             log.trace("myRegistration = ["+myRegistration+"]");
             log.trace("peerRegistration = ["+peerRegistration+"]");
-        
+            
             Set<Node> updatedNodes = mergeNodes(myRegistration,peerRegistration);
 
             log.trace("Nodes merged");
@@ -355,17 +355,20 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
 
             log.info("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
             processedMap.put(sourceServiceURL, payloadChecksum);
-
+            
             if(updatedNodes.isEmpty()) {
-                log.trace("No New Information To Share...");
+                log.debug("No New Information To Share.");
                 return true;
             }
+            
             log.trace("Sending off event with registry update digest data");
-            enqueueESGEvent(new ESGEvent(this,
-                                         new RegistryUpdateDigest(gleaner.toString(), 
-                                                                  gleaner.getMyChecksum(),
-                                                                  updatedNodes),
-                                         "Updated / Merged Registration State"));
+            ESGEvent rudEvent = new ESGEvent(this,
+                                             new RegistryUpdateDigest(gleaner.toString(), 
+                                                                      gleaner.getMyChecksum(),
+                                                                      updatedNodes),
+                                             "Updated / Merged Registration State");
+            rudEvent.setRemoteEvent(event.getRemoteEvent());
+            enqueueESGEvent(rudEvent);
             lastDispatchTime = (new Date()).getTime();
         }
 
@@ -394,7 +397,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             String peerUrl = null;
             String peerHostname = Utils.asHostname(peerUrl = event.getJoiner().getName());
             if(event.hasLeft()) {
-                log.trace("Detected That A Peer Node Has Left: "+event.getJoiner().getName());
+                log.debug("Detected That A Peer Node Has Left: "+event.getJoiner().getName());
                 synchronized(gleaner) {
                     if(gleaner.removeNode(peerHostname)) {
                         processedMap.remove(peerUrl);

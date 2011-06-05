@@ -182,7 +182,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         //This will transition from active map to inactive map
         timer.schedule(new TimerTask() { 
                 public final void run() {
-                    log.trace("Re-Pushing My Last Registry State");
+                    log.debug("(Timer) Re-Pushing My Last Registry State");
                     sendOutRegistryState();
                 }
             },delay*1000,period*1000);
@@ -239,7 +239,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                                                                 registration,
                                                                 ephemeralGleaner.getMyChecksum(),
                                                                 Utils.nextSeq(),
-                                                                0));
+                                                                5));
             log.info("Bootstrapping... sending out my registration... ");
             log.trace("My Registration is:"+ registration);
             ephemeralGleaner = null; //gc niceness.
@@ -267,7 +267,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                                                             xmlDocument,
                                                             xmlChecksum,
                                                             Utils.nextSeq(),
-                                                            0);
+                                                            5);
 
         //------------
         //If we have no peers we have to resort to using our defaultPeer...
@@ -337,7 +337,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 //in Java it's hard)
 
                 ESGPeer chosenPeer = peerList.get(idx);
-                log.trace("Selected: "+chosenPeer.getName());
+                log.debug("Selected Peer: "+chosenPeer.getName());
                 chosenPeer.handleESGRemoteEvent(myRegistryState);
                 lastIdx = idx;
                 numDispatchedPeers++;
@@ -423,9 +423,10 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             return false;
         }
 
-        rEvent.decTTL();
         if(rEvent.isValid()) {
             targetPeer.handleESGRemoteEvent(ESGEventHelper.createProxiedOutboundEvent(rEvent));
+        }else{
+            log.warn("Will NOT send invalid RemoteEvent "+rEvent);
         }
         event = null; //gc hint!
     

@@ -84,8 +84,8 @@ public class ESGRemoteEvent implements java.io.Serializable {
     private Object payload = null;
     private String checksum = null;
     private long   seqNum = 0L;
-    private int    ttl = 1; //a good spread in a network about the size of 2^5ish nodes
-
+    private int    ttl = 6; //a good spread in a network about the size of 2^5ish nodes
+    
     public ESGRemoteEvent(String source, int messageType, Object payload, String checksum, Long seqNum, int ttl) {
         this.source  = source;
         this.messageType = messageType;
@@ -93,6 +93,11 @@ public class ESGRemoteEvent implements java.io.Serializable {
         this.checksum = checksum;
         this.seqNum = seqNum;
         this.ttl = ttl;
+    }
+
+    //copy Constructor...
+    public ESGRemoteEvent(ESGRemoteEvent otherEvent) {
+        this(otherEvent.source, otherEvent.messageType, otherEvent.payload, otherEvent.checksum, otherEvent.seqNum, otherEvent.ttl);
     }
 
     public ESGRemoteEvent(String source, int messageType, Object payload, long seqNum, int ttl) {
@@ -119,7 +124,13 @@ public class ESGRemoteEvent implements java.io.Serializable {
 
     //call me before sending on to next hop
     public void decTTL() { ttl--; }
-    public boolean isValid() { return (this.ttl > 0); }
+    public boolean checkTTL() { return (this.ttl > 0); }
+    public boolean isValid() { return checkTTL(); }
+    public int copyTTLFrom(ESGRemoteEvent otherRemoteEvent) {
+        this.ttl = otherRemoteEvent.ttl;
+        return this.ttl;
+    }
+    
 
     public String toString() { return "RE - s:["+source+"] m:["+messageType+"] n:["+seqNum+"] t:["+ttl+"] p:["+payload+"]"; }
 

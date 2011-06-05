@@ -122,7 +122,7 @@ public class IdpWhitelistGleaner {
             log.error("idps (whitelist) is null ? ["+idps+"]"); 
             return success;
         }
-        log.info("Saving IDP Whitelist information to "+idpWhitelistPath+idpWhitelistFile);
+        log.trace("Saving IDP Whitelist information to "+idpWhitelistPath+idpWhitelistFile);
         try{
             JAXBContext jc = JAXBContext.newInstance(IdpWhitelist.class);
             Marshaller m = jc.createMarshaller();
@@ -143,8 +143,8 @@ public class IdpWhitelistGleaner {
        creates a local representation of this node's registration.
     */
     public synchronized IdpWhitelistGleaner appendToMyIdpWhitelistFromRegistration(Registration registration) {
-        log.info("Creating my IDP whitelist representation...");
-        log.error("Registration is ["+registration+"]");
+        log.trace("Creating my IDP whitelist representation...");
+        log.trace("Registration is ["+registration+"]");
         try{
             OpenIDProvider idp = null;  //The OpenidProvider service entry from registration
 
