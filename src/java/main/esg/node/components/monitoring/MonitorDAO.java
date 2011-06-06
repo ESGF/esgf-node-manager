@@ -297,7 +297,7 @@ public class MonitorDAO implements Serializable {
                 key_vals = m.group(1);
                 m2 = disk_info_dsroot_keyval_pat.matcher(key_vals);
                 while (m2.find()) {
-                    log.debug("Checking... dataset_root ["+m2.group(1)+"] dir ["+m2.group(2)+"]");
+                    log.trace("Checking... dataset_root ["+m2.group(1)+"] dir ["+m2.group(2)+"]");
                     datasetRoots.put(m2.group(1),new File(m2.group(2)));
                 }
             }

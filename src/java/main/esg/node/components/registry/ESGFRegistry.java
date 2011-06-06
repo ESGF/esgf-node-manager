@@ -115,9 +115,8 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             props = new ESGFProperties();
             gleaner = new RegistrationGleaner(props);
             nodecomp = new NodeHostnameComparator();
-            processedMap = new HashMap<String,String>(); //TODO: may want to persist this and then bring it back.
+            processedMap = new HashMap<String,String>();
             removedMap = new HashMap<String,Long>();
-            startRegistry();
         }catch(java.io.IOException e) {
             System.out.println("Damn ESGFRegistry can't fire up... :-(");
             log.error(e);
@@ -125,11 +124,31 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     }
 
     private void startRegistry() {
-        log.trace("launching registry timer");
-        long delay  = Long.parseLong(props.getProperty("registry.initialDelay","0"));
-        final long period = Long.parseLong(props.getProperty("registry.period","1800")); //every 30 mins
-        log.trace("registry delay:  "+delay+" sec");
-        log.trace("registry period: "+period+" sec");
+
+        //----------------------------------
+        log.info("Loading and Initilizing peers");
+        try{
+            gleaner.loadMyRegistration();
+        }catch(ESGFRegistryException e) {
+            log.warn(e.getMessage());
+            gleaner.createMyRegistration();
+        }
+        Set<Node> loadedNodes = new TreeSet<Node>(nodecomp);
+        loadedNodes.addAll(gleaner.getMyRegistration().getNode());
+        
+        enqueueESGEvent(new ESGEvent(this,
+                                     new RegistryUpdateDigest(gleaner.toString(),
+                                                              gleaner.getMyChecksum(),
+                                                              loadedNodes),
+                                     "Initializing Peers..."));
+        lastDispatchTime = (new Date()).getTime();
+        //----------------------------------
+
+        log.trace("Launching registry timer");
+        long delay  = Long.parseLong(props.getProperty("registry.initialDelay","10"));
+        final long period = Long.parseLong(props.getProperty("registry.period","300")); //every 5 mins
+        log.debug("registry delay:  "+delay+" sec");
+        log.debug("registry period: "+period+" sec");
     
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
@@ -157,15 +176,17 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     //be dealt with in an atomic way by the VM, but it
                     //won't hurt a thing.
                     //-gavin
-                    if (((new Date()).getTime() - lastDispatchTime) > (period*1000)) {
+                    Date now = new Date();
+                    if ((now.getTime() - lastDispatchTime) > (period*1000)) {
                         if(!ESGFRegistry.this.isBusy) {
                             ESGFRegistry.this.isBusy = true;
 
                             synchronized(gleaner) {
                                 //"touch" the registration.xml file (update timestamp via call to createMyRegistration, and resave)
-                                gleaner.createMyRegistration().saveRegistration();
+                                log.debug("["+now+"] - Touching registration... and re-posting");
 
-                                log.debug("Triggering event with registry update digest (rud) data [from registry timer - \"touched\" registration]");
+                                gleaner.saveRegistration();
+
                                 enqueueESGEvent(new ESGEvent(this,
                                                              new RegistryUpdateDigest(gleaner.toString(),
                                                                                       gleaner.getMyChecksum(),
@@ -248,25 +269,26 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         Collections.sort(myList,nodecomp);
         Collections.sort(otherList,nodecomp);
 
-        log.trace("Collections sorted...");
-
         Set<Node> newNodes = new TreeSet<Node>(nodecomp);
         Set<Node> updatedNodes = new HashSet<Node>();
-        
+
         int i=0;
         int j=0;
         while ((i < myList.size()) && (j < otherList.size())) {
             if( (nodecomp.compare(myList.get(i),otherList.get(j))) == 0 ) {
                 if((myList.get(i)).getTimeStamp() >= (otherList.get(j)).getTimeStamp()) {
                     newNodes.add(myList.get(i));
+                    log.trace("-- Keeping local entry for "+myList.get(i));
                 }else {
                     newNodes.add(otherList.get(j));
                     updatedNodes.add(otherList.get(j));
+                    log.trace("-- Updating with remote entry for "+myList.get(i));
                 }
                 i++;
                 j++;
             }else if ( (nodecomp.compare(myList.get(i),otherList.get(j))) < 0 ) {
                 newNodes.add(myList.get(i));
+                log.trace("-  Keeping local entry for "+myList.get(i));
                 i++;
             }else{
                 if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
@@ -274,13 +296,16 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     removedMap.remove(removedNodeHostname);
                     newNodes.add(otherList.get(j));
                     updatedNodes.add(otherList.get(j));
+                    //log.trace("-  Discarding remote entry, "+otherList.get(j)+", as it was removed here since this external registration's date");
                 }
                 j++;
             }
         }
 
         while( i < myList.size() ) {
-            newNodes.add(myList.get(i++));
+            newNodes.add(myList.get(i));
+            log.trace("   Keeping local entry for "+myList.get(i));
+            i++;
         }
 
         while( j < otherList.size() ) {
@@ -289,6 +314,9 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 removedMap.remove(removedNodeHostname);
                 newNodes.add(otherList.get(j));
                 updatedNodes.add(otherList.get(j));
+                log.trace("   Adding remote entry for "+otherList.get(j));
+            }else {
+                log.trace("   Discarding remote entry, "+otherList.get(j)+", as it was removed since this registration date ["+(removedNodeTimeStamp > otherRegistration.getTimeStamp())+"]");
             }
             j++;
         }
@@ -351,7 +379,6 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
 
             log.trace("Nodes merged");
 
-            gleaner.saveRegistration();
 
             log.info("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
             processedMap.put(sourceServiceURL, payloadChecksum);
@@ -361,6 +388,8 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 return true;
             }
             
+            gleaner.saveRegistration();
+
             log.trace("Sending off event with registry update digest data");
             ESGEvent rudEvent = new ESGEvent(this,
                                              new RegistryUpdateDigest(gleaner.toString(), 
@@ -386,6 +415,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
            (((ESGSystemEvent)esgEvent).getEventType() == ESGSystemEvent.ALL_LOADED) ) {
             log.trace("I must have missed you in the load sequence CONN_MGR... I got you now");
             addESGQueueListener(getDataNodeManager().getComponent("CONN_MGR"));
+            startRegistry();
         }
         
         if(!(esgEvent instanceof ESGJoinEvent)) return;

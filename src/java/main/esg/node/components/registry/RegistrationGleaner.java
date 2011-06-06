@@ -548,7 +548,7 @@ public class RegistrationGleaner {
             log.error(e);
         }
 
-        myRegistration = new Registration();
+        if(null == myRegistration) myRegistration = new Registration();
         myRegistration.getNode().add(node);
         myRegistration.setTimeStamp(timestamp);
         return this;
@@ -593,16 +593,20 @@ public class RegistrationGleaner {
         }
     }
     
-    public synchronized RegistrationGleaner loadMyRegistration() {
-        log.info("Loading my registration info from "+registrationPath+registrationFile);
+    public synchronized RegistrationGleaner loadMyRegistration() throws ESGFRegistryException {
+        return loadMyRegistration(registrationPath+this.registrationFile);
+    }
+
+    public synchronized RegistrationGleaner loadMyRegistration(String filename) throws ESGFRegistryException {
+        log.info("Loading my registration info from "+filename);
         try{
             JAXBContext jc = JAXBContext.newInstance(Registration.class);
             Unmarshaller u = jc.createUnmarshaller();
-            JAXBElement<Registration> root = u.unmarshal(new StreamSource(new File(registrationPath+this.registrationFile)),Registration.class);
+            JAXBElement<Registration> root = u.unmarshal(new StreamSource(new File(filename)),Registration.class);
             myRegistration = root.getValue();
             sync();
         }catch(Exception e) {
-            log.error(e);
+            throw new ESGFRegistryException("Unable to properly load local Registration from ["+filename+"]", e);
         }
         return this;
     }

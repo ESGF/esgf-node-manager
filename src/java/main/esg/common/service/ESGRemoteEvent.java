@@ -71,22 +71,24 @@ public class ESGRemoteEvent implements java.io.Serializable {
     //before I start experimenting.  Just something to get this setup
     //rolling. Besides this is old school flava right here! :-)
 
-    public static final int NOOP       = 1;
-    public static final int REGISTER   = 2;
-    public static final int UNREGISTER = 4;
-    public static final int NOTIFY     = 8;
-    public static final int HEALTH     = 16;
-    public static final int METRICS    = 32;
+    public static final int NOOP        = 1;
+    public static final int REGISTER    = 2;
+    public static final int UNREGISTER  = 4;
+    public static final int NOTIFY      = 8;
+    public static final int HEALTH      = 16;
+    public static final int METRICS     = 32;
     public static final int APPLICATION = 64;
 
-    private String source  = null; //This value is the complete URL of the originating node service
+    private String origin  = null; //This value si the complete URL of the originating node service
+    private String source  = null; //This value is the complete URL of the previous hop's node service
     private int    messageType = -1;
     private Object payload = null;
     private String checksum = null;
     private long   seqNum = 0L;
-    private int    ttl = 6; //a good spread in a network about the size of 2^5ish nodes
+    private int    ttl = 6; //a good spread in a network about the size of 2^6th-ish nodes in our federation, right?
     
     public ESGRemoteEvent(String source, int messageType, Object payload, String checksum, Long seqNum, int ttl) {
+        this.origin = source;
         this.source  = source;
         this.messageType = messageType;
         this.payload = payload;
@@ -95,9 +97,9 @@ public class ESGRemoteEvent implements java.io.Serializable {
         this.ttl = ttl;
     }
 
-    //copy Constructor...
+    //Copy Constructor... (does not change value of origin or ttl - see copy method)
     public ESGRemoteEvent(ESGRemoteEvent otherEvent) {
-        this(otherEvent.source, otherEvent.messageType, otherEvent.payload, otherEvent.checksum, otherEvent.seqNum, otherEvent.ttl);
+        this.copy(otherEvent);
     }
 
     public ESGRemoteEvent(String source, int messageType, Object payload, long seqNum, int ttl) {
@@ -115,7 +117,8 @@ public class ESGRemoteEvent implements java.io.Serializable {
     public ESGRemoteEvent(String source) { this(source,NOOP,null,null,-1L,1); }
 
     //Accessors...
-    public String getSource()  { return source;  }
+    public String getOrigin()  { return origin; }
+    public String getSource()  { return source; }
     public int    getMessageType() { return messageType; }
     public Object getPayload() { return payload; }
     public String getPayloadChecksum() { return checksum; }
@@ -126,13 +129,22 @@ public class ESGRemoteEvent implements java.io.Serializable {
     public void decTTL() { ttl--; }
     public boolean checkTTL() { return (this.ttl > 0); }
     public boolean isValid() { return checkTTL(); }
-    public int copyTTLFrom(ESGRemoteEvent otherRemoteEvent) {
-        this.ttl = otherRemoteEvent.ttl;
+    public int copyTTLFrom(ESGRemoteEvent otherEvent) {
+        this.ttl = otherEvent.ttl;
         return this.ttl;
+    }
+
+    //this is how to change the state wholesale.
+    public ESGRemoteEvent copy(ESGRemoteEvent otherEvent) {
+        this.source  = otherEvent.source;
+        this.messageType = otherEvent.messageType;
+        this.payload = otherEvent.payload;
+        this.checksum = otherEvent.checksum;
+        this.seqNum = otherEvent.seqNum;
     }
     
 
-    public String toString() { return "RE - s:["+source+"] m:["+messageType+"] n:["+seqNum+"] t:["+ttl+"] p:["+payload+"]"; }
+    public String toString() { return "RE - o:["+origin+"] s:["+source+"] m:["+messageType+"] n:["+seqNum+"] t:["+ttl+"] p:["+(null != payload)+"]"; }
 
 }
 

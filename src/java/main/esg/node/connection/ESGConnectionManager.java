@@ -371,10 +371,14 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 
                 //Scenario B: Get the service endpoint advertised by the peer in their registration...
                 //Check this node to see if it has an entry for a node manager... (required);
+                
+                peer = null;
+                peerServiceUrl = null;
+                
                 try{
                     peerServiceUrl = node.getNodeManager().getEndpoint();
                 }catch (Throwable t) { 
-                    log.warn(node.getHostname()+" does not seem to be running a node manager thus, can't be a peer... dropping'em"); 
+                    log.warn(node.getHostname()+" does not seem to be running a node manager thus, not qualified to be a peer... dropping'em"); 
                     continue;
                 }
                 
@@ -382,12 +386,17 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 
                 //If we don't have you in our peer list then we'll add
                 //you... (indirectly) The act of registering this new
-                //peer fires off a join event which is caught here and
+                //peer fires off a join event which is caught and
                 //handled below in the implementation of
                 //this.handleESGEvent where the peer is then added to
                 //the peers datastructure (map).
                 try{
-                    if ((peer == null) || !(Utils.getMyServiceUrl().equals(peerServiceUrl))) {
+                    //shall never store myself as a peer.
+                    if(Utils.getMyServiceUrl().equals(peerServiceUrl)) {
+                        log.warn("I should not be even attempting to store myself as my own peer!");
+                        continue; 
+                    }
+                    if (peer == null) {
                         getDataNodeManager().registerPeer(new BasicPeer(peerServiceUrl, ESGPeer.PEER));
                     }
                 }catch(java.net.MalformedURLException e) {
