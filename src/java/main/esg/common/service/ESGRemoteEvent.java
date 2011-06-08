@@ -141,8 +141,8 @@ public class ESGRemoteEvent implements java.io.Serializable {
         this.payload = otherEvent.payload;
         this.checksum = otherEvent.checksum;
         this.seqNum = otherEvent.seqNum;
+        return this;
     }
-    
 
     public String toString() { return "RE - o:["+origin+"] s:["+source+"] m:["+messageType+"] n:["+seqNum+"] t:["+ttl+"] p:["+(null != payload)+"]"; }
 
