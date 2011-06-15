@@ -13,7 +13,7 @@
     </xsd:complexType>
   </xsd:element>
   
-  <xsd:element name="registry">
+  <xsd:element name="ats_whitelist">
     <xsd:complexType>
       <xsd:sequence>
         <xsd:element ref="tns:attribute" minOccurs="1" maxOccurs="unbounded"/>
