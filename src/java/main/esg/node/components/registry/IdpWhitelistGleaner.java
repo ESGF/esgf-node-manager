@@ -85,7 +85,7 @@ public class IdpWhitelistGleaner {
     
     private static final Log log = LogFactory.getLog(IdpWhitelistGleaner.class);
     private IdpWhitelist idps = null;
-    private final String idpWhitelistFile = "idpWhiteList.xml";
+    private final String idpWhitelistFile = "esgf_idp.xml";
     private String idpWhitelistPath = null;
     private Properties props = null;
     private String defaultLocation = null;
