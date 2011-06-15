@@ -1,0 +1,13 @@
+<xsd:schema attributeFormDefault="unqualified" elementFormDefault="qualified" version="0.2"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.esgf.org/whitelist"
+            xmlns:tns="http://www.esgf.org/whitelist">
+  
+  <xsd:element name="azs_whitelist">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="value" type="xsd:string" minOccurs="1" maxOccurs="unbounded"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  
+</xsd:schema>
