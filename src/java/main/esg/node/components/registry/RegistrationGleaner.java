@@ -224,6 +224,18 @@ public class RegistrationGleaner {
             log.trace("props="+props);
             if(log.isTraceEnabled()) e.printStackTrace();
         }
+
+        //pull from registry to create azs whilelist file.
+        try{
+            AzsWhitelistGleaner azsWhitelistGleaner = new AzsWhitelistGleaner(props);
+            log.trace("registration="+registration);
+            log.trace("azsWhitelistGleaner="+azsWhitelistGleaner);
+            azsWhitelistGleaner.appendToMyAzsWhitelistFromRegistration(registration).saveAzsWhitelist();
+        }catch(Exception e) {
+            log.error(e);
+            log.trace("props="+props);
+            if(log.isTraceEnabled()) e.printStackTrace();
+        }
         
         return success;
     }
@@ -327,6 +339,7 @@ public class RegistrationGleaner {
             node.setLongName(props.getProperty("node.long.name"));
             node.setShortName(props.getProperty("node.short.name"));
             node.setSupportEmail(props.getProperty("mail.admin.address"));
+            node.setNamespace(props.getProperty("node.namespace"));
             
             //Pulled from system or install
             node.setHostname(nodeHostname);
