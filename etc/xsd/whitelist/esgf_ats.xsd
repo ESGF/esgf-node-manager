@@ -1,6 +1,6 @@
 <xsd:schema attributeFormDefault="unqualified" elementFormDefault="qualified" version="0.2"
             xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.esgf.org/whitelist"
-            xmlns:tns="http://www.esgf.org/registry">
+            xmlns:tns="http://www.esgf.org/whitelist">
   
   <xsd:attributeGroup name="EsgfAtsAttributes">
     <xsd:attribute name="type" type="xsd:string" use="required"/>

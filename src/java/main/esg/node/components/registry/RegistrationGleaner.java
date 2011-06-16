@@ -236,6 +236,18 @@ public class RegistrationGleaner {
             log.trace("props="+props);
             if(log.isTraceEnabled()) e.printStackTrace();
         }
+
+        //pull from registry to create ats whilelist file.
+        try{
+            AtsWhitelistGleaner atsWhitelistGleaner = new AtsWhitelistGleaner(props);
+            log.trace("registration="+registration);
+            log.trace("atsWhitelistGleaner="+atsWhitelistGleaner);
+            atsWhitelistGleaner.appendToMyAtsWhitelistFromRegistration(registration).saveAtsWhitelist();
+        }catch(Exception e) {
+            log.error(e);
+            log.trace("props="+props);
+            if(log.isTraceEnabled()) e.printStackTrace();
+        }
         
         return success;
     }
@@ -665,7 +677,11 @@ public class RegistrationGleaner {
             }else if(args[0].equals("load")) {
                 System.out.println(args[0]+"ing...");
                 //(new RegistrationGleaner()).loadMyRegistration().saveRegistration();
-                System.out.println((new RegistrationGleaner()).loadMyRegistration());
+                if(args.length == 2){
+                    System.out.println((new RegistrationGleaner()).loadMyRegistration(args[1]));
+                }else{
+                    System.out.println((new RegistrationGleaner()).loadMyRegistration());
+                }
             }else {
                 System.out.println("illegal arg: "+args[0]);
             }
