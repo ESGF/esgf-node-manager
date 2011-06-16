@@ -104,7 +104,7 @@ public class ESGFProperties extends Properties {
     public String getDatabasePassword() { return this.getDatabasePassword(false); }
     public String getDatabasePassword(boolean force) { 
         if((securityDatabasePassword == null) || force) {
-            securityDatabasePassword = readFromFile(".esgf_pass"); 
+            securityDatabasePassword = readFromFile(".esg_pg_pass"); 
         }
         return securityDatabasePassword;
     }
