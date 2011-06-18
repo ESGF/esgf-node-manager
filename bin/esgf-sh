@@ -1,0 +1,5 @@
+#! /bin/bash
+
+printf "Welcome, $(whoami) to the ESGF Shell...
+v0.0.1 - by Gavin M. Bell\n\n"
+java esg.common.shell.ESGFShell
