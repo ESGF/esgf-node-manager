@@ -65,9 +65,15 @@ import jline.*;
 
 import java.io.*;
 import java.util.*;
-import java.util.zip.*;
+
+import esg.common.ESGException;
+import esg.common.ESGRuntimeException;
+//import esg.common.shell.cmds.*;
 
 public class ESGFShell {
+
+    public static final Character mask = '*';
+    public static final String pipeRe = "\\|";
 
     public static void usage() {
         System.out.println("Usage: java " + ESGFShell.class.getName()
@@ -91,11 +97,31 @@ public class ESGFShell {
                 + "the use of '*' as a password mask.");
     }
 
+    private void eval(String[] commands, ConsoleReader reader, PrintWriter out) throws ESGException, IOException {
+        for(String command : commands) {
+            out.println("======>\"" + command.trim() + "\"");
+        }
+        out.flush();
+
+        if (commands[0].compareTo("su") == 0) {
+            commands[0] = reader.readLine("password> ", mask);
+        }
+        if (commands[0].compareTo("cls") == 0) {
+            reader.clearScreen();
+        }
+        
+        if (commands[0].equalsIgnoreCase("quit") || commands[0].equalsIgnoreCase("exit")) {
+            throw new ESGException("exit shell");
+        }
+        
+    }
+
     public static void main(String[] args) throws IOException {
-        Character mask = '*';
+        ESGFShell shell = new ESGFShell();
 
         ConsoleReader reader = new ConsoleReader();
         reader.setBellEnabled(false);
+        reader.setUsePagination(true);
         reader.setDebug(new PrintWriter(new FileWriter("writer.debug", true)));
 
         if ( (args.length > 0) && (args[0].equals("--help")) ) {
@@ -109,18 +135,15 @@ public class ESGFShell {
         
         reader.addCompletor(new ArgumentCompletor(completors));
         
+        String prompt = System.getProperty("user.name")+"@esgf-sh> ";
         String line;
         PrintWriter out = new PrintWriter(System.out);
-        
-        while ((line = reader.readLine("esgf-sh> ")) != null) {
-            out.println("======>\"" + line + "\"");
-            out.flush();
-            
-            if (line.compareTo("su") == 0) {
-                line = reader.readLine("password> ", mask);
-            }
 
-            if (line.equalsIgnoreCase("quit") || line.equalsIgnoreCase("exit")) {
+        while ((line = reader.readLine(prompt)) != null) {
+            try{
+                shell.eval(line.split(pipeRe),reader,out);
+            }catch(Throwable t) {
+                System.out.println(t.getMessage());
                 break;
             }
         }
