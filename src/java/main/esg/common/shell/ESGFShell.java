@@ -80,11 +80,18 @@ public class ESGFShell {
 
     public static final Character mask = '*';
     public static final String pipeRe = "\\|";
+    public static final String semiRe = ";";
 
     private Map<String,ESGFCommand> commandMap = null;
+    private List completors = null;
 
-    public ESGFShell() {
+    public ESGFShell(ESGFEnv env) {
         loadCommands();
+
+        completors = new LinkedList();
+        completors.add(new SimpleCompletor(commandMap.keySet().toArray(new String[]{})));
+        env.getReader().addCompletor(new ArgumentCompletor(completors));
+        
     }
 
     /**
@@ -92,8 +99,12 @@ public class ESGFShell {
        commands made available by this shell
     */
     private void loadCommands() {
-        log.info("Loading ESGF Shell Commands...");
+        log.info("Loading ESGF Builtin Shell Commands...");
         commandMap = new HashMap<String,ESGFCommand>();
+        commandMap.put("test",new esg.common.shell.cmds.ESGFtest());
+        commandMap.put("ls",new esg.common.shell.cmds.ESGFls());
+        commandMap.put("clear",new esg.common.shell.cmds.ESGFclear());
+        log.info("("+commandMap.size()+") commands loaded");
     }
 
     public static void usage() {
@@ -101,30 +112,33 @@ public class ESGFShell {
     }
 
     private void eval(String[] commands, ESGFEnv env) throws ESGException, IOException {
-        ConsoleReader reader;
-        PrintWriter out;
 
         for(String commandLine : commands) {
             String[] commandLineParts = commandLine.trim().split(" ",2);
             String commandName = commandLineParts[0].trim();
             if((commandName == null) || (commandName.equals(""))) continue;
-            env.getWriter().print("======> command ["+commandName+"] ");
+            
+            log.trace("======> command ["+commandName+"] ");
+
+            ESGFCommand command = commandMap.get(commandName);
+            if(null == command) {
+                env.getWriter().println(commandName+": command not found :-(");
+                continue;
+            }
 
             String[] args = null;
             if(commandLineParts.length == 2) {
                 args = commandLineParts[1].trim().split("\\s");
-                env.getWriter().print("args ("+args.length+") <");
-                for(String arg : args) {
-                    env.getWriter().print("["+arg+"] ");
+                
+                if(log.isTraceEnabled()) {
+                    log.trace("args ("+args.length+") <");
+                    for(String arg : args) {
+                        log.trace("["+arg+"] ");
+                    }
+                    log.trace(">");
                 }
-                env.getWriter().print(">");
             }
-
-            env.getWriter().println();
-            
-            ESGFCommand command = commandMap.get(commandName);
-            if(null != command) command.eval(args,env);
-            
+            command.eval(args,env);
         }
         env.getWriter().flush();
 
@@ -136,9 +150,6 @@ public class ESGFShell {
         if (commands[0].compareTo("su") == 0) {
             commands[0] = env.getReader().readLine("password> ", mask);
         }
-        if (commands[0].compareTo("cls") == 0) {
-            env.getReader().clearScreen();
-        }
         //------------------------------------------------------
 
         
@@ -149,32 +160,24 @@ public class ESGFShell {
     }
 
     public static void main(String[] args) throws IOException {
-        ESGFShell shell = new ESGFShell();
-
-        ConsoleReader reader = new ConsoleReader();
-        reader.setBellEnabled(false);
-        //reader.setUsePagination(true);
-        reader.setDebug(new PrintWriter(new FileWriter("writer.debug", true)));
-
         if ( (args.length > 0) && (args[0].equals("--help")) ) {
             usage();
             return;
         }
-        
-        List completors = new LinkedList();
-        completors.add(new SimpleCompletor(new String[] { "gavin", "max", "bell" }));
-        completors.add(new FileNameCompletor());
-        
-        reader.addCompletor(new ArgumentCompletor(completors));
-        
+
+        ConsoleReader reader = new ConsoleReader();
+        reader.setBellEnabled(false);
+        reader.setDebug(new PrintWriter(new FileWriter("writer.debug", true)));                
+
+        PrintWriter writer = new PrintWriter(System.out);
+        ESGFEnv env = new ESGFEnv(reader,writer,null);
+        ESGFShell shell = new ESGFShell(env);
         String prompt = System.getProperty("user.name")+"@esgf-sh> ";
-        String line;
-        PrintWriter out = new PrintWriter(System.out);
-        ESGFEnv env = null;
+        String line = null;
+
         while ((line = reader.readLine(prompt)) != null) {
             try{
-                env = new ESGFEnv(reader,out,null);
-                shell.eval(line.split(pipeRe),env);
+                shell.eval(line.split(semiRe),env);
             }catch(Throwable t) {
                 System.out.println(t.getMessage());
                 break;

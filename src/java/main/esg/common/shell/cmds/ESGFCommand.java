@@ -76,12 +76,15 @@ public abstract class ESGFCommand {
     protected CommandLine commandLine = null;
     protected CommandLineParser parser = null;
     protected Options options = null;
+    protected HelpFormatter formatter = null;
 
     //-----
     //Setup...
     //-----
     public ESGFCommand() {
-        parser = new GnuParser();
+        parser = new PosixParser();
+        formatter = new HelpFormatter();
+        getOptions().addOption("help", false, "print this message");
     }
     
     abstract public String getCommandName();
@@ -97,12 +100,15 @@ public abstract class ESGFCommand {
     final public ESGFEnv eval(String[] args, ESGFEnv env) {
         try{
             commandLine = getCommandLineParser().parse(getOptions(),args);
-        }catch( ParseException exp ) {
+            if(commandLine.hasOption("help")) {
+                formatter.printHelp(getCommandName(), getOptions(), true);
+                return env;
+            }
+        }catch(ParseException exp) {
             // oops, something went wrong
             System.err.println( "Parsing failed.  Reason: " + exp.getMessage() );
             return null;
-        }
-
+        }        
         return doEval(commandLine, env);
     };
     

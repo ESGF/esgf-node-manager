@@ -75,15 +75,35 @@ private static Log log = LogFactory.getLog(ESGFls.class);
 
     public ESGFls() {
         super();
-        //TODO: Define options...
-        //getOptions().addOption(...);
+        getOptions().addOption("t", "test", false, "This is a simple test flag");
+        Option logfile   = OptionBuilder.withArgName( "file" )
+            .hasArg()
+            .withDescription(  "use given file for log" )
+            .create( "testfile" );
+        getOptions().addOption(logfile);
     }
 
     public String getCommandName() { return "ls"; }
 
     public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
-        log.info("inside the \"ls\" command's doEval");
+        log.trace("inside the \"ls\" command's doEval");
         //TODO: Query for options and perform execution logic
+
+        String testfile = null;
+        if(line.hasOption( "testfile" )) {
+            testfile = line.getOptionValue( "testfile" );
+            env.getWriter().println("testfile option value is: "+testfile);
+        }
+
+        if(line.hasOption("test")) {
+            env.getWriter().println("just Testing... :-)");
+        }
+
+        int i=0;
+        for(String arg : line.getArgs()) {
+            log.trace("arg("+(i++)+"): "+arg);
+        }
+        
         return env;
     }
 }
