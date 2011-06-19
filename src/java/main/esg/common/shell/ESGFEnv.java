@@ -56,131 +56,35 @@
 ***************************************************************************/
 package esg.common.shell;
 
-/**
-   Description:
-   Top level class for ESGF Shell implementation...
-**/
-
 import jline.*;
 
 import java.io.*;
 import java.util.*;
 
-import esg.common.ESGException;
-import esg.common.ESGRuntimeException;
-//import esg.common.shell.cmds.*;
+/**
+   Description:
+   Encapsulates the "environment" of a given line of command execution
+**/
+public class ESGFEnv {
+    ConsoleReader reader = null;
+    PrintWriter  writer = null;
+    Map<String,String> env = null;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.commons.logging.impl.*;
+    ESGFEnv() {}
 
-public class ESGFShell {
-
-    private static Log log = LogFactory.getLog(ESGFShell.class);
-
-    public static final Character mask = '*';
-    public static final String pipeRe = "\\|";
-
-    private Map<String,Class> commandMap = null;
-
-    /**
-       This is where we look through the command list and load up the
-       commands made available by this shell
-    */
-    private void loadCommands() {
-        commandMap = new HashMap<String,Class>();
+    ESGFEnv(ConsoleReader reader,
+            PrintWriter writer, 
+            Map<String,String> env) {
+        setReader(reader);
+        setWriter(writer);
+        setEnv(env);
     }
-
-    public static void usage() {
-        System.out.println("Usage: java " + ESGFShell.class.getName()
-                + " [none/simple/files/dictionary [trigger mask]]");
-        System.out.println("  none - no completors");
-        System.out.println("  simple - a simple completor that comples "
-                + "\"foo\", \"bar\", and \"baz\"");
-        System.out
-                .println("  files - a completor that comples " + "file names");
-        System.out.println("  dictionary - a completor that comples "
-                + "english dictionary words");
-        System.out.println("  classes - a completor that comples "
-                + "java class names");
-        System.out
-                .println("  trigger - a special word which causes it to assume "
-                        + "the next line is a password");
-        System.out.println("  mask - is the character to print in place of "
-                + "the actual password character");
-        System.out.println("\n  E.g - java Example simple su '*'\n"
-                + "will use the simple compleator with 'su' triggering\n"
-                + "the use of '*' as a password mask.");
-    }
-
-    private void eval(String[] commands, ESGFEnv env) throws ESGException, IOException {
-        ConsoleReader reader;
-        PrintWriter out;
-
-        for(String commandLine : commands) {
-            String[] commandLineParts = commandLine.trim().split(" ",2);
-            String command = commandLineParts[0].trim();
-            String args = null;
-            if(commandLineParts.length == 2) {
-                args = commandLineParts[1].trim();
-            }
-            env.getWriter().println("======> command ["+command+"] args ["+args+"]");
-            
-            //ESGFCommand command = commandMap.get(command);
-            //command.eval(args,env);
-            
-        }
-        env.getWriter().flush();
-
-        
-        //-------------------------Misc-------------------------
-        if (commands[0].compareTo("su") == 0) {
-            commands[0] = env.getReader().readLine("password> ", mask);
-        }
-        if (commands[0].compareTo("cls") == 0) {
-            env.getReader().clearScreen();
-        }
-        //------------------------------------------------------
-
-        
-        if (commands[0].equalsIgnoreCase("quit") || commands[0].equalsIgnoreCase("exit")) {
-            throw new ESGException("exit shell");
-        }
-        
-    }
-
-    public static void main(String[] args) throws IOException {
-        ESGFShell shell = new ESGFShell();
-
-        ConsoleReader reader = new ConsoleReader();
-        reader.setBellEnabled(false);
-        //reader.setUsePagination(true);
-        reader.setDebug(new PrintWriter(new FileWriter("writer.debug", true)));
-
-        if ( (args.length > 0) && (args[0].equals("--help")) ) {
-            usage();
-            return;
-        }
-        
-        List completors = new LinkedList();
-        completors.add(new SimpleCompletor(new String[] { "gavin", "max", "bell" }));
-        completors.add(new FileNameCompletor());
-        
-        reader.addCompletor(new ArgumentCompletor(completors));
-        
-        String prompt = System.getProperty("user.name")+"@esgf-sh> ";
-        String line;
-        PrintWriter out = new PrintWriter(System.out);
-        ESGFEnv env = null;
-        while ((line = reader.readLine(prompt)) != null) {
-            try{
-                env = new ESGFEnv(reader,out,null);
-                shell.eval(line.split(pipeRe),env);
-            }catch(Throwable t) {
-                System.out.println(t.getMessage());
-                break;
-            }
-        }
-    }
+    
+    public ConsoleReader getReader() { return reader; }
+    public ESGFEnv setReader(ConsoleReader reader) { this.reader = reader; return this; }
+    public PrintWriter getWriter() { return writer; }
+    public ESGFEnv setWriter(PrintWriter writer) { this.writer = writer; return this;}
+    public Map<String,String> getEnv() { return env; }
+    public ESGFEnv setEnv(Map<String,String> env) { this.env = env; return this; }
+    
 }
-
