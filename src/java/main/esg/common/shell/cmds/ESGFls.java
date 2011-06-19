@@ -75,12 +75,15 @@ private static Log log = LogFactory.getLog(ESGFls.class);
 
     public ESGFls() {
         super();
+        //TODO: Define options...
+        //getOptions().addOption(...);
     }
 
     public String getCommandName() { return "ls"; }
 
-    public ESGFEnv doEval(ESGFEnv env) {
+    public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
         log.info("inside the \"ls\" command's doEval");
+        //TODO: Query for options and perform execution logic
         return env;
     }
 }

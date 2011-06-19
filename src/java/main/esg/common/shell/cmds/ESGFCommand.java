@@ -73,6 +73,7 @@ public abstract class ESGFCommand {
  
     private static Log log = LogFactory.getLog(ESGFCommand.class);
 
+    protected CommandLine commandLine = null;
     protected CommandLineParser parser = null;
     protected Options options = null;
 
@@ -95,15 +96,16 @@ public abstract class ESGFCommand {
     //-----
     final public ESGFEnv eval(String[] args, ESGFEnv env) {
         try{
-            getCommandLineParser().parse(getOptions(),args);
+            commandLine = getCommandLineParser().parse(getOptions(),args);
         }catch( ParseException exp ) {
             // oops, something went wrong
             System.err.println( "Parsing failed.  Reason: " + exp.getMessage() );
+            return null;
         }
 
-        return doEval(env);
+        return doEval(commandLine, env);
     };
     
-    public abstract ESGFEnv doEval(ESGFEnv env);
+    public abstract ESGFEnv doEval(CommandLine line, ESGFEnv env);
     
 }

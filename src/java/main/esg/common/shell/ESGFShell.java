@@ -127,7 +127,7 @@ public class ESGFShell {
             
         }
         env.getWriter().flush();
- 
+
         if (commands[0].compareTo("rehash") == 0) {
             loadCommands();
         }
