@@ -68,7 +68,7 @@ import java.util.*;
 
 import esg.common.ESGException;
 import esg.common.ESGRuntimeException;
-//import esg.common.shell.cmds.*;
+import esg.common.shell.cmds.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -81,36 +81,23 @@ public class ESGFShell {
     public static final Character mask = '*';
     public static final String pipeRe = "\\|";
 
-    private Map<String,Class> commandMap = null;
+    private Map<String,ESGFCommand> commandMap = null;
+
+    public ESGFShell() {
+        loadCommands();
+    }
 
     /**
        This is where we look through the command list and load up the
        commands made available by this shell
     */
     private void loadCommands() {
-        commandMap = new HashMap<String,Class>();
+        log.info("Loading ESGF Shell Commands...");
+        commandMap = new HashMap<String,ESGFCommand>();
     }
 
     public static void usage() {
-        System.out.println("Usage: java " + ESGFShell.class.getName()
-                + " [none/simple/files/dictionary [trigger mask]]");
-        System.out.println("  none - no completors");
-        System.out.println("  simple - a simple completor that comples "
-                + "\"foo\", \"bar\", and \"baz\"");
-        System.out
-                .println("  files - a completor that comples " + "file names");
-        System.out.println("  dictionary - a completor that comples "
-                + "english dictionary words");
-        System.out.println("  classes - a completor that comples "
-                + "java class names");
-        System.out
-                .println("  trigger - a special word which causes it to assume "
-                        + "the next line is a password");
-        System.out.println("  mask - is the character to print in place of "
-                + "the actual password character");
-        System.out.println("\n  E.g - java Example simple su '*'\n"
-                + "will use the simple compleator with 'su' triggering\n"
-                + "the use of '*' as a password mask.");
+        System.out.println("Usage: java " + ESGFShell.class.getName()+" yadda yadda yadda");
     }
 
     private void eval(String[] commands, ESGFEnv env) throws ESGException, IOException {
@@ -119,20 +106,32 @@ public class ESGFShell {
 
         for(String commandLine : commands) {
             String[] commandLineParts = commandLine.trim().split(" ",2);
-            String command = commandLineParts[0].trim();
-            String args = null;
+            String commandName = commandLineParts[0].trim();
+            if((commandName == null) || (commandName.equals(""))) continue;
+            env.getWriter().print("======> command ["+commandName+"] ");
+
+            String[] args = null;
             if(commandLineParts.length == 2) {
-                args = commandLineParts[1].trim();
+                args = commandLineParts[1].trim().split("\\s");
+                env.getWriter().print("args ("+args.length+") <");
+                for(String arg : args) {
+                    env.getWriter().print("["+arg+"] ");
+                }
+                env.getWriter().print(">");
             }
-            env.getWriter().println("======> command ["+command+"] args ["+args+"]");
+
+            env.getWriter().println();
             
-            //ESGFCommand command = commandMap.get(command);
-            //command.eval(args,env);
+            ESGFCommand command = commandMap.get(commandName);
+            if(null != command) command.eval(args,env);
             
         }
         env.getWriter().flush();
-
-        
+ 
+        if (commands[0].compareTo("rehash") == 0) {
+            loadCommands();
+        }
+       
         //-------------------------Misc-------------------------
         if (commands[0].compareTo("su") == 0) {
             commands[0] = env.getReader().readLine("password> ", mask);

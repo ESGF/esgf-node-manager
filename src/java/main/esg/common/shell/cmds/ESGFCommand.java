@@ -61,6 +61,10 @@ package esg.common.shell.cmds;
    The base class for commands used by ESGF
 **/
 
+import esg.common.shell.*;
+
+import org.apache.commons.cli.*;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
@@ -68,5 +72,38 @@ import org.apache.commons.logging.impl.*;
 public abstract class ESGFCommand {
  
     private static Log log = LogFactory.getLog(ESGFCommand.class);
+
+    protected CommandLineParser parser = null;
+    protected Options options = null;
+
+    //-----
+    //Setup...
+    //-----
+    public ESGFCommand() {
+        parser = new GnuParser();
+    }
+    
+    abstract public String getCommandName();
+
+    public CommandLineParser getCommandLineParser() { return parser; }
+    
+    public Options getOptions() { return (null == options) ? this.options = new Options() : this.options; }
+    public ESGFCommand setOptions(Options options) { this.options = options; return this; }
+
+    //-----
+    //Execution...
+    //-----
+    final public ESGFEnv eval(String[] args, ESGFEnv env) {
+        try{
+            getCommandLineParser().parse(getOptions(),args);
+        }catch( ParseException exp ) {
+            // oops, something went wrong
+            System.err.println( "Parsing failed.  Reason: " + exp.getMessage() );
+        }
+
+        return doEval(env);
+    };
+    
+    public abstract ESGFEnv doEval(ESGFEnv env);
     
 }
