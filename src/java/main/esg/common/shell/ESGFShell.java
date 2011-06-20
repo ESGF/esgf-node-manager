@@ -113,6 +113,10 @@ public class ESGFShell {
 
     private void eval(String[] commands, ESGFEnv env) throws ESGException, IOException {
 
+        if (commands[0].equalsIgnoreCase("quit") || commands[0].equalsIgnoreCase("exit")) {
+            throw new ESGException("exit shell");
+        }
+
         for(String commandLine : commands) {
             String[] commandLineParts = commandLine.trim().split(" ",2);
             String commandName = commandLineParts[0].trim();
@@ -151,11 +155,6 @@ public class ESGFShell {
             commands[0] = env.getReader().readLine("password> ", mask);
         }
         //------------------------------------------------------
-
-        
-        if (commands[0].equalsIgnoreCase("quit") || commands[0].equalsIgnoreCase("exit")) {
-            throw new ESGException("exit shell");
-        }
         
     }
 

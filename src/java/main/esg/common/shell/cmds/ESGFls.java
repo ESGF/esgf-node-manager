@@ -75,12 +75,22 @@ private static Log log = LogFactory.getLog(ESGFls.class);
 
     public ESGFls() {
         super();
-        getOptions().addOption("t", "test", false, "This is a simple test flag");
-        Option logfile   = OptionBuilder.withArgName( "file" )
+        getOptions().addOption("d", "datasets", false, "lists All Datasets in CWD");
+        Option listfiles   = OptionBuilder.withArgName("datasetdir")
             .hasArg()
-            .withDescription(  "use given file for log" )
-            .create( "testfile" );
-        getOptions().addOption(logfile);
+            .withDescription("lists the files of a particular dataset")
+            .create("files");
+        getOptions().addOption(listfiles);
+        Option missingfiles   = OptionBuilder.withArgName("datasetdir")
+            .hasArg()
+            .withDescription("lists the missing files of a particular dataset")
+            .create("missing");
+        getOptions().addOption(missingfiles);
+        Option localfiles   = OptionBuilder.withArgName("datasetdir")
+            .hasArg()
+            .withDescription("lists the files of a particular dataset")
+            .create("local");
+        getOptions().addOption(localfiles);
     }
 
     public String getCommandName() { return "ls"; }
@@ -89,14 +99,24 @@ private static Log log = LogFactory.getLog(ESGFls.class);
         log.trace("inside the \"ls\" command's doEval");
         //TODO: Query for options and perform execution logic
 
-        String testfile = null;
-        if(line.hasOption( "testfile" )) {
-            testfile = line.getOptionValue( "testfile" );
-            env.getWriter().println("testfile option value is: "+testfile);
+        if(line.hasOption("datasets")) {
+            env.getWriter().println("Scanning for datasets... :-)");
         }
 
-        if(line.hasOption("test")) {
-            env.getWriter().println("just Testing... :-)");
+        String datasetdir = null;
+        if(line.hasOption( "files" )) {
+            datasetdir = line.getOptionValue( "files" );
+            env.getWriter().println("files option value is: "+datasetdir);
+        }
+
+        if(line.hasOption( "missing" )) {
+            datasetdir = line.getOptionValue( "missing" );
+            env.getWriter().println("missing option value is: "+datasetdir);
+        }
+
+        if(line.hasOption( "local" )) {
+            datasetdir = line.getOptionValue( "local" );
+            env.getWriter().println("local option value is: "+datasetdir);
         }
 
         int i=0;
