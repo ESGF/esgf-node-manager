@@ -86,6 +86,11 @@ private static Log log = LogFactory.getLog(ESGFrealize.class);
             .withDescription("lists the files of a particular dataset")
             .create("dataset");
         getOptions().addOption(dataset);
+        Option regex   = OptionBuilder.withArgName("regex")
+            .hasArg()
+            .withDescription("Select only dataset files that match regex")
+            .create("regex");
+        getOptions().addOption(regex);
     }
 
     public String getCommandName() { return "realize"; }
@@ -102,6 +107,12 @@ private static Log log = LogFactory.getLog(ESGFrealize.class);
         if(line.hasOption( "dataset" )) {
             datasetdir = line.getOptionValue( "dataset" );
             env.getWriter().println("dataset option value is: "+datasetdir);
+        }
+
+        String regex = null;
+        if(line.hasOption( "regex" )) {
+            datasetdir = line.getOptionValue( "regex" );
+            env.getWriter().println("regex option value is: "+datasetdir);
         }
 
         int i=0;
