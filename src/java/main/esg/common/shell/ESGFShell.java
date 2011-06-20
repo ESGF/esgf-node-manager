@@ -84,12 +84,12 @@ public class ESGFShell {
     public static final String semiRe = ";";
 
     private Map<String,ESGFCommand> commandMap = null;
-    private List completors = null;
+    private List<Completor> completors = null;
 
     public ESGFShell(ESGFEnv env) {
         loadCommands();
 
-        completors = new LinkedList();
+        completors = new LinkedList<Completor>();
         completors.add(new SimpleCompletor(commandMap.keySet().toArray(new String[]{})));
         env.getReader().addCompletor(new ArgumentCompletor(completors));
     }
