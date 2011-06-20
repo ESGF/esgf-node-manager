@@ -58,7 +58,12 @@ package esg.common.shell.cmds;
 
 /**
    Description:
-   The base class for commands used by ESGF
+   ESGF's "realize" command..."
+
+   This command takes a dataset directory and inspects its catalog to
+   find missing files (files listed in the dataset catalog but not
+   locally present on the filesystem) and brings them local. The
+   second half of the 'replication' process - for a single dataset.
 **/
 
 import esg.common.shell.*;
@@ -69,53 +74,41 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-public abstract class ESGFCommand {
- 
-    private static Log log = LogFactory.getLog(ESGFCommand.class);
+public class ESGFrealize extends ESGFCommand {
 
-    protected CommandLine commandLine = null;
-    protected CommandLineParser parser = null;
-    protected Options options = null;
-    protected HelpFormatter formatter = null;
+private static Log log = LogFactory.getLog(ESGFrealize.class);
 
-    //-----
-    //Setup...
-    //-----
-    public ESGFCommand() {
-        parser = new PosixParser();
-        formatter = new HelpFormatter();
-        getOptions().addOption("help", false, "print this message");
+    public ESGFrealize() {
+        super();
+        getOptions().addOption("a", "all", false, "realize all dataset files");
+        Option dataset   = OptionBuilder.withArgName("datasetdir")
+            .hasArg()
+            .withDescription("lists the files of a particular dataset")
+            .create("dataset");
+        getOptions().addOption(dataset);
     }
-    
-    abstract public String getCommandName();
 
-    public CommandLineParser getCommandLineParser() { return parser; }
-    
-    public Options getOptions() { return (null == options) ? this.options = new Options() : this.options; }
-    public ESGFCommand setOptions(Options options) { this.options = options; return this; }
+    public String getCommandName() { return "realize"; }
 
-    protected void showHelp() {
-        formatter.printHelp(getCommandName(), getOptions(), true);        
+    public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
+        log.trace("inside the \"realize\" command's doEval");
+        //TODO: Query for options and perform execution logic
+
+        if(line.hasOption("all")) {
+            env.getWriter().println("Realizing all datasets :-)");
+        }
+
+        String datasetdir = null;
+        if(line.hasOption( "dataset" )) {
+            datasetdir = line.getOptionValue( "dataset" );
+            env.getWriter().println("dataset option value is: "+datasetdir);
+        }
+
+        int i=0;
+        for(String arg : line.getArgs()) {
+            log.trace("arg("+(i++)+"): "+arg);
+        }
+        
+        return env;
     }
-    
-    //-----
-    //Execution...
-    //-----
-    final public ESGFEnv eval(String[] args, ESGFEnv env) {
-        try{
-            commandLine = getCommandLineParser().parse(getOptions(),args);
-            if(commandLine.hasOption("help")) {
-                showHelp();
-                return env;
-            }
-        }catch(ParseException exp) {
-            // oops, something went wrong
-            System.err.println( "Parsing failed.  Reason: " + exp.getMessage() );
-            return null;
-        }        
-        return doEval(commandLine, env);
-    };
-    
-    public abstract ESGFEnv doEval(CommandLine line, ESGFEnv env);
-    
 }

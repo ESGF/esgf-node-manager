@@ -102,8 +102,9 @@ public class ESGFShell {
         log.info("Loading ESGF Builtin Shell Commands...");
         commandMap = new HashMap<String,ESGFCommand>();
         commandMap.put("test",new esg.common.shell.cmds.ESGFtest());
-        commandMap.put("ls",new esg.common.shell.cmds.ESGFls());
         commandMap.put("clear",new esg.common.shell.cmds.ESGFclear());
+        commandMap.put("ls",new esg.common.shell.cmds.ESGFls());
+        commandMap.put("realize",new esg.common.shell.cmds.ESGFrealize());
         log.info("("+commandMap.size()+") commands loaded");
     }
 
