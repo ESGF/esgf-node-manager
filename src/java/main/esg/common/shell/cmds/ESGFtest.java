@@ -1,4 +1,3 @@
-<!--
 /***************************************************************************
 *                                                                          *
 *  Organization: Lawrence Livermore National Lab (LLNL)                    *
@@ -7,7 +6,7 @@
 *      Division: S&T Global Security                                       *
 *        Matrix: Atmospheric, Earth and Energy Division                    *
 *       Program: PCMDI                                                     *
-*       Project: Earth Systems Grid (ESG) Data Node Software Stack         *
+*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
 *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
 *                                                                          *
 ****************************************************************************
@@ -18,11 +17,11 @@
 *   LLNL-CODE-420962                                                       *
 *                                                                          *
 *   All rights reserved. This file is part of the:                         *
-*   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
+*   Earth System Grid Federation (ESGF) Data Node Software Stack           *
 *                                                                          *
-*   For details, see http://esg-repo.llnl.gov/esg-node/                    *
+*   For details, see http://esgf.org/esg-node/                             *
 *   Please also read this link                                             *
-*    http://esg-repo.llnl.gov/LICENSE                                      *
+*    http://esgf.org/LICENSE                                               *
 *                                                                          *
 *   * Redistribution and use in source and binary forms, with or           *
 *   without modification, are permitted provided that the following        *
@@ -55,59 +54,58 @@
 *   SUCH DAMAGE.                                                           *
 *                                                                          *
 ***************************************************************************/
+package esg.common.shell.cmds;
 
-Description:
-Ivy "settings" file for defining libraries needed for this project.
+/**
+   Description:
+   ESGF's "test" command..."
+**/
 
-Note: Check Maven for propery dependency parameter values @
-      http://mvnrepository.com/
--->
+import esg.common.shell.*;
 
-<ivy-module version="2.0" 
-	    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:noNamespaceSchemaLocation=
-                      "http://ant.apache.org/ivy/schemas/ivy.xsd">
-  <info organisation="org.esgf" module="esgf-node-manager">
-    <description homepage="http://esgf.org/esgf-node-manager-site/" />
-  </info>
+import org.apache.commons.cli.*;
 
-  <configurations>
-    <conf name="base" description="required for both compile and runtime" />
-    <conf name="runtime" extends="base" />
-    <conf name="compile" extends="base" />
-    <conf name="test" extends="base" visibility="private" />
-  </configurations>
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
 
-  <publications>
-    <artifact name="${module}-common" type="jar" conf="*"/>
-    <artifact name="${module}-filters" type="jar" conf="*"/>
-    <artifact name="${module}-accesslog-client" type="jar" conf="*"/>
-  </publications>
+public class ESGFtest extends ESGFCommand {
 
-  <dependencies>
-    <dependency org="net.sourceforge.cobertura" name="cobertura" rev="1.9.4"/>
-<!--<dependency org="commons-io" name="commons-io" rev="2.0.1" conf="base->default"/> -->
-    <dependency org="commons-cli" name="commons-cli" rev="1.2"/>
-<!--<dependency org="commons-dbcp" name="commons-dbcp" rev="1.2.2"/> -->
-    <dependency org="commons-dbcp" name="commons-dbcp" rev="1.4"/>
+private static Log log = LogFactory.getLog(ESGFtest.class);
 
-    <dependency org="commons-dbutils" name="commons-dbutils" rev="1.3"/>
-    <dependency org="commons-httpclient" name="commons-httpclient" rev="3.1"/>
-    <dependency org="commons-lang" name="commons-lang" rev="2.5"/>
-    <dependency org="commons-logging" name="commons-logging" rev="1.1.1"/>
-    <dependency org="commons-pool" name="commons-pool" rev="1.5.4"/>
-<!--<dependency org="com.caucho" name="hessian" rev="3.1.5"/> -->
-    <dependency org="com.caucho" name="hessian" rev="3.0.20"/>
-    <dependency org="com.sun.xml.bind" name="jaxb-xjc" rev="2.2"/>
-    <dependency org="jline" name="jline" rev="0.9.9"/>
-    <dependency org="junit" name="junit" rev="4.8.1"/>
-    <dependency org="log4j" name="log4j" rev="1.2.14">
-      <exclude org="com.sun.jdmk"/>
-      <exclude org="com.sun.jmx"/>
-      <exclude org="javax.jms"/>
-    </dependency>
-    <dependency org="javax.mail" name="mail" rev="1.4.3"/>
-    <dependency org="postgresql" name="postgresql" rev="8.3-603.jdbc3"/>
+    public ESGFtest() {
+        super();
+        //TODO: Define options...
+        getOptions().addOption("t", "test", false, "This is a simple test flag");
+        Option logfile   = OptionBuilder.withArgName( "file" )
+            .hasArg()
+            .withDescription(  "use given file for log" )
+            .create( "testfile" );
+        getOptions().addOption(logfile);
+    }
 
-  </dependencies>
-</ivy-module>
+    public String getCommandName() { return "test"; }
+
+    public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
+        log.info("inside the \"test\" command's doEval");
+        //TODO: Query for options and perform execution logic
+
+        String testfile = null;
+        if(line.hasOption( "testfile" )) {
+            // initialise the member variable
+            testfile = line.getOptionValue( "testfile" );
+            env.getWriter().println("testfile option value is: "+testfile);
+        }
+
+        if(line.hasOption("test")) {
+            env.getWriter().println("just Testing... :-)");
+        }
+        
+        int i=0;
+        for(String arg : line.getArgs()) {
+            log.info("arg("+(i++)+"): "+arg);
+        }
+        
+        return env;
+    }
+}

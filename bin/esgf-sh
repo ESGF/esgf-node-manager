@@ -1,0 +1,19 @@
+#! /bin/bash
+
+runshell() {
+    printf "Welcome, $(whoami) to the ESGF Shell...
+v0.0.1 - by Gavin M. Bell\n\n"
+    
+    local my_classpath=""
+    
+    #TODO
+    #Put in code to build the classpath
+    #include the classpath when calling
+    #the shell
+    
+    java esg.common.shell.ESGFShell $@
+    
+    echo "Goodbye :-)"
+}
+
+runshell $@

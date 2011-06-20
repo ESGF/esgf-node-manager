@@ -1,4 +1,3 @@
-<!--
 /***************************************************************************
 *                                                                          *
 *  Organization: Lawrence Livermore National Lab (LLNL)                    *
@@ -7,7 +6,7 @@
 *      Division: S&T Global Security                                       *
 *        Matrix: Atmospheric, Earth and Energy Division                    *
 *       Program: PCMDI                                                     *
-*       Project: Earth Systems Grid (ESG) Data Node Software Stack         *
+*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
 *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
 *                                                                          *
 ****************************************************************************
@@ -18,11 +17,11 @@
 *   LLNL-CODE-420962                                                       *
 *                                                                          *
 *   All rights reserved. This file is part of the:                         *
-*   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
+*   Earth System Grid Federation (ESGF) Data Node Software Stack           *
 *                                                                          *
-*   For details, see http://esg-repo.llnl.gov/esg-node/                    *
+*   For details, see http://esgf.org/esg-node/                             *
 *   Please also read this link                                             *
-*    http://esg-repo.llnl.gov/LICENSE                                      *
+*    http://esgf.org/LICENSE                                               *
 *                                                                          *
 *   * Redistribution and use in source and binary forms, with or           *
 *   without modification, are permitted provided that the following        *
@@ -55,59 +54,37 @@
 *   SUCH DAMAGE.                                                           *
 *                                                                          *
 ***************************************************************************/
+package esg.common.shell;
 
-Description:
-Ivy "settings" file for defining libraries needed for this project.
+import jline.*;
 
-Note: Check Maven for propery dependency parameter values @
-      http://mvnrepository.com/
--->
+import java.io.*;
+import java.util.*;
 
-<ivy-module version="2.0" 
-	    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:noNamespaceSchemaLocation=
-                      "http://ant.apache.org/ivy/schemas/ivy.xsd">
-  <info organisation="org.esgf" module="esgf-node-manager">
-    <description homepage="http://esgf.org/esgf-node-manager-site/" />
-  </info>
+/**
+   Description:
+   Encapsulates the "environment" of a given line of command execution
+**/
+public class ESGFEnv {
+    ConsoleReader reader = null;
+    PrintWriter  writer = null;
+    Properties env = null;
 
-  <configurations>
-    <conf name="base" description="required for both compile and runtime" />
-    <conf name="runtime" extends="base" />
-    <conf name="compile" extends="base" />
-    <conf name="test" extends="base" visibility="private" />
-  </configurations>
+    ESGFEnv() {}
 
-  <publications>
-    <artifact name="${module}-common" type="jar" conf="*"/>
-    <artifact name="${module}-filters" type="jar" conf="*"/>
-    <artifact name="${module}-accesslog-client" type="jar" conf="*"/>
-  </publications>
-
-  <dependencies>
-    <dependency org="net.sourceforge.cobertura" name="cobertura" rev="1.9.4"/>
-<!--<dependency org="commons-io" name="commons-io" rev="2.0.1" conf="base->default"/> -->
-    <dependency org="commons-cli" name="commons-cli" rev="1.2"/>
-<!--<dependency org="commons-dbcp" name="commons-dbcp" rev="1.2.2"/> -->
-    <dependency org="commons-dbcp" name="commons-dbcp" rev="1.4"/>
-
-    <dependency org="commons-dbutils" name="commons-dbutils" rev="1.3"/>
-    <dependency org="commons-httpclient" name="commons-httpclient" rev="3.1"/>
-    <dependency org="commons-lang" name="commons-lang" rev="2.5"/>
-    <dependency org="commons-logging" name="commons-logging" rev="1.1.1"/>
-    <dependency org="commons-pool" name="commons-pool" rev="1.5.4"/>
-<!--<dependency org="com.caucho" name="hessian" rev="3.1.5"/> -->
-    <dependency org="com.caucho" name="hessian" rev="3.0.20"/>
-    <dependency org="com.sun.xml.bind" name="jaxb-xjc" rev="2.2"/>
-    <dependency org="jline" name="jline" rev="0.9.9"/>
-    <dependency org="junit" name="junit" rev="4.8.1"/>
-    <dependency org="log4j" name="log4j" rev="1.2.14">
-      <exclude org="com.sun.jdmk"/>
-      <exclude org="com.sun.jmx"/>
-      <exclude org="javax.jms"/>
-    </dependency>
-    <dependency org="javax.mail" name="mail" rev="1.4.3"/>
-    <dependency org="postgresql" name="postgresql" rev="8.3-603.jdbc3"/>
-
-  </dependencies>
-</ivy-module>
+    ESGFEnv(ConsoleReader reader,
+            PrintWriter writer, 
+            Properties env) {
+        setReader(reader);
+        setWriter(writer);
+        setEnv(env);
+    }
+    
+    public ConsoleReader getReader() { return reader; }
+    public ESGFEnv setReader(ConsoleReader reader) { this.reader = reader; return this; }
+    public PrintWriter getWriter() { return writer; }
+    public ESGFEnv setWriter(PrintWriter writer) { this.writer = writer; return this;}
+    public Properties getEnv() { return env; }
+    public ESGFEnv setEnv(Properties env) { this.env = env; return this; }
+    
+}
