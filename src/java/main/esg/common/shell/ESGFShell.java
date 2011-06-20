@@ -69,6 +69,7 @@ import java.util.*;
 import esg.common.ESGException;
 import esg.common.ESGRuntimeException;
 import esg.common.shell.cmds.*;
+import esg.common.util.ESGFProperties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -91,7 +92,6 @@ public class ESGFShell {
         completors = new LinkedList();
         completors.add(new SimpleCompletor(commandMap.keySet().toArray(new String[]{})));
         env.getReader().addCompletor(new ArgumentCompletor(completors));
-        
     }
 
     /**
@@ -170,7 +170,13 @@ public class ESGFShell {
         reader.setDebug(new PrintWriter(new FileWriter("writer.debug", true)));                
 
         PrintWriter writer = new PrintWriter(System.out);
-        ESGFEnv env = new ESGFEnv(reader,writer,null);
+        ESGFProperties esgfProperties = null;
+        try{
+            esgfProperties = new ESGFProperties();
+        }catch (Throwable t) {
+            System.out.println(t.getMessage());
+        }
+        ESGFEnv env = new ESGFEnv(reader,writer,esgfProperties);
         ESGFShell shell = new ESGFShell(env);
         String prompt = System.getProperty("user.name")+"@esgf-sh> ";
         String line = null;

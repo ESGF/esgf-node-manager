@@ -68,13 +68,13 @@ import java.util.*;
 public class ESGFEnv {
     ConsoleReader reader = null;
     PrintWriter  writer = null;
-    Map<String,String> env = null;
+    Properties env = null;
 
     ESGFEnv() {}
 
     ESGFEnv(ConsoleReader reader,
             PrintWriter writer, 
-            Map<String,String> env) {
+            Properties env) {
         setReader(reader);
         setWriter(writer);
         setEnv(env);
@@ -84,7 +84,7 @@ public class ESGFEnv {
     public ESGFEnv setReader(ConsoleReader reader) { this.reader = reader; return this; }
     public PrintWriter getWriter() { return writer; }
     public ESGFEnv setWriter(PrintWriter writer) { this.writer = writer; return this;}
-    public Map<String,String> getEnv() { return env; }
-    public ESGFEnv setEnv(Map<String,String> env) { this.env = env; return this; }
+    public Properties getEnv() { return env; }
+    public ESGFEnv setEnv(Properties env) { this.env = env; return this; }
     
 }
