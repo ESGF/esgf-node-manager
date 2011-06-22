@@ -110,18 +110,18 @@ public class ESGFShell {
         //(NOTE: Class loading these because they are apart of the esgf-security project... not resident to the node-manager)
         //(      Also to avoid circular dependencies between esgf-security and node-manager...)
         //---
-        try{ commandMap.put("useradd", (ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFuseradd").newInstance())); } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
-        try{ commandMap.put("userdel", (ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFuserdel").newInstance())); } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
-        try{ commandMap.put("usermod", (ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFusermod").newInstance())); } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
-        try{ commandMap.put("groupadd",(ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFgroupadd").newInstance()));} catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
-        try{ commandMap.put("groupdel",(ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFgroupdel").newInstance()));} catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
-        try{ commandMap.put("groupmod",(ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFgroupmod").newInstance()));} catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
-        try{ commandMap.put("passwd",  (ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFpasswd").newInstance()));  } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
-        try{ commandMap.put("show",    (ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFshow").newInstance()));    } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
+        try{ commandMap.put("useradd", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuseradd").newInstance())); } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
+        try{ commandMap.put("userdel", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuserdel").newInstance())); } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
+        try{ commandMap.put("usermod", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFusermod").newInstance())); } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
+        try{ commandMap.put("groupadd",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupadd").newInstance()));} catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
+        try{ commandMap.put("groupdel",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupdel").newInstance()));} catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
+        try{ commandMap.put("groupmod",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupmod").newInstance()));} catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
+        try{ commandMap.put("passwd",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFpasswd").newInstance()));  } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
+        try{ commandMap.put("show",    (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFshow").newInstance()));    } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
         try{ commandMap.put("add_user_to_group",
-                            (ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFaddUserToGroup").newInstance()));  } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
+                            (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFaddUserToGroup").newInstance()));  } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
         try{ commandMap.put("del_user_from_group",
-                            (ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFdelUserFromGroup").newInstance()));} catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
+                            (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFdelUserFromGroup").newInstance()));} catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
 
         //---
         //search
