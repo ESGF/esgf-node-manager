@@ -69,7 +69,6 @@ public class ESGFEnv {
     ConsoleReader reader = null;
     PrintWriter  writer = null;
     Properties env = null;
-    Map<String,Object> context = null;
 
     ESGFEnv() {}
 
