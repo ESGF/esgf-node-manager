@@ -54,38 +54,94 @@
 *   SUCH DAMAGE.                                                           *
 *                                                                          *
 ***************************************************************************/
-package esg.common.shell;
-
-import jline.*;
-
-import java.io.*;
-import java.util.*;
+package esg.common.shell.cmds;
 
 /**
    Description:
-   Encapsulates the "environment" of a given line of command execution
+   ESGF's "realize" command..."
+
+   This command takes a dataset directory and inspects its catalog to
+   find missing files (files listed in the dataset catalog but not
+   locally present on the filesystem) and brings them local. The
+   second half of the 'replication' process - for a single dataset.
 **/
-public class ESGFEnv {
-    ConsoleReader reader = null;
-    PrintWriter  writer = null;
-    Properties env = null;
-    Map<String,Object> context = null;
 
-    ESGFEnv() {}
+import esg.common.shell.*;
 
-    ESGFEnv(ConsoleReader reader,
-            PrintWriter writer, 
-            Properties env) {
-        setReader(reader);
-        setWriter(writer);
-        setEnv(env);
+import org.apache.commons.cli.*;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
+
+public class ESGFpasswd extends ESGFCommand {
+
+private static Log log = LogFactory.getLog(ESGFpasswd.class);
+
+    public ESGFpasswd() {
+        super();
+        getOptions().addOption("d", "disable", false, "disable this account");
+        
+        Option user = 
+        OptionBuilder.withArgName("user")
+            .hasArg(true)
+            .withDescription("User for which you wish to change password")
+            .withLongOpt("user")
+            .create("u");
+        getOptions().addOption(user);
+        
     }
-    
-    public ConsoleReader getReader() { return reader; }
-    public ESGFEnv setReader(ConsoleReader reader) { this.reader = reader; return this; }
-    public PrintWriter getWriter() { return writer; }
-    public ESGFEnv setWriter(PrintWriter writer) { this.writer = writer; return this;}
-    public Properties getEnv() { return env; }
-    public ESGFEnv setEnv(Properties env) { this.env = env; return this; }
-    
+
+    public String getCommandName() { return "passwd"; }
+
+    public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
+        log.trace("inside the \"passwd\" command's doEval");
+        //TODO: Query for options and perform execution logic
+
+        String user = null;
+        if(line.hasOption( "u" )) {
+            user = line.getOptionValue( "u" );
+            env.getWriter().println("user: ["+user+"]");
+        }
+        
+        int i=0;
+        for(String arg : line.getArgs()) {
+            log.info("arg("+(i++)+"): "+arg);
+        }
+        
+        //Scrubbing... (need to go into cli code and toss in some regex's to clean this type of shit up)
+        java.util.List<String> argsList = new java.util.ArrayList<String>();
+        String[] args = null;
+        for(String arg : line.getArgs()) {
+            if(!arg.isEmpty()) {
+                argsList.add(arg);
+            }
+        }
+        args = argsList.toArray(new String[]{});
+
+        boolean disable = false;
+        if(line.hasOption( "d" )) { disable = true; }
+        env.getWriter().println("disable: ["+disable+"]");
+
+        String origPassword = null;
+        String newPassword = null;
+        if(args.length == 1) {
+            newPassword = args[0];
+            env.getWriter().println("*new password: ["+((newPassword != null) ? "*********" : newPassword)+"]");
+        }
+        if(args.length == 2) {
+            origPassword = args[0];
+            newPassword = args[1];
+            env.getWriter().println("new password: ["+((newPassword != null) ? "*********" : newPassword)+"]");
+        }
+        
+        //------------------
+        //NOW DO SOME LOGIC
+        //------------------
+        
+        
+
+        //------------------
+        return env;
+    }
 }

@@ -54,38 +54,115 @@
 *   SUCH DAMAGE.                                                           *
 *                                                                          *
 ***************************************************************************/
-package esg.common.shell;
-
-import jline.*;
-
-import java.io.*;
-import java.util.*;
+package esg.common.shell.cmds;
 
 /**
    Description:
-   Encapsulates the "environment" of a given line of command execution
+   ESGF's "realize" command..."
+
+   This command takes a dataset directory and inspects its catalog to
+   find missing files (files listed in the dataset catalog but not
+   locally present on the filesystem) and brings them local. The
+   second half of the 'replication' process - for a single dataset.
 **/
-public class ESGFEnv {
-    ConsoleReader reader = null;
-    PrintWriter  writer = null;
-    Properties env = null;
-    Map<String,Object> context = null;
 
-    ESGFEnv() {}
+import esg.common.shell.*;
 
-    ESGFEnv(ConsoleReader reader,
-            PrintWriter writer, 
-            Properties env) {
-        setReader(reader);
-        setWriter(writer);
-        setEnv(env);
+import org.apache.commons.cli.*;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
+
+public class ESGFshow extends ESGFCommand {
+
+private static Log log = LogFactory.getLog(ESGFshow.class);
+
+    public ESGFshow() {
+        super();
+        getOptions().addOption("d",  "details",    false, "show details");
+        getOptions().addOption("au", "all-users",  false, "show all users on the system");
+        getOptions().addOption("ag", "all-groups", false, "show all groups on the system");
+        
+        Option user = 
+        OptionBuilder.withArgName("user")
+            .hasArg(true)
+            .withDescription("User to inspect")
+            .withLongOpt("user")
+            .create("u");
+        getOptions().addOption(user);
+
+        Option group = 
+        OptionBuilder.withArgName("group")
+            .hasArg(true)
+            .withDescription("Group to inspect")
+            .withLongOpt("group")
+            .create("g");
+        getOptions().addOption(group);
+        
     }
-    
-    public ConsoleReader getReader() { return reader; }
-    public ESGFEnv setReader(ConsoleReader reader) { this.reader = reader; return this; }
-    public PrintWriter getWriter() { return writer; }
-    public ESGFEnv setWriter(PrintWriter writer) { this.writer = writer; return this;}
-    public Properties getEnv() { return env; }
-    public ESGFEnv setEnv(Properties env) { this.env = env; return this; }
-    
+
+    public String getCommandName() { return "show"; }
+
+    public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
+        log.trace("inside the \"show\" command's doEval");
+        //TODO: Query for options and perform execution logic
+
+        boolean details = false;
+        if(line.hasOption( "details" )) { details = true; }
+        env.getWriter().println("details: ["+details+"]");
+
+        boolean all_users = false;
+        if(line.hasOption( "all-users" )) { all_users = true; }
+        env.getWriter().println("all-users: ["+all_users+"]");
+
+        boolean all_groups = false;
+        if(line.hasOption( "all-groups" )) { all_groups = true; }
+        env.getWriter().println("all-groups: ["+all_groups+"]");
+
+        //------------------
+        //NOW DO SOME LOGIC (all logic)
+        //------------------
+        
+        
+
+        //------------------
+
+
+        String user = null;
+        if(line.hasOption( "u" )) {
+            user = line.getOptionValue( "u" );
+            env.getWriter().println("user: ["+user+"]");
+        }
+
+        String group = null;
+        if(line.hasOption( "g" )) {
+            group = line.getOptionValue( "g" );
+            env.getWriter().println("group: ["+group+"]");
+        }
+        
+        int i=0;
+        for(String arg : line.getArgs()) {
+            log.info("arg("+(i++)+"): "+arg);
+        }
+        
+        //Scrubbing... (need to go into cli code and toss in some regex's to clean this type of shit up)
+        java.util.List<String> argsList = new java.util.ArrayList<String>();
+        String[] args = null;
+        for(String arg : line.getArgs()) {
+            if(!arg.isEmpty()) {
+                argsList.add(arg);
+            }
+        }
+        args = argsList.toArray(new String[]{});
+
+        //------------------
+        //NOW DO SOME LOGIC (per user or group)
+        //------------------
+        
+        
+
+        //------------------
+        return env;
+    }
 }

@@ -104,12 +104,34 @@ public class ESGFShell {
         commandMap.put("test",new esg.common.shell.cmds.ESGFtest());
         commandMap.put("clear",new esg.common.shell.cmds.ESGFclear());
         commandMap.put("ls",new esg.common.shell.cmds.ESGFls());
-        commandMap.put("realize",new esg.common.shell.cmds.ESGFrealize());
+        
+        //---
+        //security / administrative commands
+        //---
         commandMap.put("useradd",new esg.common.shell.cmds.ESGFuseradd());
         commandMap.put("userdel",new esg.common.shell.cmds.ESGFuserdel());
         commandMap.put("usermod",new esg.common.shell.cmds.ESGFusermod());
         commandMap.put("groupadd",new esg.common.shell.cmds.ESGFgroupadd());
         commandMap.put("groupdel",new esg.common.shell.cmds.ESGFgroupdel());
+        commandMap.put("groupmod",new esg.common.shell.cmds.ESGFgroupmod());
+        commandMap.put("passwd",new esg.common.shell.cmds.ESGFpasswd());
+        commandMap.put("show",new esg.common.shell.cmds.ESGFshow());
+
+        //---
+        //search
+        //---
+        //commandMap.put("search",new esg.common.shell.cmds.ESGFsearch());
+        //commandMap.put("mark",new esg.common.shell.cmds.ESGFmark());
+        //commandMap.put("unmark",new esg.common.shell.cmds.ESGFunmark());
+
+        //---
+        //copy / replication commands
+        //---
+        //commandMap.put("cpds",new esg.common.shell.cmds.ESGFcpds());
+        //commandMap.put("realize",new esg.common.shell.cmds.ESGFrealize());
+        //commandMap.put("replicate",new esg.common.shell.cmds.ESGFreplicate());
+
+
         log.info("("+commandMap.size()+") commands loaded");
     }
 

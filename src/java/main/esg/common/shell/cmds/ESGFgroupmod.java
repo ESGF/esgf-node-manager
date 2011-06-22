@@ -54,38 +54,100 @@
 *   SUCH DAMAGE.                                                           *
 *                                                                          *
 ***************************************************************************/
-package esg.common.shell;
-
-import jline.*;
-
-import java.io.*;
-import java.util.*;
+package esg.common.shell.cmds;
 
 /**
    Description:
-   Encapsulates the "environment" of a given line of command execution
+   ESGF's "realize" command..."
+
+   This command takes a dataset directory and inspects its catalog to
+   find missing files (files listed in the dataset catalog but not
+   locally present on the filesystem) and brings them local. The
+   second half of the 'replication' process - for a single dataset.
 **/
-public class ESGFEnv {
-    ConsoleReader reader = null;
-    PrintWriter  writer = null;
-    Properties env = null;
-    Map<String,Object> context = null;
 
-    ESGFEnv() {}
+import esg.common.shell.*;
 
-    ESGFEnv(ConsoleReader reader,
-            PrintWriter writer, 
-            Properties env) {
-        setReader(reader);
-        setWriter(writer);
-        setEnv(env);
+import org.apache.commons.cli.*;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
+
+public class ESGFgroupmod extends ESGFCommand {
+
+private static Log log = LogFactory.getLog(ESGFgroupmod.class);
+
+    public ESGFgroupmod() {
+        super();
+        getOptions().addOption("auto", "auto-approve", false, "Set auto approval for joining this group");
+        getOptions().addOption("no_auto", "no-auto-approve", false, "Set auto approval for joining this group");
+
+        getOptions().addOption("vis", "visible", false, "Sets whether this group is visible to registry");
+        getOptions().addOption("no_vis", "not-visible", false, "Sets whether this group is visible to registry");
+
+        Option description = 
+            OptionBuilder.withArgName("description")
+            .hasArgs()
+            .withDescription("Description of group")
+            .withLongOpt("description")
+            .create("d");
+        getOptions().addOption(description);
+
     }
-    
-    public ConsoleReader getReader() { return reader; }
-    public ESGFEnv setReader(ConsoleReader reader) { this.reader = reader; return this; }
-    public PrintWriter getWriter() { return writer; }
-    public ESGFEnv setWriter(PrintWriter writer) { this.writer = writer; return this;}
-    public Properties getEnv() { return env; }
-    public ESGFEnv setEnv(Properties env) { this.env = env; return this; }
-    
+
+    public String getCommandName() { return "groupmod"; }
+
+    public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
+        log.trace("inside the \"groupmod\" command's doEval");
+        //TODO: Query for options and perform execution logic
+
+        String description = null;
+        if(line.hasOption( "d" )) {
+            description = line.getOptionValue( "d" );
+            env.getWriter().println("description: ["+description+"]");
+        }
+        
+        boolean autoapprove = true;
+        if(line.hasOption( "auto" )) { autoapprove = true; }
+        if(line.hasOption( "no_auto" )) { autoapprove = false; }
+        env.getWriter().println("auto approval: ["+autoapprove+"]");
+
+        boolean visible = true; //default
+        if(line.hasOption( "vis" )) { visible = true; }
+        if(line.hasOption( "no_vis" )) { visible = false; }
+        env.getWriter().println("visible: ["+visible+"]");
+
+        
+        int i=0;
+        for(String arg : line.getArgs()) {
+            log.info("arg("+(i++)+"): "+arg);
+        }
+        
+        //Scrubbing... (need to go into cli code and toss in some regex's to clean this type of shit up)
+        java.util.List<String> argsList = new java.util.ArrayList<String>();
+        String[] args = null;
+        for(String arg : line.getArgs()) {
+            if(!arg.isEmpty()) {
+                argsList.add(arg);
+            }
+        }
+        args = argsList.toArray(new String[]{});
+
+        String groupname = null;
+        if(args.length > 0) {
+            groupname = args[0];
+            env.getWriter().println("group to create is: ["+groupname+"]");
+        }
+        
+        //if(groupname == null) throw new ESGFParseException("no group name specified");
+        //------------------
+        //NOW DO SOME LOGIC
+        //------------------
+        
+        
+
+        //------------------
+        return env;
+    }
 }
