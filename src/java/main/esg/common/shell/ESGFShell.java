@@ -123,9 +123,6 @@ public class ESGFShell {
         try{ commandMap.put("del_user_from_group",
                             (ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFdelUserFromGroup").newInstance()));} catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
 
-        //new esg.common.shell.cmds.ESGFadd_user_to_group();
-        //new esg.common.shell.cmds.ESGFdel_user_from_group();
-
         //---
         //search
         //---
