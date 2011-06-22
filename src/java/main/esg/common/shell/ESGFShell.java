@@ -119,9 +119,9 @@ public class ESGFShell {
         try{ commandMap.put("passwd",  (ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFpasswd").newInstance()));  } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
         try{ commandMap.put("show",    (ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFshow").newInstance()));    } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
         try{ commandMap.put("add_user_to_group",
-                            (ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFadd_user_to_group").newInstance()));  } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
+                            (ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFaddUserToGroup").newInstance()));  } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
         try{ commandMap.put("del_user_from_group",
-                            (ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFdel_user_from_group").newInstance()));} catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
+                            (ESGFCommand)(Class.forName("esg.common.shell.cmds.ESGFdelUserFromGroup").newInstance()));} catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
 
         //new esg.common.shell.cmds.ESGFadd_user_to_group();
         //new esg.common.shell.cmds.ESGFdel_user_from_group();

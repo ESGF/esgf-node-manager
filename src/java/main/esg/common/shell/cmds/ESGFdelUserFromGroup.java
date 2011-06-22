@@ -74,11 +74,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-public class ESGFdel_user_from_group extends ESGFCommand {
+public class ESGFdelUserFromGroup extends ESGFCommand {
 
-private static Log log = LogFactory.getLog(ESGFdel_user_from_group.class);
+private static Log log = LogFactory.getLog(ESGFdelUserFromGroup.class);
 
-    public ESGFdel_user_from_group() {
+    public ESGFdelUserFromGroup() {
         super();
         init();
     }
@@ -92,7 +92,7 @@ private static Log log = LogFactory.getLog(ESGFdel_user_from_group.class);
             .create("u");
         getOptions().addOption(user);
         
-        Option all_group = new Option("ag", "all-groups", false, "del_user_from_group all groups on the system");
+        Option all_group = new Option("ag", "all-groups", false, "delUserFromGroup all groups on the system");
         getOptions().addOption(all_group);
         
         Option group = 
@@ -104,10 +104,10 @@ private static Log log = LogFactory.getLog(ESGFdel_user_from_group.class);
         getOptions().addOption(group);
     }
     
-    public String getCommandName() { return "del_user_from_group"; }
+    public String getCommandName() { return "delUserFromGroup"; }
     
     public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
-        log.trace("inside the \"del_user_from_group\" command's doEval");
+        log.trace("inside the \"delUserFromGroup\" command's doEval");
         //TODO: Query for options and perform execution logic
         
         String user = null;
