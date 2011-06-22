@@ -110,7 +110,7 @@ public abstract class ESGFCommand {
             }
         }catch(ParseException exp) {
             // oops, something went wrong
-            System.err.println( "Parsing failed.  Reason: " + exp.getMessage() );
+            System.err.println(exp.getMessage());
             return null;
         }        
         return doEval(commandLine, env);

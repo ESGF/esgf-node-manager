@@ -74,53 +74,80 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-public class ESGFrealize extends ESGFCommand {
+public class ESGFgroupadd extends ESGFCommand {
 
-private static Log log = LogFactory.getLog(ESGFrealize.class);
+private static Log log = LogFactory.getLog(ESGFgroupadd.class);
 
-    public ESGFrealize() {
+    public ESGFgroupadd() {
         super();
-        getOptions().addOption("a", "all", false, "realize all dataset files");
-        Option dataset   = OptionBuilder.withArgName("datasetdir")
-            .hasArg()
-            .withLongOpt("dataset")
-            .withDescription("lists the files of a particular dataset")
-            .create("ds");
-        getOptions().addOption(dataset);
-        Option regex   = OptionBuilder.withArgName("regex")
-            .hasArg()
-            .withDescription("Select only dataset files that match regex")
-            .create("regex");
-        getOptions().addOption(regex);
+        getOptions().addOption("auto", "auto-approve", false, "Set auto approval for joining this group");
+        getOptions().addOption("no_auto", "no-auto-approve", false, "Set auto approval for joining this group");
+
+        getOptions().addOption("vis", "visible", false, "Sets whether this group is visible to registry");
+        getOptions().addOption("no_vis", "not-visible", false, "Sets whether this group is visible to registry");
+
+        Option description = 
+            OptionBuilder.withArgName("description")
+            .hasArgs()
+            .withDescription("Description of group")
+            .withLongOpt("description")
+            .create("d");
+        getOptions().addOption(description);
+
     }
 
-    public String getCommandName() { return "realize"; }
+    public String getCommandName() { return "groupadd"; }
 
     public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
-        log.trace("inside the \"realize\" command's doEval");
+        log.trace("inside the \"groupadd\" command's doEval");
         //TODO: Query for options and perform execution logic
 
-        if(line.hasOption("all")) {
-            env.getWriter().println("Realizing all datasets :-)");
+        String description = null;
+        if(line.hasOption( "d" )) {
+            description = line.getOptionValue( "d" );
+            env.getWriter().println("description: ["+description+"]");
         }
+        
+        boolean autoapprove = true;
+        if(line.hasOption( "auto" )) { autoapprove = true; }
+        if(line.hasOption( "no_auto" )) { autoapprove = false; }
+        env.getWriter().println("auto approval: ["+autoapprove+"]");
 
-        String datasetdir = null;
-        if(line.hasOption( "ds" )) {
-            datasetdir = line.getOptionValue( "ds" );
-            env.getWriter().println("dataset option value is: "+datasetdir);
-        }
+        boolean visible = true; //default
+        if(line.hasOption( "vis" )) { visible = true; }
+        if(line.hasOption( "no_vis" )) { visible = false; }
+        env.getWriter().println("visible: ["+visible+"]");
 
-        String regex = null;
-        if(line.hasOption( "regex" )) {
-            datasetdir = line.getOptionValue( "regex" );
-            env.getWriter().println("regex option value is: "+datasetdir);
-        }
 
         int i=0;
         for(String arg : line.getArgs()) {
-            log.trace("arg("+(i++)+"): "+arg);
+            log.info("arg("+(i++)+"): "+arg);
         }
         
+        //Scrubbing... (need to go into cli code and toss in some regex's to clean this type of shit up)
+        java.util.List<String> argsList = new java.util.ArrayList<String>();
+        String[] args = null;
+        for(String arg : line.getArgs()) {
+            if(!arg.isEmpty()) {
+                argsList.add(arg);
+            }
+        }
+        args = argsList.toArray(new String[]{});
+
+        String groupname = null;
+        if(args.length > 0) {
+            groupname = args[0];
+            env.getWriter().println("group to create is: ["+groupname+"]");
+        }
+        
+        //if(groupname == null) throw new ESGFParseException("no group name specified");
+        //------------------
+        //NOW DO SOME LOGIC
+        //------------------
+        
+        
+
+        //------------------
         return env;
     }
 }

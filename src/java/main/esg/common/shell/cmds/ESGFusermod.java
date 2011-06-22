@@ -74,53 +74,172 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-public class ESGFrealize extends ESGFCommand {
+public class ESGFusermod extends ESGFCommand {
 
-private static Log log = LogFactory.getLog(ESGFrealize.class);
+private static Log log = LogFactory.getLog(ESGFusermod.class);
 
-    public ESGFrealize() {
+    public ESGFusermod() {
         super();
-        getOptions().addOption("a", "all", false, "realize all dataset files");
-        Option dataset   = OptionBuilder.withArgName("datasetdir")
-            .hasArg()
-            .withLongOpt("dataset")
-            .withDescription("lists the files of a particular dataset")
-            .create("ds");
-        getOptions().addOption(dataset);
-        Option regex   = OptionBuilder.withArgName("regex")
-            .hasArg()
-            .withDescription("Select only dataset files that match regex")
-            .create("regex");
-        getOptions().addOption(regex);
+        Option firstname = 
+            OptionBuilder.withArgName("firstname")
+            .hasArg(true)
+            .withDescription("First name of user")
+            .withLongOpt("firstname")
+            .create("fn");
+        getOptions().addOption(firstname);
+
+        Option middlename = 
+            OptionBuilder.withArgName("middlename")
+            .hasArg(true)
+            .withDescription("Middle name of user")
+            .withLongOpt("middlename")
+            .create("mn");
+        getOptions().addOption(middlename);
+
+        Option lastname = 
+            OptionBuilder.withArgName("lastname")
+            .hasArg(true)
+            .withDescription("Last name of user")
+            .withLongOpt("lastname")
+            .create("ln");
+        getOptions().addOption(lastname);
+
+        Option email = 
+            OptionBuilder.withArgName("email")
+            .hasArg(true)
+            .withDescription("Email address of user")
+            .withLongOpt("email")
+            .create("e");
+        getOptions().addOption(email);
+
+        Option organization = 
+            OptionBuilder.withArgName("organization")
+            .hasArg(true)
+            .withDescription("Organization name of user")
+            .withLongOpt("organization")
+            .create("o");
+        getOptions().addOption(organization);
+
+        Option city = 
+            OptionBuilder.withArgName("city")
+            .hasArg(true)
+            .withDescription("City of user")
+            .withLongOpt("city")
+            .create("c");
+        getOptions().addOption(city);
+
+        Option state = 
+            OptionBuilder.withArgName("state")
+            .hasArgs()
+            .withDescription("State of user")
+            .withLongOpt("state")
+            .create("st");
+        getOptions().addOption(state);
+
+        Option country = 
+            OptionBuilder.withArgName("country")
+            .hasArg(true)
+            .withDescription("First name of user")
+            .withLongOpt("country")
+            .create("cn");
+        getOptions().addOption(country);
+
+        Option openid = 
+            OptionBuilder.withArgName("openid")
+            .hasArg(true)
+            .withDescription("OpenID of user")
+            .withLongOpt("openid")
+            .create("oid");
+        getOptions().addOption(openid);
     }
 
-    public String getCommandName() { return "realize"; }
+    public String getCommandName() { return "usermod"; }
 
     public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
-        log.trace("inside the \"realize\" command's doEval");
+        log.trace("inside the \"usermod\" command's doEval");
         //TODO: Query for options and perform execution logic
 
-        if(line.hasOption("all")) {
-            env.getWriter().println("Realizing all datasets :-)");
+        String firstname = null;
+        if(line.hasOption( "fn" )) {
+            firstname = line.getOptionValue( "fn" );
+            env.getWriter().println("firstname: ["+firstname+"]");
         }
 
-        String datasetdir = null;
-        if(line.hasOption( "ds" )) {
-            datasetdir = line.getOptionValue( "ds" );
-            env.getWriter().println("dataset option value is: "+datasetdir);
+        String middlename = null;
+        if(line.hasOption( "mn" )) {
+            middlename = line.getOptionValue( "mn" );
+            env.getWriter().println("middlename: ["+middlename+"]");
         }
 
-        String regex = null;
-        if(line.hasOption( "regex" )) {
-            datasetdir = line.getOptionValue( "regex" );
-            env.getWriter().println("regex option value is: "+datasetdir);
+        String lastname = null;
+        if(line.hasOption( "ln" )) {
+            lastname = line.getOptionValue( "ln" );
+            env.getWriter().println("lastname: ["+lastname+"]");
+        }
+
+        String email = null;
+        if(line.hasOption( "e" )) {
+            email = line.getOptionValue( "e" );
+            env.getWriter().println("email: ["+email+"]");
+        }
+
+        String organization = null;
+        if(line.hasOption( "o" )) {
+            organization = line.getOptionValue( "o" );
+            env.getWriter().println("organization: ["+organization+"]");
+        }
+
+        String city = null;
+        if(line.hasOption( "c" )) {
+            city = line.getOptionValue( "c" );
+            env.getWriter().println("city: ["+city+"]");
+        }
+
+        String state = null;
+        if(line.hasOption( "st" )) {
+            state = line.getOptionValue( "st" );
+            env.getWriter().println("state: ["+state+"]");
+        }
+
+        String country = null;
+        if(line.hasOption( "cn" )) {
+            country = line.getOptionValue( "cn" );
+            env.getWriter().println("country: ["+country+"]");
+        }
+
+        String openid = null;
+        if(line.hasOption( "oid" )) {
+            openid = line.getOptionValue( "oid" );
+            env.getWriter().println("openid: ["+openid+"]");
         }
 
         int i=0;
         for(String arg : line.getArgs()) {
-            log.trace("arg("+(i++)+"): "+arg);
+            log.info("arg("+(i++)+"): "+arg);
         }
         
+        //Scrubbing... (need to go into cli code and toss in some regex's to clean this type of shit up)
+        java.util.List<String> argsList = new java.util.ArrayList<String>();
+        String[] args = null;
+        for(String arg : line.getArgs()) {
+            if(!arg.isEmpty()) {
+                argsList.add(arg);
+            }
+        }
+        args = argsList.toArray(new String[]{});
+
+        String username = null;
+        if(args.length > 0) {
+            username = args[0];
+            env.getWriter().println("user to create is: ["+username+"]");
+        }
+        //------------------
+        //NOW DO SOME LOGIC
+        //------------------
+
+        
+
+        //------------------
         return env;
     }
 }

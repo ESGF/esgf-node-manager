@@ -74,53 +74,76 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-public class ESGFrealize extends ESGFCommand {
+public class ESGFuserdel extends ESGFCommand {
 
-private static Log log = LogFactory.getLog(ESGFrealize.class);
+private static Log log = LogFactory.getLog(ESGFuserdel.class);
 
-    public ESGFrealize() {
+    public ESGFuserdel() {
         super();
-        getOptions().addOption("a", "all", false, "realize all dataset files");
-        Option dataset   = OptionBuilder.withArgName("datasetdir")
-            .hasArg()
-            .withLongOpt("dataset")
-            .withDescription("lists the files of a particular dataset")
-            .create("ds");
-        getOptions().addOption(dataset);
-        Option regex   = OptionBuilder.withArgName("regex")
-            .hasArg()
-            .withDescription("Select only dataset files that match regex")
-            .create("regex");
-        getOptions().addOption(regex);
+        Option username = 
+            OptionBuilder.withArgName("username")
+            .hasArg(true)
+            .withDescription("username to delete")
+            .withLongOpt("username")
+            .create("u");
+        getOptions().addOption(username);
+
+        Option openid = 
+            OptionBuilder.withArgName("openid")
+            .hasArg(true)
+            .withDescription("OpenID of user")
+            .withLongOpt("openid")
+            .create("oid");
+        getOptions().addOption(openid);
     }
 
-    public String getCommandName() { return "realize"; }
+    public String getCommandName() { return "userdel"; }
 
     public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
-        log.trace("inside the \"realize\" command's doEval");
+        log.trace("inside the \"userdel\" command's doEval");
         //TODO: Query for options and perform execution logic
 
-        if(line.hasOption("all")) {
-            env.getWriter().println("Realizing all datasets :-)");
+        String username = null;
+        if(line.hasOption( "u" )) {
+            username = line.getOptionValue( "u" );
+            env.getWriter().println("username: ["+username+"]");
         }
 
-        String datasetdir = null;
-        if(line.hasOption( "ds" )) {
-            datasetdir = line.getOptionValue( "ds" );
-            env.getWriter().println("dataset option value is: "+datasetdir);
-        }
-
-        String regex = null;
-        if(line.hasOption( "regex" )) {
-            datasetdir = line.getOptionValue( "regex" );
-            env.getWriter().println("regex option value is: "+datasetdir);
+        String openid = null;
+        if(line.hasOption( "oid" )) {
+            openid = line.getOptionValue( "oid" );
+            env.getWriter().println("openid: ["+openid+"]");
         }
 
         int i=0;
         for(String arg : line.getArgs()) {
-            log.trace("arg("+(i++)+"): "+arg);
+            log.info("arg("+(i++)+"): "+arg);
         }
         
+        //Scrubbing... (need to go into cli code and toss in some regex's to clean this type of shit up)
+        java.util.List<String> argsList = new java.util.ArrayList<String>();
+        String[] args = null;
+        for(String arg : line.getArgs()) {
+            if(!arg.isEmpty()) {
+                argsList.add(arg);
+            }
+        }
+        args = argsList.toArray(new String[]{});
+
+        if(username == null) {
+            if(args.length > 0) {
+                username = args[0];
+                env.getWriter().println("user to delete is: ["+username+"]");
+            }
+        }
+
+        //------------------
+        //NOW DO SOME LOGIC
+        //------------------
+
+        
+
+        //------------------
         return env;
     }
 }

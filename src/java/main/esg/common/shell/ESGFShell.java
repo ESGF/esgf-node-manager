@@ -105,6 +105,10 @@ public class ESGFShell {
         commandMap.put("clear",new esg.common.shell.cmds.ESGFclear());
         commandMap.put("ls",new esg.common.shell.cmds.ESGFls());
         commandMap.put("realize",new esg.common.shell.cmds.ESGFrealize());
+        commandMap.put("useradd",new esg.common.shell.cmds.ESGFuseradd());
+        commandMap.put("userdel",new esg.common.shell.cmds.ESGFuserdel());
+        commandMap.put("usermod",new esg.common.shell.cmds.ESGFusermod());
+        commandMap.put("groupadd",new esg.common.shell.cmds.ESGFgroupadd());
         log.info("("+commandMap.size()+") commands loaded");
     }
 
@@ -167,7 +171,7 @@ public class ESGFShell {
 
         ConsoleReader reader = new ConsoleReader();
         reader.setBellEnabled(false);
-        reader.setDebug(new PrintWriter(new FileWriter("writer.debug", true)));                
+        reader.setDebug(new PrintWriter(new FileWriter("writer.debug", true)));
 
         PrintWriter writer = new PrintWriter(System.out);
         ESGFProperties esgfProperties = null;
@@ -186,7 +190,8 @@ public class ESGFShell {
                 shell.eval(line.split(semiRe),env);
             }catch(Throwable t) {
                 System.out.println(t.getMessage());
-                break;
+                t.printStackTrace();
+                env.getWriter().flush();
             }
         }
     }
