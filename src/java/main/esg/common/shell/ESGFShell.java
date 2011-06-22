@@ -109,6 +109,7 @@ public class ESGFShell {
         commandMap.put("userdel",new esg.common.shell.cmds.ESGFuserdel());
         commandMap.put("usermod",new esg.common.shell.cmds.ESGFusermod());
         commandMap.put("groupadd",new esg.common.shell.cmds.ESGFgroupadd());
+        commandMap.put("groupdel",new esg.common.shell.cmds.ESGFgroupdel());
         log.info("("+commandMap.size()+") commands loaded");
     }
 
@@ -119,7 +120,8 @@ public class ESGFShell {
     private void eval(String[] commands, ESGFEnv env) throws ESGException, IOException {
 
         if (commands[0].equalsIgnoreCase("quit") || commands[0].equalsIgnoreCase("exit")) {
-            throw new ESGException("exit shell");
+            System.exit(0);
+            //throw new ESGException("exit shell");
         }
 
         for(String commandLine : commands) {
@@ -182,12 +184,26 @@ public class ESGFShell {
         }
         ESGFEnv env = new ESGFEnv(reader,writer,esgfProperties);
         ESGFShell shell = new ESGFShell(env);
-        String prompt = System.getProperty("user.name")+"@esgf-sh> ";
+
+        String baseUser = System.getProperty("user.name");
+        String whoami = null;
+        String mode = null;
         String line = null;
 
-        while ((line = reader.readLine(prompt)) != null) {
+        String prompt = ((whoami == null) ? baseUser : baseUser+":"+whoami)+"@esgf-sh"+((mode == null) ? "" : ":["+mode+"]")+"> ";
+
+        int hist_num=0;
+        while ((line = reader.readLine(((whoami == null) ? baseUser : baseUser+":"+whoami)+"@esgf-sh"+((mode == null) ? "" : ":["+mode+"]")+"> ")) != null){
             try{
                 shell.eval(line.split(semiRe),env);
+                hist_num++;
+                //if((hist_num % 2) == 0) {
+                //    whoami="root";
+                //    mode="admin";
+                //}else{
+                //    whoami = null;
+                //    mode = null;
+                //}
             }catch(Throwable t) {
                 System.out.println(t.getMessage());
                 t.printStackTrace();
