@@ -90,6 +90,7 @@ public class ESGFEnv {
     public ESGFEnv setEnv(Properties env) { this.env = env; return this; }
     
     public Object get(String key) { return context.get(key); }
+    public Object remove(String key) { return context.remove(key); }
     public ESGFEnv store(String key, Object value) { context.put(key,value); return this; }
     public ESGFEnv clear() { context.clear(); return this; }
     
