@@ -69,6 +69,7 @@ public class ESGFEnv {
     ConsoleReader reader = null;
     PrintWriter  writer = null;
     Properties env = null;
+    Map<String,Object> context = null;
 
     ESGFEnv() {}
 
@@ -78,6 +79,7 @@ public class ESGFEnv {
         setReader(reader);
         setWriter(writer);
         setEnv(env);
+        context = new HashMap<String,Object>();
     }
     
     public ConsoleReader getReader() { return reader; }
@@ -86,5 +88,9 @@ public class ESGFEnv {
     public ESGFEnv setWriter(PrintWriter writer) { this.writer = writer; return this;}
     public Properties getEnv() { return env; }
     public ESGFEnv setEnv(Properties env) { this.env = env; return this; }
+    
+    public Object get(String key) { return context.get(key); }
+    public ESGFEnv store(String key, Object value) { context.put(key,value); return this; }
+    public ESGFEnv clear() { context.clear(); return this; }
     
 }
