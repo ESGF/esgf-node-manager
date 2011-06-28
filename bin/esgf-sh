@@ -2,22 +2,50 @@
 
 DEBUG=${DEBUG:-0}
 VERBOSE=${VERBOSE:-0}
+devel=${devel:-0}
+
+envfile="/etc/esg.env"
+
+[ -e "${envfile}" ] && source ${envfile} && ((VERBOSE)) && printf "sourcing environment from: ${envfile} \n"
+
 
 runshell() {
     printf "Welcome, $(whoami) to the ESGF Shell...
 v0.0.1 - by Gavin M. Bell\n\n"
     
-    local my_classpath=$(build_classpath ${devel})
+    local my_classpath=$(build_jarpath ${devel})
     
     debug_print "java -cp ${my_classpath} esg.common.shell.ESGFShell $@"
     java -cp ${my_classpath} esg.common.shell.ESGFShell $@
-
     
     echo "Goodbye :-)"
 }
 
-build_classpath() {
+build_jarpath() {
     local devel=${1:-0}
+    local paths
+
+    if ((devel)); then
+        paths[0]="$HOME/projects/esgf-node-manager/lib"
+        paths[1]="$HOME/projects/esgf-security/lib"
+    else
+        paths[0]=${CATALINA_HOME:-/usr/local/tomcat}/webapps/esgf-node-manager/WEB-INF/lib
+        paths[0]=${CATALINA_HOME:-/usr/local/tomcat}/webapps/esgf-security/WEB-INF/lib
+    fi
+
+    local IFS=" :"
+    local i=0
+    local f
+    for libdir in ${paths[@]}; do
+        unset IFS
+        for jar in $(find $libdir | grep .jar  | grep -v sources | grep -v javadoc | grep -v .md5); do
+            f+=$(printf "${jar##*/}:$i:$jar ")
+        done
+        ((i++))
+    done
+    f=$(echo ${f} | awk 'BEGIN {RS = " "; FS = ":"} !($1 in a) {a[$1];print $3}' | xargs | sed -n 's/ /:/gp')
+    echo ${paths[0]%/*}/$( ((devel == 1)) && echo "build" || echo "classes"):${paths[1]%/*}/$( ((devel == 1)) && echo "build" || echo "classes"):$f
+
 }
 
 ############################################
