@@ -129,6 +129,9 @@ init() {
     mail_smtp_host=${mail_smtp_host:-smtp.`hostname --domain`} #standard guess.
     mail_admin_address=${mail_admin_address}
 
+    #Launcher script for the esgf-sh
+    esgf_shell_launcher="esgf-sh"
+
 }
 
 
@@ -204,7 +207,7 @@ setup_node_manager() {
 
     checked_get ${node_dist_file} ${node_dist_url} $((force_install))
     (( $? > 1 )) && echo " ERROR: Could not download ${node_dist_url} :-(" && popd && checked_done 1
-    
+
     #make room for new install
     if (( force_install )) ; then
         echo "Removing Previous Installation of the ESGF Node Manager... (${node_dist_dir})" && \
@@ -275,8 +278,18 @@ setup_node_manager() {
 
     [ -d ${tomcat_install_dir}/webapps/esg-node ] && echo -n "Removing old esg-node webapp (${tomcat_install_dir}/webapps/esg-node)... " && rm -rf ${tomcat_install_dir}/webapps/esg-node && echo "[OK]"
 
+    fetch_shell_launcher
+
     checked_done 0
     
+}
+
+fetch_shell_launcher() {
+    pushd ${scripts_dir} >& /dev/null
+    checked_get ${esgf_shell_launcher} ${node_dist_url%/*}/${esgf_shell_launcher} $((force_install))
+    (( $? > 1 )) && echo " ERROR: Could not download ${node_dist_url%/*}/${esgf_shell_launcher} :-(" && popd >& /dev/null && return 1
+    popd >& /dev/null
+    return 0
 }
 
 write_node_manager_config() {
