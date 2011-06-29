@@ -201,7 +201,9 @@ public class ESGFShell {
 
         ConsoleReader reader = new ConsoleReader();
         reader.setBellEnabled(false);
-        reader.setDebug(new PrintWriter(new FileWriter("writer.debug", true)));
+        String debugFile = System.getProperty("java.io.tmpdir")+File.separator+"writer.debug";
+        log.trace("("+debugFile+")");
+        reader.setDebug(new PrintWriter(new FileWriter(debugFile, true)));
 
         PrintWriter writer = new PrintWriter(System.out);
         ESGFProperties esgfProperties = null;
