@@ -112,18 +112,18 @@ public class ESGFShell {
         //(NOTE: Class loading these because they are apart of the esgf-security project... not resident to the node-manager)
         //(      Also to avoid circular dependencies between esgf-security and node-manager...)
         //---
-        try{ commandMap.put("useradd", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuseradd").newInstance())); } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
-        try{ commandMap.put("userdel", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuserdel").newInstance())); } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
-        try{ commandMap.put("usermod", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFusermod").newInstance())); } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
-        try{ commandMap.put("groupadd",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupadd").newInstance()));} catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
-        try{ commandMap.put("groupdel",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupdel").newInstance()));} catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
-        try{ commandMap.put("groupmod",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupmod").newInstance()));} catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
-        try{ commandMap.put("passwd",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFpasswd").newInstance()));  } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
-        try{ commandMap.put("show",    (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFshow").newInstance()));    } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
+        try{ commandMap.put("useradd", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuseradd").newInstance())); } catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
+        try{ commandMap.put("userdel", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuserdel").newInstance())); } catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
+        try{ commandMap.put("usermod", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFusermod").newInstance())); } catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
+        try{ commandMap.put("groupadd",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupadd").newInstance()));} catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
+        try{ commandMap.put("groupdel",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupdel").newInstance()));} catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
+        try{ commandMap.put("groupmod",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupmod").newInstance()));} catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
+        try{ commandMap.put("passwd",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFpasswd").newInstance()));  } catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
+        try{ commandMap.put("show",    (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFshow").newInstance()));    } catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
         try{ commandMap.put("add_user_to_group",
-                            (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFaddUserToGroup").newInstance()));  } catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
+                            (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFaddUserToGroup").newInstance()));  } catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
         try{ commandMap.put("del_user_from_group",
-                            (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFdelUserFromGroup").newInstance()));} catch(Exception e) { log.info("unable to load: "+e.getMessage()); }
+                            (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFdelUserFromGroup").newInstance()));} catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
 
         //---
         //search
@@ -203,6 +203,24 @@ public class ESGFShell {
                
     }
 
+    //helper method to encapsulate common task of getting username
+    public String getUserName(ESGFEnv env) {
+        String whoami = null;
+        if ((whoami = (String)env.getContext(SYS,"user.name")) == null) {
+            env.putContext(SYS,"user.name",(whoami = System.getProperty("user.name")));
+        }
+        return whoami;
+    }
+
+    //helper method to encapsulate common task of getting mode
+    public String getMode(ESGFEnv env) {
+        String mode = null;
+        if ((mode = (String)env.getContext(USER,"mode")) == null) {
+            env.putContext(USER,"node",null);
+        }
+        return mode;
+    }
+
     public static void main(String[] args) throws IOException {
         if ( (args.length > 0) && (args[0].equals("--help")) ) {
             usage();
@@ -225,17 +243,11 @@ public class ESGFShell {
         ESGFEnv env = new ESGFEnv(reader,writer,esgfProperties);
         ESGFShell shell = new ESGFShell(env);
 
-        String baseUser = "%";
-        String whoami = null;
         String mode = null;
         String line = null;
-        String prompt = null;
         int hist_num=0;
 
-        env.putContext(SYS,"user.name",System.getProperty("user.name"));
-        env.putContext(USER,"mode",null);
-
-        while ((line = reader.readLine((( (whoami = (String)env.getContext(SYS,"user.name")) == null) ? baseUser : whoami)+"@esgf-sh"+(( (mode = (String)env.getContext(USER,"mode")) == null) ? "" : ":["+mode+"]")+"> ")) != null) {
+        while ((line = reader.readLine(shell.getUserName(env)+"@esgf-sh"+( ((mode = shell.getMode(env)) == null) ? "" : ":["+mode+"]")+"> ")) != null) {
         
             try{
                 shell.eval(line.split(SEMI_RE),env);
