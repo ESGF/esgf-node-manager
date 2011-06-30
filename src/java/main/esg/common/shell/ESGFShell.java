@@ -114,7 +114,7 @@ public class ESGFShell {
                 public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
                     log.trace("inside the \"set\" command's doEval");
                     try{
-                        env.putContext(USER,line.getArgs()[0],line.getArgs()[1]);
+                        env.putContext(DEFAULT,line.getArgs()[0],line.getArgs()[1]);
                     }catch(Throwable t) {}
                     return env;
                 }
@@ -125,7 +125,7 @@ public class ESGFShell {
                 public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
                     log.trace("inside the \"unset\" command's doEval");
                     try{
-                        env.removeContext(USER,line.getArgs()[0]);
+                        env.removeContext(DEFAULT,line.getArgs()[0]);
                     }catch(Throwable t) {}
                     return env;
                 }
