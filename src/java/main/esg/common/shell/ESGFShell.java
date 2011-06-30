@@ -134,7 +134,7 @@ public class ESGFShell {
         //---
         //security / administrative commands
         //(NOTE: Class loading these because they are apart of the esgf-security project... not resident to the node-manager)
-        //(      Also to avoid circular dependencies between esgf-security and node-manager...)
+        //(      Also to avoid circular dependencies between esgf-security and esgf-node-manager...)
         //---
         try{ commandMap.put("useradd", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuseradd").newInstance())); } catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
         try{ commandMap.put("userdel", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuserdel").newInstance())); } catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
@@ -152,15 +152,15 @@ public class ESGFShell {
         //---
         //search
         //---
-        //commandMap.put("search",new esg.common.shell.cmds.ESGFsearch());
-        //commandMap.put("mark",new esg.common.shell.cmds.ESGFmark());
-        //commandMap.put("unmark",new esg.common.shell.cmds.ESGFunmark());
+        //commandMap.put("search",new esg.node.search.shell.cmds.ESGFsearch());
+        //commandMap.put("mark"  ,new esg.node.search.shell.cmds.ESGFmark());
+        //commandMap.put("unmark",new esg.node.search.shell.cmds.ESGFunmark());
 
         //---
         //copy / replication commands
         //---
-        //commandMap.put("cpds",new esg.common.shell.cmds.ESGFcpds());
-        //commandMap.put("realize",new esg.common.shell.cmds.ESGFrealize());
+        //commandMap.put("cpds"     ,new esg.common.shell.cmds.ESGFcpds());
+        //commandMap.put("realize"  ,new esg.common.shell.cmds.ESGFrealize());
         //commandMap.put("replicate",new esg.common.shell.cmds.ESGFreplicate());
 
 

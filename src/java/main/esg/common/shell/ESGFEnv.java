@@ -147,8 +147,22 @@ public class ESGFEnv {
 
     public ESGFEnv clearContext() { context.clear(); return this; }
 
+
+    @SuppressWarnings("unchecked")
     public String toString() {
-        return context.toString();
+        StringBuilder sb = new StringBuilder();
+        sb.append("Env... \n");
+        Map<String,Object> contextSubMap = null;
+        for(String contextKey : context.keySet()) {
+            contextSubMap = null;
+            if (null != (contextSubMap = (Map<String,Object>)context.get(contextKey))) {
+                if(contextKey.equals(SYS)) sb.append("SYS: ");
+                if(contextKey.equals(USER)) sb.append("USER: ");
+                if(contextKey.equals(DEFAULT)) sb.append("DEFAULT: ");
+                sb.append(contextSubMap.toString()+"\n");
+            }
+        }
+        return sb.toString();
     }
     
 }
