@@ -66,6 +66,8 @@ import jline.*;
 import java.io.*;
 import java.util.*;
 
+import org.apache.commons.cli.*;
+
 import esg.common.ESGException;
 import esg.common.ESGRuntimeException;
 import esg.common.shell.cmds.*;
@@ -106,6 +108,28 @@ public class ESGFShell {
         commandMap.put("test",new esg.common.shell.cmds.ESGFtest());
         commandMap.put("clear",new esg.common.shell.cmds.ESGFclear());
         commandMap.put("ls",new esg.common.shell.cmds.ESGFls());
+
+        commandMap.put("set", new esg.common.shell.cmds.ESGFCommand() {
+                public String getCommandName() { return "set"; }                
+                public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
+                    log.trace("inside the \"set\" command's doEval");
+                    try{
+                        env.putContext(USER,line.getArgs()[0],line.getArgs()[1]);
+                    }catch(Throwable t) {}
+                    return env;
+                }
+            });
+        
+        commandMap.put("unset", new esg.common.shell.cmds.ESGFCommand() {
+                public String getCommandName() { return "unset"; }
+                public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
+                    log.trace("inside the \"unset\" command's doEval");
+                    try{
+                        env.removeContext(USER,line.getArgs()[0]);
+                    }catch(Throwable t) {}
+                    return env;
+                }
+            });
         
         //---
         //security / administrative commands
@@ -149,24 +173,56 @@ public class ESGFShell {
 
     private void eval(String[] commands, ESGFEnv env) throws ESGException, IOException {
 
+        //-------------------------
+        // "quit/exit" command
+        //-------------------------
         if (commands[0].equalsIgnoreCase("quit") || commands[0].equalsIgnoreCase("exit")) {
-            System.exit(0);
-            //throw new ESGException("exit shell");
-        }
-
-        //-------------------------Misc-------------------------
-        if (commands[0].compareTo("su") == 0) {
-            String password = env.getReader().readLine("password> ", MASK);
-            if(env.getEnv().getAdminPassword().equals(password)) {
-                env.putContext(ESGFEnv.SYS,"user.name","rootAdmin");
-                env.putContext(ESGFEnv.SYS,"auth",true);
-            }else {
-                env.getWriter().flush();
-                env.getWriter().println("incorrect password :-(");
+            if(getMode(env) == null) {
+                System.exit(0);
+            }else{
+                clearMode(env);
+                clearUserName(env);
+                env.removeContext(SYS,"auth");
                 return;
             }
         }
-        //------------------------------------------------------
+
+        //-------------------------
+        // "su" command
+        //-------------------------
+        if (commands[0].compareTo("su") == 0) {
+            String password = env.getReader().readLine("password> ", MASK);
+            if(/*env.getEnv().getAdminPassword().equals(password)*/ password.equals("foobar")) {
+                env.putContext(SYS,"user.name","rootAdmin");
+                env.putContext(SYS,"auth",true);
+                env.putContext(USER,"mode","admin");
+                return;
+            }else {
+                env.getWriter().println("incorrect password :-(");
+                env.getWriter().flush();
+                return;
+            }
+        }
+
+        //-------------------------
+        // "id" command
+        //-------------------------
+        if (commands[0].compareTo("id") == 0) {
+            env.getWriter().println(getUserName(env)+":"+env.getContext(SYS,"auth"));
+            env.getWriter().flush();
+            return;
+        }
+
+        //-------------------------
+        // show env object
+        //-------------------------
+        if (commands[0].compareTo("env") == 0) {
+            env.getWriter().println(env);
+            env.getWriter().flush();
+            return;
+        }
+
+        //-------------------------
 
         for(String commandLine : commands) {
             String[] commandLineParts = commandLine.trim().split(" ",2);
@@ -203,23 +259,42 @@ public class ESGFShell {
                
     }
 
+    //------------------------
+    // Helper Methods for common tasks...
+    //------------------------
+
     //helper method to encapsulate common task of getting username
     public String getUserName(ESGFEnv env) {
         String whoami = null;
         if ((whoami = (String)env.getContext(SYS,"user.name")) == null) {
-            env.putContext(SYS,"user.name",(whoami = System.getProperty("user.name")));
+            whoami = clearUserName(env);
         }
         return whoami;
     }
 
+    //helper method to encapsulate common task of clearing (resetting) username
+    public String clearUserName(ESGFEnv env) {
+        String whoami = System.getProperty("user.name");
+        env.putContext(SYS,"user.name",whoami);
+        return whoami;
+    }
+    
     //helper method to encapsulate common task of getting mode
     public String getMode(ESGFEnv env) {
         String mode = null;
         if ((mode = (String)env.getContext(USER,"mode")) == null) {
-            env.putContext(USER,"node",null);
+            clearMode(env);
         }
         return mode;
     }
+
+    //helper method to encapsulate common task of clearing mode
+    public void clearMode(ESGFEnv env) {
+        env.putContext(USER,"mode",null);
+    }
+
+    //------------------------
+    //------------------------
 
     public static void main(String[] args) throws IOException {
         if ( (args.length > 0) && (args[0].equals("--help")) ) {
@@ -251,14 +326,14 @@ public class ESGFShell {
         
             try{
                 shell.eval(line.split(SEMI_RE),env);
-                hist_num++;
-                if((hist_num % 2) == 0) {
-                    env.putContext(SYS,"user.name","root");
-                    env.putContext(USER,"mode","admin");
-                }else{
-                    env.putContext(SYS,"user.name",System.getProperty("user.name"));
-                    env.putContext(USER,"mode",null);
-                }
+                //hist_num++;
+                //if((hist_num % 2) == 0) {
+                //    env.putContext(SYS,"user.name","root");
+                //    env.putContext(USER,"mode","admin");
+                //}else{
+                //    env.putContext(SYS,"user.name",System.getProperty("user.name"));
+                //    env.putContext(USER,"mode",null);
+                //}
             }catch(Throwable t) {
                 System.out.println(t.getMessage());
                 t.printStackTrace();
