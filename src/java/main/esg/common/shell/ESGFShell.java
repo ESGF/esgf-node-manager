@@ -320,20 +320,11 @@ public class ESGFShell {
 
         String mode = null;
         String line = null;
-        int hist_num=0;
 
         while ((line = reader.readLine(shell.getUserName(env)+"@esgf-sh"+( ((mode = shell.getMode(env)) == null) ? "" : ":["+mode+"]")+"> ")) != null) {
         
             try{
                 shell.eval(line.split(SEMI_RE),env);
-                //hist_num++;
-                //if((hist_num % 2) == 0) {
-                //    env.putContext(SYS,"user.name","root");
-                //    env.putContext(USER,"mode","admin");
-                //}else{
-                //    env.putContext(SYS,"user.name",System.getProperty("user.name"));
-                //    env.putContext(USER,"mode",null);
-                //}
             }catch(Throwable t) {
                 System.out.println(t.getMessage());
                 t.printStackTrace();
