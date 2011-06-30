@@ -136,6 +136,19 @@ public class ESGFEnv {
 
     public Object  removeContext(String contextKey) { return context.remove(contextKey); }
 
+    @SuppressWarnings("unchecked")
+    public Object removeContext(String contextKey, String key) {
+        Map<String,Object> contextSubMap = null;
+        if (null == (contextSubMap = (Map<String,Object>)context.get(contextKey))) {
+            contextSubMap = new HashMap<String,Object>();
+        }
+        return contextSubMap.remove(key);
+    }
+
     public ESGFEnv clearContext() { context.clear(); return this; }
+
+    public String toString() {
+        return context.toString();
+    }
     
 }
