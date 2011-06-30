@@ -75,13 +75,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import static esg.common.shell.ESGFEnv.*;
+
 public class ESGFShell {
 
     private static Log log = LogFactory.getLog(ESGFShell.class);
 
-    public static final Character mask = '*';
-    public static final String pipeRe = "\\|";
-    public static final String semiRe = ";";
+    public static final Character MASK = '*';
+    public static final String PIPE_RE = "\\|";
+    public static final String SEMI_RE = ";";
 
     private Map<String,ESGFCommand> commandMap = null;
     private List<Completor> completors = null;
@@ -152,6 +154,20 @@ public class ESGFShell {
             //throw new ESGException("exit shell");
         }
 
+        //-------------------------Misc-------------------------
+        if (commands[0].compareTo("su") == 0) {
+            String password = env.getReader().readLine("password> ", MASK);
+            if(env.getEnv().getAdminPassword().equals(password)) {
+                env.putContext(ESGFEnv.SYS,"user.name","rootAdmin");
+                env.putContext(ESGFEnv.SYS,"auth",true);
+            }else {
+                env.getWriter().flush();
+                env.getWriter().println("incorrect password :-(");
+                return;
+            }
+        }
+        //------------------------------------------------------
+
         for(String commandLine : commands) {
             String[] commandLineParts = commandLine.trim().split(" ",2);
             String commandName = commandLineParts[0].trim();
@@ -184,13 +200,7 @@ public class ESGFShell {
         if (commands[0].compareTo("rehash") == 0) {
             loadCommands();
         }
-       
-        //-------------------------Misc-------------------------
-        if (commands[0].compareTo("su") == 0) {
-            commands[0] = env.getReader().readLine("password> ", mask);
-        }
-        //------------------------------------------------------
-        
+               
     }
 
     public static void main(String[] args) throws IOException {
@@ -215,25 +225,28 @@ public class ESGFShell {
         ESGFEnv env = new ESGFEnv(reader,writer,esgfProperties);
         ESGFShell shell = new ESGFShell(env);
 
-        String baseUser = System.getProperty("user.name");
+        String baseUser = "%";
         String whoami = null;
         String mode = null;
         String line = null;
-
-        String prompt = ((whoami == null) ? baseUser : baseUser+":"+whoami)+"@esgf-sh"+((mode == null) ? "" : ":["+mode+"]")+"> ";
-
+        String prompt = null;
         int hist_num=0;
-        while ((line = reader.readLine(((whoami == null) ? baseUser : baseUser+":"+whoami)+"@esgf-sh"+((mode == null) ? "" : ":["+mode+"]")+"> ")) != null){
+
+        env.putContext(SYS,"user.name",System.getProperty("user.name"));
+        env.putContext(USER,"mode",null);
+
+        while ((line = reader.readLine((( (whoami = (String)env.getContext(SYS,"user.name")) == null) ? baseUser : whoami)+"@esgf-sh"+(( (mode = (String)env.getContext(USER,"mode")) == null) ? "" : ":["+mode+"]")+"> ")) != null) {
+        
             try{
-                shell.eval(line.split(semiRe),env);
+                shell.eval(line.split(SEMI_RE),env);
                 hist_num++;
-                //if((hist_num % 2) == 0) {
-                //    whoami="root";
-                //    mode="admin";
-                //}else{
-                //    whoami = null;
-                //    mode = null;
-                //}
+                if((hist_num % 2) == 0) {
+                    env.putContext(SYS,"user.name","root");
+                    env.putContext(USER,"mode","admin");
+                }else{
+                    env.putContext(SYS,"user.name",System.getProperty("user.name"));
+                    env.putContext(USER,"mode",null);
+                }
             }catch(Throwable t) {
                 System.out.println(t.getMessage());
                 t.printStackTrace();

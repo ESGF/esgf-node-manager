@@ -61,24 +61,41 @@ import jline.*;
 import java.io.*;
 import java.util.*;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
+
+import esg.common.util.ESGFProperties;
+
+
 /**
    Description:
    Encapsulates the "environment" of a given line of command execution
+   
+   Note: I could do this same thing with getting sexy with enums, but chose to K.I.S.S.
 **/
 public class ESGFEnv {
-    ConsoleReader reader = null;
-    PrintWriter  writer = null;
-    Properties env = null;
+
+    private static Log log = LogFactory.getLog(ESGFEnv.class);
+
+    ConsoleReader  reader = null;
+    PrintWriter    writer = null;
+    ESGFProperties env = null;
     Map<String,Object> context = null;
+
+    //default "contexts (contextKeys)"
+    public static final String DEFAULT = "asdfjkhaueowr_default";
+    public static final String USER    = "asdfjkhaueowr_user";
+    public static final String SYS     = "asdfjkhaueowr_system";
 
     ESGFEnv() {}
 
     ESGFEnv(ConsoleReader reader,
             PrintWriter writer, 
-            Properties env) {
+            ESGFProperties env) {
         setReader(reader);
         setWriter(writer);
-        setEnv(env);
+        this.env = env;
         context = new HashMap<String,Object>();
     }
     
@@ -86,12 +103,39 @@ public class ESGFEnv {
     public ESGFEnv setReader(ConsoleReader reader) { this.reader = reader; return this; }
     public PrintWriter getWriter() { return writer; }
     public ESGFEnv setWriter(PrintWriter writer) { this.writer = writer; return this;}
-    public Properties getEnv() { return env; }
-    public ESGFEnv setEnv(Properties env) { this.env = env; return this; }
+
+    public ESGFProperties getEnv()   { return env; }
+    public String getEnv(String key) { return env.getProperty(key); }
     
-    public Object get(String key) { return context.get(key); }
-    public Object remove(String key) { return context.remove(key); }
-    public ESGFEnv store(String key, Object value) { context.put(key,value); return this; }
-    public ESGFEnv clear() { context.clear(); return this; }
+    public Object  getContext(String key) { 
+        return this.getContext(DEFAULT,key); 
+    }
+
+    @SuppressWarnings("unchecked")
+    public Object getContext(String contextKey, String key) {
+            Map<String,Object> contextSubMap = (Map<String,Object>)context.get(contextKey);
+            if(null == contextSubMap) return null;
+            return contextSubMap.get(key);
+    }
+
+    public ESGFEnv putContext(String key, Object value) {
+        return this.putContext(DEFAULT,key,value); 
+    }
+
+    @SuppressWarnings("unchecked")
+    public ESGFEnv putContext(String contextKey, String key, Object value) {
+        Map<String,Object> contextSubMap = null;
+        if (null == (contextSubMap = (Map<String,Object>)context.get(contextKey))) {
+            contextSubMap = new HashMap<String,Object>();
+        }
+        contextSubMap.put(key,value);
+        context.put(contextKey,contextSubMap);
+        log.trace(context.toString());
+        return this;
+    }
+
+    public Object  removeContext(String contextKey) { return context.remove(contextKey); }
+
+    public ESGFEnv clearContext() { context.clear(); return this; }
     
 }
