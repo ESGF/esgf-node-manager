@@ -327,7 +327,7 @@ public class ESGFShell {
                 shell.eval(line.split(SEMI_RE),env);
             }catch(Throwable t) {
                 System.out.println(t.getMessage());
-                t.printStackTrace();
+                //t.printStackTrace();
                 env.getWriter().flush();
             }
         }
