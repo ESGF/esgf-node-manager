@@ -73,8 +73,11 @@ public class ESGFls extends ESGFCommand {
 
 private static Log log = LogFactory.getLog(ESGFls.class);
 
-    public ESGFls() {
-        super();
+    public ESGFls() { super(); }
+    
+    public String getCommandName() { return "ls"; }
+
+    public void doInitOptions() {
         getOptions().addOption("d", "datasets", false, "lists All Datasets in CWD");
         Option listfiles   = OptionBuilder.withArgName("datasetdir")
             .hasArg()
@@ -92,8 +95,6 @@ private static Log log = LogFactory.getLog(ESGFls.class);
             .create("local");
         getOptions().addOption(localfiles);
     }
-
-    public String getCommandName() { return "ls"; }
 
     public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
         log.trace("inside the \"ls\" command's doEval");

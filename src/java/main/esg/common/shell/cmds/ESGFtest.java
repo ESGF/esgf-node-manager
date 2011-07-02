@@ -73,8 +73,11 @@ public class ESGFtest extends ESGFCommand {
 
 private static Log log = LogFactory.getLog(ESGFtest.class);
 
-    public ESGFtest() {
-        super();
+    public ESGFtest() { super(); }
+
+    public String getCommandName() { return "test"; }
+
+    public void doInitOptions() {
         //TODO: Define options...
         getOptions().addOption("t", "test", false, "This is a simple test flag");
         Option logfile   = OptionBuilder.withArgName( "file" )
@@ -83,8 +86,6 @@ private static Log log = LogFactory.getLog(ESGFtest.class);
             .create( "testfile" );
         getOptions().addOption(logfile);
     }
-
-    public String getCommandName() { return "test"; }
 
     public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
         log.info("inside the \"test\" command's doEval");

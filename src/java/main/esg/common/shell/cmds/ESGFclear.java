@@ -78,7 +78,7 @@ private static Log log = LogFactory.getLog(ESGFclear.class);
     }
 
     public String getCommandName() { return "clear"; }
-
+    public void doInitOptions() {}
     public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
         log.trace("inside the \"clear\" command's doEval");
         try{

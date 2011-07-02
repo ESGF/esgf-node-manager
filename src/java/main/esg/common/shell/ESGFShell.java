@@ -110,7 +110,8 @@ public class ESGFShell {
         commandMap.put("ls",new esg.common.shell.cmds.ESGFls());
 
         commandMap.put("set", new esg.common.shell.cmds.ESGFCommand() {
-                public String getCommandName() { return "set"; }                
+                public String getCommandName() { return "set"; }
+                public void doInitOptions(){}
                 public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
                     log.trace("inside the \"set\" command's doEval");
                     try{
@@ -122,6 +123,7 @@ public class ESGFShell {
         
         commandMap.put("unset", new esg.common.shell.cmds.ESGFCommand() {
                 public String getCommandName() { return "unset"; }
+                public void doInitOptions(){}
                 public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
                     log.trace("inside the \"unset\" command's doEval");
                     try{

@@ -78,8 +78,11 @@ public class ESGFrealize extends ESGFCommand {
 
 private static Log log = LogFactory.getLog(ESGFrealize.class);
 
-    public ESGFrealize() {
-        super();
+    public ESGFrealize() { super(); }
+
+    public String getCommandName() { return "realize"; }
+
+    public void doInitOptions() {
         getOptions().addOption("a", "all", false, "realize all dataset files");
         Option dataset   = OptionBuilder.withArgName("datasetdir")
             .hasArg()
@@ -93,8 +96,6 @@ private static Log log = LogFactory.getLog(ESGFrealize.class);
             .create("regex");
         getOptions().addOption(regex);
     }
-
-    public String getCommandName() { return "realize"; }
 
     public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
         log.trace("inside the \"realize\" command's doEval");

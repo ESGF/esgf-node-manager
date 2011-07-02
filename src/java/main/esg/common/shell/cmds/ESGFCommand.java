@@ -82,21 +82,32 @@ public abstract class ESGFCommand {
     //Setup...
     //-----
     public ESGFCommand() {
-        parser = new PosixParser();
         formatter = new HelpFormatter();
-        getOptions().addOption("help", false, "print this message");
+        initOptions();
     }
     
     abstract public String getCommandName();
 
-    public CommandLineParser getCommandLineParser() { return parser; }
+    public CommandLineParser getCommandLineParser() { return (null == parser) ? this.parser = new PosixParser() : this.parser; }
+    public void clearCommandLineParser()  { parser = null; }
     
+
+    public void initOptions() {
+        getOptions().addOption("help", false, "print this message");
+        doInitOptions();
+    };
+    public void doInitOptions() {} //FIX ME?... for some reason when I make this abstract and call from constructor hell breaks loose.
     public Options getOptions() { return (null == options) ? this.options = new Options() : this.options; }
     public ESGFCommand setOptions(Options options) { this.options = options; return this; }
+    public void clearOptions() { options = null; }
 
-    protected void showHelp() {
-        formatter.printHelp(getCommandName(), getOptions(), true);        
+    protected void reset() {
+        clearCommandLineParser();
+        clearOptions();
+        initOptions();
     }
+
+    protected void showHelp() { formatter.printHelp(getCommandName(), getOptions(), true); }
     
     //-----
     //Execution...
@@ -112,8 +123,10 @@ public abstract class ESGFCommand {
             // oops, something went wrong
             System.err.println(exp.getMessage());
             return null;
-        }        
-        return doEval(commandLine, env);
+        }
+        doEval(commandLine, env);
+        reset();
+        return env;
     };
     
     public abstract ESGFEnv doEval(CommandLine line, ESGFEnv env);
