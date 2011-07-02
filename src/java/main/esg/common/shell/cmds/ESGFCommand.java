@@ -86,6 +86,7 @@ public abstract class ESGFCommand {
         initOptions();
     }
     
+    public void init(ESGFEnv env) {}
     abstract public String getCommandName();
 
     public CommandLineParser getCommandLineParser() { return (null == parser) ? this.parser = new PosixParser() : this.parser; }

@@ -138,18 +138,18 @@ public class ESGFShell {
         //(NOTE: Class loading these because they are apart of the esgf-security project... not resident to the node-manager)
         //(      Also to avoid circular dependencies between esgf-security and esgf-node-manager...)
         //---
-        try{ commandMap.put("useradd", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuseradd").newInstance())); } catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
-        try{ commandMap.put("userdel", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuserdel").newInstance())); } catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
-        try{ commandMap.put("usermod", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFusermod").newInstance())); } catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
-        try{ commandMap.put("groupadd",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupadd").newInstance()));} catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
-        try{ commandMap.put("groupdel",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupdel").newInstance()));} catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
-        try{ commandMap.put("groupmod",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupmod").newInstance()));} catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
-        try{ commandMap.put("passwd",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFpasswd").newInstance()));  } catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
-        try{ commandMap.put("show",    (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFshow").newInstance()));    } catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
-        try{ commandMap.put("add_user_to_group",
-                            (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFaddUserToGroup").newInstance()));  } catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
-        try{ commandMap.put("del_user_from_group",
-                            (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFdelUserFromGroup").newInstance()));} catch(Exception e) { log.info(" unable to load: "+e.getMessage()); }
+        try{ commandMap.put("useradd",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuseradd").newInstance())); } catch(Exception e) { log.info(" unable to load useradd: "+e.getMessage()); }
+        try{ commandMap.put("userdel",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuserdel").newInstance())); } catch(Exception e) { log.info(" unable to load userdel: "+e.getMessage()); }
+        try{ commandMap.put("usermod",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFusermod").newInstance())); } catch(Exception e) { log.info(" unable to load usermod: "+e.getMessage()); }
+        try{ commandMap.put("groupadd", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupadd").newInstance()));} catch(Exception e) { log.info(" unable to load groupadd: "+e.getMessage()); }
+        try{ commandMap.put("groupdel", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupdel").newInstance()));} catch(Exception e) { log.info(" unable to load groupdel: "+e.getMessage()); }
+        try{ commandMap.put("groupmod", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupmod").newInstance()));} catch(Exception e) { log.info(" unable to load groupmod: "+e.getMessage()); }
+        try{ commandMap.put("roleadd",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFroleadd").newInstance()));} catch(Exception e) { log.info(" unable to load roleadd: "+e.getMessage()); }
+        try{ commandMap.put("roledel",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFroledel").newInstance()));} catch(Exception e) { log.info(" unable to load roledel: "+e.getMessage()); }
+        try{ commandMap.put("rolemod",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFrolemod").newInstance()));} catch(Exception e) { log.info(" unable to load rolemod: "+e.getMessage()); }
+        try{ commandMap.put("associate",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFassociate").newInstance()));    } catch(Exception e) { log.info(" unable to load associate: "+e.getMessage()); }
+        try{ commandMap.put("passwd",   (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFpasswd").newInstance()));  } catch(Exception e) { log.info(" unable to load passwd: "+e.getMessage()); }
+        try{ commandMap.put("show",     (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFshow").newInstance()));    } catch(Exception e) { log.info(" unable to load show: "+e.getMessage()); }
 
         //---
         //search
@@ -193,17 +193,21 @@ public class ESGFShell {
         // "su" command
         //-------------------------
         if (commands[0].compareTo("su") == 0) {
-            String password = env.getReader().readLine("password> ", MASK);
-            if(/*env.getEnv().getAdminPassword().equals(password)*/ password.equals("foobar")) {
-                env.putContext(SYS,"user.name","rootAdmin");
-                env.putContext(SYS,"auth",true);
-                env.putContext(USER,"mode","admin");
-                return;
-            }else {
-                env.getWriter().println("incorrect password :-(");
-                env.getWriter().flush();
-                return;
+            String password = null;
+            while ((password = env.getReader().readLine("password> ", MASK)) != null) {
+                if(/*env.getEnv().getAdminPassword().equals(password)*/ password.equals("foobar")) {
+                    env.putContext(SYS,"user.name","rootAdmin");
+                    env.putContext(SYS,"auth",true);
+                    env.putContext(USER,"mode","admin");
+                    break;
+                }else {
+                    env.getWriter().println("incorrect password :-(");
+                    env.getWriter().flush();
+                }
             }
+            env.getWriter().println();
+            env.getWriter().flush();
+            return;
         }
 
         //-------------------------
@@ -239,6 +243,7 @@ public class ESGFShell {
                 continue;
             }
 
+            command.init(env);
             String[] args = null;
             if(commandLineParts.length == 2) {
                 args = commandLineParts[1].trim().split("\\s");
