@@ -309,6 +309,13 @@ public class ESGFShell {
             return;
         }
 
+        String hostname = "<?>";
+        try{
+            hostname = java.net.InetAddress.getLocalHost().getHostName();
+        }catch (java.net.UnknownHostException e) {
+            log.error(e);
+        }
+
         ConsoleReader reader = new ConsoleReader();
         reader.setBellEnabled(false);
         String debugFile = System.getProperty("java.io.tmpdir")+File.separator+"writer.debug";
@@ -328,10 +335,10 @@ public class ESGFShell {
         String mode = null;
         String line = null;
 
-        while ((line = reader.readLine(shell.getUserName(env)+"@esgf-sh"+( ((mode = shell.getMode(env)) == null) ? "" : ":["+mode+"]")+"> ")) != null) {
+        while ((line = reader.readLine(shell.getUserName(env)+"@"+hostname+":[esgf-sh]"+( ((mode = shell.getMode(env)) == null) ? "" : ":["+mode+"]")+"> ")) != null) {
         
             try{
-                shell.eval(line.split(SEMI_RE),env);
+                shell.eval(line.trim().split(SEMI_RE),env);
             }catch(Throwable t) {
                 System.out.println(t.getMessage());
                 //t.printStackTrace();
