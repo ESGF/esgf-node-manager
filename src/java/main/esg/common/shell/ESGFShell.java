@@ -195,7 +195,8 @@ public class ESGFShell {
         if (commands[0].compareTo("su") == 0) {
             String password = null;
             while ((password = env.getReader().readLine("password> ", MASK)) != null) {
-                if(/*env.getEnv().getAdminPassword().equals(password)*/ password.equals("foobar")) {
+                System.out.println("Admin Password Read is: "+env.getEnv().getAdminPassword());
+                if(env.getEnv().getAdminPassword().equals(password) /*password.equals("foobar")*/) {
                     env.putContext(SYS,"user.name","rootAdmin");
                     env.putContext(SYS,"auth",true);
                     env.putContext(USER,"mode","admin");
@@ -318,9 +319,9 @@ public class ESGFShell {
 
         ConsoleReader reader = new ConsoleReader();
         reader.setBellEnabled(false);
-        String debugFile = System.getProperty("java.io.tmpdir")+File.separator+"writer.debug";
-        log.trace("("+debugFile+")");
-        reader.setDebug(new PrintWriter(new FileWriter(debugFile, true)));
+        //String debugFile = System.getProperty("java.io.tmpdir")+File.separator+"writer.debug";
+        //log.trace("("+debugFile+")");
+        //reader.setDebug(new PrintWriter(new FileWriter(debugFile, true)));
 
         PrintWriter writer = new PrintWriter(System.out);
         ESGFProperties esgfProperties = null;
