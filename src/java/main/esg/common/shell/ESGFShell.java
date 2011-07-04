@@ -195,7 +195,6 @@ public class ESGFShell {
         if (commands[0].compareTo("su") == 0) {
             String password = null;
             while ((password = env.getReader().readLine("password> ", MASK)) != null) {
-                System.out.println("Admin Password Read is: "+env.getEnv().getAdminPassword());
                 if(env.getEnv().getAdminPassword().equals(password) /*password.equals("foobar")*/) {
                     env.putContext(SYS,"user.name","rootAdmin");
                     env.putContext(SYS,"auth",true);
@@ -312,7 +311,7 @@ public class ESGFShell {
 
         String hostname = "<?>";
         try{
-            hostname = java.net.InetAddress.getLocalHost().getHostName();
+            hostname = java.net.InetAddress.getLocalHost().getHostName().split("\\.",2)[0];
         }catch (java.net.UnknownHostException e) {
             log.error(e);
         }

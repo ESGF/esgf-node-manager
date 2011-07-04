@@ -89,7 +89,6 @@ public class ESGFProperties extends Properties {
         if((securityAdminPassword == null) || force) {
             securityAdminPassword = readFromFile(".esgf_pass"); 
         }
-        log.warn("Could not determine admin password :-(");
         return securityAdminPassword;
     }
     public String loadAdminPasswordAs(String propertyKey) {
