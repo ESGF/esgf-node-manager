@@ -288,6 +288,7 @@ fetch_shell_launcher() {
     pushd ${scripts_dir} >& /dev/null
     checked_get ${esgf_shell_launcher} ${node_dist_url%/*}/${esgf_shell_launcher} $((force_install))
     (( $? > 1 )) && echo " ERROR: Could not download ${node_dist_url%/*}/${esgf_shell_launcher} :-(" && popd >& /dev/null && return 1
+    chmod 755 ${esgf_shell_launcher}
     popd >& /dev/null
     return 0
 }
