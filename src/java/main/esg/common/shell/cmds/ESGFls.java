@@ -69,7 +69,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-public class ESGFls extends ESGFCommand {
+public final class ESGFls extends ESGFCommand {
 
 private static Log log = LogFactory.getLog(ESGFls.class);
 

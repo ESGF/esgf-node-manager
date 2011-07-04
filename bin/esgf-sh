@@ -11,7 +11,7 @@ envfile="/etc/esg.env"
 
 runshell() {
     printf "Welcome, $(whoami) to the ESGF Shell...
-v0.0.1 - by Gavin M. Bell\n\n"
+v0.0.1 - by Gavin M. Bell (gavin@llnl.gov)\n\n"
     
     local my_classpath=$(build_jarpath ${devel})
     

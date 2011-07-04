@@ -69,13 +69,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-public class ESGFclear extends ESGFCommand {
+public final class ESGFclear extends ESGFCommand {
 
 private static Log log = LogFactory.getLog(ESGFclear.class);
 
-    public ESGFclear() {
-        super();
-    }
+    public ESGFclear() { super(); }
 
     public String getCommandName() { return "clear"; }
     public void doInitOptions() {}
