@@ -119,7 +119,19 @@ public class DatabaseResource {
         String port = props.getProperty("db.port","5432");
         String database = props.getProperty("db.database","esgcet");
         String user = props.getProperty("db.user","dbsuper");
-        String password = props.getProperty("db.password","changeme");
+        String password = props.getProperty("db.password");
+
+        //If the password is not directly available in the properties
+        //object then try to read it via the code provided in the
+        //ESGFProperties type...iff props is actually of the type
+        //ESGFProperties.
+        if(password == null) {
+            try{
+                password = ((esg.common.util.ESGFProperties)props).getDatabasePassword();
+            }catch(Throwable t) {
+                t.printStackTrace();
+            }
+        }
 
         String connectURI = protocol+"//"+host+":"+port+"/"+database; //zoiks
         log.info("Connection URI = "+connectURI);
