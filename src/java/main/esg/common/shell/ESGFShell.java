@@ -175,7 +175,7 @@ public class ESGFShell {
                         for(String commandName : ESGFShell.this.commandMap.keySet()) {
                             formatter.printUsage(env.getWriter(),10,commandName,ESGFShell.this.commandMap.get(commandName).getOptions());
                         }
-                        enf.getWriter().flush();
+                        env.getWriter().flush();
                     }catch(Throwable t) {}
                     return env;
                 }
