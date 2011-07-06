@@ -144,10 +144,10 @@ public class ESGFShell {
         try{ commandMap.put("groupadd", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupadd").newInstance()));} catch(Exception e) { log.info(" unable to load groupadd: "+e.getMessage()); }
         try{ commandMap.put("groupdel", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupdel").newInstance()));} catch(Exception e) { log.info(" unable to load groupdel: "+e.getMessage()); }
         try{ commandMap.put("groupmod", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupmod").newInstance()));} catch(Exception e) { log.info(" unable to load groupmod: "+e.getMessage()); }
-        try{ commandMap.put("roleadd",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFroleadd").newInstance()));} catch(Exception e) { log.info(" unable to load roleadd: "+e.getMessage()); }
-        try{ commandMap.put("roledel",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFroledel").newInstance()));} catch(Exception e) { log.info(" unable to load roledel: "+e.getMessage()); }
-        try{ commandMap.put("rolemod",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFrolemod").newInstance()));} catch(Exception e) { log.info(" unable to load rolemod: "+e.getMessage()); }
-        try{ commandMap.put("associate",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFassociate").newInstance()));    } catch(Exception e) { log.info(" unable to load associate: "+e.getMessage()); }
+        try{ commandMap.put("roleadd",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFroleadd").newInstance()));}  catch(Exception e) { log.info(" unable to load roleadd: "+e.getMessage()); }
+        try{ commandMap.put("roledel",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFroledel").newInstance()));}  catch(Exception e) { log.info(" unable to load roledel: "+e.getMessage()); }
+        try{ commandMap.put("rolemod",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFrolemod").newInstance()));}  catch(Exception e) { log.info(" unable to load rolemod: "+e.getMessage()); }
+        try{ commandMap.put("associate",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFassociate").newInstance()));} catch(Exception e) { log.info(" unable to load associate: "+e.getMessage()); }
         try{ commandMap.put("passwd",   (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFpasswd").newInstance()));  } catch(Exception e) { log.info(" unable to load passwd: "+e.getMessage()); }
         try{ commandMap.put("show",     (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFshow").newInstance()));    } catch(Exception e) { log.info(" unable to load show: "+e.getMessage()); }
 
@@ -165,6 +165,22 @@ public class ESGFShell {
         //commandMap.put("realize"  ,new esg.common.shell.cmds.ESGFrealize());
         //commandMap.put("replicate",new esg.common.shell.cmds.ESGFreplicate());
 
+        //Help command...
+        commandMap.put("help",new esg.common.shell.cmds.ESGFCommand() {
+                public String getCommandName() { return "help"; }
+                public void doInitOptions(){}
+                public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
+                    log.trace("inside the \"help\" command's doEval");
+                    try{
+                        for(String commandName : ESGFShell.this.commandMap.keySet()) {
+                            formatter.printUsage(env.getWriter(),10,commandName,ESGFShell.this.commandMap.get(commandName).getOptions());
+                        }
+                        enf.getWriter().flush();
+                    }catch(Throwable t) {}
+                    return env;
+                }
+            });
+        commandMap.put("?", commandMap.get("help"));
 
         log.info("("+commandMap.size()+") commands loaded");
     }
