@@ -6,7 +6,7 @@
 *      Division: S&T Global Security                                       *
 *        Matrix: Atmospheric, Earth and Energy Division                    *
 *       Program: PCMDI                                                     *
-*       Project: Earth Systems Grid (ESG) Data Node Software Stack         *
+*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
 *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
 *                                                                          *
 ****************************************************************************
@@ -54,114 +54,115 @@
 *   SUCH DAMAGE.                                                           *
 *                                                                          *
 ***************************************************************************/
+package esg.common.shell;
 
-/**
-   Description:
+import jline.*;
 
-**/
-package esg.common.db;
-
-import java.util.Properties;
-import javax.sql.DataSource;
-
-import org.apache.commons.pool.ObjectPool;
-import org.apache.commons.pool.impl.GenericObjectPool;
-import org.apache.commons.dbcp.ConnectionFactory;
-import org.apache.commons.dbcp.PoolingDataSource;
-import org.apache.commons.dbcp.PoolableConnectionFactory;
-import org.apache.commons.dbcp.DriverManagerConnectionFactory;
+import java.io.*;
+import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-//Singleton class for getting database DataSources
-public class DatabaseResource {
+import esg.common.util.ESGFProperties;
 
-    private static Log log = LogFactory.getLog(DatabaseResource.class);
-    private static DatabaseResource instance = null;
-    private ObjectPool connectionPool = null;
-    private PoolingDataSource dataSource = null;
-    private String driverName = null;
 
-    public static DatabaseResource init(String driverName) {
-        log.trace("Initializing... with Driver: ["+driverName+"]");
-        if(instance == null) {
-            instance = new DatabaseResource(driverName);
-        }else {
-            log.trace("fetching instance: ["+instance+"]");
-        }
-        return instance;
-    }
-    public static DatabaseResource getInstance() { 
-        if(instance == null) log.warn("Instance is NULL!!! \"init\" must be called prior to calling this method!!");
-        return instance; 
-    }
+/**
+   Description:
+   Encapsulates the "environment" of a given line of command execution
+   
+   Note: I could do this same thing with getting sexy with enums, but chose to K.I.S.S.
+**/
+public class ESGFEnv {
 
-    //Private Singleton Constructor...
-    private DatabaseResource(String driverName) { 
-        log.trace("Instantating DatabaseResource object...");
-        try {
-            log.info("Loading JDBC driver: ["+driverName+"]");
-            Class.forName(driverName);
-            this.driverName = driverName;
-        } catch (ClassNotFoundException e) {
-            log.error(e);
-        }
+    private static Log log = LogFactory.getLog(ESGFEnv.class);
+
+    ConsoleReader  reader = null;
+    PrintWriter    writer = null;
+    ESGFProperties env = null;
+    Map<String,Object> context = null;
+
+    //default "contexts (contextKeys)"
+    public static final String DEFAULT = "asdfjkhaueowr_default";
+    public static final String USER    = "asdfjkhaueowr_user";
+    public static final String SYS     = "asdfjkhaueowr_system";
+
+    ESGFEnv() {}
+
+    ESGFEnv(ConsoleReader reader,
+            PrintWriter writer, 
+            ESGFProperties env) {
+        setReader(reader);
+        setWriter(writer);
+        this.env = env;
+        context = new HashMap<String,Object>();
     }
     
-    public DatabaseResource setupDataSource(Properties props) {
-        log.trace("Setting up data source ");
-        if(props == null) { log.error("Property object is ["+props+"]: Cannot setup up data source"); return this; }
-        //Ex: jdbc:postgresql://pcmdi3.llnl.gov:5432/esgcet
-        String protocol = props.getProperty("db.protocol","jdbc:postgresql:");
-        String host = props.getProperty("db.host","localhost");
-        String port = props.getProperty("db.port","5432");
-        String database = props.getProperty("db.database","esgcet");
-        String user = props.getProperty("db.user","dbsuper");
-        String password = props.getProperty("db.password");
+    public ConsoleReader getReader() { return reader; }
+    public ESGFEnv setReader(ConsoleReader reader) { this.reader = reader; return this; }
+    public PrintWriter getWriter() { return writer; }
+    public ESGFEnv setWriter(PrintWriter writer) { this.writer = writer; return this;}
 
-        //If the password is not directly available in the properties
-        //object then try to read it via the code provided in the
-        //ESGFProperties type...iff props is actually of the type
-        //ESGFProperties.
-        if(password == null) {
-            try{
-                password = ((esg.common.util.ESGFProperties)props).getDatabasePassword();
-            }catch(Throwable t) {
-                t.printStackTrace();
-            }
+    public ESGFProperties getEnv()   { return env; }
+    public String getEnv(String key) { return env.getProperty(key); }
+    
+    public Object  getContext(String key) { 
+        return this.getContext(DEFAULT,key); 
+    }
+
+    @SuppressWarnings("unchecked")
+    public Object getContext(String contextKey, String key) {
+            Map<String,Object> contextSubMap = (Map<String,Object>)context.get(contextKey);
+            if(null == contextSubMap) return null;
+            return contextSubMap.get(key);
+    }
+
+    public ESGFEnv putContext(String key, Object value) {
+        return this.putContext(DEFAULT,key,value); 
+    }
+
+    @SuppressWarnings("unchecked")
+    public ESGFEnv putContext(String contextKey, String key, Object value) {
+        Map<String,Object> contextSubMap = null;
+        if (null == (contextSubMap = (Map<String,Object>)context.get(contextKey))) {
+            contextSubMap = new HashMap<String,Object>();
         }
-
-        String connectURI = protocol+"//"+host+":"+port+"/"+database; //zoiks
-        log.info("Connection URI = "+connectURI);
-        connectionPool = new GenericObjectPool(null);
-        ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connectURI,user,password);
-        PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory,connectionPool,null,null,false,true);
-        dataSource = new PoolingDataSource(connectionPool);
+        contextSubMap.put(key,value);
+        context.put(contextKey,contextSubMap);
+        log.trace(context.toString());
         return this;
     }
 
-    public String getDriverName() { return driverName; }
-    
-    public DataSource getDataSource() {
-        if(null == dataSource) log.error("Data Source Is NULL!!!");
-        return dataSource;
-    }
+    public Object  removeContext(String contextKey) { return context.remove(contextKey); }
 
-    public void showDriverStats() {
-        System.out.println(" NumActive: " + (connectionPool == null ? "X" : connectionPool.getNumActive()));
-        System.out.println(" NumIdle:   " + (connectionPool == null ? "X" : connectionPool.getNumIdle()));
-    }
-
-    public void shutdownResource() {
-        log.info("Shutting Down Database Resource! ("+driverName+")");
-        try{
-            connectionPool.close();
-        }catch(Exception ex) {
-            log.error("Problem with closing connection Pool!",ex);
+    @SuppressWarnings("unchecked")
+    public Object removeContext(String contextKey, String key) {
+        Map<String,Object> contextSubMap = null;
+        if (null == (contextSubMap = (Map<String,Object>)context.get(contextKey))) {
+            contextSubMap = new HashMap<String,Object>();
         }
-        dataSource = null;
-        instance = null;
+        return contextSubMap.remove(key);
     }
+
+    public ESGFEnv clearContext() { context.clear(); return this; }
+
+
+    @SuppressWarnings("unchecked")
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Env... \n");
+        Map<String,Object> contextSubMap = null;
+        for(String contextKey : context.keySet()) {
+            contextSubMap = null;
+            if (null != (contextSubMap = (Map<String,Object>)context.get(contextKey))) {
+                if(contextKey.equals(SYS)) sb.append("SYS: ");
+                if(contextKey.equals(USER)) sb.append("USER: ");
+                if(contextKey.equals(DEFAULT)) sb.append("DEFAULT: ");
+                sb.append(contextSubMap.toString()+"\n");
+            }
+        }
+        return sb.toString();
+    }
+    
 }

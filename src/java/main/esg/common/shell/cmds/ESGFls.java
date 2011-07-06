@@ -6,7 +6,7 @@
 *      Division: S&T Global Security                                       *
 *        Matrix: Atmospheric, Earth and Energy Division                    *
 *       Program: PCMDI                                                     *
-*       Project: Earth Systems Grid (ESG) Data Node Software Stack         *
+*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
 *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
 *                                                                          *
 ****************************************************************************
@@ -54,114 +54,77 @@
 *   SUCH DAMAGE.                                                           *
 *                                                                          *
 ***************************************************************************/
+package esg.common.shell.cmds;
 
 /**
    Description:
-
+   ESGF's "ls" command..."
 **/
-package esg.common.db;
 
-import java.util.Properties;
-import javax.sql.DataSource;
+import esg.common.shell.*;
 
-import org.apache.commons.pool.ObjectPool;
-import org.apache.commons.pool.impl.GenericObjectPool;
-import org.apache.commons.dbcp.ConnectionFactory;
-import org.apache.commons.dbcp.PoolingDataSource;
-import org.apache.commons.dbcp.PoolableConnectionFactory;
-import org.apache.commons.dbcp.DriverManagerConnectionFactory;
+import org.apache.commons.cli.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
-//Singleton class for getting database DataSources
-public class DatabaseResource {
+public final class ESGFls extends ESGFCommand {
 
-    private static Log log = LogFactory.getLog(DatabaseResource.class);
-    private static DatabaseResource instance = null;
-    private ObjectPool connectionPool = null;
-    private PoolingDataSource dataSource = null;
-    private String driverName = null;
+private static Log log = LogFactory.getLog(ESGFls.class);
 
-    public static DatabaseResource init(String driverName) {
-        log.trace("Initializing... with Driver: ["+driverName+"]");
-        if(instance == null) {
-            instance = new DatabaseResource(driverName);
-        }else {
-            log.trace("fetching instance: ["+instance+"]");
-        }
-        return instance;
-    }
-    public static DatabaseResource getInstance() { 
-        if(instance == null) log.warn("Instance is NULL!!! \"init\" must be called prior to calling this method!!");
-        return instance; 
-    }
-
-    //Private Singleton Constructor...
-    private DatabaseResource(String driverName) { 
-        log.trace("Instantating DatabaseResource object...");
-        try {
-            log.info("Loading JDBC driver: ["+driverName+"]");
-            Class.forName(driverName);
-            this.driverName = driverName;
-        } catch (ClassNotFoundException e) {
-            log.error(e);
-        }
-    }
+    public ESGFls() { super(); }
     
-    public DatabaseResource setupDataSource(Properties props) {
-        log.trace("Setting up data source ");
-        if(props == null) { log.error("Property object is ["+props+"]: Cannot setup up data source"); return this; }
-        //Ex: jdbc:postgresql://pcmdi3.llnl.gov:5432/esgcet
-        String protocol = props.getProperty("db.protocol","jdbc:postgresql:");
-        String host = props.getProperty("db.host","localhost");
-        String port = props.getProperty("db.port","5432");
-        String database = props.getProperty("db.database","esgcet");
-        String user = props.getProperty("db.user","dbsuper");
-        String password = props.getProperty("db.password");
+    public String getCommandName() { return "ls"; }
 
-        //If the password is not directly available in the properties
-        //object then try to read it via the code provided in the
-        //ESGFProperties type...iff props is actually of the type
-        //ESGFProperties.
-        if(password == null) {
-            try{
-                password = ((esg.common.util.ESGFProperties)props).getDatabasePassword();
-            }catch(Throwable t) {
-                t.printStackTrace();
-            }
+    public void doInitOptions() {
+        getOptions().addOption("d", "datasets", false, "lists All Datasets in CWD");
+        Option listfiles   = OptionBuilder.withArgName("datasetdir")
+            .hasArg()
+            .withDescription("lists the files of a particular dataset")
+            .create("files");
+        getOptions().addOption(listfiles);
+        Option missingfiles   = OptionBuilder.withArgName("datasetdir")
+            .hasArg()
+            .withDescription("lists the missing files of a particular dataset")
+            .create("missing");
+        getOptions().addOption(missingfiles);
+        Option localfiles   = OptionBuilder.withArgName("datasetdir")
+            .hasArg()
+            .withDescription("lists the files of a particular dataset")
+            .create("local");
+        getOptions().addOption(localfiles);
+    }
+
+    public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
+        log.trace("inside the \"ls\" command's doEval");
+        //TODO: Query for options and perform execution logic
+
+        if(line.hasOption("datasets")) {
+            env.getWriter().println("Scanning for datasets... :-)");
         }
 
-        String connectURI = protocol+"//"+host+":"+port+"/"+database; //zoiks
-        log.info("Connection URI = "+connectURI);
-        connectionPool = new GenericObjectPool(null);
-        ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connectURI,user,password);
-        PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory,connectionPool,null,null,false,true);
-        dataSource = new PoolingDataSource(connectionPool);
-        return this;
-    }
-
-    public String getDriverName() { return driverName; }
-    
-    public DataSource getDataSource() {
-        if(null == dataSource) log.error("Data Source Is NULL!!!");
-        return dataSource;
-    }
-
-    public void showDriverStats() {
-        System.out.println(" NumActive: " + (connectionPool == null ? "X" : connectionPool.getNumActive()));
-        System.out.println(" NumIdle:   " + (connectionPool == null ? "X" : connectionPool.getNumIdle()));
-    }
-
-    public void shutdownResource() {
-        log.info("Shutting Down Database Resource! ("+driverName+")");
-        try{
-            connectionPool.close();
-        }catch(Exception ex) {
-            log.error("Problem with closing connection Pool!",ex);
+        String datasetdir = null;
+        if(line.hasOption( "files" )) {
+            datasetdir = line.getOptionValue( "files" );
+            env.getWriter().println("files option value is: "+datasetdir);
         }
-        dataSource = null;
-        instance = null;
+
+        if(line.hasOption( "missing" )) {
+            datasetdir = line.getOptionValue( "missing" );
+            env.getWriter().println("missing option value is: "+datasetdir);
+        }
+
+        if(line.hasOption( "local" )) {
+            datasetdir = line.getOptionValue( "local" );
+            env.getWriter().println("local option value is: "+datasetdir);
+        }
+
+        int i=0;
+        for(String arg : line.getArgs()) {
+            log.trace("arg("+(i++)+"): "+arg);
+        }
+        
+        return env;
     }
 }
