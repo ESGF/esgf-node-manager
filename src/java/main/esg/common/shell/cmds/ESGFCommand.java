@@ -69,9 +69,16 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
 public abstract class ESGFCommand {
  
     private static Log log = LogFactory.getLog(ESGFCommand.class);
+
+    public  static final String helpOptionRegex = "(\\s|^)(--|-)(help|h)(\\s+|$)";
+    public  static final Pattern helpOptionPattern = Pattern.compile(helpOptionRegex,Pattern.CASE_INSENSITIVE);
+    private final Matcher m = helpOptionPattern.matcher("");
 
     protected CommandLine commandLine = null;
     protected CommandLineParser parser = null;
@@ -94,7 +101,7 @@ public abstract class ESGFCommand {
     
 
     public void initOptions() {
-        getOptions().addOption("help", false, "print this message");
+        getOptions().addOption("h","help", false, "print this message");
         doInitOptions();
     };
     public void doInitOptions() {} //FIX ME?... for some reason when I make this abstract and call from constructor hell breaks loose.
@@ -103,6 +110,7 @@ public abstract class ESGFCommand {
     public void clearOptions() { options = null; }
 
     protected void reset() {
+        //TODO: remove command option completor...
         clearCommandLineParser();
         clearOptions();
         initOptions();
@@ -115,11 +123,35 @@ public abstract class ESGFCommand {
     //-----
     final public ESGFEnv eval(String[] args, ESGFEnv env) {
         try{
-            commandLine = getCommandLineParser().parse(getOptions(),args);
-            if(commandLine.hasOption("help")) {
-                showHelp();
-                return env;
+
+            //NOTE: I have not been able to find any special handling
+            //for 'help' that would by-pass getting caught in the
+            //required fields trap... so I have to do it myself before
+            //the call to parse the command line which is what puts us
+            //in the --help/requiered_field conundrum.
+            
+            for(String arg : args) {
+                m.reset(arg);
+                if(m.find()) {
+                    log.info("Found help arg... showing help");
+                    showHelp();
+                    reset();
+                    return env;
+                }
             }
+            
+            //TODO:
+            //This would also be the place to add an option specific
+            //completor. The idea is to be able to complete the next
+            //option as you are building the command line.  It will
+            //also show you what the required fields are so you can be
+            //sure to fill them in
+
+            //Perhaps something like this...
+            //env.getReader().addCompletor(getCommandOptionCompletor());
+            
+            commandLine = getCommandLineParser().parse(getOptions(),args);
+
         }catch(ParseException exp) {
             // oops, something went wrong
             System.err.println(exp.getMessage());
@@ -131,5 +163,9 @@ public abstract class ESGFCommand {
     };
     
     public abstract ESGFEnv doEval(CommandLine line, ESGFEnv env);
+
+    //protected ESGFCommandOptionCompletor getCommandOptionCompletor() {
+    //    return new ESGFCommandOptionCompletor(getOptions());
+    //}
     
 }
