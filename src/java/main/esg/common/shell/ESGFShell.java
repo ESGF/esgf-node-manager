@@ -138,25 +138,25 @@ public class ESGFShell {
         //(NOTE: Class loading these because they are apart of the esgf-security project... not resident to the node-manager)
         //(      Also to avoid circular dependencies between esgf-security and esgf-node-manager...)
         //---
-        try{ commandMap.put("useradd",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuseradd").newInstance())); } catch(Exception e) { log.info(" unable to load useradd: "+e.getMessage()); }
-        try{ commandMap.put("userdel",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuserdel").newInstance())); } catch(Exception e) { log.info(" unable to load userdel: "+e.getMessage()); }
-        try{ commandMap.put("usermod",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFusermod").newInstance())); } catch(Exception e) { log.info(" unable to load usermod: "+e.getMessage()); }
-        try{ commandMap.put("groupadd", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupadd").newInstance()));} catch(Exception e) { log.info(" unable to load groupadd: "+e.getMessage()); }
-        try{ commandMap.put("groupdel", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupdel").newInstance()));} catch(Exception e) { log.info(" unable to load groupdel: "+e.getMessage()); }
-        try{ commandMap.put("groupmod", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupmod").newInstance()));} catch(Exception e) { log.info(" unable to load groupmod: "+e.getMessage()); }
-        try{ commandMap.put("roleadd",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFroleadd").newInstance()));}  catch(Exception e) { log.info(" unable to load roleadd: "+e.getMessage()); }
-        try{ commandMap.put("roledel",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFroledel").newInstance()));}  catch(Exception e) { log.info(" unable to load roledel: "+e.getMessage()); }
-        try{ commandMap.put("rolemod",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFrolemod").newInstance()));}  catch(Exception e) { log.info(" unable to load rolemod: "+e.getMessage()); }
-        try{ commandMap.put("associate",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFassociate").newInstance()));} catch(Exception e) { log.info(" unable to load associate: "+e.getMessage()); }
-        try{ commandMap.put("passwd",   (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFpasswd").newInstance()));  } catch(Exception e) { log.info(" unable to load passwd: "+e.getMessage()); }
-        try{ commandMap.put("show",     (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFshow").newInstance()));    } catch(Exception e) { log.info(" unable to load show: "+e.getMessage()); }
+        try{ commandMap.put("useradd",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuseradd").newInstance())); } catch(Exception e) { log.trace(" unable to load useradd: "+e.getMessage()); }
+        try{ commandMap.put("userdel",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuserdel").newInstance())); } catch(Exception e) { log.trace(" unable to load userdel: "+e.getMessage()); }
+        try{ commandMap.put("usermod",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFusermod").newInstance())); } catch(Exception e) { log.trace(" unable to load usermod: "+e.getMessage()); }
+        try{ commandMap.put("groupadd", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupadd").newInstance()));} catch(Exception e) { log.trace(" unable to load groupadd: "+e.getMessage()); }
+        try{ commandMap.put("groupdel", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupdel").newInstance()));} catch(Exception e) { log.trace(" unable to load groupdel: "+e.getMessage()); }
+        try{ commandMap.put("groupmod", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupmod").newInstance()));} catch(Exception e) { log.trace(" unable to load groupmod: "+e.getMessage()); }
+        try{ commandMap.put("roleadd",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFroleadd").newInstance()));}  catch(Exception e) { log.trace(" unable to load roleadd: "+e.getMessage()); }
+        try{ commandMap.put("roledel",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFroledel").newInstance()));}  catch(Exception e) { log.trace(" unable to load roledel: "+e.getMessage()); }
+        try{ commandMap.put("rolemod",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFrolemod").newInstance()));}  catch(Exception e) { log.trace(" unable to load rolemod: "+e.getMessage()); }
+        try{ commandMap.put("associate",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFassociate").newInstance()));} catch(Exception e) { log.trace(" unable to load associate: "+e.getMessage()); }
+        try{ commandMap.put("passwd",   (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFpasswd").newInstance()));  } catch(Exception e) { log.trace(" unable to load passwd: "+e.getMessage()); }
+        try{ commandMap.put("show",     (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFshow").newInstance()));    } catch(Exception e) { log.trace(" unable to load show: "+e.getMessage()); }
 
         //---
         //search
         //---
-        //commandMap.put("search",new esg.node.search.shell.cmds.ESGFsearch());
-        //commandMap.put("mark"  ,new esg.node.search.shell.cmds.ESGFmark());
-        //commandMap.put("unmark",new esg.node.search.shell.cmds.ESGFunmark());
+        //This command must live on the index server node...
+        try{ commandMap.put("ingest", (ESGFCommand)(Class.forName("esg.node.search.shell.cmds.ESGFsearch").newInstance()));} catch(Exception e) { log.info(" unable to load ingest: "+e.getMessage()); }
+        //commandMap.put("search",new esg.common.shell.cmds.search.ESGFsearch());
 
         //---
         //copy / replication commands
