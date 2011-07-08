@@ -96,6 +96,9 @@ public abstract class ESGFCommand {
     public void init(ESGFEnv env) {}
     abstract public String getCommandName();
 
+    //TODO: make this properly abstract...
+    public String getInfo() { return "<no info>"; }
+
     public CommandLineParser getCommandLineParser() { return (null == parser) ? this.parser = new PosixParser() : this.parser; }
     public void clearCommandLineParser()  { parser = null; }
     
@@ -130,16 +133,17 @@ public abstract class ESGFCommand {
             //the call to parse the command line which is what puts us
             //in the --help/requiered_field conundrum.
             
-            for(String arg : args) {
-                m.reset(arg);
-                if(m.find()) {
-                    log.info("Found help arg... showing help");
-                    showHelp();
-                    reset();
-                    return env;
+            if(null != args) {
+                for(String arg : args) {
+                    m.reset(arg);
+                    if(m.find()) {
+                        showHelp();
+                        reset();
+                        return env;
+                    }
                 }
             }
-            
+
             //TODO:
             //This would also be the place to add an option specific
             //completor. The idea is to be able to complete the next
@@ -155,7 +159,7 @@ public abstract class ESGFCommand {
         }catch(ParseException exp) {
             // oops, something went wrong
             System.err.println(exp.getMessage());
-            return null;
+            return env;
         }
         doEval(commandLine, env);
         reset();

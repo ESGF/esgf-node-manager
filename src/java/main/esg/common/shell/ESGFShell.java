@@ -155,7 +155,7 @@ public class ESGFShell {
         //search
         //---
         //This command must live on the index server node...
-        try{ commandMap.put("ingest", (ESGFCommand)(Class.forName("esg.node.search.shell.cmds.ESGFsearch").newInstance()));} catch(Exception e) { log.info(" unable to load ingest: "+e.getMessage()); }
+        try{ commandMap.put("ingest", (ESGFCommand)(Class.forName("esg.node.search.shell.cmds.ESGFingest").newInstance()));} catch(Exception e) { log.info(" unable to load ingest: "+e.getMessage()); }
         //commandMap.put("search",new esg.common.shell.cmds.search.ESGFsearch());
 
         //---
@@ -168,12 +168,17 @@ public class ESGFShell {
         //Help command...
         commandMap.put("help",new esg.common.shell.cmds.ESGFCommand() {
                 public String getCommandName() { return "help"; }
+                public String getInfo() { return "prints this command list"; }
                 public void doInitOptions(){}
                 public ESGFEnv doEval(CommandLine line, ESGFEnv env) {
                     log.trace("inside the \"help\" command's doEval");
                     try{
                         for(String commandName : ESGFShell.this.commandMap.keySet()) {
-                            formatter.printUsage(env.getWriter(),10,commandName,ESGFShell.this.commandMap.get(commandName).getOptions());
+                            env.getWriter().println(commandName+"  --- "+ESGFShell.this.commandMap.get(commandName).getInfo());
+                            //formatter.printUsage(env.getWriter(),
+                            //                     env.getReader().getTermwidth(),
+                            //                     commandName,
+                            //                     ESGFShell.this.commandMap.get(commandName).getOptions());
                         }
                         env.getWriter().flush();
                     }catch(Throwable t) {}
