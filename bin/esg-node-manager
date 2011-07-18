@@ -88,7 +88,7 @@ install_prefix=${install_prefix:-"/usr/local"}
 cdat_home=${cdat_home:-${install_prefix}/cdat}
 esg_root_dir=${esg_root_dir:-"/esg"}
 workdir=${workdir:-~/workbench/esg}
-install_logfile=${install_logfile:-"/etc/esg.install_log"}
+install_manifest=${install_manifest:-"${esg_root_dir}/esgf-install-manifest"}
 #--------------
 
 date_format=${date_format:-"+%Y_%m_%d_%H%M%S"}
@@ -319,8 +319,8 @@ EOF
 }
 
 write_node_manager_install_log() {
-    echo "$(date ${date_format}) webapp:esgf-node-manager=${esgf_node_manager_version} ${node_manager_app_home}" >> ${install_logfile}
-    dedup ${install_logfile}
+    echo "$(date ${date_format}) webapp:esgf-node-manager=${esgf_node_manager_version} ${node_manager_app_home}" >> ${install_manifest}
+    dedup ${install_manifest}
     return 0
 }
 
@@ -404,8 +404,8 @@ configure_postgress() {
 }
 
 write_node_manager_db_install_log() {
-    echo "$(date ${date_format}) python:esgf_node_manager=${esgf_node_manager_db_version} " >> ${install_logfile}
-    dedup ${install_logfile}
+    echo "$(date ${date_format}) python:esgf_node_manager=${esgf_node_manager_db_version} " >> ${install_manifest}
+    dedup ${install_manifest}
     return 0
 }
 
@@ -423,7 +423,7 @@ clean_node_manager_webapp_subsystem() {
             if [ -n ${node_manager_app_home} ] ; then 
                 rm -rf ${node_manager_app_home}
                 [ $? != 0 ] && echo "ERROR: Unable to remove ${node_manager_app_home}" && return 1
-                perl -n -i -e'print unless m!webapp:esgf-node-manager!' ${install_logfile}
+                perl -n -i -e'print unless m!webapp:esgf-node-manager!' ${install_manifest}
             fi
         fi
     fi 
@@ -453,7 +453,7 @@ clean_node_manager_database_subsystem_installation() {
             [ $? != 0 ] && echo "ERROR: Unable to remove ${tomcat_install_dir}/webapps/${node_manager_app_context_root}" && return 1
             rm -rvf ${cdat_home}/bin/esgf_node_manager_initialize && \
                 rm -rf ${cdat_home}/lib/python${python_version}/${esgf_node_manager_egg_file} && \
-                perl -n -i -e'print unless m!python:esgf_node_manager!' ${install_logfile} && echo "[REMOVED]"
+                perl -n -i -e'print unless m!python:esgf_node_manager!' ${install_manifest} && echo "[REMOVED]"
         fi
     fi 
     return 0
