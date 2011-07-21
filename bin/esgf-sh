@@ -32,7 +32,7 @@ build_jarpath() {
     else
         paths[0]=${CATALINA_HOME:-/usr/local/tomcat}/webapps/esgf-node-manager/WEB-INF/lib
         paths[1]=${CATALINA_HOME:-/usr/local/tomcat}/webapps/esgf-security/WEB-INF/lib
-        paths[1]=${CATALINA_HOME:-/usr/local/tomcat}/webapps/esg-search/WEB-INF/lib
+        paths[2]=${CATALINA_HOME:-/usr/local/tomcat}/webapps/esg-search/WEB-INF/lib
     fi
 
     local IFS=" :"
