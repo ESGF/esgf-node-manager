@@ -5,6 +5,7 @@
   <xsd:attributeGroup name="LasServerAttributes">
     <xsd:attribute name="name" type="xsd:string" use="required"/>
     <xsd:attribute name="url"  type="xsd:string" use="required"/>
+    <xsd:attribute name="ip"   type="xsd:string" use="required"/>
   </xsd:attributeGroup>
   
   <xsd:element name="las_server">

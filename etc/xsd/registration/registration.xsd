@@ -154,6 +154,8 @@ That does make it more wordy, and require and reconstruction. -->
         <xsd:attribute name="supportEmail" type="xsd:string"/>
         <!-- Hostname, full domain name, and unique identifier -->
         <xsd:attribute name="hostname" type="xsd:string" use="required"/>
+        <!-- IP, ip address of this node -->
+        <xsd:attribute name="ip" type="xsd:string" use="required"/>
         <!-- Host Certificate DN, will be used as default identity for all services,
         unless overridden by the DN attribute in the service -->
         <xsd:attribute name="dn" type="xsd:string" use="required"/>
