@@ -98,7 +98,7 @@ public class ESGFShell {
     private static final Pattern commandTypePattern = Pattern.compile(commandTypeRegex,Pattern.CASE_INSENSITIVE);
     private final Matcher typeMatcher = commandTypePattern.matcher("");
 
-    private static final String commandEntryRegex = "[ ]*([a-zA-Z0-9-_]*)[ ]*->[ ]*([a-zA-Z0-9-_./]*)[ ]*$";
+    private static final String commandEntryRegex = "[ ]*([a-zA-Z0-9-_]*)[ ]*(?:->|=)[ ]*([a-zA-Z0-9-_./]*)[ ]*$";
     private static final Pattern commandEntryPattern = Pattern.compile(commandEntryRegex,Pattern.CASE_INSENSITIVE);
     private final Matcher entryMatcher = commandEntryPattern.matcher("");
 
