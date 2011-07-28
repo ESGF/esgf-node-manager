@@ -123,7 +123,7 @@ public class ESGFShell {
     private void loadCommands() {
         log.info("Loading ESGF Builtin Shell Commands...");
         commandMap = new HashMap<String,ESGFCommand>();
-        commandMap.put("test",new esg.common.shell.cmds.ESGFtest());
+        //commandMap.put("test",new esg.common.shell.cmds.ESGFtest()); //now loaded as contrib command
         commandMap.put("clear",new esg.common.shell.cmds.ESGFclear());
         commandMap.put("ls",new esg.common.shell.cmds.ESGFls());
 
@@ -210,7 +210,7 @@ public class ESGFShell {
     }
 
     private void loadCommandsFromFile() {
-        System.out.println("Loading ESGF Contrib Shell Commands...");
+        log.info("Loading ESGF Contrib Shell Commands...");
 
         String configDir = null;
         String line = null;

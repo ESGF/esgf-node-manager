@@ -274,6 +274,7 @@ setup_node_manager() {
 
     (write_node_manager_config && configure_postgress) || checked_done 1
     write_node_manager_install_log
+    write_shell_contrib_command_file
     set_redirect
 
     [ -d ${tomcat_install_dir}/webapps/esg-node ] && echo -n "Removing old esg-node webapp (${tomcat_install_dir}/webapps/esg-node)... " && rm -rf ${tomcat_install_dir}/webapps/esg-node && echo "[OK]"
@@ -299,6 +300,8 @@ write_node_manager_config() {
     #----------------------------
     mkdir -p ${esg_root_dir}/config
     pushd ${esg_root_dir}/config >& /dev/null
+    [ $? != 0 ] && return 1
+
     cat >> ${config_file} <<EOF
 db.driver=${postgress_driver}
 db.protocol=${postgress_protocol}
@@ -310,6 +313,8 @@ db.password=${pg_sys_acct_passwd}
 mail.smtp.host=${mail_smtp_host}
 mail.admin.address=${mail_admin_address}
 EOF
+    [ $? != 0 ] && popd >& /dev/null && return 1
+
     dedup_properties ${config_file}
     chown ${tomcat_user}:${tomcat_group} ${config_file}
     chmod 600 ${config_file}
@@ -321,6 +326,41 @@ EOF
 write_node_manager_install_log() {
     echo "$(date ${date_format}) webapp:esgf-node-manager=${esgf_node_manager_version} ${node_manager_app_home}" >> ${install_manifest}
     dedup ${install_manifest}
+    return 0
+}
+
+write_shell_contrib_command_file() {
+    local contrib_file=${esg_root_dir}/config/esgf_contrib_commands
+    [ -e contrib_commands ] && return 0
+
+    #----------------------------
+    mkdir -p ${esg_root_dir}/config
+    pushd ${esg_root_dir}/config >& /dev/null
+    [ $? != 0 ] && return 1
+
+    cat >> ${contrib_file} <<EOF
+#This file contains the mappings of contributed shell commands that
+#are to be loaded into the esgf-sh shell
+#Entries are of the form:
+
+#[implmentation_language]
+#command1 -> resource1
+#command2 = resource2
+
+#Depending on the resource value specifies the resource to load given
+#the implementation language specified.  For example for commands
+#implemented in Java the resource is the fully qualified class name of
+#the implementing class.
+
+[java]
+test -> esg.common.shell.cmds.ESGFtest
+
+EOF
+    [ $? != 0 ] && popd >& /dev/null && return 1
+
+    chmod 644 ${config_file}
+    popd >& /dev/null
+    #----------------------------
     return 0
 }
 
