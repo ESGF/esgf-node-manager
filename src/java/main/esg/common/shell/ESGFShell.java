@@ -66,6 +66,13 @@ import jline.*;
 import java.io.*;
 import java.util.*;
 
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
+
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
 import org.apache.commons.cli.*;
 
 import esg.common.ESGException;
@@ -86,6 +93,17 @@ public class ESGFShell {
     public static final Character MASK = '*';
     public static final String PIPE_RE = "\\|";
     public static final String SEMI_RE = ";";
+
+    private static final String commandTypeRegex = ".*\\[([a-zA-Z0-9]*)\\].*";
+    private static final Pattern commandTypePattern = Pattern.compile(commandTypeRegex,Pattern.CASE_INSENSITIVE);
+    private final Matcher typeMatcher = commandTypePattern.matcher("");
+
+    private static final String commandEntryRegex = "[ ]*([a-zA-Z0-9-_]*)[ ]*->[ ]*([a-zA-Z0-9-_./]*)[ ]*$";
+    private static final Pattern commandEntryPattern = Pattern.compile(commandEntryRegex,Pattern.CASE_INSENSITIVE);
+    private final Matcher entryMatcher = commandEntryPattern.matcher("");
+
+    String commandName = null;
+    String resource = null;
 
     private Map<String,ESGFCommand> commandMap = null;
     private List<Completor> completors = null;
@@ -187,8 +205,103 @@ public class ESGFShell {
             });
         commandMap.put("?", commandMap.get("help"));
 
+        loadCommandsFromFile();
         log.info("("+commandMap.size()+") commands loaded");
     }
+
+    private void loadCommandsFromFile() {
+        System.out.println("Loading ESGF Contrib Shell Commands...");
+
+        String configDir = null;
+        String line = null;
+        String commandType = null;
+
+        if (null != (configDir = System.getenv().get("ESGF_HOME"))) {
+            configDir = configDir+File.separator+"config";
+            BufferedReader in = null;
+            try {
+                File commandList = new File(configDir+File.separator+"esgf_contrib_commands");
+                if(commandList.exists()) {
+                    in = new BufferedReader(new FileReader(commandList));
+                    try{
+                        while ((line = in.readLine()) != null) {
+                            line = line.trim();
+                            if (line.isEmpty() || line.startsWith("#")) continue; //skip blank and comment lines...
+
+                            //Regex for pulling out [commandType]
+                            //if the regex gets a hit, set the commandType accordingly.
+                            typeMatcher.reset(line);
+                            if(typeMatcher.find()) {
+                                String foundCommandType = typeMatcher.group(1);
+                                if(foundCommandType != null) {
+                                    commandType = foundCommandType;
+                                    log.trace("command implementation = ["+commandType+"]");
+                                }
+                                continue;
+                            }
+                            if (commandType == null) continue;
+                            loadCommand(commandType,line);
+                        }
+                    }catch(java.io.IOException ex) {
+                        log.error(ex);
+                    }finally {
+                        if(null != in) in.close();
+                    }
+                }else{
+                    log.trace("Could not find command file: ["+commandList.getPath()+"]");
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
+        }else {
+            log.warn("ESGF_HOME not found in environment");
+        }
+    }
+
+    /**
+       Loads commands into the shell
+     */
+    private void loadCommand(String commandType, String line) {
+        //Regex to parse the line for commandName and resource information...
+        entryMatcher.reset(line);
+        if(entryMatcher.find()) {
+            commandName = entryMatcher.group(1);
+            resource = entryMatcher.group(2);
+            log.trace("preparing to load ["+commandName+"] -> ["+resource+"]");
+        }else{
+            log.warn("Malformed shell command entry: ["+line+"]");
+            return;
+        }
+
+        //-----
+        //NOTE: yes yes, I know... there is a sexier way to do this
+        //with enums, but I have to Brody this right now son.
+        //-----
+        if(commandType.equalsIgnoreCase("java")) {            loadJavaCommand(commandName,resource);
+        }else if(commandType.equalsIgnoreCase("clojure"))   { loadClojureCommand(commandName,resource);
+        }else if(commandType.equalsIgnoreCase("scala"))     { loadScalaCommand(commandName,resource);
+        }else if(commandType.equalsIgnoreCase("jython"))    { loadJythonCommand(commandName,resource);
+        }else if(commandType.equalsIgnoreCase("groovy"))    { loadGroovyCommand(commandName,resource);
+        }else if(commandType.equalsIgnoreCase("beanshell")) { loadBeanShellCommand(commandName,resource);
+        }else {
+            log.warn("Unknown command implementation language ["+commandType+"]");
+        }
+    }
+
+    //Handles (loads)  Java shell command entries
+    private void loadJavaCommand(String commandName, String resource) {
+        try{
+            commandMap.put(commandName,(ESGFCommand)(Class.forName(resource).newInstance()));
+        } catch(Exception e) {
+            log.trace(" unable to load "+commandName+": "+e.getMessage());
+        }
+    }
+
+    private void loadClojureCommand(String commandName, String resource)   { log.warn("Clojure commands not yet supported ["+commandName+"]->["+resource+"]"); }
+    private void loadScalaCommand(String commandName, String resource)     { log.warn("Scala commands not yet supported ["+commandName+"]->["+resource+"]"); }
+    private void loadJythonCommand(String commandName, String resource)    { log.warn("Jython commands not yet supported ["+commandName+"]->["+resource+"]"); }
+    private void loadGroovyCommand(String commandName, String resource)    { log.warn("Groovy commands not yet supported ["+commandName+"]->["+resource+"]"); }
+    private void loadBeanShellCommand(String commandName, String resource) { log.warn("BeanShell commands not yet supported ["+commandName+"]->["+resource+"]"); }
 
     public static void usage() {
         System.out.println("Usage: java " + ESGFShell.class.getName()+" yadda yadda yadda");
