@@ -121,7 +121,7 @@ public class ESGFShell {
        commands made available by this shell
     */
     private void loadCommands() {
-        log.info("Loading ESGF Builtin Shell Commands...");
+        System.out.print("Loading ESGF Builtin Shell Commands ");
         commandMap = new HashMap<String,ESGFCommand>();
         //commandMap.put("test",new esg.common.shell.cmds.ESGFtest()); //now loaded as contrib command
         commandMap.put("clear",new esg.common.shell.cmds.ESGFclear());
@@ -153,28 +153,29 @@ public class ESGFShell {
         
         //---
         //security / administrative commands
-        //(NOTE: Class loading these because they are apart of the esgf-security project... not resident to the node-manager)
-        //(      Also to avoid circular dependencies between esgf-security and esgf-node-manager...)
+        //(NOTE: Class loading these because they are apart of the esgf-security project... not resident to the node-manager.
+        //       Avoids circular dependencies between esgf-security and esgf-node-manager...)
+        //See loadCommand method below...
         //---
-        try{ commandMap.put("useradd",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuseradd").newInstance())); } catch(Exception e) { log.trace(" unable to load useradd: "+e.getMessage()); }
-        try{ commandMap.put("userdel",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuserdel").newInstance())); } catch(Exception e) { log.trace(" unable to load userdel: "+e.getMessage()); }
-        try{ commandMap.put("usermod",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFusermod").newInstance())); } catch(Exception e) { log.trace(" unable to load usermod: "+e.getMessage()); }
-        try{ commandMap.put("groupadd", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupadd").newInstance()));} catch(Exception e) { log.trace(" unable to load groupadd: "+e.getMessage()); }
-        try{ commandMap.put("groupdel", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupdel").newInstance()));} catch(Exception e) { log.trace(" unable to load groupdel: "+e.getMessage()); }
-        try{ commandMap.put("groupmod", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupmod").newInstance()));} catch(Exception e) { log.trace(" unable to load groupmod: "+e.getMessage()); }
-        try{ commandMap.put("roleadd",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFroleadd").newInstance()));}  catch(Exception e) { log.trace(" unable to load roleadd: "+e.getMessage()); }
-        try{ commandMap.put("roledel",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFroledel").newInstance()));}  catch(Exception e) { log.trace(" unable to load roledel: "+e.getMessage()); }
-        try{ commandMap.put("rolemod",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFrolemod").newInstance()));}  catch(Exception e) { log.trace(" unable to load rolemod: "+e.getMessage()); }
-        try{ commandMap.put("associate",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFassociate").newInstance()));} catch(Exception e) { log.trace(" unable to load associate: "+e.getMessage()); }
-        try{ commandMap.put("passwd",   (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFpasswd").newInstance()));  } catch(Exception e) { log.trace(" unable to load passwd: "+e.getMessage()); }
-        try{ commandMap.put("show",     (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFshow").newInstance()));    } catch(Exception e) { log.trace(" unable to load show: "+e.getMessage()); }
+        loadCommand("useradd   -> esg.node.security.shell.cmds.ESGFuseradd");
+        loadCommand("userdel   -> esg.node.security.shell.cmds.ESGFuserdel");
+        loadCommand("usermod   -> esg.node.security.shell.cmds.ESGFusermod");
+        loadCommand("groupadd  -> esg.node.security.shell.cmds.ESGFgroupadd");
+        loadCommand("groupdel  -> esg.node.security.shell.cmds.ESGFgroupdel");
+        loadCommand("groupmod  -> esg.node.security.shell.cmds.ESGFgroupmod");
+        loadCommand("roleadd   -> esg.node.security.shell.cmds.ESGFroleadd");
+        loadCommand("roledel   -> esg.node.security.shell.cmds.ESGFroledel");
+        loadCommand("rolemod   -> esg.node.security.shell.cmds.ESGFrolemod");
+        loadCommand("associate -> esg.node.security.shell.cmds.ESGFassociate");
+        loadCommand("passwd    -> esg.node.security.shell.cmds.ESGFpasswd");
+        loadCommand("show      -> esg.node.security.shell.cmds.ESGFshow");
 
         //---
         //search
         //---
         //This command must live on the index server node...
-        try{ commandMap.put("ingest", (ESGFCommand)(Class.forName("esg.node.search.shell.cmds.ESGFingest").newInstance()));} catch(Exception e) { log.info(" unable to load ingest: "+e.getMessage()); }
-        //commandMap.put("search",new esg.common.shell.cmds.search.ESGFsearch());
+        loadCommand("ingest -> esg.node.search.shell.cmds.ESGFingest");
+        //loadCommand("search -> new esg.common.shell.cmds.search.ESGFsearch");
 
         //---
         //copy / replication commands
@@ -204,13 +205,15 @@ public class ESGFShell {
                 }
             });
         commandMap.put("?", commandMap.get("help"));
-
+        
+        System.out.println();
         loadCommandsFromFile();
+        System.out.println();
         log.info("("+commandMap.size()+") commands loaded");
     }
 
     private void loadCommandsFromFile() {
-        log.info("Loading ESGF Contrib Shell Commands...");
+        System.out.print("Loading ESGF Contrib Shell Commands ");
 
         String configDir = null;
         String line = null;
@@ -261,8 +264,10 @@ public class ESGFShell {
     /**
        Loads commands into the shell
      */
+    private void loadCommand(String line) { this.loadCommand("java",line); }
     private void loadCommand(String commandType, String line) {
         //Regex to parse the line for commandName and resource information...
+        System.out.print(".");
         entryMatcher.reset(line);
         if(entryMatcher.find()) {
             commandName = entryMatcher.group(1);
