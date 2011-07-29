@@ -368,6 +368,13 @@ public class ESGFShell {
         }
 
         //-------------------------
+        // reload commands
+        //-------------------------
+        if (commands[0].compareTo("rehash") == 0) {
+            loadCommands();
+        }
+
+        //-------------------------
 
         for(String commandLine : commands) {
             String[] commandLineParts = commandLine.trim().split(" ",2);
@@ -398,11 +405,6 @@ public class ESGFShell {
             command.eval(args,env);
         }
         env.getWriter().flush();
-
-        if (commands[0].compareTo("rehash") == 0) {
-            loadCommands();
-        }
-               
     }
 
     //------------------------
