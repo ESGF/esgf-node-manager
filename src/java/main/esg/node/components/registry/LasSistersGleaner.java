@@ -162,6 +162,7 @@ public class LasSistersGleaner {
                 sister = new LasServer();
                 sister.setName(node.getShortName());
                 sister.setUrl(service.getEndpoint());
+                sister.setIp(node.getIp());
                 servers.getLasServer().add(sister);
                 lasNodes++;
             }

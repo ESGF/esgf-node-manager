@@ -157,8 +157,9 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 }
             },delay*1000,period*1000);
     }
-    private void pingToPeers() {
-        Collection<? extends ESGPeer> peers_ = unavailablePeers.values();
+    private synchronized void pingToPeers() {
+        java.util.Vector<ESGPeer> peers_ = new java.util.Vector<ESGPeer>();
+        peers_.addAll(unavailablePeers.values());
         for(ESGPeer peer: peers_) {
             if(peer.equals(defaultPeer)) log.trace("(default peer)");
             //TODO: put in random selection and or heartbeat/leasing here...
@@ -167,6 +168,8 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             //maybe ping should be expanded to put in lease negotiation proper.
             peer.ping();
         }
+        peers_.clear();
+        peers_ = null; //gc niceness...
     }
 
 

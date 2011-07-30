@@ -17,21 +17,35 @@
 
 TODO:
 
+Features:
+
+- Shell: 
+  - Mode exit function to clear mode env
+  - caching DAO in admin mode
+
+- P2P Protocol adjustments
+  - don't drop messages just because you have seen them before
+  - Do not resend messages with artificially touched timestamp
+  - TTL logic for dropping messages.
+  - Test timing code for removed messages vs stale incoming
+  - filter by namespaces (regex namespaces during merge)
+  - remove immediately if fails to connect
+      if then recovers with ping, then reinstate
+  - Send out explicit 'goodbye' message when leaving / shutting down
+
+
 overall:
--set new header for all files
--untabify all files (use only spaces)
 -Put in MORE JUnit testing.
 -Write test cases for codebase.
 -Install BDM client and simple sanity check call(s)
--Build Shell
 
 core:
 Metrics & Monitoring
  ->Put in Query "LIMIT" clause at the end of each query to a configurable value
  ->For Monitoring put in time series results in fixed size LRU cache
+
 -Remove faux 'gateway' from codebase.
 -Put in XML Parsing of Payload message data (the catalog)
- ->Test xjc ant task and building stubs
  -> Have to get or make catalog specific XSD to JAXB on.
 
 -Find out from Bob what the deal is/was with hessian to see if I can
@@ -41,23 +55,11 @@ screw things up?
 
       hessian-3.0.20.jar ->? hessian-3.1.5.jar
 
--Install and setup database version control like LiquiBase, for DNM managed tables
-
 DONE:
 xClean up InstallCert Blurting out exception stack trace simply because
  you don't have the key.  (that's the point - you're trying to get it :-)
 
-esg-node:
-xInspect the "dedup" function to work with install_log as well
-xPut in better software version string checking in check_version()
-xGIT - put in fix to update an existing git fetching for cdat upgraded versions
-
-
 libs: (todo's and issues)
-xWhen cut over to ivy make sure to get rid of [jsr173] api jar since the
-xtansient dependency [stax] api jar is fetched.  Also the [jaxb1-impl.jar]
-xmay be removed since ivy pulls down the transient dependency
-[jaxb-impl.jar] that replaces it.
 
 	git rm jsr173 api use fetched stax api
 	git rm jaxb1-impl use fetched jaxb-impl

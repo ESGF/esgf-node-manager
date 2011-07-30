@@ -66,6 +66,13 @@ import jline.*;
 import java.io.*;
 import java.util.*;
 
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
+
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
 import org.apache.commons.cli.*;
 
 import esg.common.ESGException;
@@ -87,6 +94,17 @@ public class ESGFShell {
     public static final String PIPE_RE = "\\|";
     public static final String SEMI_RE = ";";
 
+    private static final String commandTypeRegex = "^[ ]*\\[([a-zA-Z]*)\\][ ]*$";
+    private static final Pattern commandTypePattern = Pattern.compile(commandTypeRegex,Pattern.CASE_INSENSITIVE);
+    private final Matcher typeMatcher = commandTypePattern.matcher("");
+
+    private static final String commandEntryRegex = "[ ]*([a-zA-Z0-9-_]*)[ ]*(?:->|=)[ ]*([a-zA-Z0-9-_./]*)[ ]*$";
+    private static final Pattern commandEntryPattern = Pattern.compile(commandEntryRegex,Pattern.CASE_INSENSITIVE);
+    private final Matcher entryMatcher = commandEntryPattern.matcher("");
+
+    String commandName = null;
+    String resource = null;
+
     private Map<String,ESGFCommand> commandMap = null;
     private List<Completor> completors = null;
 
@@ -103,9 +121,9 @@ public class ESGFShell {
        commands made available by this shell
     */
     private void loadCommands() {
-        log.info("Loading ESGF Builtin Shell Commands...");
+        System.out.print("Loading ESGF Builtin Shell Commands ");
         commandMap = new HashMap<String,ESGFCommand>();
-        commandMap.put("test",new esg.common.shell.cmds.ESGFtest());
+        //commandMap.put("test",new esg.common.shell.cmds.ESGFtest()); //now loaded as contrib command
         commandMap.put("clear",new esg.common.shell.cmds.ESGFclear());
         commandMap.put("ls",new esg.common.shell.cmds.ESGFls());
 
@@ -135,28 +153,29 @@ public class ESGFShell {
         
         //---
         //security / administrative commands
-        //(NOTE: Class loading these because they are apart of the esgf-security project... not resident to the node-manager)
-        //(      Also to avoid circular dependencies between esgf-security and esgf-node-manager...)
+        //(NOTE: Class loading these because they are apart of the esgf-security project... not resident to the node-manager.
+        //       Avoids circular dependencies between esgf-security and esgf-node-manager...)
+        //See loadCommand method below...
         //---
-        try{ commandMap.put("useradd",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuseradd").newInstance())); } catch(Exception e) { log.trace(" unable to load useradd: "+e.getMessage()); }
-        try{ commandMap.put("userdel",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFuserdel").newInstance())); } catch(Exception e) { log.trace(" unable to load userdel: "+e.getMessage()); }
-        try{ commandMap.put("usermod",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFusermod").newInstance())); } catch(Exception e) { log.trace(" unable to load usermod: "+e.getMessage()); }
-        try{ commandMap.put("groupadd", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupadd").newInstance()));} catch(Exception e) { log.trace(" unable to load groupadd: "+e.getMessage()); }
-        try{ commandMap.put("groupdel", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupdel").newInstance()));} catch(Exception e) { log.trace(" unable to load groupdel: "+e.getMessage()); }
-        try{ commandMap.put("groupmod", (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFgroupmod").newInstance()));} catch(Exception e) { log.trace(" unable to load groupmod: "+e.getMessage()); }
-        try{ commandMap.put("roleadd",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFroleadd").newInstance()));}  catch(Exception e) { log.trace(" unable to load roleadd: "+e.getMessage()); }
-        try{ commandMap.put("roledel",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFroledel").newInstance()));}  catch(Exception e) { log.trace(" unable to load roledel: "+e.getMessage()); }
-        try{ commandMap.put("rolemod",  (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFrolemod").newInstance()));}  catch(Exception e) { log.trace(" unable to load rolemod: "+e.getMessage()); }
-        try{ commandMap.put("associate",(ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFassociate").newInstance()));} catch(Exception e) { log.trace(" unable to load associate: "+e.getMessage()); }
-        try{ commandMap.put("passwd",   (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFpasswd").newInstance()));  } catch(Exception e) { log.trace(" unable to load passwd: "+e.getMessage()); }
-        try{ commandMap.put("show",     (ESGFCommand)(Class.forName("esg.node.security.shell.cmds.ESGFshow").newInstance()));    } catch(Exception e) { log.trace(" unable to load show: "+e.getMessage()); }
+        loadCommand("useradd   -> esg.node.security.shell.cmds.ESGFuseradd");
+        loadCommand("userdel   -> esg.node.security.shell.cmds.ESGFuserdel");
+        loadCommand("usermod   -> esg.node.security.shell.cmds.ESGFusermod");
+        loadCommand("groupadd  -> esg.node.security.shell.cmds.ESGFgroupadd");
+        loadCommand("groupdel  -> esg.node.security.shell.cmds.ESGFgroupdel");
+        loadCommand("groupmod  -> esg.node.security.shell.cmds.ESGFgroupmod");
+        loadCommand("roleadd   -> esg.node.security.shell.cmds.ESGFroleadd");
+        loadCommand("roledel   -> esg.node.security.shell.cmds.ESGFroledel");
+        loadCommand("rolemod   -> esg.node.security.shell.cmds.ESGFrolemod");
+        loadCommand("associate -> esg.node.security.shell.cmds.ESGFassociate");
+        loadCommand("passwd    -> esg.node.security.shell.cmds.ESGFpasswd");
+        loadCommand("show      -> esg.node.security.shell.cmds.ESGFshow");
 
         //---
         //search
         //---
         //This command must live on the index server node...
-        try{ commandMap.put("ingest", (ESGFCommand)(Class.forName("esg.node.search.shell.cmds.ESGFingest").newInstance()));} catch(Exception e) { log.info(" unable to load ingest: "+e.getMessage()); }
-        //commandMap.put("search",new esg.common.shell.cmds.search.ESGFsearch());
+        loadCommand("ingest -> esg.node.search.shell.cmds.ESGFingest");
+        //loadCommand("search -> new esg.common.shell.cmds.search.ESGFsearch");
 
         //---
         //copy / replication commands
@@ -186,9 +205,108 @@ public class ESGFShell {
                 }
             });
         commandMap.put("?", commandMap.get("help"));
-
+        
+        System.out.println();
+        loadCommandsFromFile();
+        System.out.println();
         log.info("("+commandMap.size()+") commands loaded");
     }
+
+    private void loadCommandsFromFile() {
+        System.out.print("Loading ESGF Contrib Shell Commands ");
+
+        String configDir = null;
+        String line = null;
+        String commandType = null;
+
+        if (null != (configDir = System.getenv().get("ESGF_HOME"))) {
+            configDir = configDir+File.separator+"config";
+            BufferedReader in = null;
+            try {
+                File commandList = new File(configDir+File.separator+"esgf_contrib_commands");
+                if(commandList.exists()) {
+                    in = new BufferedReader(new FileReader(commandList));
+                    try{
+                        while ((line = in.readLine()) != null) {
+                            line = line.trim();
+                            if (line.isEmpty() || line.startsWith("#")) continue; //skip blank and comment lines...
+
+                            //Regex for pulling out [commandType]
+                            //if the regex gets a hit, set the commandType accordingly.
+                            typeMatcher.reset(line);
+                            if(typeMatcher.find()) {
+                                String foundCommandType = typeMatcher.group(1);
+                                if(foundCommandType != null) {
+                                    commandType = foundCommandType;
+                                    log.trace("command implementation = ["+commandType+"]");
+                                }
+                                continue;
+                            }
+                            if (commandType == null) continue;
+                            loadCommand(commandType,line);
+                        }
+                    }catch(java.io.IOException ex) {
+                        log.error(ex);
+                    }finally {
+                        if(null != in) in.close();
+                    }
+                }else{
+                    log.trace("Could not find command file: ["+commandList.getPath()+"]");
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
+        }else {
+            log.warn("ESGF_HOME not found in environment");
+        }
+    }
+
+    /**
+       Loads commands into the shell
+     */
+    private void loadCommand(String line) { this.loadCommand("java",line); }
+    private void loadCommand(String commandType, String line) {
+        //Regex to parse the line for commandName and resource information...
+        System.out.print(".");
+        entryMatcher.reset(line);
+        if(entryMatcher.find()) {
+            commandName = entryMatcher.group(1);
+            resource = entryMatcher.group(2);
+            log.trace("preparing to load ["+commandName+"] -> ["+resource+"]");
+        }else{
+            log.warn("Malformed shell command entry: ["+line+"]");
+            return;
+        }
+
+        //-----
+        //NOTE: yes yes, I know... there is a sexier way to do this
+        //with enums, but I have to Brody this right now son.
+        //-----
+        if(commandType.equalsIgnoreCase("java")) {            loadJavaCommand(commandName,resource);
+        }else if(commandType.equalsIgnoreCase("clojure"))   { loadClojureCommand(commandName,resource);
+        }else if(commandType.equalsIgnoreCase("scala"))     { loadScalaCommand(commandName,resource);
+        }else if(commandType.equalsIgnoreCase("jython"))    { loadJythonCommand(commandName,resource);
+        }else if(commandType.equalsIgnoreCase("groovy"))    { loadGroovyCommand(commandName,resource);
+        }else if(commandType.equalsIgnoreCase("beanshell")) { loadBeanShellCommand(commandName,resource);
+        }else {
+            log.warn("Unknown command implementation language ["+commandType+"]");
+        }
+    }
+
+    //Handles (loads)  Java shell command entries
+    private void loadJavaCommand(String commandName, String resource) {
+        try{
+            commandMap.put(commandName,(ESGFCommand)(Class.forName(resource).newInstance()));
+        } catch(Exception e) {
+            log.trace(" unable to load "+commandName+": "+e.getMessage());
+        }
+    }
+
+    private void loadClojureCommand(String commandName, String resource)   { log.warn("Clojure commands not yet supported ["+commandName+"]->["+resource+"]"); }
+    private void loadScalaCommand(String commandName, String resource)     { log.warn("Scala commands not yet supported ["+commandName+"]->["+resource+"]"); }
+    private void loadJythonCommand(String commandName, String resource)    { log.warn("Jython commands not yet supported ["+commandName+"]->["+resource+"]"); }
+    private void loadGroovyCommand(String commandName, String resource)    { log.warn("Groovy commands not yet supported ["+commandName+"]->["+resource+"]"); }
+    private void loadBeanShellCommand(String commandName, String resource) { log.warn("BeanShell commands not yet supported ["+commandName+"]->["+resource+"]"); }
 
     public static void usage() {
         System.out.println("Usage: java " + ESGFShell.class.getName()+" yadda yadda yadda");
@@ -250,6 +368,13 @@ public class ESGFShell {
         }
 
         //-------------------------
+        // reload commands
+        //-------------------------
+        if (commands[0].compareTo("rehash") == 0) {
+            loadCommands();
+        }
+
+        //-------------------------
 
         for(String commandLine : commands) {
             String[] commandLineParts = commandLine.trim().split(" ",2);
@@ -280,11 +405,6 @@ public class ESGFShell {
             command.eval(args,env);
         }
         env.getWriter().flush();
-
-        if (commands[0].compareTo("rehash") == 0) {
-            loadCommands();
-        }
-               
     }
 
     //------------------------

@@ -355,6 +355,7 @@ public class RegistrationGleaner {
             
             //Pulled from system or install
             node.setHostname(nodeHostname);
+            node.setIp(props.getProperty("esgf.host.ip"));
             node.setDn(props.getProperty("node.dn")); //zoiks
             node.setNamespace(props.getProperty("node.namespace")); //zoiks
             node.setTimeStamp(timestamp);
