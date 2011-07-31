@@ -32,6 +32,12 @@ Features:
   - remove immediately if fails to connect
       if then recovers with ping, then reinstate
   - Send out explicit 'goodbye' message when leaving / shutting down
+  - When comparing node timestamps in merge, add in skew slop function
+      instead of direct comparing. Ex: isWithinSkew(ts1,ts2);
+      coordinate this skew tolerance with that of ntp.
+  - Adjust the regex for the PeerNetworkFilter to deal with namespace
+      prefix. Ex: a candidate network foo-org.esgf is accepted when
+      testing for org.esgf. (but not vise versa)
 
 
 overall:
