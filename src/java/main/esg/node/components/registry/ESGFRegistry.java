@@ -101,6 +101,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     private Map<String,Long> removedMap = null;
     private NodeHostnameComparator nodecomp = null;
     private long lastDispatchTime = -1L;
+    private PeerNetworkFilter peerFilter = null;
 
     public ESGFRegistry(String name) {
         super(name);
@@ -117,6 +118,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             nodecomp = new NodeHostnameComparator();
             processedMap = new HashMap<String,String>();
             removedMap = new HashMap<String,Long>();
+            peerFilter = new PeerNetworkFilter(props);
         }catch(java.io.IOException e) {
             System.out.println("Damn ESGFRegistry can't fire up... :-(");
             log.error(e);
