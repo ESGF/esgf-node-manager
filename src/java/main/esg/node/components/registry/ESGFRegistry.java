@@ -282,9 +282,18 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     newNodes.add(myList.get(i));
                     log.trace("-- Keeping local entry for "+myList.get(i));
                 }else {
-                    newNodes.add(otherList.get(j));
-                    updatedNodes.add(otherList.get(j));
-                    log.trace("-- Updating with remote entry for "+myList.get(i));
+                    if(peerFilter.isInNetwork(otherList.get(j).getNamespace())) {
+                        newNodes.add(otherList.get(j));
+                        updatedNodes.add(otherList.get(j));
+                        log.trace("-- Updating with remote entry for "+myList.get(i));
+                    }else{
+                        log.trace("   Skipping, Not in our peer network (=)");
+                        //just skip what's in the entry in the
+                        //otherList but leave us at the same position
+                        //in myList to do the next comparison 
+                        //(I could have also done j++; continue;)
+                        i--; 
+                    }
                 }
                 i++;
                 j++;
@@ -296,9 +305,13 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
                     (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
                     removedMap.remove(removedNodeHostname);
-                    newNodes.add(otherList.get(j));
-                    updatedNodes.add(otherList.get(j));
-                    //log.trace("-  Discarding remote entry, "+otherList.get(j)+", as it was removed here since this external registration's date");
+                    if(peerFilter.isInNetwork(otherList.get(j).getNamespace())) {                    
+                        newNodes.add(otherList.get(j));
+                        updatedNodes.add(otherList.get(j));
+                        //log.trace("-  Discarding remote entry, "+otherList.get(j)+", as it was removed here since this external registration's date");
+                    }else {
+                        log.trace("   Skipping, Not in our peer network (+)");
+                    }
                 }
                 j++;
             }
@@ -314,9 +327,13 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
                 (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
                 removedMap.remove(removedNodeHostname);
-                newNodes.add(otherList.get(j));
-                updatedNodes.add(otherList.get(j));
-                log.trace("   Adding remote entry for "+otherList.get(j));
+                if(peerFilter.isInNetwork(otherList.get(j).getNamespace())) {
+                    newNodes.add(otherList.get(j));
+                    updatedNodes.add(otherList.get(j));
+                    log.trace("   Adding remote entry for "+otherList.get(j));
+                }else {
+                    log.trace("   Skipping, Not in our peer network (++)");
+                }
             }else {
                 log.trace("   Discarding remote entry, "+otherList.get(j)+", as it was removed since this registration date ["+(removedNodeTimeStamp > otherRegistration.getTimeStamp())+"]");
             }
