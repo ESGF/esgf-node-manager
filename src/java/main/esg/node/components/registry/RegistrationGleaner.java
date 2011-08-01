@@ -178,7 +178,6 @@ public class RegistrationGleaner {
         }
         log.info("Saving registration information to "+ registrationPath+this.registrationFile);
         try{
-            registration.setTimeStamp((new Date()).getTime());
             JAXBContext jc = JAXBContext.newInstance(Registration.class);
             Marshaller m = jc.createMarshaller();
             m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
@@ -614,9 +613,12 @@ public class RegistrationGleaner {
         log.trace("sync'ing...");
         if(null == myRegistration) return;
         if(null == myNodeMap) myNodeMap = new HashMap<String,Node>();
+        int i = 0;
         for(Node node : myRegistration.getNode()) {
             myNodeMap.put(node.getHostname(),node);
+            i++;
         }
+        if(i > 0) touch();
     }
     
     public synchronized RegistrationGleaner loadMyRegistration() throws ESGFRegistryException {
@@ -639,9 +641,14 @@ public class RegistrationGleaner {
 
     public synchronized boolean removeNode(String nodeHostname) {
         sync();
-        if (myRegistration.getNode().remove(myNodeMap.remove(nodeHostname))) { dirty = true; }
+        if (myRegistration.getNode().remove(myNodeMap.remove(nodeHostname))) { 
+            dirty = true; 
+            touch();
+        }
         return dirty;
     }
+
+    protected void touch() { myRegistration.setTimeStamp((new Date()).getTime()); }
 
     public Registration createRegistrationFromString(String registrationContent) {
         log.trace("Creating registration info from String:\n"+registrationContent+"\n");
