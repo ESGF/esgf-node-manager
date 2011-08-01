@@ -398,6 +398,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             log.trace("peerRegistration = ["+peerRegistration+"]");
 
             Set<Node> updatedNodes = mergeNodes(myRegistration,peerRegistration);
+            if (updatedNodes.size() > 0) gleaner.touch();
 
             log.trace("Nodes merged");
 
@@ -407,11 +408,16 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
 
             if(updatedNodes.isEmpty()) {
                 log.debug("No New Information To Share.");
+                //zoiks - take this out and re-work this... don't want
+                //to not forward a message simply because we didn't
+                //get anything out of it.  The next hop might need
+                //that info we are taking for granted.  Thus we should
+                //not drop the message here.
                 return true;
             }
 
             gleaner.saveRegistration();
-
+            
             log.trace("Sending off event with registry update digest data");
             ESGEvent rudEvent = new ESGEvent(this,
                                              new RegistryUpdateDigest(gleaner.toString(),

@@ -609,16 +609,15 @@ public class RegistrationGleaner {
         return new String(buffer);
     }
     
+    //NOTE: May have to synchronized his method...
     public void sync() {
         log.trace("sync'ing...");
         if(null == myRegistration) return;
         if(null == myNodeMap) myNodeMap = new HashMap<String,Node>();
-        int i = 0;
+        myNodeMap.clear();
         for(Node node : myRegistration.getNode()) {
             myNodeMap.put(node.getHostname(),node);
-            i++;
         }
-        if(i > 0) touch();
     }
     
     public synchronized RegistrationGleaner loadMyRegistration() throws ESGFRegistryException {
