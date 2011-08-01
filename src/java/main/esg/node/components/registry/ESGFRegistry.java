@@ -83,16 +83,16 @@ import esg.common.generated.registration.*;
 
 /**
    Description:
-   
+
    Core object for providing the Registry service.  The registration
    "form" (xml payload defined by the registration.xsd) that is passed
    among nodes describes the set of services available on a particular
    node.  This object exists in service of registration distribution
    and collection.
-   
+
 */
 public class ESGFRegistry extends AbstractDataNodeComponent {
-    
+
     private static Log log = LogFactory.getLog(ESGFRegistry.class);
     private Properties props = null;
     private boolean isBusy = false;
@@ -108,7 +108,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         log.debug("Instantiating ESGFRegistry...");
 
     }
-    
+
     public void init() {
         log.info("Initializing ESGFRegistry...");
         try{
@@ -128,21 +128,22 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     private void startRegistry() {
 
         //----------------------------------
-        log.info("Loading and Initilizing peers");
+        log.info("Loading and Initilizing...");
         try{
-            gleaner.loadMyRegistration();
+            //gleaner.loadMyRegistration();
+            gleaner.createMyRegistration().saveRegistration();
         }catch(ESGFRegistryException e) {
             log.warn(e.getMessage());
             gleaner.createMyRegistration();
         }
         Set<Node> loadedNodes = new TreeSet<Node>(nodecomp);
         loadedNodes.addAll(gleaner.getMyRegistration().getNode());
-        
+
         enqueueESGEvent(new ESGEvent(this,
                                      new RegistryUpdateDigest(gleaner.toString(),
                                                               gleaner.getMyChecksum(),
                                                               loadedNodes),
-                                     "Initializing Peers..."));
+                                     "Initializing..."));
         lastDispatchTime = (new Date()).getTime();
         //----------------------------------
 
@@ -151,7 +152,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         final long period = Long.parseLong(props.getProperty("registry.period","300")); //every 5 mins
         log.debug("registry delay:  "+delay+" sec");
         log.debug("registry period: "+period+" sec");
-    
+
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
                 public final void run() {
@@ -185,7 +186,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
 
                             synchronized(gleaner) {
                                 //"touch" the registration.xml file (update timestamp via call to createMyRegistration, and resave)
-                                log.debug("["+now+"] - Touching registration... and re-posting");
+                                log.debug("re-posting registration...");
 
                                 gleaner.saveRegistration();
 
@@ -193,13 +194,13 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                                                              new RegistryUpdateDigest(gleaner.toString(),
                                                                                       gleaner.getMyChecksum(),
                                                                                       new HashSet<Node>()),
-                                                             "Touched Registration State"));
+                                                             "Re-Posting Registration State"));
                                 lastDispatchTime = (new Date()).getTime();
                             }
                             ESGFRegistry.this.isBusy = false;
                         }
                     }else{
-                        log.debug("Won't touch and send state - too soon after last dispatch (quiescence, for me, was not reached)");
+                        log.debug("Won't re-send state - too soon after last dispatch (quiescence, at least for me, was not reached)");
                     }
                 }
             },delay*1000,period*1000);
@@ -208,7 +209,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     //(Indeed this algorithm is not the most parsimoneous on memory,
     //sort of.... thank goodness we are only talking about pointer
     //storage!!!)
-    
+
     /*Notes on the merge algorithm:
 
       This algorithm is pretty much 'merge' from merge-sort.  The
@@ -243,8 +244,8 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
       all about maintaining the representation of the network.  This
       is the state that is being syncronized.  The connection manager
       should be all about interacting with peers and peforming pushes
-      and getting status on connections and attendance.  
-      
+      and getting status on connections and attendance.
+
       I am depending pretty heavily on wall clock time here.  I should
       probably implement vector clocks here to liberate me from time
       skew issues.  All should be good.  The hope is that nodes don't
@@ -255,7 +256,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     */
     private Set<Node> mergeNodes(Registration myRegistration, Registration otherRegistration) {
         log.trace("merging registrations...");
-        
+
         List<Node> myList = myRegistration.getNode();
         List<Node> otherList = otherRegistration.getNode();
 
@@ -290,9 +291,9 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                         log.trace("   Skipping, Not in our peer network (=)");
                         //just skip what's in the entry in the
                         //otherList but leave us at the same position
-                        //in myList to do the next comparison 
+                        //in myList to do the next comparison
                         //(I could have also done j++; continue;)
-                        i--; 
+                        i--;
                     }
                 }
                 i++;
@@ -305,7 +306,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
                     (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
                     removedMap.remove(removedNodeHostname);
-                    if(peerFilter.isInNetwork(otherList.get(j).getNamespace())) {                    
+                    if(peerFilter.isInNetwork(otherList.get(j).getNamespace())) {
                         newNodes.add(otherList.get(j));
                         updatedNodes.add(otherList.get(j));
                         //log.trace("-  Discarding remote entry, "+otherList.get(j)+", as it was removed here since this external registration's date");
@@ -344,11 +345,11 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         for(Node n : updatedNodes) {
             log.debug("updating registry with info on: "+n.getHostname());
         }
-        
+
         myList.clear();
-        myList.addAll(newNodes); //because using set they are 
+        myList.addAll(newNodes); //because using set they are
         newNodes.clear();
-        
+
         return updatedNodes;
     }
 
@@ -357,12 +358,12 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     //incorporate it into our own world view.
     public boolean handleESGQueuedEvent(ESGEvent event) {
         log.trace("handling enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
-        
+
         synchronized(gleaner) {
-        
+
             String payloadChecksum  = event.getRemoteEvent().getPayloadChecksum();
             String sourceServiceURL = event.getRemoteEvent().getSource();
-        
+
             //TODO: Heck no, I should NOT be using string comparison for
             //this...  I need to revisit the typing of the remote event
             //for type of the checksum.  The thing is I don't want to use
@@ -378,13 +379,13 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 enqueueESGEvent(event);
                 return true; //handled... by not handling.
             }
-        
+
             //zoiks: use gleaner to get local registration object to modify.
             //       periodically write modified structure to file (getting a new checksum)
             //       back the list of nodes with a datastructure that can ...
             //       have another datastructure with checksum and source service url
             //       to see if we should even do anything at all.
-        
+
             //Pull out our registration information (parse the xml string
             //payload into object form via the gleaner) and send the event
             //on its way (the connection manager should be downstream this
@@ -395,7 +396,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
 
             log.trace("myRegistration = ["+myRegistration+"]");
             log.trace("peerRegistration = ["+peerRegistration+"]");
-            
+
             Set<Node> updatedNodes = mergeNodes(myRegistration,peerRegistration);
 
             log.trace("Nodes merged");
@@ -403,17 +404,17 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
 
             log.info("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
             processedMap.put(sourceServiceURL, payloadChecksum);
-            
+
             if(updatedNodes.isEmpty()) {
                 log.debug("No New Information To Share.");
                 return true;
             }
-            
+
             gleaner.saveRegistration();
 
             log.trace("Sending off event with registry update digest data");
             ESGEvent rudEvent = new ESGEvent(this,
-                                             new RegistryUpdateDigest(gleaner.toString(), 
+                                             new RegistryUpdateDigest(gleaner.toString(),
                                                                       gleaner.getMyChecksum(),
                                                                       updatedNodes),
                                              "Updated / Merged Registration State");
@@ -424,21 +425,21 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
 
         return true;
     }
-    
-    //Listen out for Joins from conn mgr  
+
+    //Listen out for Joins from conn mgr
     public void handleESGEvent(ESGEvent esgEvent) {
         //we only care about join events... err... sort of :-)
-        
+
         //Note: I should not be so myopic in dealing with system
         //events. There may be others that need to be acted upon that
         //I am now ignoring but I am in Brody mode now -gavin
-        if((esgEvent instanceof ESGSystemEvent) && 
+        if((esgEvent instanceof ESGSystemEvent) &&
            (((ESGSystemEvent)esgEvent).getEventType() == ESGSystemEvent.ALL_LOADED) ) {
             log.trace("I must have missed you in the load sequence CONN_MGR... I got you now");
             addESGQueueListener(getDataNodeManager().getComponent("CONN_MGR"));
             startRegistry();
         }
-        
+
         if(!(esgEvent instanceof ESGJoinEvent)) return;
         //we only care bout peer joining beyond this point...
 
@@ -481,5 +482,5 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             return a.getHostname().compareTo(b.getHostname());
         }
     }
-    
+
 }
