@@ -66,6 +66,8 @@ import org.apache.commons.logging.impl.*;
 
 import esg.common.Utils;
 
+import esg.common.generated.registration.*;
+
 /**
    Description:
 
@@ -119,6 +121,26 @@ public class PeerNetworkFilter {
         networkMatcher = Pattern.compile(regex.toString()).matcher("");
         networkMatcher.reset();
     }
+
+
+    /**
+       Overload of isInNetwork(String s) method to provide a bit more encapsulation.
+
+       There is a design trade off... the caller could provide just a
+       string and call the base implementation method. However, it
+       would be 'nicer' if the caller, who only wants to see if a node
+       is or is not in a given peer network to know as little as
+       possible as to how that determination is made.  Encapsulating
+       that logic keeps things simple for the caller who has a node to
+       test. Also if there is a change to the critera for what it
+       means to be "in network" then that can be done here and the
+       caller won't have to 'worry' about it.  Case in point: we want
+       to use another attribute/property to hold the network list.  We
+       can do it here in one place and be done, otherwise we would
+       have to change all the callers to do so.  Encapuslaton 101 :-).
+
+    */
+    public boolean isInNetwork(Node candidateNode) { return this.isInNetwork(candidateNode.getNamespace()); }
 
     public boolean isInNetwork(String candidate) {
         log.info("network candidate = "+candidate);
