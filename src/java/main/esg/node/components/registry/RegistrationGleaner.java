@@ -640,8 +640,8 @@ public class RegistrationGleaner {
 
     public synchronized boolean removeNode(String nodeHostname) {
         sync();
-        if (myRegistration.getNode().remove(myNodeMap.remove(nodeHostname))) { 
-            dirty = true; 
+        if (myRegistration.getNode().remove(myNodeMap.remove(nodeHostname))) {
+            dirty = true;
             touch();
         }
         return dirty;
@@ -694,5 +694,5 @@ public class RegistrationGleaner {
             }
         }
     }
-    
+
 }

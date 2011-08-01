@@ -417,7 +417,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             }
 
             gleaner.saveRegistration();
-            
+
             log.trace("Sending off event with registry update digest data");
             ESGEvent rudEvent = new ESGEvent(this,
                                              new RegistryUpdateDigest(gleaner.toString(),
