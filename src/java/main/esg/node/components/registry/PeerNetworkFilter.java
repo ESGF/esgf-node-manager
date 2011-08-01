@@ -81,10 +81,6 @@ import esg.common.Utils;
    values as well as I scrub the candidate ones... but for now don't
    put *s and stuff in the value just delimit by ",|:" The * is
    implicit. 
-   
-   TODO: Do a better job scrubbing the prefix of network strings.
-   Ex: simple-org.esgf candiate passes, so does simple-org.esgf-bar
-   Be more regimented with the values that can be assigned.
 
 */
 public class PeerNetworkFilter {
@@ -110,7 +106,7 @@ public class PeerNetworkFilter {
     protected void init(String[] myNetworks) {
         StringBuffer regex = new StringBuffer();
         StringBuffer networks = new StringBuffer(); //for the sake of log output...
-        regex.append("^[a-zA-Z0-9,|:_. -]*(");
+        regex.append("(?:^|[,|: ])+(");
         int i = 0;
         for(String network : myNetworks) {
             regex.append(network); networks.append(network+"*");
@@ -119,13 +115,13 @@ public class PeerNetworkFilter {
         }
         log.info("Recognizing Peer Network(s): ["+networks.toString()+"]");
         regex.append(")[a-zA-Z0-9,|:_. -]*$");
-        log.trace("pattern = "+regex.toString());
+        log.info("pattern = "+regex.toString());
         networkMatcher = Pattern.compile(regex.toString()).matcher("");
         networkMatcher.reset();
     }
 
     public boolean isInNetwork(String candidate) {
-        log.trace("network candidate = "+candidate);
+        log.info("network candidate = "+candidate);
         if(networkMatcher == null) {
             log.error("ERROR: NotINITIALIZED - Not able to affirm ANY network affiliation: \n\t"+
                       "Check that configuration property \"node.namespace\" exists and set properly");
