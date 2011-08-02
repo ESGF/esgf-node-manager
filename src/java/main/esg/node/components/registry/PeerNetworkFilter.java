@@ -144,6 +144,7 @@ public class PeerNetworkFilter {
 
     public boolean isInNetwork(String candidate) {
         log.info("network candidate = "+candidate);
+        if(null == candidate) { return false; }
         if(networkMatcher == null) {
             log.error("ERROR: NotINITIALIZED - Not able to affirm ANY network affiliation: \n\t"+
                       "Check that configuration property \"node.namespace\" exists and set properly");
