@@ -254,7 +254,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
 
       -gavin
     */
-    private Set<Node> mergeNodes(Registration myRegistration, Registration otherRegistration) {
+    Set<Node> mergeNodes(Registration myRegistration, Registration otherRegistration) {
         log.trace("merging registrations...");
 
         List<Node> myList = myRegistration.getNode();
@@ -309,7 +309,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     if(peerFilter.isInNetwork(otherList.get(j))) {
                         newNodes.add(otherList.get(j));
                         updatedNodes.add(otherList.get(j));
-                        //log.trace("-  Discarding remote entry, "+otherList.get(j)+", as it was removed here since this external registration's date");
+                        log.trace("-  Discarding remote entry, "+otherList.get(j)+", as it was removed here since this external registration's date");
                     }else {
                         log.trace("   Skipping, Not in our peer network (+)");
                     }
