@@ -92,12 +92,49 @@ public class ESGFRegistrationMergeTest {
     }
 
     @Before
-    public void setup() { }
+    public void setup() { 
+        Node node1 = new Node();
+        node1.setHostname("test_host_1");
+        node1.setTimeStamp(1L);
+        node1.setNamespace("org.esgf");
+        node1.setShortName("node_1_host_1");
+
+        Node node2 = new Node();
+        node1.setHostname("test_host_1");
+        node1.setTimeStamp(2L);
+        node1.setNamespace("org.esgf");
+        node1.setShortName("node_2_host_1");
+
+        Node node3 = new Node();
+        node1.setHostname("test_host_1");
+        node1.setTimeStamp(3L);
+        node1.setNamespace("org.esgf");
+        node1.setShortName("node_3_host_1");
+
+        Node node4 = new Node();
+        node1.setHostname("test_host_1");
+        node1.setTimeStamp(4L);
+        node1.setNamespace("org.esgf");
+        node1.setShortName("node_4_host_1");
+
+        Node node5 = new Node();
+        node1.setHostname("test_host_1");
+        node1.setTimeStamp(5L);
+        node1.setNamespace("org.esgf");
+        node1.setShortName("node_5_host_1");
+
+        registrationA.getNode().add(node1);
+        registrationA.getNode().add(node3);
+        registrationA.getNode().add(node5);
+
+        registrationB.getNode().add(node2);
+        registrationA.getNode().add(node4);
+    }
 
     @Test
     public void testRegistrationMerging() {
         Set<Node> updatedNodes = registry.mergeNodes(registrationA,registrationB);
-
+        
     }
 
     @After
