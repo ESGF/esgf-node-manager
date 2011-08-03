@@ -281,14 +281,14 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             if( (nodecomp.compare(myList.get(i),otherList.get(j))) == 0 ) {
                 if((myList.get(i)).getTimeStamp() >= (otherList.get(j)).getTimeStamp()) {
                     newNodes.add(myList.get(i));
-                    log.trace("-- Keeping local entry for "+myList.get(i));
+                    log.trace("-- Keeping local entry for (=) "+(myList.get(i)).getHostname());
                 }else {
                     if(peerFilter.isInNetwork(otherList.get(j))) {
                         newNodes.add(otherList.get(j));
                         updatedNodes.add(otherList.get(j));
-                        log.trace("-- Updating with remote entry for "+myList.get(i));
+                        log.trace("-- Updating with remote entry for (=) "+(myList.get(j)).getHostname());
                     }else{
-                        log.trace("   Skipping, Not in our peer network (=)");
+                        log.trace("   Skipping, Not in our peer network (=) ["+(myList.get(j)).getHostname()+"]");
                         //just skip what's in the entry in the
                         //otherList but leave us at the same position
                         //in myList to do the next comparison
@@ -300,7 +300,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 j++;
             }else if ( (nodecomp.compare(myList.get(i),otherList.get(j))) < 0 ) {
                 newNodes.add(myList.get(i));
-                log.trace("-  Keeping local entry for "+myList.get(i));
+                log.trace("-  Keeping local entry for "+(myList.get(i)).getHostname());
                 i++;
             }else{
                 if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
@@ -309,10 +309,12 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     if(peerFilter.isInNetwork(otherList.get(j))) {
                         newNodes.add(otherList.get(j));
                         updatedNodes.add(otherList.get(j));
-                        log.trace("-  Discarding remote entry, "+otherList.get(j)+", as it was removed here since this external registration's date");
+                        log.trace("-  Accepting new(er) remote entry for (+) "+(otherList.get(j)).getHostname());
                     }else {
-                        log.trace("   Skipping, Not in our peer network (+)");
+                        log.trace("   Skipping "+(otherList.get(j)).getHostname()+", Not in our peer network (+)");
                     }
+                }else {
+                    log.debug("   NOT accepting older candidate remote entry, ["+(otherList.get(j)).getHostname()+"], have more recent knowledge of removal by ["+(removedNodeTimeStamp > otherRegistration.getTimeStamp())+"]ms than candidate entry (+)");
                 }
                 j++;
             }
@@ -331,12 +333,12 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 if(peerFilter.isInNetwork(otherList.get(j))) {
                     newNodes.add(otherList.get(j));
                     updatedNodes.add(otherList.get(j));
-                    log.trace("   Adding remote entry for "+otherList.get(j));
+                    log.trace("   Adding new(er) remote entry for (++) "+(otherList.get(j)).getHostname());
                 }else {
-                    log.trace("   Skipping, Not in our peer network (++)");
+                    log.trace("   Skipping "+(otherList.get(j)).getHostname()+", Not in our peer network (++)");
                 }
             }else {
-                log.trace("   Discarding remote entry, "+otherList.get(j)+", as it was removed since this registration date ["+(removedNodeTimeStamp > otherRegistration.getTimeStamp())+"]");
+                log.debug("   NOT accepting older candidate remote entry, ["+(otherList.get(j)).getHostname()+"], have more recent knowledge of removal by ["+(removedNodeTimeStamp > otherRegistration.getTimeStamp())+"]ms than candidate entry (++)");
             }
             j++;
         }
@@ -413,7 +415,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 //get anything out of it.  The next hop might need
                 //that info we are taking for granted.  Thus we should
                 //not drop the message here.
-                return true;
+                //return true;
             }
 
             gleaner.saveRegistration();
