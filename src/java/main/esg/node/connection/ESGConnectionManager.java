@@ -485,12 +485,14 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         boolean handled = false;
         if(ESGRemoteEvent.UNREGISTER == event.getRemoteEvent().getMessageType()) {
             return dispatchToRandomPeers(event.getRemoteEvent());
-        }else {
-            return dispatchResponseToSource(event);
+        }else{
+            log.info("unhandled event type: ["+event.getRemoteEvent().getMessageType()+"] from "+event.getRemoteEvent().getSource());
+            log.trace(event);
+            //return dispatchResponseToSource(event);
         }
 
-        //event = null; //gc hint!
-        //return true;
+        event = null; //gc hint!
+        return true;
     }
 
 
