@@ -92,7 +92,7 @@ public class ESGEvent extends EventObject {
     public Object getData() { return this.data; }
     public String getMessage() { return this.message; }
     public ESGRemoteEvent getRemoteEvent() { return this.remoteEvent; }
-    public boolean hashRemoteEvent() { return null != remoteEvent; }
+    public boolean hasRemoteEvent() { return null != remoteEvent; }
 
     public String toString() {
         return "Event:["+this.getClass().getName()+"] s:["+source+"] d:["+data+"] msg:["+message+"] "+((remoteEvent == null) ? "" : remoteEvent.toString());

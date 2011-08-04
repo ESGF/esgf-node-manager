@@ -355,11 +355,40 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         return updatedNodes;
     }
 
+    //Dispatch method for dealing with types of queued events...
+    //The two we are concerned with are registering and unregistering peers
+    public boolean handleESGQueuedEvent(ESGEvent event) {
+        log.trace("delegating enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: "+event);
+        boolean handled = false;
+
+        if(event.hasRemoteEvent()) {
+            int eventType = event.getRemoteEvent().getMessageType();
+            switch (eventType) {
+            case ESGRemoteEvent.REGISTER:
+                handled = this.handleRegistrationEvent(event);
+                break;
+            case ESGRemoteEvent.UNREGISTER:
+                handled = this.handleUnRegistrationEvent(event);
+                break;
+            default:
+                log.warn("Unknown Event Type: ["+eventType+"]?");
+                break;
+            }
+        }
+        return handled;
+    }
+
+    protected boolean handleUnRegistrationEvent(ESGEvent event) {
+        log.trace("handling unregister enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: Got An Unregister QueuedEvent!!!!: "+event);
+        getDataNodeManager().removePeer(event.getRemoteEvent().getOrigin());
+        return true;
+    }
+
     //When peer registration messages are encountered grab those
     //events and collect the peer's registration information and
     //incorporate it into our own world view.
-    public boolean handleESGQueuedEvent(ESGEvent event) {
-        log.trace("handling enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
+    protected boolean handleRegistrationEvent(ESGEvent event) {
+        log.trace("handling register enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: Got A Register QueuedEvent!!!!: "+event);
 
         synchronized(gleaner) {
 
