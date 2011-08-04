@@ -575,7 +575,7 @@ public class RegistrationGleaner {
 
         if(null == myRegistration) myRegistration = new Registration();
         myRegistration.getNode().add(node);
-        myRegistration.setTimeStamp(timestamp);
+        myRegistration.setTimeStamp(timestamp); //touch'ing the registration...
         return this;
     }
     

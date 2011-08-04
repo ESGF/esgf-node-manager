@@ -91,6 +91,38 @@ public class ESGEventHelper {
         return new ESGRemoteEvent(Utils.getMyServiceUrl(),rEvent.getMessageType(),in.getData(),rEvent.getSeqNum());
     }
 
+    //Here we create an event that is suitable as a response to the
+    //input remote event.  the request originator is preserved as the
+    //"origin" value of the event, the originator's sequence number is
+    //reflected back as well as the message type. The payload is what
+    //we specify
+    public static ESGRemoteEvent createResponseOutboundEvent(ESGEvent in) {
+        if(in.getRemoteEvent() == null) {
+            log.warn("This event does not contain a remote event... ILLEGAL");
+            return null;
+        }
+        return createResponseOutboundEvent(in.getRemoteEvent(), in.getData());
+    }
+    public static ESGRemoteEvent createResponseOutboundEvent(ESGRemoteEvent in, Object payload) {
+        in.copy(new ESGRemoteEvent(Utils.getMyServiceUrl(),in.getMessageType(),payload,in.getSeqNum()));
+        return in;
+    }
+
+    //Here we create a remote event that respects the input remote
+    //event's TTL, that has been properly decremented by the
+    //DataNodeService on initial ingress. and because of the copy we
+    //are respecting the "origin" value associated with this remote
+    //event - very important
+    public static ESGRemoteEvent createRelayedOutboundEvent(ESGRemoteEvent in) {
+        in.copy(new ESGRemoteEvent(Utils.getMyServiceUrl(),in.getMessageType(),in.getPayload(),Utils.nextSeq()));
+        return in;
+    }
+
+    //Here we take an input remote event and create and event that
+    //makes it look like the data came from THIS node - our version of
+    //NAT'ing or Spoofing.  (note: when instantiating a new remote
+    //event you claim this node as the "origin" - very important make
+    //sure that's what you want) Also the TTL is set to initial value
     public static ESGRemoteEvent createProxiedOutboundEvent(ESGRemoteEvent in) {
         //Create the string for *our* callback address...
         return new ESGRemoteEvent(Utils.getMyServiceUrl(),in.getMessageType(),in.getPayload(),in.getSeqNum());

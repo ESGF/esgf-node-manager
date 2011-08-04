@@ -224,6 +224,24 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         unavailablePeers.clear(); unavailablePeers = null; //gc niceness
         super.unregister();
     }
+
+    //-------
+    //quick helper method
+    //-------
+    private boolean checkEvent(ESGEvent event) {
+        ESGRemoteEvent rEvent=null;
+        if((rEvent = event.getRemoteEvent()) == null) {
+            log.warn("The encountered event does not contain a remote event, which is needed for egress routing [event dropped]");
+            event = null; //gc hint!
+            return false;
+        }
+        if(!rEvent.isValid()) {
+            log.warn("Will NOT send invalid RemoteEvent "+rEvent);
+            return false;
+        }
+        return true;
+    }
+    //-------
     
     //Cached last registry data and checksum in lastRud.
     //Send out the same info to another random pair of neighbors.
@@ -261,7 +279,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     private synchronized boolean sendOutNewRegistryState(String xmlDocument, String xmlChecksum) {
         log.trace("Sending out registry state...");
         
-        if((peers.size()< 1) && (defaultPeer == null)) {
+        if((peers.size() < 1) && (defaultPeer == null)) {
             log.info("No one to send to... you have no peers.  Nothing further to do. waiting to be contacted... (I am probably my own default peer)");
             return false;
         }
@@ -271,12 +289,23 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                                                             xmlChecksum,
                                                             Utils.nextSeq(),
                                                             5);
+        return dispatchToRandomPeers(myRegistryState);
+    }
 
+
+    //--------------------------------------------
+    //Remote Event Dispatching
+    //--------------------------------------------
+
+    private boolean dispatchToRandomPeers(ESGEvent event) {
+        return dispatchToRandomPeers(event.getRemoteEvent());
+    }
+    private boolean dispatchToRandomPeers(ESGRemoteEvent remoteEvent) {
         //------------
         //If we have no peers we have to resort to using our defaultPeer...
         if((peers.size() == 0)  && (defaultPeer != null)) {
             log.info("You have no peers - resorting to harassing the default peer ["+defaultPeer.getServiceURL()+"]");
-            defaultPeer.handleESGRemoteEvent(myRegistryState);
+            defaultPeer.handleESGRemoteEvent(remoteEvent);
             return true;
         }
         //------------
@@ -294,7 +323,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         for(int i=0; i < retries; i++)  {
             //It is possible, to randomly keep getting the same index
             //number again and again to prevent that we try up to
-            //[rechooseLimit] times to select another peer If we hit
+            //[rechooseLimit] times to select a different peer If we hit
             //the limit we re-try again up to [retries] times.
             
             //So if you are tremendously unlucky or in a situation
@@ -341,13 +370,51 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 
                 ESGPeer chosenPeer = peerList.get(idx);
                 log.debug("Selected Peer: "+chosenPeer.getName());
-                chosenPeer.handleESGRemoteEvent(myRegistryState);
+                chosenPeer.handleESGRemoteEvent(remoteEvent);
                 lastIdx = idx;
                 numDispatchedPeers++;
             }
             if(numDispatchedPeers >= branchFactor) break;
         }
         return (numDispatchedPeers > 1); //I was at least able to get one off!
+    }
+    
+    private boolean dispatchResponseToSource(ESGEvent event) {
+        if(!checkEvent(event)) return false;
+
+        ESGRemoteEvent remoteEvent = event.getRemoteEvent();
+        String targetAddress = null;
+        ESGPeer targetPeer = null;
+
+        //Responding back to message source...
+        if((targetPeer = peers.get(targetAddress=remoteEvent.getSource())) == null) {
+            targetPeer = unavailablePeers.get(targetAddress);
+            log.error("Specified source peer named by ["+targetAddress+"] is "+
+                      ((targetPeer == null) ? "unknown " : "unavailable ")+"[event dropped]");
+            return false;
+        }
+        log.info("Dispatching Event Back To Source: "+targetAddress);
+        targetPeer.handleESGRemoteEvent(ESGEventHelper.createResponseOutboundEvent(event));
+        return true;
+    }
+
+    private boolean dispatchResponseToOrigin(ESGEvent event) {
+        if(!checkEvent(event)) return false;
+
+        ESGRemoteEvent remoteEvent = event.getRemoteEvent();
+        String targetAddress = null;
+        ESGPeer targetPeer = null;
+
+        //Responding back to message origin...
+        if((targetPeer = peers.get(targetAddress=remoteEvent.getOrigin())) == null) {
+            targetPeer = unavailablePeers.get(targetAddress);
+            log.error("Specified origin peer named by ["+targetAddress+"] is "+
+                      ((targetPeer == null) ? "unknown " : "unavailable ")+"[event dropped]");
+            return false;
+        }
+        log.info("Dispatching Event Back To Origin: "+targetAddress);
+        targetPeer.handleESGRemoteEvent(ESGEventHelper.createResponseOutboundEvent(event));
+        return true;
     }
 
     //--------------------------------------------
@@ -409,40 +476,21 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 }
             }
             lastRud=rud;
-            return sendOutNewRegistryState(rud.xmlDocument(), rud.xmlChecksum());
+            return sendOutNewRegistryState(rud.xmlDocument(), rud.xmlChecksum());  //dispatch method
         }
         
         //--------------------
         //Routing of events...
         //--------------------
-
-        ESGRemoteEvent rEvent=null;
-        String targetAddress = null;
-        ESGPeer targetPeer = null;
-    
-        //TODO: pick it up from here to launch egress / return calls...
-        if((rEvent = event.getRemoteEvent()) == null) {
-            log.warn("The encountered event does not contain a remote event, which is needed for egress routing [event dropped]");
-            event = null; //gc hint!
-            return false;
-        }
-    
-        if((targetPeer = peers.get(targetAddress=rEvent.getSource())) == null) {
-            targetPeer = unavailablePeers.get(targetAddress);
-            log.error("Specified peer named by ["+targetAddress+"] is "+
-                      ((targetPeer == null) ? "unknown " : "unavailable ")+"[event dropped]");
-            event = null; //gc hint!
-            return false;
+        boolean handled = false;
+        if(ESGRemoteEvent.UNREGISTER == event.getRemoteEvent().getMessageType()) {
+            return dispatchToRandomPeers(event.getRemoteEvent());
+        }else {
+            return dispatchResponseToSource(event);
         }
 
-        if(rEvent.isValid()) {
-            targetPeer.handleESGRemoteEvent(ESGEventHelper.createProxiedOutboundEvent(rEvent));
-        }else{
-            log.warn("Will NOT send invalid RemoteEvent "+rEvent);
-        }
-        event = null; //gc hint!
-    
-        return true;
+        //event = null; //gc hint!
+        //return true;
     }
 
 

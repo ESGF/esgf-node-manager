@@ -187,7 +187,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                             synchronized(gleaner) {
                                 //"touch" the registration.xml file (update timestamp via call to createMyRegistration, and resave)
                                 log.debug("re-posting registration...");
-
+                                
                                 gleaner.saveRegistration();
 
                                 enqueueESGEvent(new ESGEvent(this,
@@ -365,22 +365,42 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             int eventType = event.getRemoteEvent().getMessageType();
             switch (eventType) {
             case ESGRemoteEvent.REGISTER:
-                handled = this.handleRegistrationEvent(event);
+                //If this event is dispatched and yet still not
+                //handled then we push the unhandled event directly to
+                //the next state, in this case the ConnectionManager,
+                //letting it know the event passed through us by
+                //setting this object as the source.... and call it
+                //good
+                if(!(handled = this.handleRegistrationEvent(event))) {
+                    event.setSource(this);
+                    enqueueESGEvent(event);
+                    handled = true;
+                }
                 break;
             case ESGRemoteEvent.UNREGISTER:
-                handled = this.handleUnRegistrationEvent(event);
+                if(handled = this.handleUnRegistrationEvent(event)) {
+                    event.setSource(this);
+                    enqueueESGEvent(event);
+                }
                 break;
             default:
-                log.warn("Unknown Event Type: ["+eventType+"]?");
+                log.warn("Unknown Event Type: ["+eventType+"]... blindly forwarding to next state");
                 break;
             }
+            if(handled) lastDispatchTime = (new Date()).getTime();
         }
         return handled;
     }
-
+    
     protected boolean handleUnRegistrationEvent(ESGEvent event) {
         log.trace("handling unregister enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: Got An Unregister QueuedEvent!!!!: "+event);
-        getDataNodeManager().removePeer(event.getRemoteEvent().getOrigin());
+        try{
+            getDataNodeManager().removePeer(event.getRemoteEvent().getOrigin());
+        }catch (Throwable t) {
+            log.error(t);
+            t.printStackTrace();
+            return false;
+        }
         return true;
     }
 
@@ -406,50 +426,36 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             String lastChecksum = processedMap.get(sourceServiceURL);
             if( (lastChecksum != null) && (lastChecksum.equals(payloadChecksum)) ) {
                 log.trace("I have seen this payload before, from the same dude... there is nothing new to learn... dropping event on floor ["+event+"]");
-                event.setSource(this);
-                enqueueESGEvent(event);
-                return true; //handled... by not handling.
+                //punt... (see dispatcher above)
+                return false;
             }
 
-            //zoiks: use gleaner to get local registration object to modify.
-            //       periodically write modified structure to file (getting a new checksum)
-            //       back the list of nodes with a datastructure that can ...
-            //       have another datastructure with checksum and source service url
-            //       to see if we should even do anything at all.
-
-            //Pull out our registration information (parse the xml string
-            //payload into object form via the gleaner) and send the event
-            //on its way (the connection manager should be downstream this
-            //event path
-
+            //Pull out our registration information and parse the xml string
+            //payload from the incoming event into object form, via the gleaner.
             Registration myRegistration = gleaner.getMyRegistration();
             Registration peerRegistration = gleaner.createRegistrationFromString((String)event.getRemoteEvent().getPayload());
 
-            log.trace("myRegistration = ["+myRegistration+"]");
-            log.trace("peerRegistration = ["+peerRegistration+"]");
+            //log.trace("myRegistration = ["+myRegistration+"]");
+            //log.trace("peerRegistration = ["+peerRegistration+"]");
 
             Set<Node> updatedNodes = mergeNodes(myRegistration,peerRegistration);
-            if (updatedNodes.size() > 0) gleaner.touch();
-
-            log.trace("Nodes merged");
-
 
             log.info("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
             processedMap.put(sourceServiceURL, payloadChecksum);
 
             if(updatedNodes.isEmpty()) {
-                log.debug("No New Information To Share.");
-                //zoiks - take this out and re-work this... don't want
-                //to not forward a message simply because we didn't
-                //get anything out of it.  The next hop might need
-                //that info we are taking for granted.  Thus we should
-                //not drop the message here.
-                //return true;
+                log.debug("No New Information Learned :-(");
+                return false;
             }
 
-            gleaner.saveRegistration();
+            //--------------------------------------------------------------
+            //There has been updates made to the registry generate the R.U.D.
+            //and send it to the next state (the connection manager)
+            //--------------------------------------------------------------
+            gleaner.touch(); //timestamp our updated registry...
+            gleaner.saveRegistration(); //write the new registry to file... (registration.xml)
 
-            log.trace("Sending off event with registry update digest data");
+            log.trace("Sending off new event with registry update digest data");
             ESGEvent rudEvent = new ESGEvent(this,
                                              new RegistryUpdateDigest(gleaner.toString(),
                                                                       gleaner.getMyChecksum(),
@@ -457,7 +463,8 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                                              "Updated / Merged Registration State");
             rudEvent.setRemoteEvent(event.getRemoteEvent());
             enqueueESGEvent(rudEvent);
-            lastDispatchTime = (new Date()).getTime();
+            //--------------------------------------------------------------
+
         }
 
         return true;
