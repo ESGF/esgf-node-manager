@@ -106,6 +106,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     private Map<String,ESGPeer> unavailablePeers = null;
     private RegistryUpdateDigest lastRud = null;
     private ESGPeer defaultPeer = null;
+    private boolean shutdownHookLatch = false;
 
     public ESGConnectionManager(String name) {
         super(name);
@@ -132,6 +133,17 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             System.out.println("Damn, ESGConnectionManager can't fire up... :-(");
             log.error(e);
         }
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+                public void run(){
+                    if(ESGConnectionManager.this.shutdownHookLatch){
+                        System.out.println("Running Connection Manager Shutdown Hook");
+                        ESGConnectionManager.this.dispatchUnRegisterToPeers();
+                        System.out.println("Bye!");
+                    }
+                    ESGConnectionManager.this.shutdownHookLatch=true;
+                }
+            });
     }
 
     //--------------------------------------------
@@ -417,6 +429,16 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         return true;
     }
 
+    private boolean dispatchUnRegisterToPeers() {
+        System.out.println("I am dispatching UnRegister Event To Peers");
+        ESGRemoteEvent unregisterEvent = new ESGRemoteEvent(Utils.getMyServiceUrl(),
+                                                            ESGRemoteEvent.UNREGISTER,
+                                                            (new java.util.Date()).getTime()+"",
+                                                            0L);
+        System.out.println(unregisterEvent);
+        return dispatchToRandomPeers(unregisterEvent);
+    }
+
     //--------------------------------------------
     //Event handling...
     //--------------------------------------------
@@ -424,10 +446,13 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     public synchronized boolean handleESGQueuedEvent(ESGEvent event) {
         log.trace("["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
 
+        //--------------------
+        //Routing Registration Update Events ONLY...
+        //--------------------
         if(event.getData() instanceof RegistryUpdateDigest) {
             log.trace("Getting update information regarding internal representation of the federation");
             RegistryUpdateDigest rud = (RegistryUpdateDigest)event.getData();
-
+            
             //Add all the newly discovered peers that I don't already
             //know first hand are active... but they are not fully "available"
             //yet.
@@ -477,22 +502,31 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             }
             lastRud=rud;
             return sendOutNewRegistryState(rud.xmlDocument(), rud.xmlChecksum());  //dispatch method
-        }
-        
-        //--------------------
-        //Routing of events...
-        //--------------------
-        boolean handled = false;
-        if(ESGRemoteEvent.UNREGISTER == event.getRemoteEvent().getMessageType()) {
-            return dispatchToRandomPeers(event.getRemoteEvent());
         }else{
-            log.info("unhandled event type: ["+event.getRemoteEvent().getMessageType()+"] from "+event.getRemoteEvent().getSource());
-            log.trace(event);
-            //return dispatchResponseToSource(event);
+            //--------------------
+            //Routing of events...
+            //--------------------
+            boolean handled = false;
+            int eventType = event.getRemoteEvent().getMessageType();
+            if(event.hasRemoteEvent()) {
+                switch (eventType) {
+                case ESGRemoteEvent.REGISTER: 
+                    log.trace("Forwarding REGISTER event to next random peer");
+                    log.trace(event);
+                    return dispatchToRandomPeers(event.getRemoteEvent());
+                case ESGRemoteEvent.UNREGISTER:
+                    log.trace("Forwarding UNREGISTER event to next random peer");
+                    log.trace(event);
+                    return dispatchToRandomPeers(event.getRemoteEvent());
+                default:
+                    log.info("UnHandled event type: ["+event.getRemoteEvent().getMessageType()+"] from "+event.getRemoteEvent().getSource());
+                    log.trace(event);
+                    break;
+                }
+            }
         }
-
         event = null; //gc hint!
-        return true;
+        return false;
     }
 
 

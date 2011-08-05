@@ -260,9 +260,13 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         List<Node> myList = myRegistration.getNode();
         List<Node> otherList = otherRegistration.getNode();
 
-        log.trace("mylist = ["+myList+"] - size ("+myList.size()+") "+myList.get(0).getHostname());
-        log.trace("otherList = ["+otherList+"] - size ("+otherList.size()+") "+otherList.get(0).getHostname());
-
+        try{
+            log.trace("mylist = ["+myList+"] - size ("+myList.size()+") "+myList.get(0).getHostname());
+            log.trace("otherList = ["+otherList+"] - size ("+otherList.size()+") "+otherList.get(0).getHostname());
+        }catch(Throwable t) {
+            log.error(t);
+            log.trace("Malformed Registration: hostname field not set!!!!"); 
+        }
         Long removedNodeTimeStamp = null;
         String removedNodeHostname = null;
 
@@ -278,45 +282,52 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         int i=0;
         int j=0;
         while ((i < myList.size()) && (j < otherList.size())) {
-            if( (nodecomp.compare(myList.get(i),otherList.get(j))) == 0 ) {
-                if((myList.get(i)).getTimeStamp() >= (otherList.get(j)).getTimeStamp()) {
-                    newNodes.add(myList.get(i));
-                    log.trace("-- Keeping local entry for (=) "+(myList.get(i)).getHostname());
-                }else {
-                    if(peerFilter.isInNetwork(otherList.get(j))) {
-                        newNodes.add(otherList.get(j));
-                        updatedNodes.add(otherList.get(j));
-                        log.trace("-- Updating with remote entry for (=) "+(myList.get(j)).getHostname());
-                    }else{
-                        log.trace("   Skipping, Not in our peer network (=) ["+(myList.get(j)).getHostname()+"]");
-                        //just skip what's in the entry in the
-                        //otherList but leave us at the same position
-                        //in myList to do the next comparison
-                        //(I could have also done j++; continue;)
-                        i--;
-                    }
-                }
-                i++;
-                j++;
-            }else if ( (nodecomp.compare(myList.get(i),otherList.get(j))) < 0 ) {
-                newNodes.add(myList.get(i));
-                log.trace("-  Keeping local entry for "+(myList.get(i)).getHostname());
-                i++;
-            }else{
-                if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
-                    (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
-                    removedMap.remove(removedNodeHostname);
-                    if(peerFilter.isInNetwork(otherList.get(j))) {
-                        newNodes.add(otherList.get(j));
-                        updatedNodes.add(otherList.get(j));
-                        log.trace("-  Accepting new(er) remote entry for (+) "+(otherList.get(j)).getHostname());
+            try{
+                if( (nodecomp.compare(myList.get(i),otherList.get(j))) == 0 ) {
+                    if((myList.get(i)).getTimeStamp() >= (otherList.get(j)).getTimeStamp()) {
+                        newNodes.add(myList.get(i));
+                        log.trace("-- Keeping local entry for (=) "+(myList.get(i)).getHostname());
                     }else {
-                        log.trace("   Skipping "+(otherList.get(j)).getHostname()+", Not in our peer network (+)");
+                        if(peerFilter.isInNetwork(otherList.get(j))) {
+                            newNodes.add(otherList.get(j));
+                            updatedNodes.add(otherList.get(j));
+                            log.trace("-- Updating with remote entry for (=) "+(myList.get(j)).getHostname());
+                        }else{
+                            log.trace("   Skipping, Not in our peer network (=) ["+(myList.get(j)).getHostname()+"]");
+                            //just skip what's in the entry in the
+                            //otherList but leave us at the same position
+                            //in myList to do the next comparison
+                            //(I could have also done j++; continue;)
+                            i--;
+                        }
                     }
-                }else {
-                    log.debug("   NOT accepting older candidate remote entry, ["+(otherList.get(j)).getHostname()+"], have more recent knowledge of removal by ["+(removedNodeTimeStamp > otherRegistration.getTimeStamp())+"]ms than candidate entry (+)");
+                    i++;
+                    j++;
+                }else if ( (nodecomp.compare(myList.get(i),otherList.get(j))) < 0 ) {
+                    newNodes.add(myList.get(i));
+                    log.trace("-  Keeping local entry for "+(myList.get(i)).getHostname());
+                    i++;
+                }else{
+                    if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
+                        (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
+                        removedMap.remove(removedNodeHostname);
+                        if(peerFilter.isInNetwork(otherList.get(j))) {
+                            newNodes.add(otherList.get(j));
+                            updatedNodes.add(otherList.get(j));
+                            log.trace("-  Accepting new(er) remote entry for (+) "+(otherList.get(j)).getHostname());
+                        }else {
+                            log.trace("   Skipping "+(otherList.get(j)).getHostname()+", Not in our peer network (+)");
+                        }
+                    }else {
+                        log.debug("   NOT accepting older candidate remote entry, ["+(otherList.get(j)).getHostname()+"], have more recent knowledge of removal by ["+(removedNodeTimeStamp > otherRegistration.getTimeStamp())+"]ms than candidate entry (+)");
+                    }
+                    j++;
                 }
+            }catch(Throwable t) {
+                log.error(t);
+                log.warn("[=+] Skipping MALFORMED Node Entry...(i="+(i)+") (j="+(j)+")"); 
                 j++;
+                continue;
             }
         }
 
@@ -327,22 +338,29 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         }
 
         while( j < otherList.size() ) {
-            if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
-                (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
-                removedMap.remove(removedNodeHostname);
-                if(peerFilter.isInNetwork(otherList.get(j))) {
-                    newNodes.add(otherList.get(j));
-                    updatedNodes.add(otherList.get(j));
-                    log.trace("   Adding new(er) remote entry for (++) "+(otherList.get(j)).getHostname());
+            try{
+                if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
+                    (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
+                    removedMap.remove(removedNodeHostname);
+                    if(peerFilter.isInNetwork(otherList.get(j))) {
+                        newNodes.add(otherList.get(j));
+                        updatedNodes.add(otherList.get(j));
+                        log.trace("   Adding new(er) remote entry for (++) "+(otherList.get(j)).getHostname());
+                    }else {
+                        log.trace("   Skipping "+(otherList.get(j)).getHostname()+", Not in our peer network (++)");
+                    }
                 }else {
-                    log.trace("   Skipping "+(otherList.get(j)).getHostname()+", Not in our peer network (++)");
+                    log.debug("   NOT accepting older candidate remote entry, ["+(otherList.get(j)).getHostname()+"], have more recent knowledge of removal by ["+(removedNodeTimeStamp > otherRegistration.getTimeStamp())+"]ms than candidate entry (++)");
                 }
-            }else {
-                log.debug("   NOT accepting older candidate remote entry, ["+(otherList.get(j)).getHostname()+"], have more recent knowledge of removal by ["+(removedNodeTimeStamp > otherRegistration.getTimeStamp())+"]ms than candidate entry (++)");
+            }catch(Throwable t) {
+                log.error(t);
+                log.warn("Skipping MALFORMED Node Entry... (j="+(j)+")"); 
+                j++;
+                continue;
             }
             j++;
         }
-
+        
         log.trace("updatedNodes: ("+updatedNodes.size()+")");
         for(Node n : updatedNodes) {
             log.debug("updating registry with info on: "+n.getHostname());
@@ -425,7 +443,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
 
             String lastChecksum = processedMap.get(sourceServiceURL);
             if( (lastChecksum != null) && (lastChecksum.equals(payloadChecksum)) ) {
-                log.trace("I have seen this payload before, from the same dude... there is nothing new to learn... dropping event on floor ["+event+"]");
+                log.trace("I have seen this payload before, from the same dude... there is nothing new to learn... ["+event+"]");
                 //punt... (see dispatcher above)
                 return false;
             }
@@ -434,7 +452,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             //payload from the incoming event into object form, via the gleaner.
             Registration myRegistration = gleaner.getMyRegistration();
             Registration peerRegistration = gleaner.createRegistrationFromString((String)event.getRemoteEvent().getPayload());
-
+            
             //log.trace("myRegistration = ["+myRegistration+"]");
             //log.trace("peerRegistration = ["+peerRegistration+"]");
 
