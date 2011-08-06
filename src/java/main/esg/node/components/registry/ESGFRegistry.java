@@ -472,20 +472,31 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             //--------------------------------------------------------------
             gleaner.touch(); //timestamp our updated registry...
             gleaner.saveRegistration(); //write the new registry to file... (registration.xml)
-
-            log.trace("Sending off new event with registry update digest data");
-            ESGEvent rudEvent = new ESGEvent(this,
-                                             new RegistryUpdateDigest(gleaner.toString(),
-                                                                      gleaner.getMyChecksum(),
-                                                                      updatedNodes),
-                                             "Updated / Merged Registration State");
-            rudEvent.setRemoteEvent(event.getRemoteEvent());
-            enqueueESGEvent(rudEvent);
+            sendOutNewRegistryState(gleaner,updatedNodes); //send off registry state to peer network...
             //--------------------------------------------------------------
 
         }
 
         return true;
+    }
+
+    //When nodes are removed from the registry there is a new state.
+    //This method takes the new (reduced) state of the registry and
+    //pushes it out - eventually - to the rest of the peer network.
+    private void sendOutNewRegistryState(RegistrationGleaner gleaner) {
+        this.sendOutNewRegistryState(gleaner,null);
+    }
+
+    //Conjure a brand new event (as we are now the source for a new state that is to be propagated).
+    //send that event on to the next step - that will propagate this new state ([ending with] connection manager)
+    private synchronized void sendOutNewRegistryState(RegistrationGleaner gleaner, Set<Node> updatedNodes) {
+        log.trace("Sending off new event with registry update digest data");
+        ESGEvent rudEvent = new ESGEvent(this,
+                                         new RegistryUpdateDigest(gleaner.toString(),
+                                                                  gleaner.getMyChecksum(),
+                                                                  updatedNodes),
+                                         "Updated / Merged Registration State");
+        enqueueESGEvent(rudEvent);
     }
 
     //Listen out for Joins from conn mgr
@@ -517,6 +528,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                         processedMap.remove(peerUrl);
                         removedMap.put(peerHostname,event.getTimeStamp());
                         gleaner.saveRegistration();
+                        sendOutNewRegistryState(gleaner);
                     }
                 }
             }else if(event.hasJoined()) {

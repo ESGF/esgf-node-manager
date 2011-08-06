@@ -79,6 +79,10 @@ public class RegistryUpdateDigest {
         this.xmlChecksum = xmlChecksum;
         this.updatedNodes = updatedNodes;
     }
+
+    public RegistryUpdateDigest (String xmlDocument, String xmlChecksum) {
+        this(xmlDocument,xmlChecksum,null);
+    }
     
     public String xmlDocument() { return this.xmlDocument; }
     public String xmlChecksum() { return this.xmlChecksum; }

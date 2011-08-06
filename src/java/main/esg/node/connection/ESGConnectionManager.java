@@ -71,6 +71,7 @@ import org.apache.commons.logging.impl.*;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -458,46 +459,49 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             //yet.
             ESGPeer peer = null;
             String peerServiceUrl = null;
-            for(Node node : rud.updatedNodes()) {
-                
-                //Scenario A:
-                //This was the first way... Where we enforced the service url... maybe not a bad idea?
-                //peer = peers.get(peerServiceUrl = Utils.asServiceUrl(node.getHostname()));
+            Set<Node> updatedNodes = null;
+            if(null != (updatedNodes = rud.updatedNodes())) {
+                for(Node node : updatedNodes) {
 
-                //Scenario B: Get the service endpoint advertised by the peer in their registration...
-                //Check this node to see if it has an entry for a node manager... (required);
-                
-                peer = null;
-                peerServiceUrl = null;
-                
-                try{
-                    peerServiceUrl = node.getNodeManager().getEndpoint();
-                }catch (Throwable t) { 
-                    log.warn(node.getHostname()+" does not seem to be running a node manager thus, not qualified to be a peer... dropping'em"); 
-                    continue;
-                }
-                
-                peer = peers.get(peerServiceUrl);
+                    //Scenario A:
+                    //This was the first way... Where we enforced the service url... maybe not a bad idea?
+                    //peer = peers.get(peerServiceUrl = Utils.asServiceUrl(node.getHostname()));
 
-                //If we don't have you in our peer list then we'll add
-                //you... (indirectly) The act of registering this new
-                //peer fires off a join event which is caught and
-                //handled below in the implementation of
-                //this.handleESGEvent where the peer is then added to
-                //the peers datastructure (map).
-                try{
-                    //shall never store myself as a peer.
-                    if(Utils.getMyServiceUrl().equals(peerServiceUrl)) {
-                        log.warn("I should not be even attempting to store myself as my own peer!");
-                        continue; 
+                    //Scenario B: Get the service endpoint advertised by the peer in their registration...
+                    //Check this node to see if it has an entry for a node manager... (required);
+
+                    peer = null;
+                    peerServiceUrl = null;
+
+                    try{
+                        peerServiceUrl = node.getNodeManager().getEndpoint();
+                    }catch (Throwable t) { 
+                        log.warn(node.getHostname()+" does not seem to be running a node manager thus, not qualified to be a peer... dropping'em"); 
+                        continue;
                     }
-                    if (peer == null) {
-                        getDataNodeManager().registerPeer(new BasicPeer(peerServiceUrl, ESGPeer.PEER));
+
+                    peer = peers.get(peerServiceUrl);
+
+                    //If we don't have you in our peer list then we'll add
+                    //you... (indirectly) The act of registering this new
+                    //peer fires off a join event which is caught and
+                    //handled below in the implementation of
+                    //this.handleESGEvent where the peer is then added to
+                    //the peers datastructure (map).
+                    try{
+                        //shall never store myself as a peer.
+                        if(Utils.getMyServiceUrl().equals(peerServiceUrl)) {
+                            log.warn("I should not be even attempting to store myself as my own peer!");
+                            continue;
+                        }
+                        if (peer == null) {
+                            getDataNodeManager().registerPeer(new BasicPeer(peerServiceUrl, ESGPeer.PEER));
+                        }
+                    }catch(java.net.MalformedURLException e) {
+                        log.error(e);
+                        log.error("This url was not recognized as a node manager url, no need to go further - Drop it like it's hot...");
+                        return false;
                     }
-                }catch(java.net.MalformedURLException e) {
-                    log.error(e); 
-                    log.error("This url was not recognized as a node manager url, no need to go further - Drop it like it's hot...");
-                    return false;
                 }
             }
             lastRud=rud;
