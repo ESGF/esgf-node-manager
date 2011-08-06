@@ -125,12 +125,14 @@ public class AccessLoggingFilter implements Filter {
     AccessLoggingDAO accessLoggingDAO = null;
     Properties dbProperties = null;
     private Pattern urlPattern = null;
+    
+    private String serviceType = null;
 
 
     public void init(FilterConfig filterConfig) throws ServletException {
         log.debug("Initializing filter: "+this.getClass().getName());
         this.filterConfig = filterConfig;
-        Properties esgfProperties = null;
+        ESGFProperties esgfProperties = null;
         try{
             esgfProperties = new ESGFProperties();
         }catch (java.io.IOException e) { log.error(e); }
@@ -138,13 +140,15 @@ public class AccessLoggingFilter implements Filter {
         dbProperties = new Properties();
         log.debug("FilterConfig is : ["+filterConfig+"]");
         log.debug("db.protocol is  : ["+filterConfig.getInitParameter("db.protocol")+"]");
-        dbProperties.put("db.protocol",((null != (value = filterConfig.getInitParameter("db.protocol"))) ? value : esgfProperties.get("db.protocol")));
-        dbProperties.put("db.host",((null != (value = filterConfig.getInitParameter("db.host"))) ? value : esgfProperties.get("db.host")));
-        dbProperties.put("db.port",((null != (value = filterConfig.getInitParameter("db.port"))) ? value : esgfProperties.get("db.port")));
-        dbProperties.put("db.database",((null != (value = filterConfig.getInitParameter("db.database"))) ? value : esgfProperties.get("db.database")));
-        dbProperties.put("db.user",((null != (value = filterConfig.getInitParameter("db.user"))) ? value : esgfProperties.get("db.user")));
+        dbProperties.put("db.protocol",((null != (value = filterConfig.getInitParameter("db.protocol"))) ? value : esgfProperties.getProperty("db.protocol")));
+        dbProperties.put("db.host",((null != (value = filterConfig.getInitParameter("db.host"))) ? value : esgfProperties.getProperty("db.host")));
+        dbProperties.put("db.port",((null != (value = filterConfig.getInitParameter("db.port"))) ? value : esgfProperties.getProperty("db.port")));
+        dbProperties.put("db.database",((null != (value = filterConfig.getInitParameter("db.database"))) ? value : esgfProperties.getProperty("db.database")));
+        dbProperties.put("db.user",((null != (value = filterConfig.getInitParameter("db.user"))) ? value : esgfProperties.getProperty("db.user")));
         dbProperties.put("db.password",((null != (value = filterConfig.getInitParameter("db.password"))) ? value : esgfProperties.getDatabasePassword()));
-        dbProperties.put("db.driver",((null != (value = filterConfig.getInitParameter("db.driver"))) ? value : esgfProperties.get("db.driver")));
+        dbProperties.put("db.driver",((null != (value = filterConfig.getInitParameter("db.driver"))) ? value : esgfProperties.getProperty("db.driver","org.postgresql.Driver")));
+
+        serviceType = (null != (value = filterConfig.getInitParameter("service.type"))) ? value : "tds";
         
         log.trace("Database parameters: "+dbProperties);
 
@@ -198,9 +202,9 @@ public class AccessLoggingFilter implements Filter {
         String fileID = null;
         String remoteAddress = null;
         String userAgent = null;
-        String serviceType = null;
         long   dateFetched = 0L;
         long   batchUpdateTime = 0L;
+        //(note: serviceType defined in global scope)
 
         //firewall off any errors so that nothing stops the show...
         try {
@@ -266,7 +270,6 @@ public class AccessLoggingFilter implements Filter {
                     fileID = "0A";
                     remoteAddress = req.getRemoteAddr();
                     userAgent = (String)req.getAttribute("userAgent");
-                    serviceType = "tds";
                     dateFetched = System.currentTimeMillis()/1000;
                     batchUpdateTime = dateFetched; //For the life of my I am not sure why this is there, something from the gridftp metrics collection. -gmb
                     
