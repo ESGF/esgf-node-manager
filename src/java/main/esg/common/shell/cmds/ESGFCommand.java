@@ -99,7 +99,7 @@ public abstract class ESGFCommand {
     //TODO: make this properly abstract...
     public String getInfo() { return "<no info>"; }
 
-    public CommandLineParser getCommandLineParser() { return (null == parser) ? this.parser = new PosixParser() : this.parser; }
+    public CommandLineParser getCommandLineParser() { return (null == parser) ? this.parser = new GnuParser() : this.parser; }
     public void clearCommandLineParser()  { parser = null; }
     
 

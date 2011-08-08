@@ -331,14 +331,14 @@ write_node_manager_install_log() {
 
 write_shell_contrib_command_file() {
     local contrib_file=${esg_root_dir}/config/esgf_contrib_commands
-    [ -e contrib_commands ] && return 0
+    [ -e "${contrib_commands}" ] && return 0
 
     #----------------------------
     mkdir -p ${esg_root_dir}/config
     pushd ${esg_root_dir}/config >& /dev/null
     [ $? != 0 ] && return 1
 
-    cat >> ${contrib_file} <<EOF
+    cat > ${contrib_file} <<EOF
 #This file contains the mappings of contributed shell commands that
 #are to be loaded into the esgf-sh shell
 #Entries are of the form:
