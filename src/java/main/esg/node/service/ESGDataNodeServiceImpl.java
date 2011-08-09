@@ -150,7 +150,7 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     //Ingress event handling from remote 'client'
     public void handleESGRemoteEvent(ESGRemoteEvent evt_) {
         if(!evt_.checkTTL()) {
-            log.warn("Received event has invalid TTL: ["+evt_.getTTL()+"] from "+evt_.getSource()+" dropping on floor...");
+            log.trace("Received event has invalid TTL: ["+evt_.getTTL()+"] from "+evt_.getSource()+" dropping on floor...");
             return;
         }else {
             evt_.decTTL();
