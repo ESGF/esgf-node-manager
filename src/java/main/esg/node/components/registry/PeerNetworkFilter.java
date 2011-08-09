@@ -98,8 +98,7 @@ public class PeerNetworkFilter {
     //Parse property value for 'key'...
     public void init(Properties props) {
         try{
-            String[] myNetworks = props.getProperty(key).split("[ ]*(?:,|[|]|[:])[ ]*");
-            init(myNetworks);
+            init(props.getProperty(key).split("[ ]*(?:,|[|]|[:])[ ]*"));
         }catch(Throwable t) {
             log.error(t);
         }
@@ -109,17 +108,24 @@ public class PeerNetworkFilter {
         StringBuffer regex = new StringBuffer();
         StringBuffer networks = new StringBuffer(); //for the sake of log output...
         regex.append("(?:^|[,|: ])+(");
+        int bad = 0;
         int i = 0;
         for(String network : myNetworks) {
+            if (network.equals("")) { bad++; continue; }
             regex.append(network); networks.append(network+"*");
             if (i < (myNetworks.length-1)) { regex.append("|"); networks.append(" + "); }
             i++;
         }
-        log.info("Recognizing Peer Network(s): ["+networks.toString()+"]");
-        regex.append(")[a-zA-Z0-9,|:_. -*]*$");
-        log.info("pattern = "+regex.toString());
-        networkMatcher = Pattern.compile(regex.toString()).matcher("");
+        if (bad == 0) {
+            log.info("Recognizing Peer Network(s): ["+networks.toString()+"]");
+            regex.append(")[a-zA-Z0-9,|:_. -*]*$");
+            log.trace("pattern = "+regex.toString());
+            networkMatcher = Pattern.compile(regex.toString()).matcher("");
+        }else {
+            networkMatcher = Pattern.compile("a^").matcher("");
+        }
         networkMatcher.reset();
+
     }
 
 
@@ -143,8 +149,8 @@ public class PeerNetworkFilter {
     public boolean isInNetwork(Node candidateNode) { return this.isInNetwork(candidateNode.getNamespace()); }
 
     public boolean isInNetwork(String candidate) {
-        log.info("network candidate = "+candidate);
-        if(null == candidate) { return false; }
+        log.trace("network candidate = "+candidate);
+        if(null == candidate || candidate.equals("")) { return false; }
         if(networkMatcher == null) {
             log.error("ERROR: NotINITIALIZED - Not able to affirm ANY network affiliation: \n\t"+
                       "Check that configuration property \"node.namespace\" exists and set properly");
