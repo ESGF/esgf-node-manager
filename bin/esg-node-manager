@@ -275,7 +275,10 @@ setup_node_manager() {
     (write_node_manager_config && configure_postgress) || checked_done 1
     write_node_manager_install_log
     write_shell_contrib_command_file
-    set_redirect
+
+    #setup the ROOT app's index.html to redirct to the esgf-node-manager's index page
+    #(function implementation inherited from esg-node script)
+    set_redirect ${node_manager_app_context_root}
 
     [ -d ${tomcat_install_dir}/webapps/esg-node ] && echo -n "Removing old esg-node webapp (${tomcat_install_dir}/webapps/esg-node)... " && rm -rf ${tomcat_install_dir}/webapps/esg-node && echo "[OK]"
 
@@ -363,32 +366,6 @@ EOF
     #----------------------------
     return 0
 }
-
-#setup the ROOT app's index.html to redirct to the esgf-node-manager's index page (BOOM!)
-set_redirect() {
-
-    local index_file=${tomcat_install_dir}/webapps/ROOT/index.html
-
-    [ ! -e ${index_file} ] && echo "Sorry, No \"ROOT\" application found!" && return 1
-
-    local redirect_content="<head><meta HTTP-EQUIV=\"REFRESH\" content=\"0; url=/esgf-node-manager\"></head>"
-
-    [ "${redirect_content}" = "$(cat ${index_file})" ] && echo "Redirect already setup" && return 0
-
-    local doit="Y"
-    read -p "Do you wish to setup the redirect to the esgf-node-manager's page? [Y/n]: " doit
-    [ "n" = "${doit}" ] || [ "N" = "${doit}" ] && return 0
-
-    mv ${index_file} ${index_file}.last
-
-    echo "${redirect_content}" > ${index_file}
-    chmod 644 ${index_file}
-    chown -R ${tomcat_user}  ${index_file}
-    chgrp -R ${tomcat_group} ${index_file}
-    echo "Redirect setup to /esgf-node-manager"
-    return 0
-}
-
 
 #--------------------------------------------------
 #NOTE: This must be run AFTER the esg node web app
