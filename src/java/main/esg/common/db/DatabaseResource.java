@@ -102,7 +102,7 @@ public class DatabaseResource {
     private DatabaseResource(String driverName) { 
         log.trace("Instantating DatabaseResource object...");
         try {
-            log.info("Loading JDBC driver: ["+driverName+"]");
+            log.debug("Loading JDBC driver: ["+driverName+"]");
             Class.forName(driverName);
             this.driverName = driverName;
         } catch (ClassNotFoundException e) {
@@ -134,7 +134,7 @@ public class DatabaseResource {
         }
 
         String connectURI = protocol+"//"+host+":"+port+"/"+database; //zoiks
-        log.info("Connection URI = "+connectURI);
+        log.debug("Connection URI = "+connectURI);
         connectionPool = new GenericObjectPool(null);
         ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connectURI,user,password);
         PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory,connectionPool,null,null,false,true);
