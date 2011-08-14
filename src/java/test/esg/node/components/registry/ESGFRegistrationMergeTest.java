@@ -89,6 +89,8 @@ public class ESGFRegistrationMergeTest {
     public static void initialSetup() {
         registry = new ESGFRegistry("Test Registry");
         registry.init();
+        registrationA = new Registration();
+        registrationB = new Registration();
     }
 
     @Before

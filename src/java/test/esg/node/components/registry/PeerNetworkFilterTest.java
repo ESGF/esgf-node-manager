@@ -81,17 +81,19 @@ public class PeerNetworkFilterTest {
     @Test
     public void testVariousPeerNetworkEntries() {
         String[] goodCandidates = {"org.esgf",
-                                   "org.esgf.group1",
-                                   "gov.llnl",
-                                   "gov.llnlgroup1",
-                                   "gov.llnlgroup1, org.esgf.group1",
-                                   "gov.llnlgroup1, org.esgf.group1",
-                                   "gov.llnl.group2"};
+                                   "org.esgf.test",
+                                   "org.esgf/test",
+                                   "org.esgf:test",
+                                   "org.esgf|test",
+                                   "org.esgf,test",
+                                   "org.esgf test",
+                                   "gov.llnl"};
         
         String[] badCandidates = {"test-org.esgf",
                                   "test-gov.llnl",
                                   "foo",
                                   "org.esg",
+                                  "gov.llnlgroup1",
                                   "gov.lln-group1, org.esggroup1",
                                   "gov.lln",
                                   "gov.lln.group1"};
