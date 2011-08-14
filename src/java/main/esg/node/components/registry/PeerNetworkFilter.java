@@ -74,12 +74,12 @@ import esg.common.generated.registration.*;
    A utility class for encapsulating the logic for determining network
    affilliation.  The point of this class is to be able to read a peer
    node's network value (at the moment written in the property
-   "node.namespace" in the main configuration file) and determine if
+   "node.peer.group" in the main configuration file) and determine if
    it is a part of the networks this node has been configured to be a
    part of.
    
    Note: Be sure not to put any regex type syntax in the
-   node.namespace value.  Perhaps I will scrub the incoming (parsed)
+   node.peer.group value.  Perhaps I will scrub the incoming (parsed)
    values as well as I scrub the candidate ones... but for now don't
    put *s and stuff in the value just delimit by ",|:" The * is
    implicit. 
@@ -89,7 +89,7 @@ public class PeerNetworkFilter {
     
     private static Log log = LogFactory.getLog(PeerNetworkFilter.class);
 
-    private static final String key = "node.namespace";
+    private static final String key = "node.peer.group";
     private Matcher networkMatcher = null;
 
     public PeerNetworkFilter() { }
@@ -146,14 +146,14 @@ public class PeerNetworkFilter {
        have to change all the callers to do so.  Encapuslaton 101 :-).
 
     */
-    public boolean isInNetwork(Node candidateNode) { return this.isInNetwork(candidateNode.getNamespace()); }
+    public boolean isInNetwork(Node candidateNode) { return this.isInNetwork(candidateNode.getNodePeerGroup()); }
 
     public boolean isInNetwork(String candidate) {
         log.trace("network candidate = "+candidate);
         if(null == candidate || candidate.equals("")) { return false; }
         if(networkMatcher == null) {
-            log.error("ERROR: NotINITIALIZED - Not able to affirm ANY network affiliation: \n\t"+
-                      "Check that configuration property \"node.namespace\" exists and set properly");
+            log.error("ERROR: NOT INITIALIZED - Not able to affirm ANY network affiliation: \n\t"+
+                      "Check that configuration property \"node.peer.group\" exists and set properly");
             return false;
         }
         networkMatcher.reset(candidate);
@@ -164,7 +164,7 @@ public class PeerNetworkFilter {
     //keeping it gutter right now cause it's brodying time! :-)
     public static void main(String[] args) {
         Properties p = new Properties();
-        p.setProperty("node.namespace","/o=org/ou=esgf, gov.llnl");
+        p.setProperty("node.peer.group","/o=org/ou=esgf, gov.llnl");
 
         PeerNetworkFilter pnf = new PeerNetworkFilter(p);
 

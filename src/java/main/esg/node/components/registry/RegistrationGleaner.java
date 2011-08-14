@@ -351,6 +351,7 @@ public class RegistrationGleaner {
             node.setShortName(props.getProperty("node.short.name"));
             node.setSupportEmail(props.getProperty("mail.admin.address"));
             node.setNamespace(props.getProperty("node.namespace"));
+            node.setNodePeerGroup(props.getProperty("node.peer.group"));
             
             //Pulled from system or install
             node.setHostname(nodeHostname);

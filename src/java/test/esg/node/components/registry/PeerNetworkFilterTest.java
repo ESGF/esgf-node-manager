@@ -98,11 +98,11 @@ public class PeerNetworkFilterTest {
                                   "gov.lln",
                                   "gov.lln.group1"};
         
-        String networkNames = "org.esgf, gov.llnl";
+        String peerGroups = "org.esgf, gov.llnl";
         
         Properties p = new Properties();
-        p.setProperty("node.namespace",networkNames);
-        System.out.println("Network Names = "+p);
+        p.setProperty("node.peer.group",peerGroups);
+        System.out.println("Peer Groups = "+p);
 
         PeerNetworkFilter pnf = new PeerNetworkFilter(p);
         boolean result = false;

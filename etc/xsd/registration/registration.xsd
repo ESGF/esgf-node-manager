@@ -150,6 +150,8 @@ That does make it more wordy, and require and reconstruction. -->
         <xsd:attribute name="organization" type="xsd:string" use="required"/>
         <!-- Oragnization namespace org.esgf.badc, etc -->
         <xsd:attribute name="namespace" type="xsd:string" use="required"/>
+        <!-- Oragnization namespace org.esgf, etc -->
+        <xsd:attribute name="nodePeerGroup" type="xsd:string" use="required"/>
         <!-- Address to send requests to -->
         <xsd:attribute name="supportEmail" type="xsd:string"/>
         <!-- Hostname, full domain name, and unique identifier -->
