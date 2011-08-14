@@ -118,8 +118,8 @@ public class PeerNetworkFilter {
         }
         if (bad == 0) {
             log.info("Recognizing Peer Network(s): ["+networks.toString()+"]");
-            regex.append(")[a-zA-Z0-9,|:_. -*]*$");
-            log.trace("pattern = "+regex.toString());
+            regex.append(")\\b[a-zA-Z0-9,|:. /*]*$");
+            log.info("pattern = "+regex.toString());
             networkMatcher = Pattern.compile(regex.toString()).matcher("");
         }else {
             networkMatcher = Pattern.compile("a^").matcher("");
@@ -164,7 +164,7 @@ public class PeerNetworkFilter {
     //keeping it gutter right now cause it's brodying time! :-)
     public static void main(String[] args) {
         Properties p = new Properties();
-        p.setProperty("node.namespace","org.esgf, gov.llnl");
+        p.setProperty("node.namespace","/o=org/ou=esgf, gov.llnl");
 
         PeerNetworkFilter pnf = new PeerNetworkFilter(p);
 
