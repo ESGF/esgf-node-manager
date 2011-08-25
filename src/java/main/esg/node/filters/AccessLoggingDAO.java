@@ -98,8 +98,10 @@ public class AccessLoggingDAO implements Serializable {
     //group 4 = file
     //We want to pull out group1, the host
     //userid = openid
-    private static final String regex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/(.*/)*(.*$)";
+    private static final String  regex      = "http[s]?://([^:/]*)(:(?:[0-9]*))?/(.*/)*(.*$)";
     private static final Pattern urlPattern = Pattern.compile(regex,Pattern.CASE_INSENSITIVE);
+    private static final String  stripRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/thredds/fileServer/(.*$)";
+    private static final Pattern urlStripPattern = Pattern.compile(stripRegex,Pattern.CASE_INSENSITIVE);
     
     private DataSource dataSource = null;
     private QueryRunner queryRunner = null;
@@ -153,7 +155,7 @@ public class AccessLoggingDAO implements Serializable {
             //That is the bit of information we really want to also have.
             //What we really need is an absolute id for a file!!!
             numRecordsInserted = queryRunner.update(accessLoggingIngressQuery,
-                                                    id,userID,quickHash.sum(userID),userIdp(userID),email,url,fileID,remoteAddress,userAgent,serviceType,batchUpdateTime,dateFetched,false);
+                                                    id,userID,quickHash.sum(userID),userIdp(userID),email,strip(url),fileID,remoteAddress,userAgent,serviceType,batchUpdateTime,dateFetched,false);
         }catch(SQLException ex) {
             log.error(ex);
         }
@@ -191,6 +193,14 @@ public class AccessLoggingDAO implements Serializable {
         Matcher m = urlPattern.matcher(userid);
         if(m.find()) idpHostname=m.group(1);
         return idpHostname;
+    }
+
+    //pulls off the first
+    private String strip(String url) {
+        String strippedUrl = url;
+        Matcher m = urlStripPattern.matcher(url);
+        if(m.find()) strippedUrl=m.group(3);
+        return strippedUrl;
     }
     
     public String toString() {
