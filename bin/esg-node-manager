@@ -312,7 +312,6 @@ db.host=${postgress_host}
 db.port=${postgress_port}
 db.database=${node_db_name}
 db.user=${postgress_user}
-db.password=${pg_sys_acct_passwd}
 mail.smtp.host=${mail_smtp_host}
 mail.admin.address=${mail_admin_address}
 EOF
