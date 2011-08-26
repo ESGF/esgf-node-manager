@@ -135,14 +135,14 @@ public class AccessLoggingDAO implements Serializable {
         
     }
     
-    //TODO: put in args and setup query!!!
+    //(NOTE: The variable serviceName maps to database field service_type)
     public synchronized int logIngressInfo(String userID,  
                               String email, 
                               String url, 
                               String fileID, 
                               String remoteAddress, 
                               String userAgent, 
-                              String serviceType, 
+                              String serviceName, 
                               long batchUpdateTime,
                               long dateFetched) {
         int id = -1;
@@ -155,7 +155,7 @@ public class AccessLoggingDAO implements Serializable {
             //That is the bit of information we really want to also have.
             //What we really need is an absolute id for a file!!!
             numRecordsInserted = queryRunner.update(accessLoggingIngressQuery,
-                                                    id,userID,quickHash.sum(userID),userIdp(userID),email,strip(url),fileID,remoteAddress,userAgent,serviceType,batchUpdateTime,dateFetched,false);
+                                                    id,userID,quickHash.sum(userID),userIdp(userID),email,strip(url),fileID,remoteAddress,userAgent,serviceName,batchUpdateTime,dateFetched,false);
         }catch(SQLException ex) {
             log.error(ex);
         }
