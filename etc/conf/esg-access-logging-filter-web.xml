@@ -8,41 +8,15 @@
     <filter-name>AccessLoggingFilter</filter-name>
     <filter-class>esg.node.filters.AccessLoggingFilter</filter-class>
     <init-param>
-      <param-name>db.driver</param-name>
-      <param-value>@db.driver@</param-value>
-    </init-param>
-    <init-param>
-      <param-name>db.protocol</param-name>
-      <param-value>@db.protocol@</param-value>
-    </init-param>
-    <init-param>
-      <param-name>db.host</param-name>
-      <param-value>@db.host@</param-value>
-    </init-param>
-    <init-param>
-      <param-name>db.port</param-name>
-      <param-value>@db.port@</param-value>
-    </init-param>
-    <init-param>
-      <param-name>db.database</param-name>
-      <param-value>@db.database@</param-value>
-    </init-param>
-    <init-param>
-      <param-name>db.user</param-name>
-      <param-value>@db.user@</param-value>
-    </init-param>
-    <init-param>
-      <param-name>db.password</param-name>
-      <param-value>@db.password@</param-value>
+      <param-name>service.name</param-name>
+      <param-value>@service.name@</param-value>
     </init-param>
     <init-param>
       <param-name>extensions</param-name>
-      <param-value>.nc</param-value>
+      <param-value>@extensions@</param-value>
     </init-param>
   </filter>
   <filter-mapping>
     <filter-name>AccessLoggingFilter</filter-name>
     <url-pattern>/*</url-pattern>
   </filter-mapping>
-
-

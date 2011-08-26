@@ -66,21 +66,41 @@
   <filter>
     <filter-name>AccessLoggingFilter</filter-name>
     <filter-class>esg.node.filters.AccessLoggingFilter</filter-class>
+    <!--
     <init-param>
       <param-name>db.driver</param-name>
       <param-value>org.postgresql.Driver</param-value>
+    </init-param>
+    <init-param>
       <param-name>db.protocol</param-name>
       <param-value>jdbc:postgresql:</param-value>
+    </init-param>
+    <init-param>
       <param-name>db.host</param-name>
       <param-value>localhost</param-value>
+    </init-param>
+    <init-param>
       <param-name>db.port</param-name>
       <param-value>5432</param-value>
+    </init-param>
+    <init-param>
       <param-name>db.database</param-name>
       <param-value>esgcet</param-value>
+    </init-param>
+    <init-param>
       <param-name>db.user</param-name>
       <param-value>dbsuper</param-value>
+    </init-param>
+    <init-param>
       <param-name>db.password</param-name>
       <param-value>***</param-value>
+    </init-param>
+    -->
+    <init-param>
+      <param-name>service.name</param-name>
+      <param-value>thredds</param-value>
+    </init-param>
+    <init-param>
       <param-name>extensions</param-name>
       <param-value>.nc,.foo,.bar</param-value>
     </init-param>
@@ -126,7 +146,7 @@ public class AccessLoggingFilter implements Filter {
     Properties dbProperties = null;
     private Pattern urlPattern = null;
     
-    private String serviceType = null;
+    private String serviceName = null;
 
 
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -147,8 +167,8 @@ public class AccessLoggingFilter implements Filter {
         dbProperties.put("db.user",((null != (value = filterConfig.getInitParameter("db.user"))) ? value : esgfProperties.getProperty("db.user")));
         dbProperties.put("db.password",((null != (value = filterConfig.getInitParameter("db.password"))) ? value : esgfProperties.getDatabasePassword()));
         dbProperties.put("db.driver",((null != (value = filterConfig.getInitParameter("db.driver"))) ? value : esgfProperties.getProperty("db.driver","org.postgresql.Driver")));
-
-        serviceType = (null != (value = filterConfig.getInitParameter("service.type"))) ? value : "tds";
+        
+        serviceName = (null != (value = filterConfig.getInitParameter("service.name"))) ? value : "thredds";
         
         log.trace("Database parameters: "+dbProperties);
 
@@ -204,7 +224,7 @@ public class AccessLoggingFilter implements Filter {
         String userAgent = null;
         long   dateFetched = 0L;
         long   batchUpdateTime = 0L;
-        //(note: serviceType defined in global scope)
+        //(note: serviceName defined in global scope)
 
         //firewall off any errors so that nothing stops the show...
         try {
@@ -273,7 +293,7 @@ public class AccessLoggingFilter implements Filter {
                     dateFetched = System.currentTimeMillis()/1000;
                     batchUpdateTime = dateFetched; //For the life of my I am not sure why this is there, something from the gridftp metrics collection. -gmb
                     
-                    success = ((id = accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,serviceType,batchUpdateTime,dateFetched)) > 0);
+                    success = ((id = accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,serviceName,batchUpdateTime,dateFetched)) > 0);
 
                 }else {
                     log.debug("No match against: "+url);
