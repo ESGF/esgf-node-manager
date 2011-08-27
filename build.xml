@@ -145,8 +145,6 @@ Builds the project via ant (obviously).
   <filter token="db.database" value="${db.database}"/>
   <property name="db.user" value="no_name"/>
   <filter token="db.user" value="${db.user}"/>
-  <property name="db.password" value="no_name"/>
-  <filter token="db.password" value="${db.password}"/>
 
   <property name="log_dir" value="/tmp/esg/logs"/>
   <mkdir dir="${log_dir}" />

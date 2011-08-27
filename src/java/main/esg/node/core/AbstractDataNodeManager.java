@@ -110,7 +110,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
         }
 
         //Parcel out the database properties... and setup database connection pool.
-        DatabaseResource.init(props.getProperty("db.driver")).setupDataSource(getMatchingProperties("^db.*"));
+        DatabaseResource.init(props.getProperty("db.driver")).setupDataSource(props);
     }
     
     public abstract void init();
