@@ -154,8 +154,10 @@ public class AccessLoggingDAO implements Serializable {
             //TODO: Perhaps the url can be used to resolve the dataset???
             //That is the bit of information we really want to also have.
             //What we really need is an absolute id for a file!!!
+            log.info("logging issuing:\n queryRunner.update(accessLoggingIngressQuery,\n"+id+",\n"+userID+",\n"+quickHash.sum(userID)+",\n"+userIdp(userID)+",\n"+email+",\n"+strip(url)+",\n"+fileID+",\n"+remoteAddress+",\n"+userAgent+",\n"+serviceName+",\n"+batchUpdateTime+",\n"+dateFetched+",\n"+false+");");
             numRecordsInserted = queryRunner.update(accessLoggingIngressQuery,
                                                     id,userID,quickHash.sum(userID),userIdp(userID),email,strip(url),fileID,remoteAddress,userAgent,serviceName,batchUpdateTime,dateFetched,false);
+            log.info("numRecordsInserted: "+numRecordsInserted);
         }catch(SQLException ex) {
             log.error(ex);
         }
