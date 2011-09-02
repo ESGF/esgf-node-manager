@@ -133,7 +133,7 @@ public class DatabaseResource {
             }
         }
 
-        String connectURI = protocol+"//"+host+":"+port+"/"+database+" - "+password; //zoiks
+        String connectURI = protocol+"//"+host+":"+port+"/"+database;
         log.info("Connection URI = "+connectURI);
         connectionPool = new GenericObjectPool(null);
         ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connectURI,user,password);
