@@ -155,22 +155,22 @@ public class AccessLoggingFilter implements Filter {
         ESGFProperties esgfProperties = null;
         try{
             esgfProperties = new ESGFProperties();
-        }catch (java.io.IOException e) { log.error(e); }
+        }catch (java.io.IOException e) { e.printStackTrace(); log.error(e); }
         String value = null;
         dbProperties = new Properties();
         log.debug("FilterConfig is : ["+filterConfig+"]");
         log.debug("db.protocol is  : ["+filterConfig.getInitParameter("db.protocol")+"]");
-        dbProperties.put("db.protocol",((null != (value = filterConfig.getInitParameter("db.protocol"))) ? value : esgfProperties.getProperty("db.protocol")));
-        dbProperties.put("db.host",((null != (value = filterConfig.getInitParameter("db.host"))) ? value : esgfProperties.getProperty("db.host")));
-        dbProperties.put("db.port",((null != (value = filterConfig.getInitParameter("db.port"))) ? value : esgfProperties.getProperty("db.port")));
-        dbProperties.put("db.database",((null != (value = filterConfig.getInitParameter("db.database"))) ? value : esgfProperties.getProperty("db.database")));
-        dbProperties.put("db.user",((null != (value = filterConfig.getInitParameter("db.user"))) ? value : esgfProperties.getProperty("db.user")));
-        dbProperties.put("db.password",((null != (value = filterConfig.getInitParameter("db.password"))) ? value : esgfProperties.getDatabasePassword()));
-        dbProperties.put("db.driver",((null != (value = filterConfig.getInitParameter("db.driver"))) ? value : esgfProperties.getProperty("db.driver","org.postgresql.Driver")));
+        dbProperties.put("db.protocol",((null != (value = filterConfig.getInitParameter("db.protocol"))) ? value : esgfProperties.getProperty("db.protocol"))); value = null;
+        dbProperties.put("db.host",((null != (value = filterConfig.getInitParameter("db.host"))) ? value : esgfProperties.getProperty("db.host"))); value = null;
+        dbProperties.put("db.port",((null != (value = filterConfig.getInitParameter("db.port"))) ? value : esgfProperties.getProperty("db.port"))); value = null;
+        dbProperties.put("db.database",((null != (value = filterConfig.getInitParameter("db.database"))) ? value : esgfProperties.getProperty("db.database"))); value = null;
+        dbProperties.put("db.user",((null != (value = filterConfig.getInitParameter("db.user"))) ? value : esgfProperties.getProperty("db.user"))); value = null;
+        dbProperties.put("db.password",((null != (value = filterConfig.getInitParameter("db.password"))) ? value : esgfProperties.getDatabasePassword())); value = null;
+        dbProperties.put("db.driver",((null != (value = filterConfig.getInitParameter("db.driver"))) ? value : esgfProperties.getProperty("db.driver","org.postgresql.Driver"))); value = null;
         
-        serviceName = (null != (value = filterConfig.getInitParameter("service.name"))) ? value : "thredds";
+        serviceName = (null != (value = filterConfig.getInitParameter("service.name"))) ? value : "thredds"; value = null;
         
-        log.trace("Database parameters: "+dbProperties);
+        log.debug("Database parameters: "+dbProperties);
 
         DatabaseResource.init(dbProperties.getProperty("db.driver","org.postgresql.Driver")).setupDataSource(dbProperties);
         DatabaseResource.getInstance().showDriverStats();

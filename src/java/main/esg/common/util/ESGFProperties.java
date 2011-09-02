@@ -70,19 +70,23 @@ public class ESGFProperties extends Properties {
     private static final long serialVersionUID = 1L;
     
     public ESGFProperties() throws IOException, FileNotFoundException {
-
         // initialize empty Properties
         super();
-
-        // load ESGF property values
-        File propertyFile = new File( System.getenv().get("ESGF_HOME")+"/config/esgf.properties" );
-        if (!propertyFile.exists()) propertyFile = new File("/esg/config/esgf.properties");
-        this.load( new FileInputStream(propertyFile) );
-        if (log.isInfoEnabled()) log.info("Loading properties from file: "+propertyFile.getAbsolutePath());
-
+        load();
     }
 
     private String securityAdminPassword = null;
+
+    public void load() throws IOException, FileNotFoundException {
+        load(System.getenv().get("ESGF_HOME")+"/config/esgf.properties");
+    }
+    private void load(String propFilename) throws IOException, FileNotFoundException {
+        // load ESGF property values
+        File propertyFile = new File(propFilename);
+        if (!propertyFile.exists()) propertyFile = new File("/esg/config/esgf.properties");
+        this.load( new FileInputStream(propertyFile) );
+        if (log.isInfoEnabled()) log.info("Loading properties from file: "+propertyFile.getAbsolutePath());
+    }
 
     public String getAdminPassword() { return this.getAdminPassword(false); }
     public String getAdminPassword(boolean force) { 
