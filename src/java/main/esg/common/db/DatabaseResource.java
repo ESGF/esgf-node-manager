@@ -111,14 +111,14 @@ public class DatabaseResource {
     }
     
     public DatabaseResource setupDataSource(Properties props) {
-        log.trace("Setting up data source ");
+        log.info("Setting up data source: props = "+props);
         if(props == null) { log.error("Property object is ["+props+"]: Cannot setup up data source"); return this; }
         //Ex: jdbc:postgresql://pcmdi3.llnl.gov:5432/esgcet
         String protocol = props.getProperty("db.protocol","jdbc:postgresql:");
-        String host = props.getProperty("db.host","localhost");
-        String port = props.getProperty("db.port","5432");
+        String host =     props.getProperty("db.host","localhost");
+        String port =     props.getProperty("db.port","5432");
         String database = props.getProperty("db.database","esgcet");
-        String user = props.getProperty("db.user","dbsuper");
+        String user =     props.getProperty("db.user","dbsuper");
         String password = props.getProperty("db.password");
 
         //If the password is not directly available in the properties
@@ -133,8 +133,8 @@ public class DatabaseResource {
             }
         }
 
-        String connectURI = protocol+"//"+host+":"+port+"/"+database; //zoiks
-        log.debug("Connection URI = "+connectURI);
+        String connectURI = protocol+"//"+host+":"+port+"/"+database+" - "+password; //zoiks
+        log.info("Connection URI = "+connectURI);
         connectionPool = new GenericObjectPool(null);
         ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connectURI,user,password);
         PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory,connectionPool,null,null,false,true);
