@@ -557,6 +557,18 @@ public class RegistrationGleaner {
             }catch(Throwable t) {
                 log.error(t);
             }
+
+            //esgf-security
+            try{
+                if( (null != (endpoint=props.getProperty("security.registration.service.endpoint"))) &&
+                    (new File(props.getProperty("security.app.home"))).exists() ) {
+                    RegistrationService regSvc = new RegistrationService();
+                    regSvc.setEndpoint(endpoint);
+                    node.setRegistrationService(regSvc);
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
 	    
             PEMCert cert = new PEMCert();
             cert.setCert(fetchMyPemCert());

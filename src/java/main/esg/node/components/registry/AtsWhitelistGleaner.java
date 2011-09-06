@@ -148,6 +148,7 @@ public class AtsWhitelistGleaner {
         try{
             AttributeService ats = null; //The Attribute service entry from registration
             Attribute attribute = null;
+            RegistrationService regSvc = null;
             
             //NOTE: Entries stored in the registration are dedup'ed so no worries here ;-)
             int numNodes = registration.getNode().size();
@@ -177,6 +178,11 @@ public class AtsWhitelistGleaner {
                     atss.getAttribute().add(attribute);
                 }
                 atsNodes++;
+                
+                regSvc =  node.getRegistrationService();
+                if(null != regSvc) {
+                    //zoiks
+                }
             }
             log.trace(atsNodes+" of "+numNodes+" gleaned");
         } catch(Exception e) {
