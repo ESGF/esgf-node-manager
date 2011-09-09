@@ -159,7 +159,7 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
         //NOTE: This would potentially get called a lot!
         //      May want to look at maybe a faster but equiv comparison
         if(myServiceUrl.equalsIgnoreCase(evt_.getSource())) {
-            log.warn("I seem to be getting an incoming message from myself ["+myServiceUrl+"]: Dropping potential spoof");
+            log.trace("I seem to be getting an incoming message from myself ["+myServiceUrl+"]: Dropping potential spoof");
             return;
         }
         

@@ -135,7 +135,7 @@ public class ESGFProperties extends Properties {
                     BufferedReader in = new BufferedReader(new FileReader(configFile));
                     try{
                         value = in.readLine().trim();
-                        log.trace("data = "+value);
+                        //log.trace("data = "+value);
                     }catch(java.io.IOException ex) {
                         log.error(ex);
                     }finally {

@@ -111,7 +111,7 @@ public class DatabaseResource {
     }
     
     public DatabaseResource setupDataSource(Properties props) {
-        log.info("Setting up data source: props = "+props);
+        log.trace("Setting up data source... ");
         if(props == null) { log.error("Property object is ["+props+"]: Cannot setup up data source"); return this; }
         //Ex: jdbc:postgresql://pcmdi3.llnl.gov:5432/esgcet
         String protocol = props.getProperty("db.protocol","jdbc:postgresql:");
@@ -129,6 +129,8 @@ public class DatabaseResource {
             try{
                 password = ((esg.common.util.ESGFProperties)props).getDatabasePassword();
             }catch(Throwable t) {
+                log.error(" ****** DATABASE PASSWORD IS NOT SET!!! ******");
+                log.warn("Check that password is set in the passed in property file or that property object is an ESGFProperties object!!");
                 t.printStackTrace();
             }
         }
