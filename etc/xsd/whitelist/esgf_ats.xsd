@@ -4,7 +4,9 @@
   
   <xsd:attributeGroup name="EsgfAtsAttributes">
     <xsd:attribute name="type" type="xsd:string" use="required"/>
-    <xsd:attribute name="service"  type="xsd:string" use="required"/>
+    <xsd:attribute name="attributeService"  type="xsd:string" use="required"/>
+    <xsd:attribute name="description"  type="xsd:string"/>
+    <xsd:attribute name="registrationService"  type="xsd:string"/>
   </xsd:attributeGroup>
   
   <xsd:element name="attribute">

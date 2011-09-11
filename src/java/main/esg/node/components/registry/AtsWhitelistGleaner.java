@@ -148,7 +148,6 @@ public class AtsWhitelistGleaner {
         try{
             AttributeService ats = null; //The Attribute service entry from registration
             Attribute attribute = null;
-            RegistrationService regSvc = null;
             
             //NOTE: Entries stored in the registration are dedup'ed so no worries here ;-)
             int numNodes = registration.getNode().size();
@@ -162,27 +161,35 @@ public class AtsWhitelistGleaner {
                     continue;
                 }
                 
-                String service = ats.getEndpoint();
-                log.trace("Looking at attribute service: "+service);
+                String attribServiceEndpoint = ats.getEndpoint();
+
+                log.trace("Looking at attribute service: "+attribServiceEndpoint);
                 String type = null;
+                String description = null;
                 for(Group group : ats.getGroup()) {
+
                     type = group.getName();
+                    description = group.getDescription();
+
                     log.trace("gleaning group/attribute: "+type);
                     if (type.equals("wheel")) {
                         log.trace("(skipping wheel");
                         continue;
                     }
+
                     attribute = new Attribute();
                     attribute.setType(type);
-                    attribute.setService(service);
+                    attribute.setDescription(description);
+
+                    //These other attributes of 'attribute' are redundant for all groups on this node...
+                    //YES!!! All this gleaning etc, should be done via a database. (next phase).
+                    attribute.setAttributeService(attribServiceEndpoint);
+                    try{
+                        attribute.setRegistrationService(node.getRegistrationService().getEndpoint());
+                    }catch(Throwable t) { t.printStackTrace(); }
                     atss.getAttribute().add(attribute);
                 }
                 atsNodes++;
-                
-                regSvc =  node.getRegistrationService();
-                if(null != regSvc) {
-                    //zoiks
-                }
             }
             log.trace(atsNodes+" of "+numNodes+" gleaned");
         } catch(Exception e) {
