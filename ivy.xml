@@ -99,7 +99,10 @@ Note: Check Maven for propery dependency parameter values @
     <dependency org="commons-pool" name="commons-pool" rev="1.5.4"/>
 <!--<dependency org="com.caucho" name="hessian" rev="3.1.5"/> -->
     <dependency org="com.caucho" name="hessian" rev="3.0.20"/>
+    <dependency org="com.sun.xml.bind" name="jaxb-api" rev="2.2"/>
+    <dependency org="com.sun.xml.bind" name="jaxb-impl" rev="2.2"/>
     <dependency org="com.sun.xml.bind" name="jaxb-xjc" rev="2.2"/>
+<!--<dependency org="org.jvnet.hudson.main" name="hudson-jaxb-xjc" rev="2.1.1"/>-->
     <dependency org="jline" name="jline" rev="0.9.94"/>
     <dependency org="junit" name="junit" rev="4.8.1"/>
     <dependency org="log4j" name="log4j" rev="1.2.14">
@@ -107,7 +110,7 @@ Note: Check Maven for propery dependency parameter values @
       <exclude org="com.sun.jmx"/>
       <exclude org="javax.jms"/>
     </dependency>
-    <dependency org="javax.mail" name="mail" rev="1.4.3"/>
+    <dependency org="javax.mail" name="mail" rev="1.4.4"/>
     <dependency org="postgresql" name="postgresql" rev="8.3-603.jdbc3"/>
 
   </dependencies>
