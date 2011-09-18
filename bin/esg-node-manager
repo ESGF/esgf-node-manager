@@ -443,6 +443,8 @@ clean_node_manager_webapp_subsystem() {
                 rm -rf ${node_manager_app_home}
                 [ $? != 0 ] && echo "ERROR: Unable to remove ${node_manager_app_home}" && return 1
                 perl -n -i -e'print unless m!webapp:esgf-node-manager!' ${install_manifest}
+                remove_property node_manager_app_home
+                remove_property node_manager_endpoint
             fi
         fi
     fi 
