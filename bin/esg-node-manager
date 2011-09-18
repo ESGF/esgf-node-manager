@@ -456,23 +456,26 @@ clean_node_manager_database_subsystem_installation() {
     init
     local doit="N"
 
-    if $(psql -U ${postgress_user} esgcet -c "\dt esgf_node_manager.;" | egrep '^\([1-9]* row[s]?\)' >& /dev/null); then
-        read -p "remove ESG Node Manager database, database subsystem AND DATA? (esgf_node_manager.*) [y/N]: " doit
-        if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
+    read -p "remove ESG Node Manager database, database subsystem AND DATA? (esgf_node_manager.*) [y/N]: " doit
+    if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
+        if $(psql -U ${postgress_user} esgcet -c "\dt esgf_node_manager.;" | egrep '^\([1-9]* row[s]?\)' >& /dev/null); then
+            
             #Call me paranoid but I want some integrity check that this code is what is meant to be straight from the distribution.
             diff <(md5sum ${scripts_dir}/esg-node-manager | tr -s " " | cut -d " " -f 1) <(curl -s -L --insecure ${esg_dist_url}/esgf-node-manager/esg-node-manager.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
             [ $? != 0 ] && echo " WARNING: Could not verify ${scripts_dir}/esg-node-manager, aborting this uninstall" && return 3
             echo "[VERIFIED]"
-
+            
             backup_db esgcet node_manager
             [ $? != 0 ] && echo "unable to successfully backup database... will NOT proceed with database removal" && return 2
-
+            
             echo "removing esgf_node_manager.* schema and tables and DATA"
             ${cdat_home}/bin/esgf_security_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@localhost:${postgress_port}/esgcet -d 0
             [ $? != 0 ] && echo "ERROR: Unable to remove ${tomcat_install_dir}/webapps/${node_manager_app_context_root}" && return 1
             rm -rvf ${cdat_home}/bin/esgf_node_manager_initialize && \
                 rm -rf ${cdat_home}/lib/python${python_version}/${esgf_node_manager_egg_file} && \
                 perl -n -i -e'print unless m!python:esgf_node_manager!' ${install_manifest} && echo "[REMOVED]"
+        else
+            echo " Could not find node manager tables in the database."
         fi
     fi 
     return 0
