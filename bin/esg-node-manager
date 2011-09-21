@@ -471,7 +471,7 @@ clean_node_manager_database_subsystem_installation() {
             [ $? != 0 ] && echo "unable to successfully backup database... will NOT proceed with database removal" && return 2
             
             echo "removing esgf_node_manager.* schema and tables and DATA"
-            ${cdat_home}/bin/esgf_security_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@localhost:${postgress_port}/esgcet -d 0
+            ${cdat_home}/bin/esgf_node_manager_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@localhost:${postgress_port}/esgcet -d 0
             [ $? != 0 ] && echo "ERROR: Unable to remove ${tomcat_install_dir}/webapps/${node_manager_app_context_root}" && return 1
             rm -rvf ${cdat_home}/bin/esgf_node_manager_initialize && \
                 rm -rf ${cdat_home}/lib/python${python_version}/${esgf_node_manager_egg_file} && \
