@@ -232,6 +232,12 @@ setup_node_manager() {
     node_war_file=${trimmed_name}.war
     echo "node_war_file = "${node_war_file}
 
+    #make room for new install
+    if (( force_install )) ; then
+        echo "Removing Previous Installation of the ESGF Node Manager Services..."
+        [ -d "${node_manager_app_home}" ] && rm -rf ${node_manager_app_home} || echo "WARNING: Strange, can't locate previous install @ ${node_manager_app_home}"
+    fi
+
     mkdir -p ${node_manager_app_home}
     cd ${node_manager_app_home}
 
