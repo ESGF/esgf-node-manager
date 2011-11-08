@@ -348,6 +348,7 @@ public class RegistrationGleaner {
         String endpoint = null;
         Node node = new Node();
         long timestamp=(new Date()).getTime();
+        int nodeTypeInt = 0;
 
         try{
             String nodeHostname =props.getProperty("esgf.host");
@@ -376,6 +377,8 @@ public class RegistrationGleaner {
             node.setDefaultPeer(props.getProperty("esgf.default.peer","pcmdi3.llnl.gov"));
             node.setAdminPeer(props.getProperty("myproxy.endpoint").split(":",2)[0]); //remove port if present
 
+            nodeTypeInt = Integer.parseInt(nodeTypeValue);
+
             //What is this ?
             CA ca = new CA();
             ca.setEndpoint(props.getProperty("esgf.host","dunno"));
@@ -393,33 +396,6 @@ public class RegistrationGleaner {
             }catch(Throwable t) {
                 log.error(t);
             }
-
-            //************************************************
-            //Data
-            //************************************************
-
-            try{
-                if( (null != (endpoint=props.getProperty("thredds.endpoint"))) &&
-                    (new File(props.getProperty("thredds.app.home"))).exists() ) {
-                    ThreddsService tds = new ThreddsService();
-                    tds.setEndpoint(endpoint);
-                    node.setThreddsService(tds);
-                }
-            }catch(Throwable t) {
-                log.error(t);
-            }
-
-            try{
-                if( (null != (endpoint=props.getProperty("relyingparty.endpoint"))) &&
-                    (new File(props.getProperty("relyingparty.app.home"))).exists() ) {
-                    RelyingPartyService orp = new RelyingPartyService();
-                    orp.setEndpoint(endpoint);
-                    node.setRelyingPartyService(orp);
-                }
-            }catch(Throwable t) {
-                log.error(t);
-            }
-
 
             //------------------------------------------------
             //GEO LOCATION Information (used by dashboard)
@@ -447,170 +423,207 @@ public class RegistrationGleaner {
             }
 
 
-            //------------------------------------------------
-            //GLOBUS SUPPORT TOOLS
-            //------------------------------------------------
-
-            try{
-                if( (null != (endpoint=props.getProperty("myproxy.endpoint"))) &&
-                    (new File(props.getProperty("myproxy.app.home"))).exists() ) { //zoiks
-                    MyProxyService mproxy = new MyProxyService();
-                    mproxy.setEndpoint(endpoint);
-                    mproxy.setDn(props.getProperty("mproxy.dn"));
-                    node.setMyProxyService(mproxy);
-                }
-            }catch(Throwable t) {
-                log.error(t);
-            }
-            
-            try{
-                if( (null != (endpoint=props.getProperty("gridftp.endpoint"))) &&
-                    (new File(props.getProperty("gridftp.app.home"))).exists() ) {
-                    GridFTPService gftp = new GridFTPService();
-                    gftp.setEndpoint(endpoint);
-                    
-                    //GridFTPServiceType.REPLICATION (BDM)
-                    //GridFTPServiceType.DOWNLOAD (END-USER)
-                    String configLabels = null;
-                    if( null != (configLabels=props.getProperty("gridftp.config"))) {
-                        for(String configLabel : configLabels.split("\\s+")) {
-                            Configuration gftpConfig = new Configuration();
-                            if(configLabel.equalsIgnoreCase("bdm")) {
-                                gftpConfig.setServiceType(GridFTPServiceType.REPLICATION);
-                                gftpConfig.setPort(props.getProperty("gridftp.bdm.server.port","2812"));
-                            }
-                            if(configLabel.equalsIgnoreCase("end-user")) {
-                                gftpConfig.setServiceType(GridFTPServiceType.DOWNLOAD);
-                                gftpConfig.setPort(props.getProperty("gridftp.server.port","2811"));//(standard gsiftp port)
-                            }
-                            gftp.getConfiguration().add(gftpConfig);
-                        }
+            //************************************************
+            //Data
+            //************************************************
+            if ((nodeTypeInt & DATA_BIT) != 0) {
+                try{
+                    if( (null != (endpoint=props.getProperty("thredds.endpoint"))) &&
+                        (new File(props.getProperty("thredds.app.home"))).exists() ) {
+                        ThreddsService tds = new ThreddsService();
+                        tds.setEndpoint(endpoint);
+                        node.setThreddsService(tds);
                     }
+                }catch(Throwable t) {
+                    log.error(t);
+                }
 
-                    node.setGridFTPService(gftp);
+                try{
+                    if( (null != (endpoint=props.getProperty("relyingparty.endpoint"))) &&
+                        (new File(props.getProperty("relyingparty.app.home"))).exists() ) {
+                        RelyingPartyService orp = new RelyingPartyService();
+                        orp.setEndpoint(endpoint);
+                        node.setRelyingPartyService(orp);
+                    }
+                }catch(Throwable t) {
+                    log.error(t);
                 }
-            }catch(Throwable t) {
-                log.error(t);
-            }
-            
-            //************************************************
-            //INDEX (search)
-            //************************************************
-            
-            try{
-                if( (null != (endpoint=props.getProperty("index.endpoint"))) &&
-                    (new File(props.getProperty("index.app.home"))).exists() ) {
-                    IndexService idx = new IndexService();
-                    idx.setEndpoint(endpoint);
-                    node.setIndexService(idx);
-                }
-            }catch(Throwable t) {
-                log.error(t);
-            }
 
-            try{
-                if( (null != (endpoint=props.getProperty("publishing.service.endpoint"))) &&
-                    (new File(props.getProperty("publishing.service.app.home"))).exists() ) {
-                    PublishingService pub = new PublishingService();
-                    pub.setEndpoint(endpoint);
-                    node.setPublishingService(pub);
+                //------------------------------------------------
+                //GLOBUS SUPPORT TOOLS (GridFTP)
+                //------------------------------------------------
+                
+                try{
+                    if( (null != (endpoint=props.getProperty("gridftp.endpoint"))) &&
+                        (new File(props.getProperty("gridftp.app.home"))).exists() ) {
+                        GridFTPService gftp = new GridFTPService();
+                        gftp.setEndpoint(endpoint);
+                        
+                        //GridFTPServiceType.REPLICATION (BDM)
+                        //GridFTPServiceType.DOWNLOAD (END-USER)
+                        String configLabels = null;
+                        if( null != (configLabels=props.getProperty("gridftp.config"))) {
+                            for(String configLabel : configLabels.split("\\s+")) {
+                                Configuration gftpConfig = new Configuration();
+                                if(configLabel.equalsIgnoreCase("bdm")) {
+                                    gftpConfig.setServiceType(GridFTPServiceType.REPLICATION);
+                                    gftpConfig.setPort(props.getProperty("gridftp.bdm.server.port","2812"));
+                                }
+                                if(configLabel.equalsIgnoreCase("end-user")) {
+                                    gftpConfig.setServiceType(GridFTPServiceType.DOWNLOAD);
+                                    gftpConfig.setPort(props.getProperty("gridftp.server.port","2811"));//(standard gsiftp port)
+                                }
+                                gftp.getConfiguration().add(gftpConfig);
+                            }
+                        }
+                        
+                        node.setGridFTPService(gftp);
+                    }
+                }catch(Throwable t) {
+                    log.error(t);
                 }
-            }catch(Throwable t) {
-                log.error(t);
+                
+                PEMCert cert = new PEMCert();
+                cert.setCert(fetchMyPemCert());
+                node.setPEMCert(cert);
             }
 
             //************************************************
             //COMPUTE
             //************************************************
-
-            try{
-                if( (null != (endpoint=props.getProperty("las.endpoint"))) &&
-                    (new File(props.getProperty("las.app.home"))).exists() ) {
-                    LASService las = new LASService();
-                    log.trace("Setting LAS endpoint to "+endpoint);
-                    las.setEndpoint(endpoint);
-                    log.trace("Setting LAS service to "+las);
-                    node.setLASService(las);
-                }else {
-                    log.trace("Could not set las information in node ["+node+"]");
+            if ((nodeTypeInt & COMPUTE_BIT) != 0) {
+                try{
+                    if( (null != (endpoint=props.getProperty("las.endpoint"))) &&
+                        (new File(props.getProperty("las.app.home"))).exists() ) {
+                        LASService las = new LASService();
+                        log.trace("Setting LAS endpoint to "+endpoint);
+                        las.setEndpoint(endpoint);
+                        log.trace("Setting LAS service to "+las);
+                        node.setLASService(las);
+                    }else {
+                        log.trace("Could not set las information in node ["+node+"]");
+                    }
+                }catch(Throwable t) {
+                    log.error(t);
                 }
-            }catch(Throwable t) {
-                log.error(t);
             }
-
-            //************************************************
-            //Web Front-End
-            //************************************************
-
-            //esgf-web-fe
-            try{
-                if( (null != (endpoint=props.getProperty("web.fe.service.endpoint"))) &&
-                    (new File(props.getProperty("web.fe.app.home"))).exists() ) {
-                    FrontEnd webfe = new FrontEnd();
-                    webfe.setEndpoint(endpoint);
-                    node.setFrontEnd(webfe);
-                }
-            }catch(Throwable t) {
-                log.error(t);
-            }
-
+            
             //************************************************
             //IDP (security)
             //************************************************
+            if ((nodeTypeInt & IDP_BIT) != 0) {
 
-            //esgf-idp
-            try{
-                if( (null != (endpoint=props.getProperty("idp.service.endpoint"))) &&
-                    (new File(props.getProperty("idp.app.home"))).exists() ) {
-                    OpenIDProvider openid = new OpenIDProvider();
-                    openid.setEndpoint(endpoint);
-                    node.setOpenIDProvider(openid);
+                //esgf-idp
+                try{
+                    if( (null != (endpoint=props.getProperty("idp.service.endpoint"))) &&
+                        (new File(props.getProperty("idp.app.home"))).exists() ) {
+                        OpenIDProvider openid = new OpenIDProvider();
+                        openid.setEndpoint(endpoint);
+                        node.setOpenIDProvider(openid);
+                    }
+                }catch(Throwable t) {
+                    log.error(t);
                 }
-            }catch(Throwable t) {
-                log.error(t);
+                
+                //esgf-security
+                try{
+                    if( (null != (endpoint=props.getProperty("security.authz.service.endpoint"))) &&
+                        (new File(props.getProperty("security.app.home"))).exists() ) {
+                        AuthorizationService authzSvc = new AuthorizationService();
+                        authzSvc.setEndpoint(endpoint);
+                        node.setAuthorizationService(authzSvc);
+                    }
+                }catch(Throwable t) {
+                    log.error(t);
+                }
+                
+                //esgf-security
+                try{
+                    if( (null != (endpoint=props.getProperty("security.attribute.service.endpoint"))) &&
+                        (new File(props.getProperty("security.app.home"))).exists() ) {
+                        AttributeService attrSvc = new AttributeService();
+                        attrSvc.setEndpoint(endpoint);
+                        loadAttributeServiceGroups(attrSvc);
+                        node.setAttributeService(attrSvc);
+                    }
+                }catch(Throwable t) {
+                    log.error(t);
+                }
+                
+                //esgf-security
+                try{
+                    if( (null != (endpoint=props.getProperty("security.registration.service.endpoint"))) &&
+                        (new File(props.getProperty("security.app.home"))).exists() ) {
+                        RegistrationService regSvc = new RegistrationService();
+                        regSvc.setEndpoint(endpoint);
+                        node.setRegistrationService(regSvc);
+                    }
+                }catch(Throwable t) {
+                    log.error(t);
+                }
+
+                //------------------------------------------------
+                //GLOBUS SUPPORT TOOLS (MyProxy)
+                //------------------------------------------------
+                
+                try{
+                    if( (null != (endpoint=props.getProperty("myproxy.endpoint"))) &&
+                        (new File(props.getProperty("myproxy.app.home"))).exists() ) { //zoiks
+                        MyProxyService mproxy = new MyProxyService();
+                        mproxy.setEndpoint(endpoint);
+                        mproxy.setDn(props.getProperty("mproxy.dn"));
+                        node.setMyProxyService(mproxy);
+                    }
+                }catch(Throwable t) {
+                    log.error(t);
+                }
+
             }
 
-            //esgf-security
-            try{
-                if( (null != (endpoint=props.getProperty("security.authz.service.endpoint"))) &&
-                    (new File(props.getProperty("security.app.home"))).exists() ) {
-                    AuthorizationService authzSvc = new AuthorizationService();
-                    authzSvc.setEndpoint(endpoint);
-                    node.setAuthorizationService(authzSvc);
+            //************************************************
+            //INDEX (search)
+            //************************************************
+            if ((nodeTypeInt & INDEX_BIT) != 0) {
+                try{
+                    if( (null != (endpoint=props.getProperty("index.endpoint"))) &&
+                        (new File(props.getProperty("index.app.home"))).exists() ) {
+                        IndexService idx = new IndexService();
+                        idx.setEndpoint(endpoint);
+                        node.setIndexService(idx);
+                    }
+                }catch(Throwable t) {
+                    log.error(t);
                 }
-            }catch(Throwable t) {
-                log.error(t);
-            }
-
-            //esgf-security
-            try{
-                if( (null != (endpoint=props.getProperty("security.attribute.service.endpoint"))) &&
-                    (new File(props.getProperty("security.app.home"))).exists() ) {
-                    AttributeService attrSvc = new AttributeService();
-                    attrSvc.setEndpoint(endpoint);
-                    loadAttributeServiceGroups(attrSvc);
-                    node.setAttributeService(attrSvc);
+                
+                try{
+                    if( (null != (endpoint=props.getProperty("publishing.service.endpoint"))) &&
+                        (new File(props.getProperty("publishing.service.app.home"))).exists() ) {
+                        PublishingService pub = new PublishingService();
+                        pub.setEndpoint(endpoint);
+                        node.setPublishingService(pub);
+                    }
+                }catch(Throwable t) {
+                    log.error(t);
                 }
-            }catch(Throwable t) {
-                log.error(t);
             }
-
-            //esgf-security
-            try{
-                if( (null != (endpoint=props.getProperty("security.registration.service.endpoint"))) &&
-                    (new File(props.getProperty("security.app.home"))).exists() ) {
-                    RegistrationService regSvc = new RegistrationService();
-                    regSvc.setEndpoint(endpoint);
-                    node.setRegistrationService(regSvc);
-                }
-            }catch(Throwable t) {
-                log.error(t);
-            }
-	    
-            PEMCert cert = new PEMCert();
-            cert.setCert(fetchMyPemCert());
-            node.setPEMCert(cert);
             
+            //************************************************
+            //Web Front-End
+            //************************************************
+            if ((nodeTypeInt & INDEX_BIT) != 0) {
+                
+                //esgf-web-fe
+                try{
+                    if( (null != (endpoint=props.getProperty("web.fe.service.endpoint"))) &&
+                        (new File(props.getProperty("web.fe.app.home"))).exists() ) {
+                        FrontEnd webfe = new FrontEnd();
+                        webfe.setEndpoint(endpoint);
+                        node.setFrontEnd(webfe);
+                    }
+                }catch(Throwable t) {
+                    log.error(t);
+                }
+            }
             
             //************************************************
             //INDEX DEPRECATED SERVICE
