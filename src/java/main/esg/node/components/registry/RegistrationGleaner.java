@@ -411,6 +411,32 @@ public class RegistrationGleaner {
 
 
             //------------------------------------------------
+            //GEO LOCATION Information (used by dashboard)
+            //------------------------------------------------
+
+            try{
+                String geoLat = null;
+                String geoLon = null;
+                String city = null;
+
+                //You must at very least have lat and lon set to even set up this entry
+                if( (null != (geoLat=props.getProperty("node.geolocation.lat"))) &&
+                    (null != (geoLon=props.getProperty("node.geolocation.lat")))) {
+
+                    GeoLocation geoLocation = new GeoLocation();
+                    geoLocation.setLat(geoLat);
+                    geoLocation.setLon(geoLon);
+
+                    if(null != (city=props.getProperty("node.geolocation.city"))) geoLocation.setCity(city);
+
+                    node.setGeoLocation(geoLocation);
+                }
+            }catch(Throwable t) {
+                log.error(t);
+            }
+
+
+            //------------------------------------------------
             //GLOBUS SUPPORT TOOLS
             //------------------------------------------------
 

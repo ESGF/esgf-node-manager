@@ -23,6 +23,15 @@ That does make it more wordy, and require and reconstruction. -->
         </xsd:complexType>
     </xsd:element>
 
+    <xsd:element name="GeoLocation">
+        <xsd:complexType>
+            <xsd:attributeGroup ref="tns:ServiceAttributes"/>
+            <xsd:attribute name="lat" type="xsd:string"/>
+            <xsd:attribute name="lon" type="xsd:string"/>
+            <xsd:attribute name="city" type="xsd:string"/>
+        </xsd:complexType>
+    </xsd:element>
+
     <xsd:element name="NodeManager">
         <xsd:complexType>
             <xsd:attributeGroup ref="tns:ServiceAttributes"/>
@@ -182,6 +191,7 @@ That does make it more wordy, and require and reconstruction. -->
     <xsd:complexType name="Node">
         <xsd:all>
             <xsd:element ref="tns:CA" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="tns:GeoLocation" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:NodeManager" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:OpenIDProvider" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:FrontEnd" minOccurs="0" maxOccurs="1"/>
