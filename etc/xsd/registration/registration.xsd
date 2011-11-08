@@ -26,8 +26,8 @@ That does make it more wordy, and require and reconstruction. -->
     <xsd:element name="GeoLocation">
         <xsd:complexType>
             <xsd:attributeGroup ref="tns:ServiceAttributes"/>
-            <xsd:attribute name="lat" type="xsd:string"/>
-            <xsd:attribute name="lon" type="xsd:string"/>
+            <xsd:attribute name="lat" type="xsd:string" use="required"/>
+            <xsd:attribute name="lon" type="xsd:string" use="required"/>
             <xsd:attribute name="city" type="xsd:string"/>
         </xsd:complexType>
     </xsd:element>
