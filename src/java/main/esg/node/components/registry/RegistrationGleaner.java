@@ -93,6 +93,17 @@ public class RegistrationGleaner {
 
     private static final Log log = LogFactory.getLog(RegistrationGleaner.class);
 
+    //-------------------------------------------------------
+    //These values correspond directly to the vaulues in esgf-installer/esg-node script
+    public static final int INSTALL_BIT=1;
+    public static final int TEST_BIT=2;
+    public static final int DATA_BIT=4;
+    public static final int INDEX_BIT=8;
+    public static final int IDP_BIT=16;
+    public static final int COMPUTE_BIT=32;
+    public static final int ALL_BIT = DATA_BIT + INDEX_BIT + IDP_BIT + COMPUTE_BIT;
+    //-------------------------------------------------------
+
     //NOTE: IF OTHER STATES BECOME APPARENT MAKE AN ENUM...
     public static final String NOT_AVAILABLE = "NOT_AVAILABLE";
     
