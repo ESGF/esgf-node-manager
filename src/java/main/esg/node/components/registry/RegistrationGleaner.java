@@ -421,7 +421,7 @@ public class RegistrationGleaner {
 
                 //You must at very least have lat and lon set to even set up this entry
                 if( (null != (geoLat=props.getProperty("node.geolocation.lat"))) &&
-                    (null != (geoLon=props.getProperty("node.geolocation.lat")))) {
+                    (null != (geoLon=props.getProperty("node.geolocation.lon")))) {
 
                     GeoLocation geoLocation = new GeoLocation();
                     geoLocation.setLat(geoLat);
