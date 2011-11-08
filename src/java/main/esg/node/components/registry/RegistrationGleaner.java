@@ -82,7 +82,7 @@ import org.apache.commons.logging.impl.*;
 
 /**
    Description:
-   
+
    Encapsulates the logic for fetching and generating this local
    node's registration form, as defined by the registration.xsd.  (The
    LasSistersGleaner is also used to further create the
@@ -106,7 +106,7 @@ public class RegistrationGleaner {
 
     //NOTE: IF OTHER STATES BECOME APPARENT MAKE AN ENUM...
     public static final String NOT_AVAILABLE = "NOT_AVAILABLE";
-    
+
     private static final String registrationFile = "registration.xml";
     private static final boolean DEBUG=true;
     private String registrationPath = null;
@@ -121,9 +121,9 @@ public class RegistrationGleaner {
     private boolean dirty = false;
 
     public RegistrationGleaner() { this(null); }
-    public RegistrationGleaner(Properties props) { 
+    public RegistrationGleaner(Properties props) {
         this.props = props;
-        this.init(); 
+        this.init();
     }
 
     public void init() {
@@ -175,8 +175,8 @@ public class RegistrationGleaner {
         }
         return nodeTypeValue;
     }
-    
-    
+
+
     public Registration getMyRegistration() { return myRegistration; }
     public String getMyChecksum() { return myChecksum; }
 
@@ -184,7 +184,7 @@ public class RegistrationGleaner {
     public synchronized boolean saveRegistration(Registration registration) {
         boolean success = false;
         if (registration == null) {
-            log.error("Registration is null ? ["+registration+"]"); 
+            log.error("Registration is null ? ["+registration+"]");
             return success;
         }
         log.info("Saving registration information to "+ registrationPath+this.registrationFile);
@@ -198,7 +198,7 @@ public class RegistrationGleaner {
         }catch(Exception e) {
             log.error(e);
         }
-        
+
         //-----------------------------------------------
         //Derivative xml file generation... (should be refactored, but in brody mode right now)
         //-----------------------------------------------
@@ -208,7 +208,7 @@ public class RegistrationGleaner {
             String endpoint=null;
             if( (null != (endpoint=props.getProperty("las.endpoint"))) &&
                 (new File(props.getProperty("las.app.home"))).exists() ) {
-                LasSistersGleaner lasSisterGleaner = new LasSistersGleaner(props); 
+                LasSistersGleaner lasSisterGleaner = new LasSistersGleaner(props);
                 log.trace("My LAS endpoint = ["+endpoint+"]");
                 log.trace("Current Registration = ["+registration+"]");
                 log.trace("registration has ("+registration.getNode().size()+") nodes");
@@ -222,10 +222,10 @@ public class RegistrationGleaner {
             log.trace("props="+props);
             if(log.isTraceEnabled()) e.printStackTrace();
         }
-        
+
         //pull from registry to create idp whilelist file.
         try{
-            IdpWhitelistGleaner idpWhitelistGleaner = new IdpWhitelistGleaner(props); 
+            IdpWhitelistGleaner idpWhitelistGleaner = new IdpWhitelistGleaner(props);
             log.trace("registration="+registration);
             log.trace("idpWhitelistGleaner="+idpWhitelistGleaner);
             idpWhitelistGleaner.appendToMyIdpWhitelistFromRegistration(registration).saveIdpWhitelist();
@@ -258,7 +258,7 @@ public class RegistrationGleaner {
             log.trace("props="+props);
             if(log.isTraceEnabled()) e.printStackTrace();
         }
-        
+
         return success;
     }
 
@@ -308,7 +308,7 @@ public class RegistrationGleaner {
     public String toString() {
         String out = null;
         if (myRegistration == null) {
-            log.error("Registration is ["+myRegistration+"]"); 
+            log.error("Registration is ["+myRegistration+"]");
             return null;
         }
         log.trace("Writing registration information to String, for "+myRegistration.getNode().get(0).getHostname());
@@ -336,7 +336,7 @@ public class RegistrationGleaner {
     }
 
     public boolean isDirty() { return dirty; }
-    
+
     /**
        Looks through the current system and gathers the configured
        node service information.  Takes that information and
@@ -356,7 +356,7 @@ public class RegistrationGleaner {
             //************************************************
             //CORE
             //************************************************
-            
+
             //Query the user for...
             node.setOrganization(props.getProperty("esg.root.id"));
             node.setLongName(props.getProperty("node.long.name"));
@@ -364,7 +364,7 @@ public class RegistrationGleaner {
             node.setSupportEmail(props.getProperty("mail.admin.address"));
             node.setNamespace(props.getProperty("node.namespace"));
             node.setNodePeerGroup(props.getProperty("node.peer.group"));
-            
+
             //Pulled from system or install
             node.setHostname(nodeHostname);
             node.setIp(props.getProperty("esgf.host.ip"));
@@ -452,13 +452,13 @@ public class RegistrationGleaner {
                 //------------------------------------------------
                 //GLOBUS SUPPORT TOOLS (GridFTP)
                 //------------------------------------------------
-                
+
                 try{
                     if( (null != (endpoint=props.getProperty("gridftp.endpoint"))) &&
                         (new File(props.getProperty("gridftp.app.home"))).exists() ) {
                         GridFTPService gftp = new GridFTPService();
                         gftp.setEndpoint(endpoint);
-                        
+
                         //GridFTPServiceType.REPLICATION (BDM)
                         //GridFTPServiceType.DOWNLOAD (END-USER)
                         String configLabels = null;
@@ -476,13 +476,13 @@ public class RegistrationGleaner {
                                 gftp.getConfiguration().add(gftpConfig);
                             }
                         }
-                        
+
                         node.setGridFTPService(gftp);
                     }
                 }catch(Throwable t) {
                     log.error(t);
                 }
-                
+
                 PEMCert cert = new PEMCert();
                 cert.setCert(fetchMyPemCert());
                 node.setPEMCert(cert);
@@ -507,7 +507,7 @@ public class RegistrationGleaner {
                     log.error(t);
                 }
             }
-            
+
             //************************************************
             //IDP (security)
             //************************************************
@@ -524,7 +524,7 @@ public class RegistrationGleaner {
                 }catch(Throwable t) {
                     log.error(t);
                 }
-                
+
                 //esgf-security
                 try{
                     if( (null != (endpoint=props.getProperty("security.authz.service.endpoint"))) &&
@@ -536,7 +536,7 @@ public class RegistrationGleaner {
                 }catch(Throwable t) {
                     log.error(t);
                 }
-                
+
                 //esgf-security
                 try{
                     if( (null != (endpoint=props.getProperty("security.attribute.service.endpoint"))) &&
@@ -549,7 +549,7 @@ public class RegistrationGleaner {
                 }catch(Throwable t) {
                     log.error(t);
                 }
-                
+
                 //esgf-security
                 try{
                     if( (null != (endpoint=props.getProperty("security.registration.service.endpoint"))) &&
@@ -565,7 +565,7 @@ public class RegistrationGleaner {
                 //------------------------------------------------
                 //GLOBUS SUPPORT TOOLS (MyProxy)
                 //------------------------------------------------
-                
+
                 try{
                     if( (null != (endpoint=props.getProperty("myproxy.endpoint"))) &&
                         (new File(props.getProperty("myproxy.app.home"))).exists() ) { //zoiks
@@ -594,7 +594,7 @@ public class RegistrationGleaner {
                 }catch(Throwable t) {
                     log.error(t);
                 }
-                
+
                 try{
                     if( (null != (endpoint=props.getProperty("publishing.service.endpoint"))) &&
                         (new File(props.getProperty("publishing.service.app.home"))).exists() ) {
@@ -606,12 +606,12 @@ public class RegistrationGleaner {
                     log.error(t);
                 }
             }
-            
+
             //************************************************
             //Web Front-End
             //************************************************
             if ((nodeTypeInt & INDEX_BIT) != 0) {
-                
+
                 //esgf-web-fe
                 try{
                     if( (null != (endpoint=props.getProperty("web.fe.service.endpoint"))) &&
@@ -624,7 +624,7 @@ public class RegistrationGleaner {
                     log.error(t);
                 }
             }
-            
+
             //************************************************
             //INDEX DEPRECATED SERVICE
             //************************************************
@@ -641,22 +641,22 @@ public class RegistrationGleaner {
         myRegistration.setTimeStamp(timestamp); //touch'ing the registration...
         return this;
     }
-    
+
     private String fetchMyPemCert() {
         log.trace("Fetching PEM Certificate...");
-        
+
         byte[] buffer = null;
         java.io.BufferedInputStream f = null;
 
         try {
-            
+
             String certfilename = "/etc/grid-security/hostcert.pem";
             File certfile = new File(certfilename);
             if(!certfile.exists()) {
                 log.warn("Could not find "+certfile.getCanonicalPath());
                 return NOT_AVAILABLE;
             }
-            
+
             //NOTE: should do this with NIO buffers and specify the right charset
             //so that the buffer size is accurate... put on list of TOODs -gavin
             buffer = new byte[(int) certfile.length()];
@@ -671,7 +671,7 @@ public class RegistrationGleaner {
         log.trace("Certificate Fetched!");
         return new String(buffer);
     }
-    
+
     //NOTE: May have to synchronized his method...
     public void sync() {
         log.trace("sync'ing...");
@@ -682,7 +682,7 @@ public class RegistrationGleaner {
             myNodeMap.put(node.getHostname(),node);
         }
     }
-    
+
     public synchronized RegistrationGleaner loadMyRegistration() throws ESGFRegistryException {
         return loadMyRegistration(registrationPath+this.registrationFile);
     }
@@ -759,3 +759,4 @@ public class RegistrationGleaner {
     }
 
 }
+
