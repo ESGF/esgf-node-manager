@@ -374,7 +374,7 @@ public class RegistrationGleaner {
             node.setVersion(props.getProperty("version"));
             node.setRelease(props.getProperty("release"));
             node.setNodeType(readMyNodeType());
-            node.setDefaultPeer(props.getProperty("esgf.default.peer","pcmdi3.llnl.gov"));
+            node.setDefaultPeer(props.getProperty("esgf.default.peer","pcmdi9.llnl.gov"));
             node.setAdminPeer(props.getProperty("myproxy.endpoint").split(":",2)[0]); //remove port if present
 
             nodeTypeInt = Integer.parseInt(nodeTypeValue);

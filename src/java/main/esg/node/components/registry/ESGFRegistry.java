@@ -128,7 +128,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     private void startRegistry() {
 
         //----------------------------------
-        log.info("Loading and Initilizing...");
+        log.info("Loading and Initializing...");
         try{
             //gleaner.loadMyRegistration();
             gleaner.createMyRegistration().saveRegistration();
