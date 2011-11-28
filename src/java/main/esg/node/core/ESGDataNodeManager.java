@@ -128,14 +128,14 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
         ESGFRegistry registry = new ESGFRegistry("REGISTRY");
         registerComponent(registry);
     
-        ESGNotifier notifier = new ESGNotifier("NOTIFIER");
-        registerComponent(notifier);
+        //ESGNotifier notifier = new ESGNotifier("NOTIFIER");
+        //registerComponent(notifier);
 
-        ESGMonitor monitor = new ESGMonitor("MONITOR");
-        registerComponent(monitor);
+        //ESGMonitor monitor = new ESGMonitor("MONITOR");
+        //registerComponent(monitor);
     
-        ESGMetrics metrics = new ESGMetrics("METRICS");
-        registerComponent(metrics);
+        //ESGMetrics metrics = new ESGMetrics("METRICS");
+        //registerComponent(metrics);
 
         log.info("Connecting core components");
 
@@ -144,14 +144,14 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
         //The DNODE_SVC then routes the message to the appropriate 
     
         connect("DNODE_SVC","REGISTRY");
-        connect("DNODE_SVC","NOTIFER");
-        connect("DNODE_SVC","MONITOR");
-        connect("DNODE_SVC","METRICS");
+        //connect("DNODE_SVC","NOTIFER");
+        //connect("DNODE_SVC","MONITOR");
+        //connect("DNODE_SVC","METRICS");
 
         connect("REGISTRY","CONN_MGR"); 
-        connect("NOTIFIER","CONN_MGR");
-        connect("MONITOR","CONN_MGR");
-        connect("METRICS","CONN_MGR");
+        //connect("NOTIFIER","CONN_MGR");
+        //connect("MONITOR","CONN_MGR");
+        //connect("METRICS","CONN_MGR");
     }
 
     public void init() {
