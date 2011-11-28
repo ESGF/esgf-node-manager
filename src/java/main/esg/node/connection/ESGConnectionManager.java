@@ -170,6 +170,10 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 }
             },delay*1000,period*1000);
     }
+
+    //TODO: Instead of making this a sync'ed method, turn this into a
+    //"future" tracking invocation and 'catch' responses or lack there
+    //of without locking things up.
     private synchronized void pingToPeers() {
         java.util.Vector<ESGPeer> peers_ = new java.util.Vector<ESGPeer>();
         peers_.addAll(unavailablePeers.values());
@@ -263,7 +267,14 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         if(lastRud == null && defaultPeer != null) {
             //Damnit, I didn't want this dependency..!!!
             esg.node.components.registry.RegistrationGleaner ephemeralGleaner = new esg.node.components.registry.RegistrationGleaner();
-            String registration = ephemeralGleaner.loadMyRegistration().toString();
+            String registration = null;
+            try{
+                registration = ephemeralGleaner.loadMyRegistration().toString();
+            }catch(Throwable t) {
+                System.err.println("CONN MGR: no registration available (this thread may have jumped the gun) no worries...");
+                log.error(t);
+            }
+
             if(registration == null) {
                 log.warn("(bootstrapping) Sorry no registration information yet available... check again later");
                 return false;
