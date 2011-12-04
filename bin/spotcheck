@@ -1,0 +1,37 @@
+#/bin/bash
+
+# ****************************************************************************
+# *                                                                          *
+# *       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
+# *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
+# *                                                                          *
+# ****************************************************************************
+# 
+#    Description:
+# 
+# A simple script to do a quick spot check on the system.  It simply
+# pulls down the registration.xml of the nodes supplied, looks at each
+# of the nodes in the registration and in turn pulls those
+# registration.xml files giving a count of the known hosts in the
+# respective registries.  As the program suggests a quick P2P 'spot
+# check'. :-)
+
+quick_check() {
+    target_node=${1:-esgf-node3.llnl.gov}
+    count=0
+    for site in $(curl -s http://${target_node}/esgf-node-manager/registration.xml | sed -n 's#\(.*hostname="\)\([^"]*\)\(".*>\)#http://\2/esgf-node-manager/registration.xml#p'); do 
+        echo -n "  [$((++count))] looking at site $site -> "
+        curl -s -m 3 $site | grep hostname | wc -l
+    done;
+}
+
+spot_check() {
+    local hosts=$@
+    for host in ${hosts[@]}; do
+        echo "Spot Checking [${host}]..."
+        quick_check ${host}
+    done
+}
+
+spot_check $@
+
