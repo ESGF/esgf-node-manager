@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 
 # ****************************************************************************
 # *                                                                          *
@@ -27,11 +27,52 @@ quick_check() {
 
 spot_check() {
     local hosts=$@
+    (( $# == 0 )) && _usage
     for host in ${hosts[@]}; do
         echo "Spot Checking [${host}]..."
         quick_check ${host}
     done
 }
 
-spot_check $@
+_usage() {
+    echo "usage:"
+    echo "  %> $0 <fqdn of server to inspect>"
+    echo
+    echo "Ex: spotcheck pcmdi9.llnl.gov"
+    echo
+    exit 1
+}
+
+############################################
+# Main
+############################################
+
+while [ -n "$1" ]; do 
+    case $1 in 
+	-v | --version)
+	    echo "Earth Systems Grid Federation (http://esgf.org)"
+	    echo "ESGF P2P Spot Check Utility"
+	    echo ""
+	    exit 0
+            ;;
+        --verbose)
+            VERBOSE=1;
+            ;;
+        --debug)
+            DEBUG=1;
+            ;;
+        --devel)
+            devel=1;
+            ;;
+        --help | -h)
+            _usage
+            ;;
+        *)
+            spotcheck_hosts=( "${spotcheck_hosts[@]}" "$1" )
+            ;;
+    esac
+    shift
+done
+
+spot_check ${spotcheck_hosts[@]}
 
