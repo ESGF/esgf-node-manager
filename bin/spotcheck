@@ -23,7 +23,7 @@ quick_check() {
     for site in $(curl -s http://${target_node}/esgf-node-manager/registration.xml | sed -n 's#\(.*hostname="\)\([^"]*\)\(".*>\)#http://\2/esgf-node-manager/registration.xml#p'); do 
         echo -n "  [$((++count))] looking at site $site -> "
         if ((VERBOSE)); then
-            peers=( $(curl -s http://esg-datanode.jpl.nasa.gov/esgf-node-manager/registration.xml | grep hostname | sed -n 's/.*hostname="\([^"]*\)".*$/\1/p' | xargs) )
+            peers=( $(curl -s http://${target_node}/esgf-node-manager/registration.xml | grep hostname | sed -n 's/.*hostname="\([^"]*\)".*$/\1/p' | xargs) )
             echo ${#peers[@]}
             for peer in ${peers[@]}; do
                 echo "      $peer"
