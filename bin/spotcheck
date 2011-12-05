@@ -18,10 +18,20 @@
 
 quick_check() {
     target_node=${1:-esgf-node3.llnl.gov}
-    count=0
+    local peers
+    local count=0    
     for site in $(curl -s http://${target_node}/esgf-node-manager/registration.xml | sed -n 's#\(.*hostname="\)\([^"]*\)\(".*>\)#http://\2/esgf-node-manager/registration.xml#p'); do 
         echo -n "  [$((++count))] looking at site $site -> "
-        curl -s -m 3 $site | grep hostname | wc -l
+        if ((VERBOSE)); then
+            peers=( $(curl -s http://esg-datanode.jpl.nasa.gov/esgf-node-manager/registration.xml | grep hostname | sed -n 's/.*hostname="\([^"]*\)".*$/\1/p' | xargs) )
+            echo ${#peers[@]}
+            for peer in ${peers[@]}; do
+                echo "      $peer"
+            done
+        else
+            curl -s -m 3 $site | grep hostname | wc -l
+        fi
+
     done;
 }
 
@@ -60,9 +70,6 @@ while [ -n "$1" ]; do
             ;;
         --debug)
             DEBUG=1;
-            ;;
-        --devel)
-            devel=1;
             ;;
         --help | -h)
             _usage
