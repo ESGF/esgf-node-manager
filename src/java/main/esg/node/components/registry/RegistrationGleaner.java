@@ -259,6 +259,18 @@ public class RegistrationGleaner {
             if(log.isTraceEnabled()) e.printStackTrace();
         }
 
+        //pull from registry to create index shards list file.
+        try{
+            ShardsListGleaner shardsListGleaner = new ShardsListGleaner(props);
+            log.trace("registration="+registration);
+            log.trace("shardsListGleaner="+shardsListGleaner);
+            shardsListGleaner.appendToMyShardsListFromRegistration(registration).saveShardsList();
+        }catch(Exception e) {
+            log.error(e);
+            log.trace("props="+props);
+            if(log.isTraceEnabled()) e.printStackTrace();
+        }
+
         return success;
     }
 

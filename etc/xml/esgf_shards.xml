@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<shards xmlns="http://www.esgf.org/registry">
+
+        <value>esg-datanode.jpl.nasa.gov:8983/solr</value>
+        <value>pcmdi9.llnl.gov:8983/solr</value>
+        <value>esg-vm-demo02.ccs.ornl.gov:8983/solr</value>
+        <value>esg1-gw.pnl.gov:8983/solr</value>
+        <value>dev.anl.gov:8983/solr</value>
+
+</shards>
