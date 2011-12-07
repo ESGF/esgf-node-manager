@@ -194,6 +194,7 @@ public class BasicPeer extends HessianPeer {
         //from sending out events that doesn't contain any *new*
         //information.
         if(isAvailable != pingState) {
+            log.trace("Detected change in peer's state/availability...");
             if(pingState) fireConnectionAvailable(); else fireConnectionBusy();
         }
         isAvailable = pingState;

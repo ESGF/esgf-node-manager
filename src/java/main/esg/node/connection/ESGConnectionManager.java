@@ -163,7 +163,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         log.trace("connection ping delay:  "+delay+" sec");
         log.trace("connection ping period: "+period+" sec");
        
-        Timer timer = new Timer();
+        Timer timer = new Timer("Peer-Sweep-Timer");
         timer.schedule(new TimerTask() { 
                 public final void run() {
                     ESGConnectionManager.this.pingToPeers();
@@ -177,6 +177,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     private synchronized void pingToPeers() {
         java.util.Vector<ESGPeer> peers_ = new java.util.Vector<ESGPeer>();
         peers_.addAll(unavailablePeers.values());
+        log.trace("Inspecting ["+peers_.size()+"] marked peers");
         for(ESGPeer peer: peers_) {
             if(peer.equals(defaultPeer)) log.trace("(default peer)");
             //TODO: put in random selection and or heartbeat/leasing here...
@@ -197,7 +198,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         log.trace("connection registration delay:  "+delay+" sec");
         log.trace("connection registration period: "+period+" sec");
 	
-        Timer timer = new Timer();
+        Timer timer = new Timer("Reg-Resend-Timer");
         
         //This will transition from active map to inactive map
         timer.schedule(new TimerTask() { 
