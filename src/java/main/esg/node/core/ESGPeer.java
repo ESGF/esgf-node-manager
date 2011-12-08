@@ -123,6 +123,7 @@ public abstract class ESGPeer extends AbstractDataNodeComponent {
     //Delgating: remote method wrappers.
     //-----------------------------------------------------------------
     //override me (all services should have a "ping" remote method! according to me! :-)
+    public abstract boolean ping(boolean force);
     public abstract boolean ping();
 
     //Send the represented ESGPeer endpoint an event object

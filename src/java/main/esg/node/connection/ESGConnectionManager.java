@@ -171,20 +171,41 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             },delay*1000,period*1000);
     }
 
+    //Does a brute force check (pings) against all known peers
+    //By doing so peers should be
+    private synchronized boolean prune() {
+        boolean ret = false;
+        int pruneCount = 0;
+        java.util.Vector<ESGPeer> peers_ = new java.util.Vector<ESGPeer>();
+        peers_.addAll(peers.values());
+        for(ESGPeer peer: peers_) {
+            log.trace("Inspecting ["+peers_.size()+"] all available peers");
+            if(peer.equals(defaultPeer)) log.trace("(default peer)");
+            if(!peer.ping(true)) {
+                log.trace("Pruning out unresponsive peer: "+peer.getServiceURL());
+                pruneCount++;
+            }
+        }
+        peers_.clear();
+        peers_ = null; //gc niceness...
+        log.trace("Total number of pruned peers: ["+pruneCount+"]/["+this.numAvailablePeers()+"]");
+        return ret;
+    }
+
     //TODO: Instead of making this a sync'ed method, turn this into a
     //"future" tracking invocation and 'catch' responses or lack there
     //of without locking things up.
     private synchronized void pingToPeers() {
         java.util.Vector<ESGPeer> peers_ = new java.util.Vector<ESGPeer>();
         peers_.addAll(unavailablePeers.values());
-        log.trace("Inspecting ["+peers_.size()+"] marked peers");
         for(ESGPeer peer: peers_) {
+            log.trace("Inspecting ["+peers_.size()+"] marked peers");
             if(peer.equals(defaultPeer)) log.trace("(default peer)");
             //TODO: put in random selection and or heartbeat/leasing here...
             //this is where the relationship maintenance code goes
             //and detecting when folks fall out of the system.
             //maybe ping should be expanded to put in lease negotiation proper.
-            peer.ping();
+            peer.ping(true);
         }
         peers_.clear();
         peers_ = null; //gc niceness...
@@ -198,7 +219,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         log.trace("connection registration delay:  "+delay+" sec");
         log.trace("connection registration period: "+period+" sec");
 	
-        Timer timer = new Timer("Reg-Resend-Timer");
+        Timer timer = new Timer("Reg-Repost-Timer");
         
         //This will transition from active map to inactive map
         timer.schedule(new TimerTask() { 
@@ -335,6 +356,11 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         }
         //------------
 
+        if(!remoteEvent.checkTTL()) {
+            log.trace("The buck stops here... will not propagate an event with exhausted TTL ["+remoteEvent.getTTL()+"]");
+            return true;
+        }
+
         int networkSizeLimit = 10000; //Essentially the total number of nodes to randomly choose from is between 0 and networkSizeLimit+1
         int retries = 3; //how many times to try to get this event to [branchFactor] peers
         int numDispatchedPeers = 0; //how many peers have successfully had events sent to them.
@@ -372,7 +398,11 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 //we'd have to check in a SET of previously selected
                 //values or something
                 if(lastIdx == idx) { 
-                    if((++rechooseIndexCount % rechooseLimit) == 0) { break; }
+                    if((++rechooseIndexCount % rechooseLimit) == 0) {
+                        log.trace("exhaused attempts ["+rechooseLimit+"] to select a different peer");
+                        break;
+                    }
+                    log.trace("already choose that peer....");
                     continue;
                 }
                 rechooseIndexCount = 0;
@@ -526,12 +556,12 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             int eventType = event.getRemoteEvent().getMessageType();
             if(event.hasRemoteEvent()) {
                 switch (eventType) {
-                case ESGRemoteEvent.REGISTER: 
-                    log.trace("Forwarding REGISTER event to next random peer");
+                case ESGRemoteEvent.REGISTER:
+                    log.trace("Forwarding REGISTER event to next random peers");
                     log.trace(event);
                     return dispatchToRandomPeers(event.getRemoteEvent());
                 case ESGRemoteEvent.UNREGISTER:
-                    log.trace("Forwarding UNREGISTER event to next random peer");
+                    log.trace("Forwarding UNREGISTER event to next random peers");
                     log.trace(event);
                     return dispatchToRandomPeers(event.getRemoteEvent());
                 default:
@@ -595,10 +625,10 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         //TODO: I know I know... use generics in the event!!! (todo)
         ESGPeer peer = (ESGPeer)evt.getSource();
         switch(evt.getEventType()) {
-        case ESGPeerEvent.CONNECTION_FAILED:
-            log.trace("Got ESGPeerEVent.CONNECTION_FAILED from: "+peer.getName());
         case ESGPeerEvent.CONNECTION_BUSY:
             log.trace("Got ESGPeerEVent.CONNECTION_BUSY from: "+peer.getName());
+        case ESGPeerEvent.CONNECTION_FAILED:
+            log.trace("Got ESGPeerEVent.CONNECTION_FAILED from: "+peer.getName());
             if(peers.remove(peer.getName()) != null) {
                 log.trace("Transfering from active -to-> inactive list");
                 unavailablePeers.put(peer.getName(),peer);

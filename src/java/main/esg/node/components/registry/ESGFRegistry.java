@@ -153,7 +153,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         log.debug("registry delay:  "+delay+" sec");
         log.debug("registry period: "+period+" sec");
 
-        Timer timer = new Timer();
+        Timer timer = new Timer("Quiescence-Reg-Repost-Timer");
         timer.schedule(new TimerTask() {
                 public final void run() {
                     //If I have not dispatched any information to
@@ -180,7 +180,8 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     //won't hurt a thing.
                     //-gavin
                     Date now = new Date();
-                    if ((now.getTime() - lastDispatchTime) > (period*1000)) {
+                    long delta=(now.getTime() - lastDispatchTime);
+                    if ( delta > (period*1000)) {
                         if(!ESGFRegistry.this.isBusy) {
                             ESGFRegistry.this.isBusy = true;
 
@@ -200,7 +201,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                             ESGFRegistry.this.isBusy = false;
                         }
                     }else{
-                        log.debug("Won't re-send state - too soon after last dispatch (quiescence, at least for me, was not reached)");
+                        log.debug("Won't re-send state - too soon after last dispatch (quiescence period "+period+"secs, was not reached ["+(delta/1000)+"secs] elapsed)");
                     }
                 }
             },delay*1000,period*1000);

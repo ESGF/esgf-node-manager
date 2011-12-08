@@ -171,8 +171,9 @@ public class BasicPeer extends HessianPeer {
     //This semantically expected to be the START of the communication
     //between data node and the peer this object represents.  (called by the bootstrapping
     //service: ESGDataNodeService)
-    public boolean ping() { 
-        log.trace("ping -->> ["+getName()+"]");
+    public boolean ping() { return this.ping(false); }
+    public boolean ping(boolean force) {
+        log.trace("ping -->> ["+getName()+"] (force = "+force+")");
         boolean response = false;
         try {
             //TODO see about changing the timeout so don't have to wait forever to fail!        
@@ -183,18 +184,26 @@ public class BasicPeer extends HessianPeer {
             log.info("Could not call \"ping\" on ["+getServiceURL()+"] "+ex.getMessage());
             log.trace(ex);
             response = false;
+            isAvailable=false;
+            pingState=false;
             fireConnectionFailed(ex);
         }
     
-        //This is basically saying that because of a ping there is a
-        //change in the availability state of the peer in question.
-        //So only upon a change in state will there be events fired
-        //through the rest of the system and the new state recorded
-        //and dispatched to the rest of the system.  This saves us
-        //from sending out events that doesn't contain any *new*
-        //information.
-        if(isAvailable != pingState) {
-            log.trace("Detected change in peer's state/availability...");
+        //----
+        //NOTE: Here I am basically saying that IF, because of a ping,
+        //there is a change in the availability state of the peer in
+        //question then only upon a CHANGE in state will there be
+        //events fired through the rest of the system and the new
+        //state recorded and dispatched to the rest of the system.
+        //This saves us from sending out events that doesn't contain
+        //any *new* information.  This can be forced to fire an event
+        //under all conditions if "force" is set to true.
+        //----
+
+        log.trace("(ia)["+isAvailable+"] -> (ps)["+pingState+"]");
+        if((isAvailable != pingState) || force ) {
+            log.trace("Peer's state/availability... from ["+isAvailable+"] -> ["+pingState+"] (force = "+force+")");
+            isAvailable=pingState;
             if(pingState) fireConnectionAvailable(); else fireConnectionBusy();
         }
         isAvailable = pingState;
