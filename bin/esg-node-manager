@@ -302,6 +302,7 @@ touch_whitelist_files() {
     debug_print "touch_whitelist_files()... "
     touch ${esg_config_dir}/esgf_ats.xml; chown ${tomcat_user}:${tomcat_group} ${esg_config_dir}/esgf_ats.xml && chmod 644 ${esg_config_dir}/esgf_ats.xml
     touch ${esg_config_dir}/esgf_azs.xml; chown ${tomcat_user}:${tomcat_group} ${esg_config_dir}/esgf_azs.xml && chmod 644 ${esg_config_dir}/esgf_azs.xml
+    touch ${esg_config_dir}/esgf_shards.xml; chown ${tomcat_user}:${tomcat_group} ${esg_config_dir}/esgf_shards.xml && chmod 644 ${esg_config_dir}/esgf_shards.xml
     if [ -d "${esg_root_dir}/content/las/conf/server" ]; then
         touch ${esg_root_dir}/content/las/conf/server/las_servers.xml
         chown ${tomcat_user}:${tomcat_group} ${esg_root_dir}/content/las/conf/server/las_servers.xml && chmod 644 ${esg_root_dir}/content/las/conf/server/las_servers.xml
