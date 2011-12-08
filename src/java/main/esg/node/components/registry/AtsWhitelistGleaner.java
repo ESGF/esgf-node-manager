@@ -173,7 +173,7 @@ public class AtsWhitelistGleaner {
 
                     log.trace("gleaning group/attribute: "+type);
                     if (type.equals("wheel")) {
-                        log.trace("(skipping wheel");
+                        log.trace("(skipping wheel)");
                         continue;
                     }
 
