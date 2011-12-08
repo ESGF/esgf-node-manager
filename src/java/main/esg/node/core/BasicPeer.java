@@ -183,9 +183,7 @@ public class BasicPeer extends HessianPeer {
         }catch (RuntimeException ex) {
             log.info("Could not call \"ping\" on ["+getServiceURL()+"] "+ex.getMessage());
             log.trace(ex);
-            response = false;
-            isAvailable=false;
-            pingState=false;
+            isAvailable=false; //I know now necessary but doesn't hurt - communicates more clearly meaning of isAvailable IMHO
             fireConnectionFailed(ex);
         }
     
@@ -202,11 +200,10 @@ public class BasicPeer extends HessianPeer {
 
         log.trace("(ia)["+isAvailable+"] -> (ps)["+pingState+"]");
         if((isAvailable != pingState) || force ) {
-            log.trace("Peer's state/availability... from ["+isAvailable+"] -> ["+pingState+"] (force = "+force+")");
-            isAvailable=pingState;
+            log.trace("Peer's state/availability changed... from ["+isAvailable+"] -> ["+pingState+"] (force = "+force+")");
             if(pingState) fireConnectionAvailable(); else fireConnectionBusy();
         }
-        isAvailable = pingState;
+        isAvailable = pingState; //I know now necessary but doesn't hurt - communicates more clearly meaning of isAvailable IMHO
 
         log.trace("isValid = "+isValid);
         log.trace("response = "+response);
@@ -221,20 +218,24 @@ public class BasicPeer extends HessianPeer {
             datanodeServiceStub.handleESGRemoteEvent(evt);
         }catch (RuntimeException ex) {
             log.error("Could not make call \"handleESGRemoteEvent\" on ["+getServiceURL()+"] "+ex.getMessage());
+            isAvailable=false; //I know now necessary but doesn't hurt - communicates more clearly meaning of isAvailable IMHO
             fireConnectionFailed(ex);
         }
     }
 
     protected void fireConnectionAvailable() {
         log.trace("Firing Connection Available to "+getServiceURL());
+        isAvailable=true;
         fireESGPeerEvent(new ESGPeerEvent(this,ESGPeerEvent.CONNECTION_AVAILABLE));
     }
     protected void fireConnectionFailed(Throwable t) {
         log.trace("Firing Connection Failed to "+getServiceURL());
+        isAvailable=false;
         fireESGPeerEvent(new ESGPeerEvent(this,t.getMessage(),ESGPeerEvent.CONNECTION_FAILED));
     }
     protected void fireConnectionBusy() {
         log.trace("Firing Connection Busy to "+getServiceURL());
+        isAvailable=false;
         fireESGPeerEvent(new ESGPeerEvent(this,ESGPeerEvent.CONNECTION_BUSY));
     }
     //--------------------------------------------
