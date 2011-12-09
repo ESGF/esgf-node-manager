@@ -79,6 +79,7 @@ public class Utils {
     private static String myServiceUrl = null;
     private static final String urlRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/(.*/)*(.*$)";
     private static final Pattern urlPattern = Pattern.compile(urlRegex,Pattern.CASE_INSENSITIVE);
+    private static QuickHash quickHash = null;
 
 
     public static long nextSeq() { return msgCounter.getAndIncrement(); }
@@ -94,6 +95,17 @@ public class Utils {
         //NOTE: Doing the call to "toString" on purpose to force a null
         //pointer exception the return value should NEVER be null!
         return nodeID.toString();
+    }
+
+
+    public static String hashSum(String plaintext) {
+        try {
+            if(quickHash == null) quickHash = new QuickHash();
+            return quickHash.sum(plaintext);
+        }catch(Throwable t) { 
+            System.out.println(t.getMessage());
+            return null;
+        }
     }
 
     public static String getFQDN() {
