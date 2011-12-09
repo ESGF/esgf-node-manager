@@ -425,7 +425,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 
                 ESGPeer chosenPeer = peerList.get(idx);
                 log.debug("Selected Peer: "+chosenPeer.getName());
-                chosenPeer.handleESGRemoteEvent(remoteEvent);
+                chosenPeer.handleESGRemoteEvent(ESGEventHelper.createRelayedOutboundEvent(remoteEvent));
                 lastIdx = idx;
                 numDispatchedPeers++;
             }
