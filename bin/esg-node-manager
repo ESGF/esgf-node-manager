@@ -293,6 +293,7 @@ setup_node_manager() {
     [ -d ${tomcat_install_dir}/webapps/esg-node ] && echo -n "Removing old esg-node webapp (${tomcat_install_dir}/webapps/esg-node)... " && rm -rf ${tomcat_install_dir}/webapps/esg-node && echo "[OK]"
 
     fetch_shell_launcher
+    fetch_p2p_spotchecker
 
     checked_done 0
     
@@ -317,6 +318,16 @@ fetch_shell_launcher() {
     popd >& /dev/null
     return 0
 }
+
+fetch_p2p_spotchecker() {
+    pushd ${scripts_dir} >& /dev/null
+    checked_get spotcheck ${node_dist_url%/*}/spotcheck $((force_install))
+    (( $? > 1 )) && echo " ERROR: Could not download ${node_dist_url%/*}/spotcheck :-(" && popd >& /dev/null && return 1
+    chmod 755 spotcheck
+    popd >& /dev/null
+    return 0
+}
+
 
 write_node_manager_config() {
     #----------------------------
