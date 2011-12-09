@@ -334,7 +334,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
 
         while( i < myList.size() ) {
             newNodes.add(myList.get(i));
-            log.trace("   Keeping local entry for "+myList.get(i));
+            log.trace("   Keeping local entry for "+myList.get(i).getHostname());
             i++;
         }
 

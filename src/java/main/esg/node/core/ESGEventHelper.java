@@ -88,7 +88,11 @@ public class ESGEventHelper {
             log.warn("The encountered event does not contain a remote event");
             return null;
         }
-        return new ESGRemoteEvent(Utils.getMyServiceUrl(),rEvent.getMessageType(),in.getData(),rEvent.getSeqNum());
+        return new ESGRemoteEvent(Utils.getMyServiceUrl(),
+                                  rEvent.getMessageType(),
+                                  in.getData(),
+                                  Utils.hashSum((String)in.getData()),
+                                  rEvent.getSeqNum());
     }
 
     //Here we create an event that is suitable as a response to the
@@ -104,7 +108,12 @@ public class ESGEventHelper {
         return createResponseOutboundEvent(in.getRemoteEvent(), in.getData());
     }
     public static ESGRemoteEvent createResponseOutboundEvent(ESGRemoteEvent in, Object payload) {
-        in.copy(new ESGRemoteEvent(Utils.getMyServiceUrl(),in.getMessageType(),payload,in.getSeqNum()));
+        in.copy(new ESGRemoteEvent(Utils.getMyServiceUrl(),
+                                   in.getMessageType(),
+                                   payload,
+                                   Utils.hashSum((String)payload),
+                                   in.getSeqNum(),
+                                   -1));
         return in;
     }
 
@@ -112,9 +121,15 @@ public class ESGEventHelper {
     //event's TTL, that has been properly decremented by the
     //DataNodeService on initial ingress. and because of the copy we
     //are respecting the "origin" value associated with this remote
-    //event - very important
+    //event - very important.  So Origin and TTL of 'in' is preserved
+    //on copy()
     public static ESGRemoteEvent createRelayedOutboundEvent(ESGRemoteEvent in) {
-        in.copy(new ESGRemoteEvent(Utils.getMyServiceUrl(),in.getMessageType(),in.getPayload(),Utils.nextSeq()));
+        in.copy(new ESGRemoteEvent(Utils.getMyServiceUrl(),
+                                   in.getMessageType(),
+                                   in.getPayload(),
+                                   in.getPayloadChecksum(),
+                                   Utils.nextSeq(),
+                                   -1));
         return in;
     }
 
@@ -125,7 +140,11 @@ public class ESGEventHelper {
     //sure that's what you want) Also the TTL is set to initial value
     public static ESGRemoteEvent createProxiedOutboundEvent(ESGRemoteEvent in) {
         //Create the string for *our* callback address...
-        return new ESGRemoteEvent(Utils.getMyServiceUrl(),in.getMessageType(),in.getPayload(),in.getSeqNum());
+        return new ESGRemoteEvent(Utils.getMyServiceUrl(),
+                                  in.getMessageType(),
+                                  in.getPayload(),
+                                  in.getPayloadChecksum(),
+                                  in.getSeqNum());
     }
 
 }
