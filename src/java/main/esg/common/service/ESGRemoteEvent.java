@@ -79,6 +79,8 @@ public class ESGRemoteEvent implements java.io.Serializable {
     public static final int METRICS     = 32;
     public static final int APPLICATION = 64;
 
+    public static final int DEFAULT_TTL = 6;
+
     private String origin  = null; //This value si the complete URL of the originating node service
     private String source  = null; //This value is the complete URL of the previous hop's node service
     private int    messageType = -1;
@@ -102,16 +104,12 @@ public class ESGRemoteEvent implements java.io.Serializable {
         this.copy(otherEvent);
     }
 
-    public ESGRemoteEvent(String source, int messageType, Object payload, long seqNum, int ttl) {
-        this(source,messageType,payload,null,seqNum,ttl);
-    }
-    
-    public ESGRemoteEvent(String source, int messageType, Object payload, long seqNum) {
-        this(source,messageType,payload,null,seqNum,1);
+    public ESGRemoteEvent(String source, int messageType, Object payload, String checksum, long seqNum) {
+        this(source,messageType,payload,checksum,seqNum,DEFAULT_TTL);
     }
 
     public ESGRemoteEvent(String source, int messageType, long seqNum) {
-        this(source,messageType,null,null,seqNum,1);
+        this(source,messageType,null,null,seqNum,DEFAULT_TTL);
     }
 
     public ESGRemoteEvent(String source) { this(source,NOOP,null,null,-1L,1); }
@@ -144,7 +142,7 @@ public class ESGRemoteEvent implements java.io.Serializable {
         return this;
     }
 
-    public String toString() { return "RE - o:["+origin+"] s:["+source+"] m:["+messageType+"] n:["+seqNum+"] t:["+ttl+"] p:["+(null != payload)+"]"; }
+    public String toString() { return "RE - orig:["+origin+"] src:["+source+"] msg:["+messageType+"] seq:["+seqNum+"] ttl:["+ttl+"] pld:["+(null != payload)+"] chk["+checksum+"]"; }
 
 }
 

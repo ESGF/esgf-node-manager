@@ -474,10 +474,12 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 
     private boolean dispatchUnRegisterToPeers() {
         System.out.println("I am dispatching UnRegister Event To Peers");
+        String now = (new java.util.Date()).getTime()+""; //yeah... ugly... :-\
         ESGRemoteEvent unregisterEvent = new ESGRemoteEvent(Utils.getMyServiceUrl(),
                                                             ESGRemoteEvent.UNREGISTER,
-                                                            (new java.util.Date()).getTime()+"",
-                                                            0L);
+                                                            now,
+                                                            Utils.hashSum(now),
+                                                            Utils.nextSeq());
         System.out.println(unregisterEvent);
         return dispatchToRandomPeers(unregisterEvent);
     }
