@@ -321,9 +321,10 @@ fetch_shell_launcher() {
 
 fetch_p2p_spotchecker() {
     pushd ${scripts_dir} >& /dev/null
-    checked_get spotcheck ${node_dist_url%/*}/spotcheck $((force_install))
-    (( $? > 1 )) && echo " ERROR: Could not download ${node_dist_url%/*}/spotcheck :-(" && popd >& /dev/null && return 1
-    chmod 755 spotcheck
+    local script_name=${1:-"esgf-spotcheck"}
+    checked_get ${script_name} ${node_dist_url%/*}/${script_name} $((force_install))
+    (( $? > 1 )) && echo " ERROR: Could not download ${node_dist_url%/*}/${script_name} :-(" && popd >& /dev/null && return 1
+    chmod 755 ${script_name}
     popd >& /dev/null
     return 0
 }
