@@ -197,17 +197,25 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         int pruneCount = 0;
         java.util.Vector<ESGPeer> peers_ = new java.util.Vector<ESGPeer>();
         peers_.addAll(peers.values());
-        peers_.addAll(unavailablePeers.values());
+        log.trace("Inspecting ["+peers_.size()+"] currently known peers");
         for(ESGPeer peer: peers_) {
-            log.trace("Inspecting ["+peers_.size()+"] currently known peers");
             if(peer.equals(defaultPeer)) log.trace("(default peer)");
             if(!peer.ping()) {
-                log.trace("Pruning out unresponsive peer: "+peer.getServiceURL());
                 pruneCount++;
+                log.trace("Pruning out unresponsive peer: ("+pruneCount+") "+peer.getServiceURL());
             }
         }
         log.trace("Total number of pruned peers: ["+pruneCount+"] / ["+peers_.size()+"]");
         peers_.clear();
+
+        peers_.addAll(unavailablePeers.values());
+        log.trace("Inspecting ["+peers_.size()+"] currently dead peers");
+        for(ESGPeer peer: peers_) {
+            log.trace("Purging dead peer: "+peer);
+            peer.unregister();
+        }
+
+        peers.clear();
         peers_ = null; //gc niceness...
         return (pruneCount > 0);
     }
