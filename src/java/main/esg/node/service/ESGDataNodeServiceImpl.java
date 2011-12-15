@@ -200,6 +200,12 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
             enqueueESGEvent("METRICS",evt);
         }else if(evt_.getMessageType() == ESGRemoteEvent.APPLICATION) { 
             log.trace("GOT APPLICATION REMOTE EVENT");
+        }else if(evt_.getMessageType() == ESGRemoteEvent.PRUNE) {
+            log.trace("GOT PRUNE REMOTE EVENT");
+            evt = new ESGEvent(this);
+            evt.setRemoteEvent(evt_);
+            if(connMgr != null) { connMgr.getESGEventQueue().enqueueEvent(evt); }
+            else { log.warn("Dropping ingress prune event: connection Manager not yet available... ["+connMgr+"]"); }
         }else {
             log.trace("DO NOT RECOGNIZE THIS MESSAGE TYPE: "+evt_);
         }

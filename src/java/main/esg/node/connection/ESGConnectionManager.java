@@ -171,27 +171,6 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             },delay*1000,period*1000);
     }
 
-    //Does a brute force check (pings) against all known peers
-    //By doing so peers should be
-    private synchronized boolean prune() {
-        boolean ret = false;
-        int pruneCount = 0;
-        java.util.Vector<ESGPeer> peers_ = new java.util.Vector<ESGPeer>();
-        peers_.addAll(peers.values());
-        for(ESGPeer peer: peers_) {
-            log.trace("Inspecting ["+peers_.size()+"] all available peers");
-            if(peer.equals(defaultPeer)) log.trace("(default peer)");
-            if(!peer.ping(true)) {
-                log.trace("Pruning out unresponsive peer: "+peer.getServiceURL());
-                pruneCount++;
-            }
-        }
-        peers_.clear();
-        peers_ = null; //gc niceness...
-        log.trace("Total number of pruned peers: ["+pruneCount+"]/["+this.numAvailablePeers()+"]");
-        return ret;
-    }
-
     //TODO: Instead of making this a sync'ed method, turn this into a
     //"future" tracking invocation and 'catch' responses or lack there
     //of without locking things up.
@@ -211,6 +190,27 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         peers_ = null; //gc niceness...
     }
 
+    //Does a brute force check (pings) against all known peers
+    //By doing so we are left with a list of peers that are all active (responding positively)
+    //return value of true means that some pruning did take place.
+    private synchronized boolean prune() {
+        int pruneCount = 0;
+        java.util.Vector<ESGPeer> peers_ = new java.util.Vector<ESGPeer>();
+        peers_.addAll(peers.values());
+        peers_.addAll(unavailablePeers.values());
+        for(ESGPeer peer: peers_) {
+            log.trace("Inspecting ["+peers_.size()+"] currently known peers");
+            if(peer.equals(defaultPeer)) log.trace("(default peer)");
+            if(!peer.ping()) {
+                log.trace("Pruning out unresponsive peer: "+peer.getServiceURL());
+                pruneCount++;
+            }
+        }
+        log.trace("Total number of pruned peers: ["+pruneCount+"] / ["+peers_.size()+"]");
+        peers_.clear();
+        peers_ = null; //gc niceness...
+        return (pruneCount > 0);
+    }
 
     private void periodicallyRegisterToPeers() {
         log.trace("Launching connection manager's registration push timer...");
@@ -566,6 +566,10 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                     log.trace("Forwarding UNREGISTER event to next random peers");
                     log.trace(event);
                     return dispatchToRandomPeers(event.getRemoteEvent());
+                case ESGRemoteEvent.PRUNE:
+                    log.trace("ConnMgr: Got prune message...");
+                    this.prune();
+                    break;
                 default:
                     log.info("UnHandled event type: ["+event.getRemoteEvent().getMessageType()+"] from "+event.getRemoteEvent().getSource());
                     log.trace(event);
@@ -638,7 +642,6 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 log.trace("Transfering from inactive -to-> outta here! :-)");
                 peer.unregister();
             }
-
             break;
         case ESGPeerEvent.CONNECTION_AVAILABLE:
             log.trace("Got ESGPeerEVent.CONNECTION_AVAILABLE from: "+peer.getName());
