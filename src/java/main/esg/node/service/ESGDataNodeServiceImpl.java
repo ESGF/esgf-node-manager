@@ -67,17 +67,20 @@
 **/
 package esg.node.service;
 
+import java.util.concurrent.locks.ReentrantLock;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
 import esg.node.core.ESGDataNodeManager;
+import esg.node.core.DataNodeComponent;
 import esg.node.core.AbstractDataNodeComponent;
 import esg.node.core.ESGEvent;
 import esg.node.core.ESGJoinEvent;
 import esg.node.core.ESGPeer;
 import esg.node.core.BasicPeer;
 import esg.node.core.ESGSystemEvent;
+import esg.node.core.ESGCallableEvent;
 import esg.node.connection.ESGConnectionManager;
 import esg.common.service.ESGRemoteEvent;
 import esg.common.Utils;
@@ -90,6 +93,7 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     private ESGConnectionManager connMgr = null;
     private String myServiceUrl = null;
     
+    private final ReentrantLock lock = new ReentrantLock();
 
     public ESGDataNodeServiceImpl() {
         log.info("ESGDataNodeServiceImpl instantiated...");
@@ -142,9 +146,59 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     //Remote service interface implementation ping & handleESGRemoteEvent
     //------------------------------------------------------------
     //Ingress calls to check RPC working method...
+    
+    /**
+       Simple boolean call for signalling if you are busy/available or
+       even alive (clearly if you don't or can't answer you are dead,
+       right?) :-)
+     */
     public boolean ping() { 
         log.trace("DataNode service got \"ping\"");
         return amAvailable();
+    }
+
+    /**
+       Remote method implementation to allow for others to tell you
+       that you need to clean up the current representation of who's
+       in the world.
+     */
+    public synchronized boolean prune() {
+        boolean ret = false;
+
+        if(!amAvailable()) {
+            log.warn("Not generating and posting local prune event: I am NOT available");
+            return false;
+        }
+
+        //NOTE: This extra bit of gymnastics is to provide a way to
+        //create a synchronous call around an asynchronous activity.
+        //So we create an event that knows how to call us back
+        ESGEvent evt = new ESGCallableEvent(this, Boolean.valueOf(false), "Local Prune Message...") {
+                public void call(DataNodeComponent contextComponent) {
+                    try{
+                        if(contextComponent.getName().equals("CONN_MGR")) {
+                            setData( ((ESGConnectionManager)contextComponent).prune() );
+                        }else{
+                            log.warn("I am a callable event and found myself in an unexpected place!! : "+contextComponent.getName());
+                        }
+                    }finally {
+                        log.info("Prune Callable Event's call method called and completed... releasing lock");
+                        ESGDataNodeServiceImpl.this.lock.unlock();
+                    }
+                }
+            };
+        
+        if(connMgr != null) {
+            lock.lock();
+            log.info("Prune Callable Event posting to ConnMgr's event queue");
+            connMgr.getESGEventQueue().enqueueEvent(evt); 
+            ret = (Boolean)evt.getData();
+        }
+        else { log.warn("NOT generating and posting local prune rpc event: connection Manager not yet available... ["+connMgr+"]"); 
+            return ret;
+        }
+
+        return ret;
     }
 
     //Ingress event handling from remote 'client'
@@ -199,13 +253,7 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
             evt.setRemoteEvent(evt_);
             enqueueESGEvent("METRICS",evt);
         }else if(evt_.getMessageType() == ESGRemoteEvent.APPLICATION) { 
-            log.trace("GOT APPLICATION REMOTE EVENT");
-        }else if(evt_.getMessageType() == ESGRemoteEvent.PRUNE) {
-            log.trace("GOT PRUNE REMOTE EVENT");
-            evt = new ESGEvent(this);
-            evt.setRemoteEvent(evt_);
-            if(connMgr != null) { connMgr.getESGEventQueue().enqueueEvent(evt); }
-            else { log.warn("Dropping ingress prune event: connection Manager not yet available... ["+connMgr+"]"); }
+            log.trace("GOT APPLICATION REMOTE EVENT (not yet implemented)");
         }else {
             log.trace("DO NOT RECOGNIZE THIS MESSAGE TYPE: "+evt_);
         }

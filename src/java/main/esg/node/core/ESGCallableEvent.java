@@ -6,7 +6,7 @@
  *      Division: S&T Global Security                                       *
  *        Matrix: Atmospheric, Earth and Energy Division                    *
  *       Program: PCMDI                                                     *
- *       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
+ *       Project: Earth Systems Grid (ESG) Data Node Software Stack         *
  *  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
  *                                                                          *
  ****************************************************************************
@@ -17,11 +17,11 @@
  *   LLNL-CODE-420962                                                       *
  *                                                                          *
  *   All rights reserved. This file is part of the:                         *
- *   Earth System Grid Federation (ESGF) Data Node Software Stack           *
+ *   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
  *                                                                          *
- *   For details, see http://esgf.org/esg-node/                             *
+ *   For details, see http://esgf.org/esg-node/                    *
  *   Please also read this link                                             *
- *    http://esgf.org/LICENSE                                               *
+ *    http://esgf.org/LICENSE                                      *
  *                                                                          *
  *   * Redistribution and use in source and binary forms, with or           *
  *   without modification, are permitted provided that the following        *
@@ -58,40 +58,25 @@
 /**
    Description:
 
-   These are methods that will be exposed, for calling by remote
-   callers, namely ESGPeers!
-
 **/
-package esg.node.service;
+package esg.node.core;
 
-import esg.common.service.ESGRemoteEvent;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
 
-public interface ESGDataNodeService {
+
+public class ESGCallableEvent extends ESGEvent {
+
+    protected static Log log = LogFactory.getLog(ESGCallableEvent.class);
+
+    private Object data=null;
+    private String message="";
+
+    public ESGCallableEvent(Object source) { super(source,null,null); }
+    public ESGCallableEvent(Object source, String message) { super(source,null,message); }
+    public ESGCallableEvent(Object source, Object data, String message) { super(source, data, message); }
+
+    public void call(DataNodeComponent contextComponent) { }
     
-    /**
-       Simple synchronous boolean call.  Useful for checking
-       availability, network reachability, and RPC functionality.
-
-       @return true if all is well, false indicates the endpoint is
-       alive but busy or somehow "unavailable".
-    */
-    public boolean ping();
-
-    /**
-       Simple sychronous boolean call.  This instructs the service to
-       prune all "dead" peers from its local cache of peers
-     */
-    public boolean prune();
-
-    /**
-       The basic inter-peer message passing method. Outside of the
-       registration handshake process, this is the method that is
-       called for all other communication.
-
-       @param evt remote event constructed with event information to
-       be routed to remote peer.
-
-    */
-    public void handleESGRemoteEvent(ESGRemoteEvent evt);
-
 }

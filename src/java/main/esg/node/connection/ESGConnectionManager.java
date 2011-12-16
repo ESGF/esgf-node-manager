@@ -93,6 +93,7 @@ import esg.node.core.ESGJoinEvent;
 import esg.node.core.ESGPeerEvent;
 import esg.node.core.ESGPeer;
 import esg.node.core.BasicPeer;
+import esg.node.core.ESGCallableEvent;
 
 import esg.common.generated.registration.*;
 import esg.node.components.registry.RegistryUpdateDigest;
@@ -193,7 +194,8 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     //Does a brute force check (pings) against all known peers
     //By doing so we are left with a list of peers that are all active (responding positively)
     //return value of true means that some pruning did take place.
-    private synchronized boolean prune() {
+    public boolean prune() {
+        log.trace("prune() ...");
         int pruneCount = 0;
         java.util.Vector<ESGPeer> peers_ = new java.util.Vector<ESGPeer>();
         peers_.addAll(peers.values());
@@ -574,15 +576,14 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                     log.trace("Forwarding UNREGISTER event to next random peers");
                     log.trace(event);
                     return dispatchToRandomPeers(event.getRemoteEvent());
-                case ESGRemoteEvent.PRUNE:
-                    log.trace("ConnMgr: Got prune message...");
-                    this.prune();
-                    break;
                 default:
                     log.info("UnHandled event type: ["+event.getRemoteEvent().getMessageType()+"] from "+event.getRemoteEvent().getSource());
                     log.trace(event);
                     break;
                 }
+            }else if(event instanceof ESGCallableEvent) {
+                log.trace("ConnMgr: got Callable event: "+event);
+                ((ESGCallableEvent)event).call(this);
             }
         }
         event = null; //gc hint!
