@@ -528,6 +528,38 @@ Builds the project via ant (obviously).
     </jar>
     <!-- <signjar jar="${dist_dir}/${module}-filters-${version_num}.jar" alias="${signing_alias}" keystore="${keystore}" storepass="${storepass}"/> -->
   </target>
+
+  <target name="make_node_manager_connector_jar" depends="make" description="(Creates jar file for client rpc call to node manager service)">
+    <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}-connector-${version_num}.jar"/>
+    <delete>
+      <fileset dir="." includes="${dist_dir}/${module}-connector*.jar"/>
+    </delete>
+    <mkdir dir="${dist_dir}" />
+    <jar destfile="${dist_dir}/${module}-connector-${version_num}.jar">
+      <fileset dir="${build_dir}"
+               includes="esg/node/connection/ESGConnector.class,esg/node/connection/ESGConnectorTester.class,esg/node/service/ESGDataNodeService.class,esg/common/service/*"/>
+      <manifest>
+        <attribute name="Organization" value="${organization}"/>
+        <attribute name="Author"       value="${author}"/>
+        <attribute name="Project"      value="${project_name} Client Connector"/>
+        <attribute name="Module"       value="${module}"/>
+        <attribute name="Version"      value="${version_num}"/>
+	<attribute name="Branch"       value="${branch}"/>
+	<attribute name="Commit"       value="${commit}"/>
+        <attribute name="Release-Name" value="${release_name}"/>
+        <attribute name="Main-Class"   value="esg.node.connection.ESGConnectorTester"/>
+        <section name="esg/node/connection/">
+          <attribute name="Sealed" value="${seal}"/>
+        </section>
+      </manifest>
+      <zipgroupfileset dir="${lib_fetched_dir}">
+        <include name="commons-logging*.jar"/>
+        <include name="log4j*.jar"/>
+        <include name="hessian-*.jar"/>
+      </zipgroupfileset>
+    </jar>
+    <!-- <signjar jar="${dist_dir}/${module}-connector-${version_num}.jar" alias="${signing_alias}" keystore="${keystore}" storepass="${storepass}"/> -->
+  </target>
   
   <target name="make_access_log_client_jar" depends="make" description="(Creates jar file for client rpc call to access log service)">
     <echo message="JAR -  ${build_dir} ->> ${dist_dir}/${module}-accesslog-client-${version_num}.jar"/> 
@@ -598,7 +630,7 @@ Builds the project via ant (obviously).
   </target>
   
   <!-- <target name="make_all_jars" depends="make_jar,make_test_jar,make_common_jar,make_filter_jar,make_access_log_client_jar,make_access_log_service_jar"/> -->
-  <target name="make_all_jars" depends="make_jar,make_common_jar,make_filter_jar,make_access_log_client_jar,make_access_log_service_jar"/>
+  <target name="make_all_jars" depends="make_jar,make_common_jar,make_filter_jar,make_node_manager_connector_jar,make_access_log_client_jar,make_access_log_service_jar"/>
 
   <target name="make_war" depends="make,init"
           description="(Creates war file of this project)">

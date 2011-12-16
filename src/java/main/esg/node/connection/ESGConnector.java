@@ -111,7 +111,7 @@ public class ESGConnector {
         log.trace("Instantiating ESGConnector");
         this.factory = new HessianProxyFactory();
         this.secured = secured;
-        this.setEndpoint(serviceHost);
+        if(null != serviceHost) this.setEndpoint(serviceHost);
     }
 
     public static synchronized ESGConnector getInstance() {
@@ -176,6 +176,7 @@ public class ESGConnector {
     }
 
     public String getServiceUrl() { return this.currentServiceURL; }
+    public String getEndpoint() { return "<Implement me>"; }
 
     //cache utility methods...
     public synchronized ESGConnector clearCache() { endpointCache.clear(); return this; }
@@ -200,6 +201,7 @@ public class ESGConnector {
        (if you can ping you know the RPC works)
     */
     public boolean ping() {
+        log.info("Connector -> ping()...");
         boolean ret = false;
         try{
             if(null == currentEndpoint) {
@@ -221,6 +223,7 @@ public class ESGConnector {
        only "alive" nodes.  Hence we prune the list of peers.
      */
     public boolean prune() {
+        log.info("Connector -> prune()...");
         boolean ret = false;
         try{
             if(null == currentEndpoint) {
@@ -236,5 +239,5 @@ public class ESGConnector {
     }
 
     //------------------------------------------------------------------
-    
+ 
 }

@@ -74,16 +74,35 @@ public class ESGConnectorTester {
     private static final Log log = LogFactory.getLog(ESGConnectorTester.class);
 
     public static void main(String[] args) {
-        System.out.println("Running ESGConnectorTester...");
+        for(String arg : args) System.out.println(arg);
+        if(args.length < 1 || args.length > 2) { System.out.println(" Usage requries args: [\"prune\" | \"ping\"]"); System.exit(1);}
+
+        System.out.println("Running ESGConnector...");
+        String function = args[0];
+        String host = "localhost";
+        if(args.length == 2) host = args[1];
         try{
-            if(ESGConnector.getInstance().setSecured(false).setEndpoint("localhost",true).prune()) {
-                System.out.println("Pruned dead peer connections from :");
-            } else {
-                System.out.println("There were no dead peer connections detected");
+            if(function.equalsIgnoreCase("prune")) {
+                System.out.println("prune -> "+host);
+                if(ESGConnector.getInstance().setSecured(false).setEndpoint(host,true).prune()) {
+                    System.out.println("Pruned dead peer connections from "+host);
+                } else {
+                    System.out.println("There were no dead peer connections detected on "+host+" (or host itself is dead)");
+                }
+            }
+            
+            if(function.equalsIgnoreCase("ping")) {
+                System.out.println("ping -> "+host);
+                if(ESGConnector.getInstance().setSecured(false).setEndpoint(host,true).ping()) {
+                    System.out.println("Successfully pinged "+host);
+                } else {
+                    System.out.println("Unable to ping "+host);
+                }
             }
         }catch(Throwable t) {
-            log.error("Oops there was a problem...");
+            log.error("Oops there was a problem... is the node manager running on "+ESGConnector.getInstance().getEndpoint()+"?");
             log.error(t);
+            t.printStackTrace();
             ESGConnector.getInstance().clearCache();
         }
         System.out.println("bye");
