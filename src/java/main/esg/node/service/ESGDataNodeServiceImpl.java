@@ -81,6 +81,7 @@ import esg.node.core.ESGPeer;
 import esg.node.core.BasicPeer;
 import esg.node.core.ESGSystemEvent;
 import esg.node.core.ESGCallableEvent;
+import esg.node.core.ESGCallableFutureEvent;
 import esg.node.connection.ESGConnectionManager;
 import esg.common.service.ESGRemoteEvent;
 import esg.common.Utils;
@@ -93,8 +94,6 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     private ESGConnectionManager connMgr = null;
     private String myServiceUrl = null;
     
-    private final ReentrantLock lock = new ReentrantLock();
-
     public ESGDataNodeServiceImpl() {
         log.info("ESGDataNodeServiceImpl instantiated...");
         setMyName("DNODE_SVC");
@@ -173,26 +172,28 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
         //NOTE: This extra bit of gymnastics is to provide a way to
         //create a synchronous call around an asynchronous activity.
         //So we create an event that knows how to call us back
-        ESGEvent evt = new ESGCallableEvent(this, Boolean.valueOf(false), "Local Prune Message...") {
-                public void call(DataNodeComponent contextComponent) {
+        ESGCallableFutureEvent evt = new ESGCallableFutureEvent<Boolean>(this, Boolean.valueOf(false), "Local Prune Message...") {
+            public boolean call(DataNodeComponent contextComponent) {
+                    boolean handled = false;
                     try{
                         if(contextComponent.getName().equals("CONN_MGR")) {
+                            log.info("Calling prune on contextComponent");
                             setData( ((ESGConnectionManager)contextComponent).prune() );
+                            return handled;
                         }else{
                             log.warn("I am a callable event and found myself in an unexpected place!! : "+contextComponent.getName());
                         }
                     }finally {
-                        log.info("Prune Callable Event's call method called and completed... releasing lock");
-                        ESGDataNodeServiceImpl.this.lock.unlock();
+                        log.info("Prune Callable Event's call method called and completed...");
                     }
+                    return handled;
                 }
-            };
-        
+        };
+
         if(connMgr != null) {
-            lock.lock();
             log.info("Prune Callable Event posting to ConnMgr's event queue");
-            connMgr.getESGEventQueue().enqueueEvent(evt); 
-            ret = (Boolean)evt.getData();
+            connMgr.getESGEventQueue().enqueueEvent(evt);
+            ret = evt.get(); //Block here until there is something to get...
         }
         else { log.warn("NOT generating and posting local prune rpc event: connection Manager not yet available... ["+connMgr+"]"); 
             return ret;

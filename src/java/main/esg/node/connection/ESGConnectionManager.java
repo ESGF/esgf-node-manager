@@ -565,8 +565,8 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             //Routing of events...
             //--------------------
             boolean handled = false;
-            int eventType = event.getRemoteEvent().getMessageType();
             if(event.hasRemoteEvent()) {
+                int eventType = event.getRemoteEvent().getMessageType();
                 switch (eventType) {
                 case ESGRemoteEvent.REGISTER:
                     log.trace("Forwarding REGISTER event to next random peers");
@@ -583,7 +583,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 }
             }else if(event instanceof ESGCallableEvent) {
                 log.trace("ConnMgr: got Callable event: "+event);
-                ((ESGCallableEvent)event).call(this);
+                ((ESGCallableEvent)event).doCall(this);
             }
         }
         event = null; //gc hint!
