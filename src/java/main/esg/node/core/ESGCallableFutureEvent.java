@@ -67,7 +67,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.ExecutionException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
+
 public abstract class ESGCallableFutureEvent<T> extends ESGCallableEvent implements Future<T> {
+
+    private static final Log log = LogFactory.getLog(ESGCallableFutureEvent.class);
 
     private volatile T result = null;
     private volatile boolean cancelled = false;
@@ -115,14 +121,19 @@ public abstract class ESGCallableFutureEvent<T> extends ESGCallableEvent impleme
     }
     
     public void setResult(T result) {
+        log.trace("setResult to: "+result);
         this.result = result;
         countDownLatch.countDown();
     }
 
     public boolean doCall(DataNodeComponent contextComponent) {
+        log.trace("doCall");
         boolean handled = false;
         if( (handled = this.call(contextComponent)) ) {
+            log.trace(" return value from \"call\" is "+handled);
             setResult((T)getData());
+        }else{
+            log.trace("This event still has work to do: handled = "+handled);
         }
         return handled;
     }

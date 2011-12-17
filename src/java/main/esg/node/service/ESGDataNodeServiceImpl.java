@@ -178,17 +178,20 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
             public boolean call(DataNodeComponent contextComponent) {
                 boolean handled = false;
                 try{
+                    log.trace("inside \"call\"... ");
                     if(contextComponent.getName().equals("CONN_MGR")) {
-                        log.info("Calling prune on contextComponent");
-                        setData( ((ESGConnectionManager)contextComponent).prune() );
-                        return handled;
+                        log.info("calling prune on contextComponent");
+                        boolean pruneRet = false;
+                        setData( pruneRet=((ESGConnectionManager)contextComponent).prune() );
+                        log.info("value returned from prune: "+pruneRet);
+                        return true;
                     }else{
                         log.warn("I am a callable event and found myself in an unexpected place!! : "+contextComponent.getName());
                     }
                 }finally {
                     log.info("Prune Callable Event's call method called and completed...");
                 }
-                return handled;
+                return false;
             }
         };
 

@@ -219,6 +219,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 
         peers_.clear();
         peers_ = null; //gc niceness...
+        log.trace("--> returning "+(pruneCount > 0));
         return (pruneCount > 0);
     }
 
