@@ -114,7 +114,7 @@ public abstract class ESGCallableFutureEvent<T> extends ESGCallableEvent impleme
         return countDownLatch.getCount() == 0;
     }
     
-    public void setResult(final T result) {
+    public void setResult(T result) {
         this.result = result;
         countDownLatch.countDown();
     }
@@ -122,10 +122,9 @@ public abstract class ESGCallableFutureEvent<T> extends ESGCallableEvent impleme
     public boolean doCall(DataNodeComponent contextComponent) {
         boolean handled = false;
         if( (handled = this.call(contextComponent)) ) {
-            setResult((Boolean)getData());
+            setResult((T)getData());
         }
         return handled;
     }
-    
 
 }
