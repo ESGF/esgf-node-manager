@@ -114,8 +114,37 @@ public class ESGConnector {
         if(null != serviceHost) this.setEndpoint(serviceHost);
     }
 
+    //-----
+
     public static synchronized ESGConnector getInstance() {
         return connector == null ? connector = new ESGConnector(null,false) : connector;
+    }
+
+    public static synchronized ESGConnector getInstance(String serviceHost) {
+        if(connector == null) {
+            connector = new ESGConnector(serviceHost);
+        }else{
+            connector.setEndpoint(serviceHost);
+        }
+        return connector;
+
+    }
+    public static synchronized ESGConnector getInstance(boolean secured) {
+        if(connector == null) {
+            connector = new ESGConnector(secured);
+        }else{
+            connector.setSecured(secured);
+        }
+        return connector;
+    }
+
+    public static synchronized ESGConnector getInstance(String serviceHost, boolean secured) {
+        if(connector == null) {
+            connector = new ESGConnector(serviceHost,secured);
+        }else{
+            connector.setEndpoint(serviceHost).setSecured(secured);
+        }
+        return connector;
     }
 
     //------------------------------------------------------------------
