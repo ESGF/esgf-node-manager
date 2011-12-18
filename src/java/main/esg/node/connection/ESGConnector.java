@@ -122,16 +122,16 @@ public class ESGConnector {
 
     public static synchronized ESGConnector getInstance(String serviceHost) {
         if(connector == null) {
-            connector = new ESGConnector(serviceHost);
+            connector = new ESGConnector(serviceHost,false);
         }else{
-            connector.setEndpoint(serviceHost);
+            connector.setEndpoint(serviceHost,true);
         }
         return connector;
 
     }
     public static synchronized ESGConnector getInstance(boolean secured) {
         if(connector == null) {
-            connector = new ESGConnector(secured);
+            connector = new ESGConnector(null,secured);
         }else{
             connector.setSecured(secured);
         }
