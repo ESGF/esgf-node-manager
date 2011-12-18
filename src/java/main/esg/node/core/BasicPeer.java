@@ -183,10 +183,12 @@ public class BasicPeer extends HessianPeer {
         }catch (RuntimeException ex) {
             log.info("Could not call \"ping\" on ["+getServiceURL()+"] "+ex.getMessage());
             log.trace(ex);
+            response=false;
             isAvailable=false; //I know now necessary but doesn't hurt - communicates more clearly meaning of isAvailable IMHO
             fireConnectionFailed(ex);
         }
-    
+        pingState = (response  && isValid);
+
         //----
         //NOTE: Here I am basically saying that IF, because of a ping,
         //there is a change in the availability state of the peer in
@@ -203,7 +205,11 @@ public class BasicPeer extends HessianPeer {
             log.trace("Peer's state/availability changed... from ["+isAvailable+"] -> ["+pingState+"] (force = "+force+")");
             if(pingState) fireConnectionAvailable(); else fireConnectionBusy();
         }
-        isAvailable = pingState; //I know now necessary but doesn't hurt - communicates more clearly meaning of isAvailable IMHO
+
+        //I know now necessary but doesn't hurt - communicates more
+        //clearly meaning of isAvailable IMHO and illustrates the
+        //relationship between these vars
+        isAvailable = pingState;
 
         log.trace("isValid = "+isValid);
         log.trace("response = "+response);

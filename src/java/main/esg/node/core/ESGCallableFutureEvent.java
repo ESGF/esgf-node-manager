@@ -126,6 +126,7 @@ public abstract class ESGCallableFutureEvent<T> extends ESGCallableEvent impleme
         countDownLatch.countDown();
     }
 
+    @SuppressWarnings("unchecked")
     public boolean doCall(DataNodeComponent contextComponent) {
         log.trace("doCall");
         boolean handled = false;

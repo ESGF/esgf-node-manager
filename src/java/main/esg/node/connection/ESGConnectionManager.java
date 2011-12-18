@@ -185,7 +185,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             //this is where the relationship maintenance code goes
             //and detecting when folks fall out of the system.
             //maybe ping should be expanded to put in lease negotiation proper.
-            peer.ping(true);
+            peer.ping();
         }
         peers_.clear();
         peers_ = null; //gc niceness...
