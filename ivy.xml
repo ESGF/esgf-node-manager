@@ -80,6 +80,7 @@ Note: Check Maven for propery dependency parameter values @
 
   <publications>
     <artifact name="${module}-common" type="jar" conf="*"/>
+    <artifact name="${module}-connector" type="jar" conf="*"/>
     <artifact name="${module}-filters" type="jar" conf="*"/>
     <artifact name="${module}-accesslog-client" type="jar" conf="*"/>
   </publications>
