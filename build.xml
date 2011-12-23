@@ -537,7 +537,7 @@ Builds the project via ant (obviously).
     <mkdir dir="${dist_dir}" />
     <jar destfile="${dist_dir}/${module}-connector-${version_num}.jar">
       <fileset dir="${build_dir}"
-               includes="esg/node/connection/ESGConnector.class,esg/node/connection/ESGConnectorTester.class,esg/node/service/ESGDataNodeService.class,esg/common/service/*"/>
+               includes="esg/node/connection/ESGConnector.class,esg/node/connection/ESGConnectorTester.class,esg/node/service/ESGDataNodeService.class,esg/common/service/*,log4j.properties"/>
       <manifest>
         <attribute name="Organization" value="${organization}"/>
         <attribute name="Author"       value="${author}"/>
