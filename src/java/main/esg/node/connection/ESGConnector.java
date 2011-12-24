@@ -69,8 +69,11 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
 
 import esg.common.ESGException;
+import esg.common.Utils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -88,6 +91,7 @@ public class ESGConnector {
     private HessianProxyFactory factory = null;
     private ESGDataNodeService currentEndpoint = null;
     private String currentServiceURL = null;
+    private String currentServiceHost = null;
     private boolean secured=false;
     private Map<String,ESGDataNodeService> endpointCache = null;
 
@@ -184,40 +188,76 @@ public class ESGConnector {
     */
     public ESGConnector setEndpoint() { return this.setEndpoint("localhost",false); }
     protected ESGConnector setEndpoint(String serviceHost) { return this.setEndpoint(serviceHost,false); }
-    protected synchronized ESGConnector setEndpoint(String serviceHost, boolean force) {
-        if (serviceHost == null) {
-            System.out.println("ERROR: You have passed in a null ["+serviceHost+"] service host!!!!");
-            log.error("ERROR: You have passed in a null ["+serviceHost+"] service host!!!!");
+    protected synchronized ESGConnector setEndpoint(String serviceHost_, boolean force) {
+        String serviceHost = null;
+        //--------------------
+        //param sanity checks
+        //--------------------
+        if (serviceHost_ == null) {
+            System.out.println("ERROR: You have passed in a null ["+serviceHost_+"] service host!!!!");
+            log.error("You have passed in a null ["+serviceHost_+"] service host!!!!");
             return null;
         }
         
-        String serviceURL = "http"+(secured ? "s" : "")+"://"+serviceHost+"/esgf-node-manager/node";
-        if( null == this.endpointCache) this.endpointCache = new HashMap<String,ESGDataNodeService>();        
-        if((null == (this.currentEndpoint = endpointCache.get(serviceURL))) || force ) {
+        //Basically I am allowing you to pass in a legal service url (just to be nice);
+        if(Utils.isLegalUrl(serviceHost_)) {
+            if(Utils.isLegalServiceUrl(serviceHost_)) {
+                serviceHost = Utils.asHostname(serviceHost_);
+            }else{
+                System.out.println("ERROR: You have passed in an illegal endpoint ["+serviceHost_+"], can't accept that.");
+                log.error("You have passed in an illegal endpoint ["+serviceHost_+"], can't accept that.");
+                return null;
+            }
+        }else{
+            serviceHost = serviceHost_;
+        }
+        //--------------------
+        
+        if( null == this.endpointCache) this.endpointCache = new HashMap<String,ESGDataNodeService>(1);
+        
+        if((null == (this.currentEndpoint = endpointCache.get(serviceHost))) || force ) {
+            String serviceURL = Utils.asServiceUrl(serviceHost,secured);
             log.trace("Creating stub endpoint to : "+serviceURL);
             this.currentEndpoint = (ESGDataNodeService)factoryCreate(ESGDataNodeService.class,serviceURL);
             this.currentServiceURL=serviceURL;
-            endpointCache.put(currentServiceURL,currentEndpoint);
+            this.currentServiceHost=serviceHost;
+            endpointCache.put(currentServiceHost,currentEndpoint);
         } else {
-            log.trace("Using cached sub endpoint to : "+serviceURL);
+            log.trace("Using cached sub endpoint to : "+Utils.asServiceUrl(serviceHost,secured));
         }
         return this;
     }
 
+    //Force peer stubs to be re-generated...
+    public synchronized ESGConnector reset() {
+        log.trace("resetting connector peer stubs...");
+        Set<String> serviceHostSet = new HashSet<String>(endpointCache.keySet());
+        clearCache(); //yes, a bit of overkill but want to make sure we 'super' force the creation of new stubs!
+        for(String serviceHost : serviceHostSet) {
+            setEndpoint(serviceHost,true);
+        }
+        return this;
+    }
+
+    //Force peer stubs to be re-generated...
+    public synchronized ESGConnector reset(String serviceHost) { setEndpoint(serviceHost,true); return this; }
+    
     public String getServiceUrl() { return this.currentServiceURL; }
-    public String getEndpoint() { return "<Implement me>"; }
+    public String getEndpoint() { return this.currentServiceHost; }
 
     //cache utility methods...
     public synchronized ESGConnector clearCache() { endpointCache.clear(); return this; }
     public synchronized int cacheSize() { return endpointCache == null ? 0 : endpointCache.size(); }
+
+    //Returns the hosts of the peers we have cached connections (stubs) to.
     public synchronized List<String> getCachedEndpointList() { 
-        List<String> endpointUrlList = new ArrayList<String>();
-        if(endpointCache != null) endpointUrlList.addAll(endpointCache.keySet());
-        return endpointUrlList;
+        List<String> endpointList = new ArrayList<String>();
+        if(endpointCache != null) endpointList.addAll(endpointCache.keySet());
+        return endpointList;
     }
     public synchronized ESGConnector expungeFromCache(String serviceHost) {
         if (endpointCache == null) return this;
-        endpointCache.remove("http"+(secured ? "s" : "")+"://"+serviceHost+"/esgf-node-manager/node");
+        endpointCache.remove(serviceHost);
         return this;
     }
     
@@ -261,8 +301,19 @@ public class ESGConnector {
             ret = currentEndpoint.prune();
             log.trace("Prune returns: "+ret);
         }catch(Exception e) {
+            //REtry logic... If the protocol is having issues the
+            //recreating the stub may help?
             log.error(e);
             e.printStackTrace();
+            try{
+                reset();
+                ret = currentEndpoint.prune();
+                log.trace("Prune retry (reset) returns: "+ret);
+                return ret;
+            }catch(Exception ex) {
+                log.error(ex);
+                ex.printStackTrace();
+            }
         }
         return ret;
     }

@@ -79,6 +79,8 @@ public class Utils {
     private static String myServiceUrl = null;
     private static final String urlRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/(.*/)*(.*$)";
     private static final Pattern urlPattern = Pattern.compile(urlRegex,Pattern.CASE_INSENSITIVE);
+    private static final String serviceUrlRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/esgf-node-manager/node";
+    private static final Pattern serviceUrlPattern = Pattern.compile(serviceUrlRegex,Pattern.CASE_INSENSITIVE);
     private static QuickHash quickHash = null;
 
 
@@ -125,14 +127,27 @@ public class Utils {
         return myServiceUrl;
     }
 
-    public static String asServiceUrl(String hostname) {
-        return "http://"+hostname+"/esgf-node-manager/node";
+    public static String asServiceUrl(String hostname, boolean secured) {
+        return "http"+(secured ? "s" : "")+"://"+hostname+"/esgf-node-manager/node";
     }
 
+    public static String asServiceUrl(String hostname) { return  asServiceUrl(hostname,false); }
+
+    //NOTE: If there is a point where we want to support running the
+    //node manager on another port that 80 Then we may want to always
+    //consider the port part of the hostname.  In which case we need
+    //to change the regex above for the urlPattern to include the port
+    //in the hostname.  That should do it. Then foohost:80 would be
+    //diff than foohost:8080 (at the moment we only return foohost
+    //regardless of port) 
+    //Affected code would include callers of the ESGConnector...
     public static String asHostname(String serviceUrl) {
         Matcher m = urlPattern.matcher(serviceUrl);
         if(m.find()) return m.group(1);
         return null;
     }
+
+    public static boolean isLegalUrl(String urlCandidate) { return (urlPattern.matcher(urlCandidate)).find(); }
+    public static boolean isLegalServiceUrl(String urlCandidate) { return (serviceUrlPattern.matcher(urlCandidate)).find(); }
 
 }
