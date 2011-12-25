@@ -229,18 +229,17 @@ public class ESGConnector {
     }
 
     //Force peer stubs to be re-generated...
-    public synchronized ESGConnector reset() {
+    public synchronized void reset() {
         log.trace("resetting connector peer stubs...");
         Set<String> serviceHostSet = new HashSet<String>(endpointCache.keySet());
         clearCache(); //yes, a bit of overkill but want to make sure we 'super' force the creation of new stubs!
         for(String serviceHost : serviceHostSet) {
             setEndpoint(serviceHost,true);
         }
-        return this;
     }
 
     //Force peer stubs to be re-generated...
-    public synchronized ESGConnector reset(String serviceHost) { setEndpoint(serviceHost,true); return this; }
+    public synchronized void reset(String serviceHost) { setEndpoint(serviceHost,true); }
     
     public String getServiceUrl() { return this.currentServiceURL; }
     public String getEndpoint() { return this.currentServiceHost; }
