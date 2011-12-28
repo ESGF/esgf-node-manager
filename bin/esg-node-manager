@@ -491,6 +491,7 @@ clean_node_manager_database_subsystem_installation() {
 
     read -p "remove ESG Node Manager database, database subsystem AND DATA? (esgf_node_manager.*) [y/N]: " doit
     if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
+        start_postgress
         if $(psql -U ${postgress_user} esgcet -c "\dt esgf_node_manager.;" | egrep '^\([1-9]* row[s]?\)' >& /dev/null); then
             
             #Call me paranoid but I want some integrity check that this code is what is meant to be straight from the distribution.
