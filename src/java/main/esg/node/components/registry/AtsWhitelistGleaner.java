@@ -70,6 +70,9 @@ import java.io.StringReader;
 import java.util.Properties;
 import javax.xml.transform.stream.StreamSource;
 
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
@@ -89,6 +92,10 @@ public class AtsWhitelistGleaner {
     private String atsWhitelistPath = null;
     private Properties props = null;
     private String defaultLocation = null;
+
+    private static final String typeRegex="(?:User|Guest|Nobody|Root)";
+    private static final Pattern typePattern = Pattern.compile(typeRegex,Pattern.CASE_INSENSITIVE);
+    private final Matcher typeMatcher = typePattern.matcher("");
 
     public AtsWhitelistGleaner() { this(null); }
     public AtsWhitelistGleaner(Properties props) {
@@ -144,10 +151,11 @@ public class AtsWhitelistGleaner {
     */
     public synchronized AtsWhitelistGleaner appendToMyAtsWhitelistFromRegistration(Registration registration) {
         log.trace("Creating my ATS whitelist representation...");
-        log.trace("Registration is ["+registration+"]");
-        try{
+        log.trace("Registration is ["+registration+"]");        try{
+
             AttributeService ats = null; //The Attribute service entry from registration
             Attribute attribute = null;
+            int wheelLatch=0;
             
             //NOTE: Entries stored in the registration are dedup'ed so no worries here ;-)
             int numNodes = registration.getNode().size();
@@ -172,8 +180,10 @@ public class AtsWhitelistGleaner {
                     description = group.getDescription();
 
                     log.trace("gleaning group/attribute: "+type);
-                    if (type.equals("wheel")) {
-                        log.trace("(skipping wheel)");
+                    // Skip over Root, Guest, Nobody, User
+                    typeMatcher.reset(type);
+                    if(typeMatcher.find()) {
+                        log.trace("Skipping "+type);
                         continue;
                     }
 
@@ -181,12 +191,24 @@ public class AtsWhitelistGleaner {
                     attribute.setType(type);
                     attribute.setDescription(description);
 
-                    //These other attributes of 'attribute' are redundant for all groups on this node...
-                    //YES!!! All this gleaning etc, should be done via a database. (next phase).
-                    attribute.setAttributeService(attribServiceEndpoint);
-                    try{
-                        attribute.setRegistrationService(node.getRegistrationService().getEndpoint());
-                    }catch(Throwable t) { t.printStackTrace(); }
+                    if(!type.equals("wheel")) {
+                        //These other attributes of 'attribute' are redundant for all groups on this node...
+                        //YES!!! All this gleaning etc, should be done via a database. (next phase).
+                        attribute.setAttributeService(attribServiceEndpoint);
+                        try{
+                            attribute.setRegistrationService(node.getRegistrationService().getEndpoint());
+                        }catch(Throwable t) { t.printStackTrace(); }
+                    }else{
+                        //Now looking at a wheel group (attribute) entry...
+                        if(wheelLatch > 0) {
+                            log.trace("Already have a wheel entry... only need one");
+                            continue;
+                        }else{
+                            attribute.setDescription("Administrator Group");
+                            attribute.setAttributeService("https://localhost/esgf-security/saml/soap/secure/attributeService.htm");
+                            wheelLatch++;
+                        }
+                    }
                     atss.getAttribute().add(attribute);
                 }
                 atsNodes++;
