@@ -93,9 +93,9 @@ public class AtsWhitelistGleaner {
     private Properties props = null;
     private String defaultLocation = null;
 
-    private static final String typeRegex="(?:User|Guest|Nobody|Root)";
-    private static final Pattern typePattern = Pattern.compile(typeRegex,Pattern.CASE_INSENSITIVE);
-    private final Matcher typeMatcher = typePattern.matcher("");
+    public static final String TYPE_REGEX="(?:User|Guest|Nobody|Root)";
+    public static final Pattern TYPE_PATTERN = Pattern.compile(TYPE_REGEX,Pattern.CASE_INSENSITIVE);
+    private final Matcher typeMatcher = TYPE_PATTERN.matcher("");
 
     public AtsWhitelistGleaner() { this(null); }
     public AtsWhitelistGleaner(Properties props) {

@@ -111,8 +111,18 @@ public class RegistrationGleanerHelperDAO {
         attributeGroupsResultSetHandler = new ResultSetHandler<Map<String,String>>() {
             public Map<String,String> handle(ResultSet rs) throws SQLException {
                 HashMap<String,String> results = new HashMap<String,String>();
+                String name = null;
+                String desc = null;
+                java.util.regex.Matcher typeMatcher = AtsWhitelistGleaner.TYPE_PATTERN.matcher("");
                 while(rs.next()) {
-                    results.put(rs.getString(1),rs.getString(2));
+                    name = rs.getString(1);
+                    desc = rs.getString(2);
+                    typeMatcher.reset(name);
+                    if(typeMatcher.find()) {
+                        log.trace("Skipping "+name);
+                        continue;
+                    }
+                    results.put(name,desc);
                 }
                 return results;
             }
