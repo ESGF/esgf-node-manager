@@ -309,11 +309,6 @@ touch_whitelist_files() {
         touch ${esg_root_dir}/content/las/conf/server/las_servers.xml
         chown ${tomcat_user}:${tomcat_group} ${esg_root_dir}/content/las/conf/server/las_servers.xml && chmod 644 ${esg_root_dir}/content/las/conf/server/las_servers.xml
     fi
-
-    [ ! -f "${esg_config_dir}/esgf_policies.xml" ] && \
-        touch ${esg_config_dir}/esgf_policies{,_static}.xml && \
-        chown ${tomcat_user}:${tomcat_group} ${esg_config_dir}/esgf_policies{,_static}.xml && \
-        chmod 644 ${esg_config_dir}/esgf_policies{,_static}.xml
 }
 
 fetch_shell_launcher() {
