@@ -191,7 +191,7 @@ public class RegistrationGleaner {
         }
 
         //-----------------------------------------------
-        //Derivative xml file generation... (should be refactored, but in brody mode right now)
+        //Derivative xml file generation... (NOTE: should be refactored, but in brody mode right now)
         //-----------------------------------------------
 
         //pull from registry to create las sisters file.

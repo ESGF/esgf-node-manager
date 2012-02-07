@@ -73,6 +73,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import static esg.node.components.registry.NodeTypes.*;
+
 /**
    Description:
    
@@ -89,6 +91,7 @@ public class LasSistersGleaner {
     private String sistersPath = null;
     private Properties props = null;
     private String defaultLocation = null;
+    private ExclusionListReader.ExclusionList exList = null;
 
     public LasSistersGleaner() { this(null); }
     public LasSistersGleaner(Properties props) {
@@ -104,7 +107,7 @@ public class LasSistersGleaner {
                 log.warn("ESGF_HOME environment var not set!");
             }
             sistersPath = props.getProperty("las.xml.config.dir",defaultLocation)+File.separator;
-
+            exList = ExclusionListReader.getInstance().getExclusionList().useType(COMPUTE_BIT);
             servers = new LasServers();
 
         } catch(Exception e) {
@@ -156,7 +159,11 @@ public class LasSistersGleaner {
                 //TODO - put in sanity check for nodeType integrity
                 service = node.getLASService();
                 if (null == service) {
-                    log.trace(node.getShortName()+" does not run an LAS service.");
+                    log.trace(node.getShortName()+" skipping... does not run an LAS service.");
+                    continue;
+                }
+                if(exList.isExcluded(node.getHostname())) {
+                    log.trace(node.getHostname()+" skipping... found in excludes list!!");
                     continue;
                 }
                 sister = new LasServer();

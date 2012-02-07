@@ -74,6 +74,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import static esg.node.components.registry.NodeTypes.*;
+
 /**
    Description:
    
@@ -89,6 +91,7 @@ public class IdpWhitelistGleaner {
     private String idpWhitelistPath = null;
     private Properties props = null;
     private String defaultLocation = null;
+    private ExclusionListReader.ExclusionList exList = null;
 
     public IdpWhitelistGleaner() { this(null); }
     public IdpWhitelistGleaner(Properties props) {
@@ -106,6 +109,7 @@ public class IdpWhitelistGleaner {
                 (new File(idpWhitelistPath)).mkdirs();
             }
                 
+            exList = ExclusionListReader.getInstance().getExclusionList().useType(IDP_BIT);
             idps = new IdpWhitelist();
 
         } catch(Exception e) {
@@ -156,7 +160,11 @@ public class IdpWhitelistGleaner {
                 //TODO - put in sanity check for nodeType integrity
                 idp = node.getOpenIDProvider();
                 if (null == idp) {
-                    log.trace(node.getShortName()+" does not run an OpenIDProvider service.");
+                    log.trace(node.getShortName()+" skipping... does not run an OpenIDProvider service.");
+                    continue;
+                }
+                if(exList.isExcluded(node.getHostname())) {
+                    log.trace(node.getHostname()+" skipping... found in excludes list!!");
                     continue;
                 }
                 idps.getValue().add(idp.getEndpoint());

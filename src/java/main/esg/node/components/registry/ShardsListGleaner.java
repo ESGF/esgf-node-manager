@@ -77,6 +77,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import static esg.node.components.registry.NodeTypes.*;
+
 /**
    Description:
    
@@ -97,6 +99,7 @@ public class ShardsListGleaner {
     private String shardsListPath = null;
     private Properties props = null;
     private String defaultLocation = null;
+    private ExclusionListReader.ExclusionList exList = null;
 
     public ShardsListGleaner() { this(null); }
     public ShardsListGleaner(Properties props) { init(); }
@@ -116,6 +119,7 @@ public class ShardsListGleaner {
                 (new File(shardsListPath)).mkdirs();
             }
                 
+            exList = ExclusionListReader.getInstance().getExclusionList().useType(INDEX_BIT);
             shardlist = new Shards();
             urlMatcher = urlPattern.matcher("");
             
@@ -169,7 +173,11 @@ public class ShardsListGleaner {
                 //TODO - put in sanity check for nodeType integrity
                 indexes = node.getIndexService();
                 if (null == indexes) {
-                    log.trace(node.getShortName()+" does not run an Index service.");
+                    log.trace(node.getShortName()+" skipping... does not run an Index service.");
+                    continue;
+                }
+                if(exList.isExcluded(node.getHostname())) {
+                    log.trace(node.getHostname()+" skipping... found in excludes list!!");
                     continue;
                 }
                 urlMatcher.reset(indexes.getEndpoint());

@@ -295,7 +295,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                         newNodes.add(myList.get(i));
                         log.trace("-- Keeping local entry for (=) "+(myList.get(i)).getHostname());
                     }else {
-                        if( !exList.isExcluded((otherList.get(j)).getHostname()) && peerFilter.isInNetwork(otherList.get(j))) {
+                        if( peerFilter.isInNetwork(otherList.get(j)) && !exList.isExcluded((otherList.get(j)).getHostname()) ) {
                             newNodes.add(otherList.get(j));
                             updatedNodes.add(otherList.get(j));
                             log.trace("-- Updating with remote entry for (=) "+(myList.get(j)).getHostname());
@@ -318,7 +318,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
                         (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
                         removedMap.remove(removedNodeHostname);
-                        if( !exList.isExcluded((otherList.get(j)).getHostname()) && peerFilter.isInNetwork(otherList.get(j))) {
+                        if( peerFilter.isInNetwork(otherList.get(j)) && !exList.isExcluded((otherList.get(j)).getHostname()) ) {
                             newNodes.add(otherList.get(j));
                             updatedNodes.add(otherList.get(j));
                             log.trace("-  Accepting new(er) remote entry for (+) "+(otherList.get(j)).getHostname());
@@ -349,7 +349,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
                     (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
                     removedMap.remove(removedNodeHostname);
-                    if( !exList.isExcluded((otherList.get(j)).getHostname()) && peerFilter.isInNetwork(otherList.get(j))) {
+                    if( peerFilter.isInNetwork(otherList.get(j)) && !exList.isExcluded((otherList.get(j)).getHostname()) ) {
                         newNodes.add(otherList.get(j));
                         updatedNodes.add(otherList.get(j));
                         log.trace("   Adding new(er) remote entry for (++) "+(otherList.get(j)).getHostname());

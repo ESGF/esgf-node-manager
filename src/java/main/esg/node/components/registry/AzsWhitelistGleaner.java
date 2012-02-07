@@ -74,6 +74,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import static esg.node.components.registry.NodeTypes.*;
+
 /**
    Description:
    
@@ -89,6 +91,7 @@ public class AzsWhitelistGleaner {
     private String azsWhitelistPath = null;
     private Properties props = null;
     private String defaultLocation = null;
+    private ExclusionListReader.ExclusionList exList = null;
 
     public AzsWhitelistGleaner() { this(null); }
     public AzsWhitelistGleaner(Properties props) {
@@ -106,6 +109,7 @@ public class AzsWhitelistGleaner {
                 (new File(azsWhitelistPath)).mkdirs();
             }
                 
+            exList = ExclusionListReader.getInstance().getExclusionList().useType(IDP_BIT);
             azss = new AzsWhitelist();
 
         } catch(Exception e) {
@@ -156,7 +160,11 @@ public class AzsWhitelistGleaner {
                 //TODO - put in sanity check for nodeType integrity
                 azs= node.getAuthorizationService();
                 if (null == azs) {
-                    log.trace(node.getShortName()+" does not run an Authorization service.");
+                    log.trace(node.getShortName()+" skipping... does not run an Authorization service.");
+                    continue;
+                }
+                if(exList.isExcluded(node.getHostname())) {
+                    log.trace(node.getHostname()+" skipping... found in excludes list!!");
                     continue;
                 }
                 azss.getValue().add(azs.getEndpoint());

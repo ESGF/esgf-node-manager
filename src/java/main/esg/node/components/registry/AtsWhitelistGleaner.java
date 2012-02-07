@@ -77,6 +77,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
+import static esg.node.components.registry.NodeTypes.*;
+
 /**
    Description:
    
@@ -92,6 +94,7 @@ public class AtsWhitelistGleaner {
     private String atsWhitelistPath = null;
     private Properties props = null;
     private String defaultLocation = null;
+    private ExclusionListReader.ExclusionList exList = null;
 
     public static final String TYPE_REGEX="(?:User|Guest|Nobody|Root)";
     public static final Pattern TYPE_PATTERN = Pattern.compile(TYPE_REGEX,Pattern.CASE_INSENSITIVE);
@@ -113,6 +116,7 @@ public class AtsWhitelistGleaner {
                 (new File(atsWhitelistPath)).mkdirs();
             }
                 
+            exList = ExclusionListReader.getInstance().getExclusionList().useType(IDP_BIT);
             atss = new AtsWhitelist();
 
         } catch(Exception e) {
@@ -165,7 +169,11 @@ public class AtsWhitelistGleaner {
                 //TODO - put in sanity check for nodeType integrity
                 ats = node.getAttributeService();
                 if (null == ats) {
-                    log.trace(node.getShortName()+" does not run an Attribute service.");
+                    log.trace(node.getShortName()+" skipping... does not run an Attribute service.");
+                    continue;
+                }
+                if(exList.isExcluded(node.getHostname())) {
+                    log.trace(node.getHostname()+" skipping... found in excludes list!!");
                     continue;
                 }
                 
