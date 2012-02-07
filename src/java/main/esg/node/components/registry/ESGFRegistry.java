@@ -81,6 +81,8 @@ import esg.node.connection.ESGConnectionManager;
 import esg.node.core.*;
 import esg.common.generated.registration.*;
 
+import static esg.node.components.registry.NodeTypes.*;
+
 /**
    Description:
 
@@ -102,6 +104,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     private NodeHostnameComparator nodecomp = null;
     private long lastDispatchTime = -1L;
     private PeerNetworkFilter peerFilter = null;
+    private ExclusionListReader.ExclusionList exList = null;
 
     public ESGFRegistry(String name) {
         super(name);
@@ -119,6 +122,9 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             processedMap = new HashMap<String,String>();
             removedMap = new HashMap<String,Long>();
             peerFilter = new PeerNetworkFilter(props);
+            if(ExclusionListReader.getInstance().loadExclusionList()) {
+                exList = ExclusionListReader.getInstance().getExclusionList().useType(ALL_BIT);
+            }
         }catch(java.io.IOException e) {
             System.out.println("Damn ESGFRegistry can't fire up... :-(");
             log.error(e);

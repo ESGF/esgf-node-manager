@@ -214,7 +214,7 @@ public class ExclusionListReader {
 
         ExclusionListReader elr = ExclusionListReader.getInstance();
         elr.loadExclusionList();
-        ExclusionList exList = elr.getExclusionList().useType(INDEX_BIT);
+        ExclusionListReader.ExclusionList exList = elr.getExclusionList().useType(INDEX_BIT);
         
         boolean result = exList.isExcluded(args[0]);
         System.out.println("test: "+result);
