@@ -108,13 +108,12 @@ public class ExclusionListReader {
         synchronized(lock) {
             excludePatTypeMap.clear();
             log.info("loading excusion list "+exclusionListFilename_);
-            System.out.println("loading excusion list "+exclusionListFilename_);
             
             if (null != (configDir = System.getenv().get("ESGF_HOME"))) {
                 configDir = configDir+File.separator+"config";
                 try {
                     File excludesFile = new File(configDir+File.separator+exclusionListFilename_);
-                    System.out.println(excludesFile);
+                    log.trace(excludesFile);
                     if(excludesFile.exists()) {
                         BufferedReader in = new BufferedReader(new FileReader(excludesFile));
                         try{
@@ -122,7 +121,6 @@ public class ExclusionListReader {
                             while(null != (entry = in.readLine())) {
                                 if (entry.isEmpty()) continue;
                                 log.info("exclusion entry = ["+entry+"]");
-                                System.out.println("exclusion entry = "+entry);
                                 String[] keyVal = entry.trim().split("\\s|[=]",2);
                                 String key =keyVal[0];
                                 String val = null;
@@ -140,7 +138,7 @@ public class ExclusionListReader {
                             if(null != in) in.close();
                         }
                     }else{
-                        System.out.println("Sorry can't find the file "+excludesFile.getAbsolutePath());
+                        log.warn("Sorry can't find the file "+excludesFile.getAbsolutePath());
                     }
                 }catch(Throwable t) {
                     log.error(t);
@@ -159,7 +157,7 @@ public class ExclusionListReader {
     //NOTE: Yes, I know this would have been easier using enums... I'll have to read that chapter again.
     //For now I am going with what I know.  Then can come back and make sexy with enums.
     private void addExclusionEntry(String entry, String types) {
-        System.out.println("Examining entry: ["+entry+"] Types: ["+types+"]");
+        log.trace("Examining entry: ["+entry+"] Types: ["+types+"]");
         int mask=0;
         for(String type : types.split("(\\s+|[,|+])")) {
             log.trace("Type = "+type);
@@ -171,7 +169,7 @@ public class ExclusionListReader {
             else { log.trace("unmatched type: "+type); }
         }
         if (mask == 0) mask=ALL_BIT;
-        System.out.println("map entry: ["+entry+"] -> ["+mask+"]");
+        log.trace("map entry: ["+entry+"] -> ["+mask+"]");
         excludePatTypeMap.put(Pattern.compile(entry),mask);
         mask=0;
     }
@@ -193,11 +191,11 @@ public class ExclusionListReader {
                 Matcher matcher = null;
                 for(Pattern pat : ExclusionListReader.this.excludePatTypeMap.keySet()) {
                     if(pat.matcher(input).find()) {
-                        System.out.println("Matched on Regex");
+                        log.info("Matched ["+input+"] on Regex");
                         int entryType = ((int)ExclusionListReader.this.excludePatTypeMap.get(pat));
-                        System.out.println("Testing types: entry:"+entryType+" & "+type+" != 0 ?");
+                        log.trace("Testing types: entry:"+entryType+" & "+type+" != 0 ?");
                         if (( entryType & type) != 0) {
-                            System.out.println("GOT A HIT!!!");
+                            log.trace("GOT A HIT!!!");
                             return true;
                         }
                     }
@@ -215,13 +213,11 @@ public class ExclusionListReader {
         System.out.println("Starting Exlcusion List Reader");
 
         ExclusionListReader elr = ExclusionListReader.getInstance();
-        if(elr.loadExclusionList()) { System.out.println("loaded"); }
+        elr.loadExclusionList();
         ExclusionList exList = elr.getExclusionList().useType(INDEX_BIT);
         
         boolean result = exList.isExcluded(args[0]);
         System.out.println("test: "+result);
-        elr.loadExclusionList();
-        exList.isExcluded(args[0]);
 
         System.exit(0);
     }
