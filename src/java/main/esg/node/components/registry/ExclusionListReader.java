@@ -60,8 +60,9 @@ import java.io.File;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -81,63 +82,77 @@ public class ExclusionListReader {
     
     private static final Log log = LogFactory.getLog(ExclusionListReader.class);
     private static final String exclusionListFilename = "esgf_excludes.txt";
-    private Map<Pattern,Integer> excludePatTypeMap = new HashMap<Pattern,Integer>();
+    private Map<Pattern,Integer> excludePatTypeMap = new ConcurrentHashMap<Pattern,Integer>();
     
     private String configDir = null;
     private String nodeTypeValue = "-1"; //TODO: yes, yes... turn this into enums strings in xsd - later.
 
-    public ExclusionListReader() { log.info("ExclusionListReader..."); }
+    private Object lock = new Object();
+
+    //---- Singleton ------
+    private static ExclusionListReader instance = null;
+
+    public static ExclusionListReader getInstance() {
+        return (null == instance) ? instance = new ExclusionListReader() : instance;
+    }
+
+    private ExclusionListReader() { log.info("Instantiating ExclusionListReader..."); }
+    //---- Singleton ------
     
     public boolean loadExclusionList() {
         return this.loadExclusionList(exclusionListFilename);
     }
     
     boolean loadExclusionList(String exclusionListFilename_) {
-        log.info("loading excusion list "+exclusionListFilename_);
-        System.out.println("loading excusion list "+exclusionListFilename_);
         boolean ret=false;
-
-        if (null != (configDir = System.getenv().get("ESGF_HOME"))) {
-            configDir = configDir+File.separator+"config";
-            try {
-                File excludesFile = new File(configDir+File.separator+exclusionListFilename_);
-                System.out.println(excludesFile);
-                if(excludesFile.exists()) {
-                    BufferedReader in = new BufferedReader(new FileReader(excludesFile));
-                    try{
-                        String entry = null;
-                        while(null != (entry = in.readLine())) {
-                            log.info("exclusion entry = ["+entry+"]");
-                            System.out.println("exclusion entry = "+entry);
-                            String[] keyVal = entry.trim().split("\\s|[=]",2);
-                            String key =keyVal[0];
-                            String val = null;
-                            if(keyVal.length == 1) {
-                                val = "ALL";
-                            }else{
-                                val = keyVal[1];
+        synchronized(lock) {
+            excludePatTypeMap.clear();
+            log.info("loading excusion list "+exclusionListFilename_);
+            System.out.println("loading excusion list "+exclusionListFilename_);
+            
+            if (null != (configDir = System.getenv().get("ESGF_HOME"))) {
+                configDir = configDir+File.separator+"config";
+                try {
+                    File excludesFile = new File(configDir+File.separator+exclusionListFilename_);
+                    System.out.println(excludesFile);
+                    if(excludesFile.exists()) {
+                        BufferedReader in = new BufferedReader(new FileReader(excludesFile));
+                        try{
+                            String entry = null;
+                            while(null != (entry = in.readLine())) {
+                                if (entry.isEmpty()) continue;
+                                log.info("exclusion entry = ["+entry+"]");
+                                System.out.println("exclusion entry = "+entry);
+                                String[] keyVal = entry.trim().split("\\s|[=]",2);
+                                String key =keyVal[0];
+                                String val = null;
+                                if(keyVal.length == 1) {
+                                    val = "ALL";
+                                }else{
+                                    val = keyVal[1];
+                                }
+                                addExclusionEntry(key,val);
                             }
-                            addExclusionEntry(key,val);
+                        }catch(java.io.IOException ex) {
+                            log.error(ex);
+                            ex.printStackTrace();
+                        }finally {
+                            if(null != in) in.close();
                         }
-                    }catch(java.io.IOException ex) {
-                        log.error(ex);
-                        ex.printStackTrace();
-                    }finally {
-                        if(null != in) in.close();
+                    }else{
+                        System.out.println("Sorry can't find the file "+excludesFile.getAbsolutePath());
                     }
-                }else{
-                    System.out.println("Sorry can't find the file "+excludesFile.getAbsolutePath());
+                }catch(Throwable t) {
+                    log.error(t);
+                    t.printStackTrace();
                 }
-            }catch(Throwable t) {
-                log.error(t);
-                t.printStackTrace();
+                ret=true;
             }
-            ret=true;
         }
         return ret;
     }
-
-
+    
+    
     //-----------------
     // Construction Method
     //-----------------
@@ -147,13 +162,13 @@ public class ExclusionListReader {
         System.out.println("Examining entry: ["+entry+"] Types: ["+types+"]");
         int mask=0;
         for(String type : types.split("(\\s+|[,|+])")) {
-            System.out.println("Type = "+type);
+            log.trace("Type = "+type);
             if (type.equalsIgnoreCase("ALL"))     { mask += ALL_BIT; }
             else if (type.equalsIgnoreCase("DATA"))    { mask += DATA_BIT; }
             else if (type.equalsIgnoreCase("INDEX"))   { mask += INDEX_BIT; }
             else if (type.equalsIgnoreCase("IDP"))     { mask += IDP_BIT; }
             else if (type.equalsIgnoreCase("COMPUTE")) { mask += COMPUTE_BIT; }
-            else { System.out.println("unmatched type: "+type); }
+            else { log.trace("unmatched type: "+type); }
         }
         if (mask == 0) mask=ALL_BIT;
         System.out.println("map entry: ["+entry+"] -> ["+mask+"]");
@@ -161,23 +176,53 @@ public class ExclusionListReader {
         mask=0;
     }
 
-    public ExclusionList getExclusionList() { return new ExclusionList(excludePatTypeMap); }
+    public ExclusionList getExclusionList() { return new ExclusionList(); }
     
+    public class ExclusionList {
+        
+        //-----------------
+        // Query Method
+        //-----------------
+        int type = 0;
+
+        public ExclusionList useType(Integer type) { this.type=type; return this; }
+        public boolean isExcluded(String input) { return this.isExcluded(input,this.type); }
+        public boolean isExcluded(String input, Integer type) {
+            synchronized(ExclusionListReader.this.lock) {
+                System.out.println("Testing ["+input+", "+type+"]");
+                Matcher matcher = null;
+                for(Pattern pat : ExclusionListReader.this.excludePatTypeMap.keySet()) {
+                    if(pat.matcher(input).find()) {
+                        System.out.println("Matched on Regex");
+                        int entryType = ((int)ExclusionListReader.this.excludePatTypeMap.get(pat));
+                        System.out.println("Testing types: entry:"+entryType+" & "+type+" != 0 ?");
+                        if (( entryType & type) != 0) {
+                            System.out.println("GOT A HIT!!!");
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        
+    }
     
     //----------------- 
     // Main
     //-----------------
     public static void main (String[] args) {
         System.out.println("Starting Exlcusion List Reader");
-        ExclusionListReader elr = new ExclusionListReader();
-        System.out.println("okay");
-        if(elr.loadExclusionList()) {
-            System.out.println("okay2");
-            System.out.println("loaded");
-            System.out.println("okay3");
-        }
-        System.out.println("okay4");
-        elr.getExclusionList().isExcluded("foo",INDEX_BIT);
+
+        ExclusionListReader elr = ExclusionListReader.getInstance();
+        if(elr.loadExclusionList()) { System.out.println("loaded"); }
+        ExclusionList exList = elr.getExclusionList().useType(INDEX_BIT);
+        
+        boolean result = exList.isExcluded(args[0]);
+        System.out.println("test: "+result);
+        elr.loadExclusionList();
+        exList.isExcluded(args[0]);
+
         System.exit(0);
     }
     
