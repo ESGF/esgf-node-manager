@@ -187,8 +187,7 @@ public class ExclusionListReader {
         public boolean isExcluded(String input) { return this.isExcluded(input,this.type); }
         public boolean isExcluded(String input, Integer type) {
             synchronized(ExclusionListReader.this.lock) {
-                System.out.println("Testing ["+input+", "+type+"]");
-                Matcher matcher = null;
+                log.trace("Testing ["+input+", "+type+"]");
                 for(Pattern pat : ExclusionListReader.this.excludePatTypeMap.keySet()) {
                     if(pat.matcher(input).find()) {
                         log.info("Matched ["+input+"] on Regex");
@@ -217,6 +216,11 @@ public class ExclusionListReader {
         ExclusionListReader.ExclusionList exList = elr.getExclusionList().useType(INDEX_BIT);
         
         boolean result = exList.isExcluded(args[0]);
+        if(result) {
+            System.out.println("EXCLUDED: "+args[0]);
+        }else{
+            System.out.println("INCLUDED: "+args[0]);
+        }
         System.out.println("test: "+result);
 
         System.exit(0);
