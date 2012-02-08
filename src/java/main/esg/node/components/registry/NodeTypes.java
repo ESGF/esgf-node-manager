@@ -73,6 +73,7 @@ public class NodeTypes {
     public static final int IDP_BIT=16;
     public static final int COMPUTE_BIT=32;
     public static final int ALL_BIT = DATA_BIT + INDEX_BIT + IDP_BIT + COMPUTE_BIT;
+    public static final int PRIVATE_BIT = 128;
     //-------------------------------------------------------
 
     private NodeTypes() {}

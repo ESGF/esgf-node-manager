@@ -123,7 +123,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             removedMap = new HashMap<String,Long>();
             peerFilter = new PeerNetworkFilter(props);
             if(ExclusionListReader.getInstance().loadExclusionList()) {
-                exList = ExclusionListReader.getInstance().getExclusionList().useType(ALL_BIT);
+                exList = ExclusionListReader.getInstance().getExclusionList().useType(PRIVATE_BIT);
             }
         }catch(java.io.IOException e) {
             System.out.println("Damn ESGFRegistry can't fire up... :-(");

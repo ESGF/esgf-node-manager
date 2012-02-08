@@ -125,7 +125,7 @@ public class ExclusionListReader {
                                 String key =keyVal[0];
                                 String val = null;
                                 if(keyVal.length == 1) {
-                                    val = "ALL";
+                                    val = "PRIVATE";
                                 }else{
                                     val = keyVal[1];
                                 }
@@ -166,9 +166,10 @@ public class ExclusionListReader {
             else if (type.equalsIgnoreCase("INDEX"))   { mask += INDEX_BIT; }
             else if (type.equalsIgnoreCase("IDP"))     { mask += IDP_BIT; }
             else if (type.equalsIgnoreCase("COMPUTE")) { mask += COMPUTE_BIT; }
+            else if (type.equalsIgnoreCase("PRIVATE")) { mask += PRIVATE_BIT; }
             else { log.trace("unmatched type: "+type); }
         }
-        if (mask == 0) mask=ALL_BIT;
+        if (mask == 0) mask=PRIVATE_BIT;
         log.trace("map entry: ["+entry+"] -> ["+mask+"]");
         excludePatTypeMap.put(Pattern.compile(entry),mask);
         mask=0;
