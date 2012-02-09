@@ -120,6 +120,7 @@ public class ExclusionListReader {
                             String entry = null;
                             while(null != (entry = in.readLine())) {
                                 if (entry.isEmpty()) continue;
+                                if (entry.matches("\\s*#.*")) continue;
                                 log.info("exclusion entry = ["+entry+"]");
                                 String[] keyVal = entry.trim().split("\\s|[=]",2);
                                 String key =keyVal[0];
@@ -196,6 +197,7 @@ public class ExclusionListReader {
                         log.trace("Testing types: entry:"+entryType+" & "+type+" != 0 ?");
                         if (( entryType & type) != 0) {
                             log.trace("GOT A HIT!!!");
+                            log.info("**Excluding Peer: "+input+" ("+type+")");
                             return true;
                         }
                     }
