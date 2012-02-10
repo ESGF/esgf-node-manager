@@ -87,7 +87,6 @@ public class ExclusionListReader {
     private String configDir = null;
     private String nodeTypeValue = "-1"; //TODO: yes, yes... turn this into enums strings in xsd - later.
 
-    private Object lock = new Object();
 
     //---- Singleton ------
     private static ExclusionListReader instance = null;
@@ -105,7 +104,6 @@ public class ExclusionListReader {
     
     boolean loadExclusionList(String exclusionListFilename_) {
         boolean ret=false;
-        synchronized(lock) {
             excludePatTypeMap.clear();
             log.info("loading excusion list "+exclusionListFilename_);
             
@@ -147,7 +145,6 @@ public class ExclusionListReader {
                 }
                 ret=true;
             }
-        }
         return ret;
     }
     
@@ -188,7 +185,6 @@ public class ExclusionListReader {
         public ExclusionList useType(Integer type) { this.type=type; return this; }
         public boolean isExcluded(String input) { return this.isExcluded(input,this.type); }
         public boolean isExcluded(String input, Integer type) {
-            synchronized(ExclusionListReader.this.lock) {
                 log.trace("Testing ["+input+", "+type+"]");
                 for(Pattern pat : ExclusionListReader.this.excludePatTypeMap.keySet()) {
                     if(pat.matcher(input).find()) {
@@ -202,7 +198,6 @@ public class ExclusionListReader {
                         }
                     }
                 }
-            }
             return false;
         }
         
