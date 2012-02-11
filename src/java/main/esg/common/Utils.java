@@ -64,6 +64,9 @@ package esg.common;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
+import java.net.Socket;
+import java.net.InetSocketAddress;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
@@ -99,6 +102,21 @@ public class Utils {
         return nodeID.toString();
     }
 
+    public static boolean poke(String host, int port) { return poke(host,port,200); }
+    public static boolean poke(String host, int port, int timeout) {
+        boolean ret = false;
+        Socket socket = null;
+        try{
+            (socket = new Socket()).connect(new InetSocketAddress(host,port),timeout);
+            socket.close();
+            ret=true;
+        }catch(Throwable t) {
+            log.error(t.getMessage());
+        }finally {
+            try{ socket.close(); } catch (Throwable t) {}
+        }
+        return ret;
+    }
 
     public static String hashSum(String plaintext) {
         try {
