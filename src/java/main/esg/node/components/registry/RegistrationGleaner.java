@@ -592,6 +592,7 @@ public class RegistrationGleaner {
                         (new File(props.getProperty("index.app.home"))).exists() ) {
                         IndexService idx = new IndexService();
                         idx.setEndpoint(endpoint);
+                        idx.setPort(props.getProperty("index_slave_port", "8983"));
                         node.setIndexService(idx);
                     }
                 }catch(Throwable t) {

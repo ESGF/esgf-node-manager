@@ -78,6 +78,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
 import static esg.node.components.registry.NodeTypes.*;
+import static esg.common.Utils.*;
 
 /**
    Description:
@@ -158,6 +159,9 @@ public class ShardsListGleaner {
        creates a local representation of this node's registration.
     */
     public synchronized ShardsListGleaner appendToMyShardsListFromRegistration(Registration registration) {
+        return appendToMyShardsListFromRegistration(registration, true);
+    }
+    public synchronized ShardsListGleaner appendToMyShardsListFromRegistration(Registration registration, boolean pruning) {
         log.trace("Creating my SHARDS list representation...");
         log.trace("Registration is ["+registration+"]");
         try{
@@ -180,10 +184,16 @@ public class ShardsListGleaner {
                     log.trace(node.getHostname()+" skipping... found in excludes list!!");
                     continue;
                 }
+                if(pruning && !poke(node.getHostname(),
+                                    Integer.parseInt(indexes.getPort()), //standard search port 8983
+                                    Integer.parseInt(props.getProperty("node.poke.timeout","200")) ) ) { //timeout in millis
+                    log.trace(node.getHostname()+" skipping... could not connect to search port!!");
+                    continue;
+                }
                 urlMatcher.reset(indexes.getEndpoint());
                 if(urlMatcher.find()) {
                     endpointBase = urlMatcher.group(1);
-                    if(null == (port = urlMatcher.group(2))) port = ":8983";
+                    port = ":"+indexes.getPort();
                     shardlist.getValue().add(endpointBase+port+"/solr");
                     indexNodes++;
                 }

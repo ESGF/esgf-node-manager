@@ -53,6 +53,7 @@ That does make it more wordy, and require and reconstruction. -->
     <xsd:element name="IndexService">
         <xsd:complexType>
             <xsd:attributeGroup ref="tns:ServiceAttributes"/>
+            <xsd:attribute name="port" type="xsd:string"/>
         </xsd:complexType>
     </xsd:element>
 
