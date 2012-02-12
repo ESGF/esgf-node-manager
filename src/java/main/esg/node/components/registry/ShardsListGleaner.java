@@ -161,8 +161,8 @@ public class ShardsListGleaner {
     public synchronized ShardsListGleaner appendToMyShardsListFromRegistration(Registration registration) {
         return appendToMyShardsListFromRegistration(registration, true);
     }
-    public synchronized ShardsListGleaner appendToMyShardsListFromRegistration(Registration registration, boolean pruning) {
-        log.trace("Creating my SHARDS list representation...");
+    public synchronized ShardsListGleaner appendToMyShardsListFromRegistration(Registration registration, boolean doChecks) {
+        log.trace("Creating my SHARDS list representation... "+(doChecks ? "" : "NOT ")+"doing port checks");
         log.trace("Registration is ["+registration+"]");
         try{
             IndexService indexes = null; //The Authorization service entry from registration
@@ -184,7 +184,7 @@ public class ShardsListGleaner {
                     log.trace(node.getHostname()+" skipping... found in excludes list!!");
                     continue;
                 }
-                if(pruning && !poke(node.getHostname(),
+                if(doChecks && !poke(node.getHostname(),
                                     Integer.parseInt(indexes.getPort()), //standard search port 8983
                                     Integer.parseInt(props.getProperty("node.poke.timeout","200")) ) ) { //timeout in millis
                     log.trace(node.getHostname()+" skipping... could not connect to search port!!");

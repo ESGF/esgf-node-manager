@@ -534,7 +534,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     if(gleaner.removeNode(peerHostname)) {
                         processedMap.remove(peerUrl);
                         removedMap.put(peerHostname,event.getTimeStamp());
-                        gleaner.saveRegistration();
+                        gleaner.saveRegistration(true); //NOTE: When a peer goes away do full check when constructing registration
                         sendOutNewRegistryState(gleaner);
                     }
                 }

@@ -171,8 +171,11 @@ public class RegistrationGleaner {
     public Registration getMyRegistration() { return myRegistration; }
     public String getMyChecksum() { return myChecksum; }
 
-    public synchronized boolean saveRegistration() { sync(); return saveRegistration(myRegistration); }
-    public synchronized boolean saveRegistration(Registration registration) {
+    public synchronized boolean saveRegistration() { return saveRegistration(myRegistration,false); }
+    public synchronized boolean saveRegistration(boolean doChecks) { return saveRegistration(myRegistration,doChecks); }
+    public synchronized boolean saveRegistration(Registration registration) { return saveRegistration(myRegistration,false); }
+    public synchronized boolean saveRegistration(Registration registration, boolean doChecks) {
+        sync();
         boolean success = false;
         if (registration == null) {
             log.error("Registration is null ? ["+registration+"]");
@@ -255,7 +258,7 @@ public class RegistrationGleaner {
             ShardsListGleaner shardsListGleaner = new ShardsListGleaner(props);
             log.trace("registration="+registration);
             log.trace("shardsListGleaner="+shardsListGleaner);
-            shardsListGleaner.appendToMyShardsListFromRegistration(registration).saveShardsList();
+            shardsListGleaner.appendToMyShardsListFromRegistration(registration,doChecks).saveShardsList();
         }catch(Exception e) {
             log.error(e);
             log.trace("props="+props);
