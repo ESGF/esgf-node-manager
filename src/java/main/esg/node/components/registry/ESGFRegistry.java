@@ -412,8 +412,12 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 log.warn("Unknown Event Type: ["+eventType+"]... blindly forwarding to next state");
                 break;
             }
-            if(handled) lastDispatchTime = (new Date()).getTime();
+        }else if(event instanceof ESGCallableEvent) {
+                log.trace("ConnMgr: got Callable event: "+event);
+                ((ESGCallableEvent)event).doCall(this);
+                handled=true;
         }
+        if(handled) lastDispatchTime = (new Date()).getTime();
         return handled;
     }
     

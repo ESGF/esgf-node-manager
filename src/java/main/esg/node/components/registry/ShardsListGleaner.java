@@ -159,7 +159,7 @@ public class ShardsListGleaner {
        creates a local representation of this node's registration.
     */
     public synchronized ShardsListGleaner appendToMyShardsListFromRegistration(Registration registration) {
-        return appendToMyShardsListFromRegistration(registration, true);
+        return appendToMyShardsListFromRegistration(registration, false);
     }
     public synchronized ShardsListGleaner appendToMyShardsListFromRegistration(Registration registration, boolean doChecks) {
         log.trace("Creating my SHARDS list representation... "+(doChecks ? "" : "NOT ")+"doing port checks");
