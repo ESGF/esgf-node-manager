@@ -66,7 +66,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.impl.*;
 
 
-public abstract class ESGCallableEvent extends ESGEvent {
+public abstract class ESGCallableEvent extends ESGEvent implements ESGCallable {
 
     protected static Log log = LogFactory.getLog(ESGCallableEvent.class);
 
@@ -77,9 +77,7 @@ public abstract class ESGCallableEvent extends ESGEvent {
     public ESGCallableEvent(Object source, String message) { super(source,null,message); }
     public ESGCallableEvent(Object source, Object data, String message) { super(source, data, message); }
 
-    protected abstract boolean call(DataNodeComponent contextComponent);
-
-    //publi decorator method around call
+    //public decorator method around call method defined in ESGCallable
     public boolean doCall(DataNodeComponent contextComponent) { return this.call(contextComponent); }
     
 }
