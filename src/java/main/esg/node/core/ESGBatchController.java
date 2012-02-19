@@ -113,6 +113,7 @@ public class ESGBatchController implements ESGListener {
 	//calling the singular version of the function...  (don't have
 	//to go through doing extra collection work for no reason).
 	if(batchSize == 1) {
+        log.trace("(passing event ("+event+") to handling component --> ["+myName+":"+handler+"] (batchSize="+batchSize+"))...");
 	    handler.handleESGQueuedEvent(event);
 	    return;
 	}

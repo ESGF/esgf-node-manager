@@ -499,7 +499,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     //Event handling...
     //--------------------------------------------
 
-    public synchronized boolean handleESGQueuedEvent(ESGEvent event) {
+    public boolean handleESGQueuedEvent(ESGEvent event) {
         log.trace("["+getName()+"]:["+this.getClass().getName()+"]: Got A QueuedEvent!!!!: "+event);
 
         //--------------------
@@ -583,7 +583,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                     break;
                 }
             }else if(event instanceof ESGCallableEvent) {
-                log.trace("ConnMgr: got Callable event: "+event);
+                log.info("ConnMgr: got Callable event: "+event);
                 ((ESGCallableEvent)event).doCall(this);
             }
         }

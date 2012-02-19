@@ -90,7 +90,7 @@ public class ESGQueue {
 		    ESGBatchController bController) {
 	this(handler,
 	     new ThreadPoolExecutor(2,20,10L,TimeUnit.MILLISECONDS,
-				    new LinkedBlockingQueue<Runnable>(100),
+				    new LinkedBlockingQueue<Runnable>(1000),
 				    new ESGGroupedThreadFactory(handler.getName()),
 				    new ESGRejectPolicy(handler.getName())),
 	     qController,
@@ -127,7 +127,7 @@ public class ESGQueue {
     
     //Events are put on the eventQueue (BlockingQueue)
     public void enqueueEvent(final ESGEvent event) {
-	log.trace(": Enqueuing event - "+event+" for component: "+handler.getName());
+        log.trace("Enqueuing event onto ["+getName()+"] - "+event+" for component: "+handler.getName());
 	pool.execute(new Runnable() {
 		public void run() {
 		    //TODO: make this actually a call to the batch

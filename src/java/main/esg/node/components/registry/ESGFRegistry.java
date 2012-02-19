@@ -519,8 +519,8 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         //I am now ignoring but I am in Brody mode now -gavin
         if((esgEvent instanceof ESGSystemEvent) &&
            (((ESGSystemEvent)esgEvent).getEventType() == ESGSystemEvent.ALL_LOADED) ) {
-            log.trace("I must have missed you in the load sequence CONN_MGR... I got you now");
-            addESGQueueListener(getDataNodeManager().getComponent("CONN_MGR"));
+            //log.trace("I must have missed you in the load sequence CONN_MGR... I got you now");
+            //addESGQueueListener(getDataNodeManager().getComponent("CONN_MGR"));
             startRegistry();
         }
 
@@ -557,6 +557,12 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             }
         }
 
+    }
+
+    public boolean saveRegistration() { return this.saveRegistration(false); }
+    public boolean saveRegistration(boolean doCheck) {
+        log.info("calling saveRegistration from ESGFRegistry (doCheck = "+doCheck+")");
+        return gleaner.saveRegistration(doCheck);
     }
 
     //------------------------------------------------------------

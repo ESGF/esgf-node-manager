@@ -84,6 +84,7 @@ import esg.node.core.BasicPeer;
 import esg.node.core.ESGSystemEvent;
 import esg.node.core.ESGCallableEvent;
 import esg.node.core.ESGCallableFutureEvent;
+import esg.node.core.ESGFPruneEvent;
 import esg.node.connection.ESGConnectionManager;
 import esg.common.service.ESGRemoteEvent;
 import esg.common.Utils;
@@ -174,30 +175,11 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
         //NOTE: This extra bit of gymnastics is to provide a way to
         //create a synchronous call around an asynchronous activity.
         //So we create an event that knows how to call us back
-        ESGCallableFutureEvent<Boolean> evt = new ESGCallableFutureEvent<Boolean>(this, Boolean.valueOf(false), "Local Prune Message...") {
-            public boolean call(DataNodeComponent contextComponent) {
-                boolean handled = false;
-                try{
-                    log.trace("inside \"call\"... ");
-                    if(contextComponent.getName().equals("CONN_MGR")) {
-                        log.info("calling prune on contextComponent");
-                        boolean pruneRet = false;
-                        setData( pruneRet=((ESGConnectionManager)contextComponent).prune() );
-                        log.info("value returned from prune: "+pruneRet);
-                        return true;
-                    }else{
-                        log.warn("I am a callable event and found myself in an unexpected place!! : "+contextComponent.getName());
-                    }
-                }finally {
-                    log.info("Prune Callable Event's call method called and completed...");
-                }
-                return false;
-            }
-        };
+        ESGFPruneEvent evt = new ESGFPruneEvent(this,Boolean.FALSE,"Prune Event Message");
 
         if(connMgr != null) {
-            log.info("Prune Callable Event posting to ConnMgr's event queue");
-            connMgr.getESGEventQueue().enqueueEvent(evt);
+            log.info("Prune Callable Event posting to "+evt.getRouteAsList().get(0)+"'s event queue");
+            enqueueESGEvent(evt.getRouteAsList().get(0),evt);
             try{
                 ret = evt.get(); //Block here until there is something to get...
             }catch(InterruptedException e) {

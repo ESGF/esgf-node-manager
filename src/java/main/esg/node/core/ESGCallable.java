@@ -19,9 +19,9 @@
  *   All rights reserved. This file is part of the:                         *
  *   Earth System Grid (ESG) Data Node Software Stack, Version 1.0          *
  *                                                                          *
- *   For details, see http://esgf.org/esg-node/                    *
+ *   For details, see http://esgf.org/esg-node/                             *
  *   Please also read this link                                             *
- *    http://esgf.org/LICENSE                                      *
+ *    http://esgf.org/LICENSE                                               *
  *                                                                          *
  *   * Redistribution and use in source and binary forms, with or           *
  *   without modification, are permitted provided that the following        *
@@ -58,26 +58,13 @@
 /**
    Description:
 
+   Simple interface for use with in the general call (command) pattern
+
 **/
 package esg.node.core;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.commons.logging.impl.*;
+public interface ESGCallable {
 
-
-public abstract class ESGCallableEvent extends ESGEvent implements ESGCallable {
-
-    protected static Log log = LogFactory.getLog(ESGCallableEvent.class);
-
-    private Object data=null;
-    private String message="";
-
-    public ESGCallableEvent(Object source) { super(source,null,null); }
-    public ESGCallableEvent(Object source, String message) { super(source,null,message); }
-    public ESGCallableEvent(Object source, Object data, String message) { super(source, data, message); }
-
-    //public decorator method around "call" method defined in ESGCallable
-    public boolean doCall(DataNodeComponent contextComponent) { return this.call(contextComponent); }
+    public boolean call(DataNodeComponent contextComponent);
 
 }
