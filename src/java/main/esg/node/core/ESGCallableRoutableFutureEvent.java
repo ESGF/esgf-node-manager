@@ -91,7 +91,7 @@ public class ESGCallableRoutableFutureEvent<T> extends ESGCallableFutureEvent<T>
     public ESGCallableRoutableFutureEvent(Object source, Object data, String message) { super(source, data, message); }
 
     public void setRoute(String... componentNames) {
-        if (null == routeList) { routeList = new ArrayList<String>(); }
+        if (null == routeList) { routeList = new ArrayList<String>(componentNames.length); }
         for(String componentName : componentNames) {
             routeList.add(componentName);
         }
@@ -110,7 +110,7 @@ public class ESGCallableRoutableFutureEvent<T> extends ESGCallableFutureEvent<T>
         return sb.toString();
     }
     public List<String> getRouteAsList() { return routeList; }
-    public int getNumHops() { return routeList.size(); }
+    public int getNumHops() { return (routeList != null ? routeList.size() : 0); }
 
     public void associateCallable(String componentName, ESGCallable esgCallable) {
         if (routeTable == null) {routeTable = new HashMap<String,ESGCallable>();}

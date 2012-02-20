@@ -173,9 +173,8 @@ public class RegistrationGleaner {
 
     public synchronized boolean saveRegistration() { return saveRegistration(myRegistration,false); }
     public synchronized boolean saveRegistration(boolean doChecks) { return saveRegistration(myRegistration,doChecks); }
-    public synchronized boolean saveRegistration(Registration registration) { return saveRegistration(myRegistration,false); }
+    public synchronized boolean saveRegistration(Registration registration) { sync(); return saveRegistration(myRegistration,false); }
     public synchronized boolean saveRegistration(Registration registration, boolean doChecks) {
-        sync();
         boolean success = false;
         if (registration == null) {
             log.error("Registration is null ? ["+registration+"]");
