@@ -232,7 +232,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         log.trace("connection registration delay:  "+delay+" sec");
         log.trace("connection registration period: "+period+" sec");
 	
-        Timer timer = new Timer("Reg-Repost-Timer");
+        Timer timer = new Timer("Reg-Repush-Timer");
         
         //This will transition from active map to inactive map
         timer.schedule(new TimerTask() {
