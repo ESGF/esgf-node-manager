@@ -202,10 +202,12 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
 
     //Ingress event handling from remote 'client'
     public void handleESGRemoteEvent(ESGRemoteEvent evt_) {
+        log.trace("DataNode service got \"handleESGRemoteEvent\" call with event: ["+evt_+"]");
         if(!evt_.checkTTL()) {
             log.trace("Received event has invalid TTL: ["+evt_.getTTL()+"] from "+evt_.getSource()+" dropping on floor...");
             return;
         }else {
+            log.trace("Decrementing event's TTL...");
             evt_.decTTL();
         }
         
@@ -216,7 +218,6 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
             return;
         }
         
-        log.trace("DataNode service got \"handleESGRemoteEvent\" call with event: ["+evt_+"]");
         if(!amAvailable()) {
             log.warn("Dropping ingress notification event on the floor, I am NOT available. ["+evt_+"]");
         }
