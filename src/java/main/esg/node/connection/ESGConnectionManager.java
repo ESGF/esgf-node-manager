@@ -84,9 +84,10 @@ import esg.common.Utils;
 import esg.common.util.ESGFProperties;
 import esg.common.service.ESGRemoteEvent;
 import esg.node.core.ESGPeerListener;
+import esg.node.core.AbstractDataNodeManager;
 import esg.node.core.ESGDataNodeManager;
 import esg.node.core.AbstractDataNodeComponent;
-import esg.node.core.AbstractDataNodeManager;
+import esg.node.core.DataNodeComponent;
 import esg.node.core.ESGEvent;
 import esg.node.core.ESGEventHelper;
 import esg.node.core.ESGJoinEvent;
@@ -94,6 +95,7 @@ import esg.node.core.ESGPeerEvent;
 import esg.node.core.ESGPeer;
 import esg.node.core.BasicPeer;
 import esg.node.core.ESGCallableEvent;
+import esg.node.core.ESGCallableFutureEvent;
 
 import esg.common.generated.registration.*;
 import esg.node.components.registry.RegistryUpdateDigest;
@@ -233,14 +235,34 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         Timer timer = new Timer("Reg-Repost-Timer");
         
         //This will transition from active map to inactive map
-        timer.schedule(new TimerTask() { 
+        timer.schedule(new TimerTask() {
                 public final void run() {
-                    log.debug("(Timer) Re-Pushing My Last Registry State");
-                    sendOutRegistryState();
+                    log.debug("(Timer) Re-Pushing My Last Registry State (Event)");
+                    ESGConnectionManager.this.getESGEventQueue().enqueueEvent(
+                                     new ESGCallableFutureEvent<Boolean>(ESGConnectionManager.this,
+                                                                         Boolean.valueOf(false),
+                                                                         "Registration Re-push Event") {
+                                         public boolean call(DataNodeComponent contextComponent) {
+                                             log.trace("Registration Re-push \"Call\"'ed...");
+                                             boolean handled = false;
+                                             try{
+                                                 //Note: since "Boolean" generic, setData needs to take a value of that type
+                                                 //"handled" plays *two* roles. 1) It is the Data that is being retrieved and stored
+                                                 //by whatever process is coded (in this case calling sendOutRegistryState()).
+                                                 //2) It is also setting the return value for this "call" method being implemented
+                                                 //that indicates if this call was successfully handled.  The former has its type
+                                                 //dictated by the generic.  The latter is always a boolean.
+                                                 setData(handled=((ESGConnectionManager)contextComponent).sendOutRegistryState());
+                                             }finally{
+                                                 log.info("Registration Re-push completed ["+handled+"]");
+                                             }
+                                             return handled;
+                                         }
+                                     });
                 }
             },delay*1000,period*1000);
     }
-    
+
 
     //We will consider this communications closed (essentially making
     //this unavailable for ingress communication) if there are no
@@ -295,7 +317,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     
     //Cached last registry data and checksum in lastRud.
     //Send out the same info to another random pair of neighbors.
-    private synchronized boolean sendOutRegistryState() {
+    private boolean sendOutRegistryState() {
         //Bootstrap condition...
         if(lastRud == null && defaultPeer != null) {
             //Damnit, I didn't want this dependency..!!!
