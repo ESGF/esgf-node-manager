@@ -109,7 +109,6 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     public ESGFRegistry(String name) {
         super(name);
         log.debug("Instantiating ESGFRegistry...");
-
     }
 
     public void init() {

@@ -114,14 +114,13 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 
     public ESGConnectionManager(String name) {
         super(name);
-        log.info("ESGConnectionManager instantiated...");
-        peers = Collections.synchronizedMap(new HashMap<String,ESGPeer>());
-        unavailablePeers = Collections.synchronizedMap(new HashMap<String,ESGPeer>());
-        init();
+        log.info("Instantiating ESGConnectionManager...");
     }
     
     //Bootstrap the rest of the subsystems... (ESGDataNodeServiceImpl really bootstraps)
     public void init() {
+        log.info("Initializing ESGFConnectionManager...");
+
         //NOTE:
         //Just to make sure we have these guys if we decide to re-register.
         //since we did such a good job cleaning things out with we unregister.
@@ -134,7 +133,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             periodicallyPingToPeers();
             periodicallyRegisterToPeers();
         }catch(java.io.IOException e) {
-            System.out.println("Damn, ESGConnectionManager can't fire up... :-(");
+            System.out.println("Damn, ESGConnectionManager, can't fire up... :-(");
             log.error(e);
         }
 
