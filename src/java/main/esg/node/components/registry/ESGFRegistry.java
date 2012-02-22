@@ -412,7 +412,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 break;
             }
         }else if(event instanceof ESGCallableEvent) {
-                log.trace("ConnMgr: got Callable event: "+event);
+                log.trace("Registry: got Callable event: "+event);
                 ((ESGCallableEvent)event).doCall(this);
                 handled=true;
         }
