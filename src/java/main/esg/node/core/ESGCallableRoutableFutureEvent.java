@@ -131,7 +131,7 @@ public class ESGCallableRoutableFutureEvent<T> extends ESGCallableFutureEvent<T>
             String nextComponentName = null;
             String currentComponentName = null;
             if ((currentComponentName = routeList.get(0)).equals(contextComponent.getName())) {
-                log.info("Calling callable on "+currentComponentName);
+                log.debug("Calling callable on "+currentComponentName);
                 handled &= (routeTable.get(currentComponentName)).call(contextComponent);
 
                 routeList.remove(0); //pop this component off queue
@@ -139,7 +139,7 @@ public class ESGCallableRoutableFutureEvent<T> extends ESGCallableFutureEvent<T>
                 //check if I have exhausted the route table... if so set result and return
                 //------------------------------------------------
                 if(routeList.isEmpty()) {
-                    log.info("Traversed all components - setting result and returning");
+                    log.debug("Traversed all components - setting result and returning");
                     //countdown the latch and release thread blocked on get() and return data <T>
                     setResult((T)Boolean.valueOf(handled));
                     clear();
@@ -150,7 +150,7 @@ public class ESGCallableRoutableFutureEvent<T> extends ESGCallableFutureEvent<T>
                 //put myself on the queue of the next component...
                 //------------------------------------------------
                 nextComponentName = routeList.get(0);
-                log.info("Jumping to the next component in route: "+nextComponentName);
+                log.debug("Jumping to the next component in route: "+nextComponentName);
                 contextComponent.getDataNodeManager().getComponent(nextComponentName).getESGEventQueue().enqueueEvent(this);
             }else{
                 log.error("Component mismatch: [ "+currentComponentName+" != "+contextComponent.getName()+" ]");

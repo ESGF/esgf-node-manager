@@ -96,28 +96,28 @@ public class ESGFPruneEvent extends ESGCallableRoutableFutureEvent<Boolean> {
     public ESGFPruneEvent(Object source, String message) { this(source,null,message); }
     public ESGFPruneEvent(Object source, Object data, String message) {
         super(source, data, message);
-        log.info("Instantiating Prune Event...");
+        log.trace("Instantiating Prune Event...");
         init();
     }
 
     public void init() {
-        log.info("Initializing Prune Event...");
+        log.debug("Initializing Prune Event...");
         associateCallable("CONN_MGR",new ESGCallableEvent(source, "Pruning Event for Peer Connection Stubs") {
                 public boolean call(DataNodeComponent contextComponent) {
                     try{
                         log.trace("inside \"call\"... CONN_MGR");
-                        log.info("making call on context component: "+contextComponent);
+                        log.debug("making call on context component: "+contextComponent);
                         if(contextComponent.getName().equals("CONN_MGR")) {
-                            log.info("calling \"prune()\" on contextComponent CONN_MGR");
+                            log.trace("calling \"prune()\" on contextComponent CONN_MGR");
                             boolean ret = false;
                             ESGFPruneEvent.this.setData( ret=((esg.node.connection.ESGConnectionManager)contextComponent).prune() );
-                            log.info("value returned from prune: "+ret);
+                            log.trace("value returned from prune: "+ret);
                             return ret;
                         }else{
                             log.warn("I am a callable event and found myself in an unexpected place!! : "+contextComponent.getName());
                         }
                     }finally {
-                        log.info("Prune Callable Event's call method called and completed...(ConnectionManager)");
+                        log.trace("Prune Callable Event's call method called and completed...(ConnectionManager)");
                     }
                     return false;
                 }
@@ -127,20 +127,20 @@ public class ESGFPruneEvent extends ESGCallableRoutableFutureEvent<Boolean> {
                 public boolean call(DataNodeComponent contextComponent) {
                     try{
                         log.trace("inside \"call\"... for REGISTRY");
-                        log.info("making call on context component: "+contextComponent);
+                        log.debug("making call on context component: "+contextComponent);
                         if(contextComponent.getName().equals("REGISTRY")) {
-                            log.info("calling \"saveRegistration(true)\" on contextComponent REGISTRY");
+                            log.trace("calling \"saveRegistration(true)\" on contextComponent REGISTRY");
                             boolean ret = (Boolean)ESGFPruneEvent.this.getData(); //expected value from previous stage (CONN_MGR) above
-                            log.info("Data gotten from previous hop is: "+ret);
+                            log.trace("Data gotten from previous hop is: "+ret);
                             ret &= ((esg.node.components.registry.ESGFRegistry)contextComponent).saveRegistration(true);
                             setData(ret);
-                            log.info("AND'ed value returned from saveRegistration( doCheck = true): "+ret);
+                            log.trace("AND'ed value returned from saveRegistration( doCheck = true): "+ret);
                             return ret;
                         }else{
                             log.warn("I am a callable event and found myself in an unexpected place!! : "+contextComponent.getName());
                         }
                     }finally {
-                        log.info("Prune Callable Event's call method called and completed... (REGISTRY)");
+                        log.trace("Prune Callable Event's call method called and completed... (REGISTRY)");
                     }
                     return false;
                 }
@@ -148,6 +148,6 @@ public class ESGFPruneEvent extends ESGCallableRoutableFutureEvent<Boolean> {
 
         //This determines the route (order)
         setRoute("CONN_MGR","REGISTRY");
-        log.info("Route: "+getRouteAsString()+" ("+getNumHops()+" ~ "+getAssociatedComponentNames().size()+")");
+        log.debug("Route: "+getRouteAsString()+" ("+getNumHops()+" ~ "+getAssociatedComponentNames().size()+")");
     }
 }

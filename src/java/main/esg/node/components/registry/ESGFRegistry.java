@@ -468,7 +468,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
 
             Set<Node> updatedNodes = mergeNodes(myRegistration,peerRegistration);
 
-            log.info("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
+            log.debug("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
             processedMap.put(sourceServiceURL, payloadChecksum);
 
             if(updatedNodes.isEmpty()) {
@@ -560,7 +560,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
 
     public boolean saveRegistration() { return this.saveRegistration(false); }
     public boolean saveRegistration(boolean doCheck) {
-        log.info("calling saveRegistration from ESGFRegistry (doCheck = "+doCheck+")");
+        log.trace("calling saveRegistration from ESGFRegistry (doCheck = "+doCheck+")");
         return gleaner.saveRegistration(doCheck);
     }
 
