@@ -106,10 +106,11 @@ public class ESGFPruneEvent extends ESGCallableRoutableFutureEvent<Boolean> {
                 public boolean call(DataNodeComponent contextComponent) {
                     try{
                         log.trace("inside \"call\"... CONN_MGR");
+                        log.info("making call on context component: "+contextComponent);
                         if(contextComponent.getName().equals("CONN_MGR")) {
-                            log.info("calling \"prune\" on contextComponent CONN_MGR");
+                            log.info("calling \"prune()\" on contextComponent CONN_MGR");
                             boolean ret = false;
-                            setData( ret=((esg.node.connection.ESGConnectionManager)contextComponent).prune() );
+                            ESGFPruneEvent.this.setData( ret=((esg.node.connection.ESGConnectionManager)contextComponent).prune() );
                             log.info("value returned from prune: "+ret);
                             return ret;
                         }else{
@@ -126,12 +127,14 @@ public class ESGFPruneEvent extends ESGCallableRoutableFutureEvent<Boolean> {
                 public boolean call(DataNodeComponent contextComponent) {
                     try{
                         log.trace("inside \"call\"... for REGISTRY");
+                        log.info("making call on context component: "+contextComponent);
                         if(contextComponent.getName().equals("REGISTRY")) {
-                            log.info("calling \"prune\" on contextComponent REGISTRY");
-                            boolean ret = (Boolean)getData(); //expected value from previous stage (CONN_MGR) above
+                            log.info("calling \"saveRegistration(true)\" on contextComponent REGISTRY");
+                            boolean ret = (Boolean)ESGFPruneEvent.this.getData(); //expected value from previous stage (CONN_MGR) above
+                            log.info("Data gotten from previous hop is: "+ret);
                             ret &= ((esg.node.components.registry.ESGFRegistry)contextComponent).saveRegistration(true);
                             setData(ret);
-                            log.info("value returned from pruning: "+ret);
+                            log.info("AND'ed value returned from saveRegistration( doCheck = true): "+ret);
                             return ret;
                         }else{
                             log.warn("I am a callable event and found myself in an unexpected place!! : "+contextComponent.getName());
