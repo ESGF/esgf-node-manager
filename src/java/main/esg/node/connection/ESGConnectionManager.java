@@ -595,20 +595,24 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 int eventType = event.getRemoteEvent().getMessageType();
                 switch (eventType) {
                 case ESGRemoteEvent.REGISTER:
-                    log.trace("Forwarding REGISTER event to next random peers");
+                    if(log.isTraceEnabled() && event.getRemoteEvent().getTTL() > 0) {
+                        log.trace("Forwarding REGISTER event to next random peers");
+                    }
                     log.trace(event);
                     return dispatchToRandomPeers(event.getRemoteEvent());
                 case ESGRemoteEvent.UNREGISTER:
-                    log.trace("Forwarding UNREGISTER event to next random peers");
+                    if(log.isTraceEnabled() && event.getRemoteEvent().getTTL() > 0) {
+                        log.trace("Forwarding UNREGISTER event to next random peers");
+                    }
                     log.trace(event);
                     return dispatchToRandomPeers(event.getRemoteEvent());
                 default:
-                    log.info("UnHandled event type: ["+event.getRemoteEvent().getMessageType()+"] from "+event.getRemoteEvent().getSource());
+                    log.warn("UnHandled event type: ["+event.getRemoteEvent().getMessageType()+"] from "+event.getRemoteEvent().getSource());
                     log.trace(event);
                     break;
                 }
             }else if(event instanceof ESGCallableEvent) {
-                log.info("ConnMgr: got Callable event: "+event);
+                log.trace("ConnMgr: got Callable event: "+event);
                 ((ESGCallableEvent)event).doCall(this);
             }
         }
