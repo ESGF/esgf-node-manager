@@ -581,7 +581,11 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 }
             }
             lastRud=rud;
-            return sendOutNewRegistryState(rud.xmlDocument(), rud.xmlChecksum());  //dispatch method
+            if(rud != null) {
+                return sendOutNewRegistryState(rud.xmlDocument(), rud.xmlChecksum());  //dispatch method
+            }else {
+                log.warn("Sorry rud is: ["+rud+"] will not attempt to send out registration");
+            }
         }else{
             //--------------------
             //Routing of events...
