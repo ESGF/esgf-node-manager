@@ -980,7 +980,7 @@ Builds the project via ant (obviously).
 
     <exec executable="bash" dir="${orig.dir}">
       <arg value="-c"/>
-      <arg value="perl -i -ne 'print unless /passw/' $(find . | xargs grep -i passw | sed -n 's/\(^[^:]*\).*/\1/p')"/>
+      <arg value="perl -i -ne 'print unless /pass/' $(find . | xargs grep -i passw | sed -n 's/\(^[^:]*\).*/\1/p')"/>
     </exec>
 
     <exec executable="rsync" dir="${basedir}">
