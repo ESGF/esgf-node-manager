@@ -93,7 +93,7 @@ public class ESGSimpleComponentTest {
     @Before
     public void setup() { }
 
-    @Test
+    @Ignore
     public void testEventPassingThroughComponents() {
         System.out.println("TEST SIMPLE COMPONENTS");
 
@@ -202,7 +202,7 @@ public class ESGSimpleComponentTest {
         System.out.println("Test Node Manager has "+testDnm.numOfComponents()+"components registered");
     }
 
-    @Test
+    @Ignore
     public void testMessagePassing() { }
 
     @After

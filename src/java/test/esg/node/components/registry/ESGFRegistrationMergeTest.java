@@ -85,7 +85,7 @@ public class ESGFRegistrationMergeTest {
         log.trace("Instantiating Test Case for ESGFRegistrationMergeTest");
     }
 
-    @BeforeClass
+    //@BeforeClass
     public static void initialSetup() {
         registry = new ESGFRegistry("Test Registry");
         registry.init();
@@ -93,7 +93,7 @@ public class ESGFRegistrationMergeTest {
         registrationB = new Registration();
     }
 
-    @Before
+    //@Before
     public void setup() { 
         Node node1 = new Node();
         node1.setHostname("test_host_1");
@@ -133,16 +133,16 @@ public class ESGFRegistrationMergeTest {
         registrationA.getNode().add(node4);
     }
 
-    @Test
+    @Ignore
     public void testRegistrationMerging() {
         Set<Node> updatedNodes = registry.mergeNodes(registrationA,registrationB);
         
     }
 
-    @After
+    //@After
     public void tearDown() { }
 
-    @AfterClass
+    //@AfterClass
     public static void finalTearDown() {
         //gc niceness...
         registry = null;
