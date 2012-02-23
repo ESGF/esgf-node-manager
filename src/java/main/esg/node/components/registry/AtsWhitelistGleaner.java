@@ -213,7 +213,7 @@ public class AtsWhitelistGleaner {
                             continue;
                         }else{
                             attribute.setDescription("Administrator Group");
-                            attribute.setAttributeService("https://localhost/esgf-security/saml/soap/secure/attributeService.htm");
+                            attribute.setAttributeService("https://localhost/esgf-idp/saml/soap/secure/attributeService.htm");
                             wheelLatch++;
                         }
                     }
