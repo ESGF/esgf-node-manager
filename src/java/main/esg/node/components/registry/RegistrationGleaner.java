@@ -123,7 +123,7 @@ public class RegistrationGleaner {
         } catch(Exception e) {
             log.error(e);
         }
-        registrationPath = props.getProperty("node.manager.app.home",".")+File.separator;
+        registrationPath = props.getProperty("node.manager.service.app.home",".")+File.separator;
         readMyNodeType();
     }
 
@@ -392,8 +392,8 @@ public class RegistrationGleaner {
             node.setCA(ca);
 
             try{
-                if( (null != (endpoint=props.getProperty("node.manager.endpoint"))) &&
-                    (new File(props.getProperty("node.manager.app.home"))).exists() ) {
+                if( (null != (endpoint=props.getProperty("node.manager.service.endpoint"))) &&
+                    (new File(props.getProperty("node.manager.service.app.home"))).exists() ) {
                     NodeManager nodeManager = new NodeManager();
                     nodeManager.setEndpoint(endpoint);
                     node.setNodeManager(nodeManager);
@@ -433,8 +433,8 @@ public class RegistrationGleaner {
             //************************************************
             if ((nodeTypeInt & DATA_BIT) != 0) {
                 try{
-                    if( (null != (endpoint=props.getProperty("thredds.endpoint"))) &&
-                        (new File(props.getProperty("thredds.app.home"))).exists() ) {
+                    if( (null != (endpoint=props.getProperty("thredds.service.endpoint"))) &&
+                        (new File(props.getProperty("thredds.service.app.home"))).exists() ) {
                         ThreddsService tds = new ThreddsService();
                         tds.setEndpoint(endpoint);
                         node.setThreddsService(tds);
@@ -444,11 +444,23 @@ public class RegistrationGleaner {
                 }
 
                 try{
-                    if( (null != (endpoint=props.getProperty("relyingparty.endpoint"))) &&
-                        (new File(props.getProperty("relyingparty.app.home"))).exists() ) {
+                    if( (null != (endpoint=props.getProperty("orp.service.endpoint"))) &&
+                        (new File(props.getProperty("orp.service.app.home"))).exists() ) {
                         RelyingPartyService orp = new RelyingPartyService();
                         orp.setEndpoint(endpoint);
                         node.setRelyingPartyService(orp);
+                    }
+                }catch(Throwable t) {
+                    log.error(t);
+                }
+
+                //security (authorization service)
+                try{
+                    if( (null != (endpoint=props.getProperty("orp.security.authorization.service.endpoint"))) &&
+                        (new File(props.getProperty("orp.security.authorization.service.app.home"))).exists() ) {
+                        AuthorizationService authzSvc = new AuthorizationService();
+                        authzSvc.setEndpoint(endpoint);
+                        node.setAuthorizationService(authzSvc);
                     }
                 }catch(Throwable t) {
                     log.error(t);
@@ -498,8 +510,8 @@ public class RegistrationGleaner {
             //************************************************
             if ((nodeTypeInt & COMPUTE_BIT) != 0) {
                 try{
-                    if( (null != (endpoint=props.getProperty("las.endpoint"))) &&
-                        (new File(props.getProperty("las.app.home"))).exists() ) {
+                    if( (null != (endpoint=props.getProperty("las.service.endpoint"))) &&
+                        (new File(props.getProperty("las.service.app.home"))).exists() ) {
                         LASService las = new LASService();
                         log.trace("Setting LAS endpoint to "+endpoint);
                         las.setEndpoint(endpoint);
@@ -521,7 +533,7 @@ public class RegistrationGleaner {
                 //esgf-idp
                 try{
                     if( (null != (endpoint=props.getProperty("idp.service.endpoint"))) &&
-                        (new File(props.getProperty("idp.app.home"))).exists() ) {
+                        (new File(props.getProperty("idp.service.app.home"))).exists() ) {
                         OpenIDProvider openid = new OpenIDProvider();
                         openid.setEndpoint(endpoint);
                         node.setOpenIDProvider(openid);
@@ -530,22 +542,10 @@ public class RegistrationGleaner {
                     log.error(t);
                 }
 
-                //esgf-security
+                //security (attribute service)
                 try{
-                    if( (null != (endpoint=props.getProperty("security.authz.service.endpoint"))) &&
-                        (new File(props.getProperty("security.app.home"))).exists() ) {
-                        AuthorizationService authzSvc = new AuthorizationService();
-                        authzSvc.setEndpoint(endpoint);
-                        node.setAuthorizationService(authzSvc);
-                    }
-                }catch(Throwable t) {
-                    log.error(t);
-                }
-
-                //esgf-security
-                try{
-                    if( (null != (endpoint=props.getProperty("security.attribute.service.endpoint"))) &&
-                        (new File(props.getProperty("security.app.home"))).exists() ) {
+                    if( (null != (endpoint=props.getProperty("idp.security.attribute.service.endpoint"))) &&
+                        (new File(props.getProperty("idp.security.attribute.service.app.home"))).exists() ) {
                         AttributeService attrSvc = new AttributeService();
                         attrSvc.setEndpoint(endpoint);
                         loadAttributeServiceGroups(attrSvc);
@@ -555,10 +555,10 @@ public class RegistrationGleaner {
                     log.error(t);
                 }
 
-                //esgf-security
+                //security (registration service)
                 try{
-                    if( (null != (endpoint=props.getProperty("security.registration.service.endpoint"))) &&
-                        (new File(props.getProperty("security.app.home"))).exists() ) {
+                    if( (null != (endpoint=props.getProperty("idp.security.registration.service.endpoint"))) &&
+                        (new File(props.getProperty("idp.security.registration.service.app.home"))).exists() ) {
                         RegistrationService regSvc = new RegistrationService();
                         regSvc.setEndpoint(endpoint);
                         node.setRegistrationService(regSvc);
@@ -573,7 +573,7 @@ public class RegistrationGleaner {
 
                 try{
                     if( (null != (endpoint=props.getProperty("myproxy.endpoint"))) &&
-                        (new File(props.getProperty("myproxy.app.home"))).exists() ) { //zoiks
+                        (new File(props.getProperty("myproxy.app.home"))).exists() ) {
                         MyProxyService mproxy = new MyProxyService();
                         mproxy.setEndpoint(endpoint);
                         mproxy.setDn(props.getProperty("mproxy.dn"));
@@ -590,8 +590,8 @@ public class RegistrationGleaner {
             //************************************************
             if ((nodeTypeInt & INDEX_BIT) != 0) {
                 try{
-                    if( (null != (endpoint=props.getProperty("index.endpoint"))) &&
-                        (new File(props.getProperty("index.app.home"))).exists() ) {
+                    if( (null != (endpoint=props.getProperty("index.service.endpoint"))) &&
+                        (new File(props.getProperty("index.service.app.home"))).exists() ) {
                         IndexService idx = new IndexService();
                         idx.setEndpoint(endpoint);
                         idx.setPort(props.getProperty("index.slave.port", "8983"));
@@ -621,7 +621,7 @@ public class RegistrationGleaner {
                 //esgf-web-fe
                 try{
                     if( (null != (endpoint=props.getProperty("web.fe.service.endpoint"))) &&
-                        (new File(props.getProperty("web.fe.app.home"))).exists() ) {
+                        (new File(props.getProperty("web.fe.service.app.home"))).exists() ) {
                         FrontEnd webfe = new FrontEnd();
                         webfe.setEndpoint(endpoint);
                         node.setFrontEnd(webfe);

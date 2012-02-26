@@ -111,9 +111,9 @@ init() {
     node_dist_url=${esg_dist_url}/esgf-node-manager/esgf-node-manager-${esgf_node_manager_version}.tar.gz
     node_manager_app_context_root=esgf-node-manager
 
-    get_property node_manager_app_home ${tomcat_install_dir}/webapps/${node_manager_app_context_root}
-    write_as_property node_manager_app_home
-    write_as_property node_manager_endpoint "http://${esgf_host}/${node_manager_app_context_root}/node"
+    get_property node_manager_service_app_home ${tomcat_install_dir}/webapps/${node_manager_app_context_root}
+    write_as_property node_manager_service_app_home
+    write_as_property node_manager_service_endpoint "http://${esgf_host}/${node_manager_app_context_root}/node"
 
 
     #Database information....
@@ -163,7 +163,7 @@ setup_node_manager() {
     local default="Y"
     ((force_install)) && default="N"
     local dosetup
-    if [ -d ${node_manager_app_home} ]; then 
+    if [ -d ${node_manager_service_app_home} ]; then 
         echo "Detected an existing node manager installation..."
         read -p "Do you want to continue with node manager installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
         [ -z "${dosetup}" ] && dosetup=${default}
@@ -179,8 +179,8 @@ setup_node_manager() {
         read -p "Do you want to make a back up of the existing distribution [${node_manager_app_context_root}]?? [Y/n] " dobackup
         [ -z "${dobackup}" ] && dobackup=${default}
         if [ "${dobackup}" = "Y" ] || [ "${dobackup}" = "y" ]; then
-            echo "Creating a backup archive of this web application [$node_manager_app_home]"
-            backup ${node_manager_app_home}
+            echo "Creating a backup archive of this web application [$node_manager_service_app_home]"
+            backup ${node_manager_service_app_home}
         fi
 
         echo
@@ -235,11 +235,11 @@ setup_node_manager() {
     #make room for new install
     if (( force_install )) ; then
         echo "Removing Previous Installation of the ESGF Node Manager Services..."
-        [ -d "${node_manager_app_home}" ] && rm -rf ${node_manager_app_home} || echo "WARNING: Strange, can't locate previous install @ ${node_manager_app_home}"
+        [ -d "${node_manager_service_app_home}" ] && rm -rf ${node_manager_service_app_home} || echo "WARNING: Strange, can't locate previous install @ ${node_manager_service_app_home}"
     fi
 
-    mkdir -p ${node_manager_app_home}
-    cd ${node_manager_app_home}
+    mkdir -p ${node_manager_service_app_home}
+    cd ${node_manager_service_app_home}
 
 
     #----------------------------
@@ -261,8 +261,8 @@ setup_node_manager() {
     pushd WEB-INF/classes >& /dev/null
     cat ${fetch_file}.tmpl >> ${config_file}
 
-    chown -R ${tomcat_user} ${node_manager_app_home}
-    chgrp -R ${tomcat_group} ${node_manager_app_home}
+    chown -R ${tomcat_user} ${node_manager_service_app_home}
+    chgrp -R ${tomcat_group} ${node_manager_service_app_home}
     unset fetch_file
     popd >& /dev/null
     #----------------------------
@@ -360,7 +360,7 @@ EOF
 }
 
 write_node_manager_install_log() {
-    echo "$(date ${date_format}) webapp:esgf-node-manager=${esgf_node_manager_version} ${node_manager_app_home}" >> ${install_manifest}
+    echo "$(date ${date_format}) webapp:esgf-node-manager=${esgf_node_manager_version} ${node_manager_service_app_home}" >> ${install_manifest}
     dedup ${install_manifest}
     return 0
 }
@@ -466,19 +466,21 @@ write_node_manager_db_install_log() {
 clean_node_manager_webapp_subsystem() {
     init
     local doit="N"
-    if [ -e ${node_manager_app_home} ]; then
-        read -p "remove ESG Node Manager web service? (${node_manager_app_home}) [y/N]: " doit
+    if [ -e ${node_manager_service_app_home} ]; then
+        read -p "remove ESG Node Manager web service? (${node_manager_service_app_home}) [y/N]: " doit
         if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
-            echo "removing ${node_manager_app_home}"
-            if [ -n ${node_manager_app_home} ] ; then 
-                rm -rf ${node_manager_app_home}
-                [ $? != 0 ] && echo "ERROR: Unable to remove ${node_manager_app_home}" && return 1
+            echo "removing ${node_manager_service_app_home}"
+            if [ -n ${node_manager_service_app_home} ] ; then 
+                rm -rf ${node_manager_service_app_home}
+                [ $? != 0 ] && echo "ERROR: Unable to remove ${node_manager_service_app_home}" && return 1
                 perl -n -i -e'print unless m!webapp:esgf-node-manager!' ${install_manifest}
-                remove_property node_manager_app_home
-                remove_property node_manager_endpoint
             fi
         fi
-    fi 
+    fi
+    if [ ! -e ${node_manager_service_app_home} ]; then
+        remove_property node_manager_service_app_home
+        remove_property node_manager_service_endpoint
+    fi    
     return 0
 }
 
