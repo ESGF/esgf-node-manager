@@ -184,10 +184,17 @@ public class ShardsListGleaner {
                     log.trace(node.getHostname()+" skipping... found in excludes list!!");
                     continue;
                 }
-                if(doChecks && !poke(node.getHostname(),
-                                    Integer.parseInt(indexes.getPort()), //standard search port 8983
-                                    Integer.parseInt(props.getProperty("node.poke.timeout","200")) ) ) { //timeout in millis
-                    log.trace(node.getHostname()+" skipping... could not connect to search port!!");
+                try{
+                    if(doChecks && !poke(node.getHostname(),
+                                         Integer.parseInt(indexes.getPort()), //standard search port 8983
+                                         Integer.parseInt(props.getProperty("node.poke.timeout","200")) ) ) { //timeout in millis
+                        log.trace(node.getHostname()+" skipping... could not connect to search port!!");
+                        continue;
+                    }
+                }catch(Exception e) {
+                    log.error(e);
+                    e.printStackTrace();
+                    if(log.isTraceEnabled()) e.printStackTrace();
                     continue;
                 }
                 urlMatcher.reset(indexes.getEndpoint());
