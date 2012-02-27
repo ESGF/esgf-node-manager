@@ -232,12 +232,10 @@ setup_node_manager() {
     node_war_file=${trimmed_name}.war
     echo "node_war_file = "${node_war_file}
 
-    #make room for new install
-    if (( force_install )) ; then
-        echo "Removing Previous Installation of the ESGF Node Manager Services..."
-        [ -d "${node_manager_service_app_home}" ] && rm -rf ${node_manager_service_app_home} || echo "WARNING: Strange, can't locate previous install @ ${node_manager_service_app_home}"
-    fi
-
+    #----------------------------
+    #make room for new INSTALL
+    ((upgrade == 0)) && set_aside_web_app ${node_manager_service_app_home}
+    #----------------------------
     mkdir -p ${node_manager_service_app_home}
     cd ${node_manager_service_app_home}
 
@@ -253,6 +251,8 @@ setup_node_manager() {
 
     echo "Expanding war ${node_war_file} in $(pwd)"
     $JAVA_HOME/bin/jar xf ${node_war_file}
+    local ret=$?
+    ((upgrade == 0)) && set_aside_web_app_cleanup ${node_manager_service_app_home} ${ret}
     
     
     #----------------------------
