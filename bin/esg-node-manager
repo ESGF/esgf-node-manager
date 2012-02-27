@@ -251,9 +251,9 @@ setup_node_manager() {
 
     echo "Expanding war ${node_war_file} in $(pwd)"
     $JAVA_HOME/bin/jar xf ${node_war_file}
-    local ret=$?
-    ((upgrade == 0)) && set_aside_web_app_cleanup ${node_manager_service_app_home} ${ret}
-    
+    local _ret=$?
+    ((upgrade == 0)) && set_aside_web_app_cleanup ${node_manager_service_app_home} ${_ret}
+    unset _ret
     
     #----------------------------
     #Property file fetching and token replacement...
