@@ -288,8 +288,9 @@ setup_node_manager() {
 
     #setup the ROOT app's index.html to redirct to the esgf-node-manager's index page
     #(function implementation inherited from esg-node script)
-    set_redirect ${node_manager_app_context_root}
+    [ -e ${tomcat_install_dir}/webapps/esgf-web-fe ] && $(grep -q esgf-web-fe ${tomcat_install_dir}/webapps/ROOT/index.html) || set_redirect ${node_manager_app_context_root}
 
+    #old distribution migration code... (esg-node was usurped by esgf-node-manager)
     [ -d ${tomcat_install_dir}/webapps/esg-node ] && echo -n "Removing old esg-node webapp (${tomcat_install_dir}/webapps/esg-node)... " && rm -rf ${tomcat_install_dir}/webapps/esg-node && echo "[OK]"
 
     fetch_shell_launcher
