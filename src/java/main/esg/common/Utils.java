@@ -76,7 +76,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Utils {
 
     private static final Log log = LogFactory.getLog(Utils.class);
-    
+
     private static AtomicLong msgCounter = new AtomicLong(0);
     private static String myHostname = null;
     private static String myServiceUrl = null;
@@ -86,6 +86,8 @@ public class Utils {
     private static final Pattern serviceUrlPattern = Pattern.compile(serviceUrlRegex,Pattern.CASE_INSENSITIVE);
     private static QuickHash quickHash = null;
 
+    //For version compare methods...
+    private static final Pattern versionPattern = Pattern.compile("[v.-]([0-9]*)");
 
     public static long nextSeq() { return msgCounter.getAndIncrement(); }
 
@@ -122,7 +124,7 @@ public class Utils {
         try {
             if(quickHash == null) quickHash = new QuickHash();
             return quickHash.sum(plaintext);
-        }catch(Throwable t) { 
+        }catch(Throwable t) {
             System.out.println(t.getMessage());
             return null;
         }
@@ -157,7 +159,7 @@ public class Utils {
     //to change the regex above for the urlPattern to include the port
     //in the hostname.  That should do it. Then foohost:80 would be
     //diff than foohost:8080 (at the moment we only return foohost
-    //regardless of port) 
+    //regardless of port)
     //Affected code would include callers of the ESGConnector...
     public static String asHostname(String serviceUrl) {
         Matcher m = urlPattern.matcher(serviceUrl);
@@ -168,12 +170,79 @@ public class Utils {
     public static boolean isLegalUrl(String urlCandidate) { return (urlPattern.matcher(urlCandidate)).find(); }
     public static boolean isLegalServiceUrl(String urlCandidate) { return (serviceUrlPattern.matcher(urlCandidate)).find(); }
 
+
+    //------------------------------------------------------------------------------------
+    //Util version string comparison functions...
+    //------------------------------------------------------------------------------------
+
     /**
-       Takes two version strings of the form v#.#.#and compares them.
-       @param candidate version string
-       @param reference version 
+       Compares two version strings and returns comparator compatible
+       return values indicating relationship between the versions.
+       This uses the Util.versionPattern regex to parse pattern values
+       expected in the form v#.#.# (hyphens are also allowed as
+       delimiters).
+
+       @param candidate the first version value to compare
+       @param reference the second version value to compare
+       @throws InvalideVersionStringException runtime exception thrown when a value cannot be numerically parsed.
+       @return 1 if candidate > reference; -1 if candidate < reference; 0 if candidate = refernece;
      */
     public static int versionCompare(String candidate, String reference) throws esg.common.InvalidVersionStringException {
-        return 0;
+        return versionCompare(candidate, versionPattern.matcher(candidate),
+                              reference, versionPattern.matcher(reference));
     }
+
+    /**
+       In an attempt to be a bit more efficient.  If there is a lot of
+       comparing that needs to be done it is better to pass in
+       matchers, rather than have the matchers be instantiated by the
+       Pattern every time a comparison is done.  Matchers are not
+       thread safe therefore this method is NOT thread safe.  So be
+       aware.  If in doubt call the other version of this method.
+
+       @param candidate the first version value to compare
+       @param c_matcher a Matcher object from a Pattern that knows how to tokenize the version values
+       @param reference the second version value to compare
+       @param r_matcher a Matcher object from a Pattern that knows how to tokenize the version values
+       @throws InvalideVersionStringException runtime exception thrown when a value cannot be numerically parsed.
+       @return 1 if candidate > reference; -1 if candidate < reference; 0 if candidate = refernece;
+     */
+    public static int versionCompare(String candidate, Matcher c_matcher, String reference, Matcher r_matcher)
+        throws esg.common.InvalidVersionStringException {
+        c_matcher.reset(candidate);
+        r_matcher.reset(reference);
+
+        int c, r = 0;
+        int c_len = candidate.length();
+        int r_len = reference.length();
+        try{
+            while (c_matcher.find() && r_matcher.find()) {
+                c = Integer.parseInt(c_matcher.group(1));
+                r = Integer.parseInt(r_matcher.group(1));
+
+                //System.out.println("Comparing "+c+" and "+r);
+                if (c > r) return 1;
+                else if (c < r) return -1;
+            }
+            //System.out.println(c_len);
+            //System.out.println(r_len);
+            if(c_len > r_len) {
+                c_matcher.reset(candidate.substring(r_len));
+                while(c_matcher.find()) {
+                    if(Integer.parseInt(c_matcher.group(1)) > 0) { return 1; }
+                }
+            }
+            if(c_len < r_len) {
+                r_matcher.reset(reference.substring(c_len));
+                while(r_matcher.find()) {
+                    if(Integer.parseInt(r_matcher.group(1)) > 0) { return -1; }
+                }
+            }
+            return 0;
+        }catch(NumberFormatException e) {
+            log.error("Improper version string! "+e.getMessage());
+            throw new InvalidVersionStringException(e);
+        }
+    }
+
 }
