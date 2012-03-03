@@ -95,6 +95,8 @@ import static esg.node.components.registry.NodeTypes.*;
 */
 public class ESGFRegistry extends AbstractDataNodeComponent {
 
+    public static String PROTOCOL_VERSION="v0.0.1";
+
     private static Log log = LogFactory.getLog(ESGFRegistry.class);
     private Properties props = null;
     private boolean isBusy = false;

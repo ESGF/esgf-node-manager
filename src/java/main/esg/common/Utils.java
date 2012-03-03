@@ -168,4 +168,12 @@ public class Utils {
     public static boolean isLegalUrl(String urlCandidate) { return (urlPattern.matcher(urlCandidate)).find(); }
     public static boolean isLegalServiceUrl(String urlCandidate) { return (serviceUrlPattern.matcher(urlCandidate)).find(); }
 
+    /**
+       Takes two version strings of the form v#.#.#and compares them.
+       @param candidate version string
+       @param reference version 
+     */
+    public static int versionCompare(String candidate, String reference) throws esg.common.InvalidVersionStringException {
+        return 0;
+    }
 }
