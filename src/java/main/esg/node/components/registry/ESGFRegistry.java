@@ -468,12 +468,22 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             //log.trace("myRegistration = ["+myRegistration+"]");
             //log.trace("peerRegistration = ["+peerRegistration+"]");
 
-            Set<Node> updatedNodes = mergeNodes(myRegistration,peerRegistration);
+            //Don't even consider registrations that are not within version range!
+            Set<Node> updatedNodes = null;
+            try {
+                if(Utils.versionCompare(peerRegistration.getVersion(), ESGFRegistry.PROTOCOL_VERSION) >= 0) {
+                    updatedNodes = mergeNodes(myRegistration,peerRegistration);
+                }else{
+                    log.warn("Peer node registration has unsupported version: "+myRegistration.getVersion());
+                }
+            }catch(esg.common.InvalidVersionStringException e) {
+                log.error("Peer node registration has unsupported version: "+myRegistration.getVersion(),e);
+            }
 
             log.debug("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
             processedMap.put(sourceServiceURL, payloadChecksum);
 
-            if(updatedNodes.isEmpty()) {
+            if(updatedNodes == null || updatedNodes.isEmpty()) {
                 log.debug("No New Information Learned :-(");
                 return false;
             }
