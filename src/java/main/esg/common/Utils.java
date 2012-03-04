@@ -213,19 +213,21 @@ public class Utils {
         r_matcher.reset(reference);
 
         int c, r = 0;
-        int c_len = candidate.length();
-        int r_len = reference.length();
         try{
             while (c_matcher.find() && r_matcher.find()) {
                 c = Integer.parseInt(c_matcher.group(1));
                 r = Integer.parseInt(r_matcher.group(1));
 
-                //System.out.println("Comparing "+c+" and "+r);
+                //log.trace("Comparing "+c+" and "+r);
                 if (c > r) return 1;
                 else if (c < r) return -1;
             }
-            //System.out.println(c_len);
-            //System.out.println(r_len);
+
+            //When version positions don't line up...
+            int c_len = candidate.length();
+            int r_len = reference.length();
+            //log.trace("candidate length = "+c_len);
+            //log.trace("reference length = "+r_len);
             if(c_len > r_len) {
                 c_matcher.reset(candidate.substring(r_len));
                 while(c_matcher.find()) {
@@ -240,6 +242,9 @@ public class Utils {
             }
             return 0;
         }catch(NumberFormatException e) {
+            log.error("Improper version string! "+e.getMessage());
+            throw new InvalidVersionStringException(e);
+        }catch(Exception e) {
             log.error("Improper version string! "+e.getMessage());
             throw new InvalidVersionStringException(e);
         }

@@ -477,7 +477,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     log.warn("Peer node registration has unsupported version: "+myRegistration.getVersion());
                 }
             }catch(esg.common.InvalidVersionStringException e) {
-                log.error("Peer node registration has unsupported version: "+myRegistration.getVersion(),e);
+                log.error("Peer node registration has unsupported version*: "+myRegistration.getVersion(),e);
             }
 
             log.debug("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
