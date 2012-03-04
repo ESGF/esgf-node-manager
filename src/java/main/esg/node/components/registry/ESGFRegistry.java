@@ -474,10 +474,13 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 if(Utils.versionCompare(peerRegistration.getVersion(), ESGFRegistry.PROTOCOL_VERSION) >= 0) {
                     updatedNodes = mergeNodes(myRegistration,peerRegistration);
                 }else{
-                    log.warn("Peer node registration has unsupported version: "+myRegistration.getVersion());
+                    log.warn("Peer node registration has unsupported version: ["+myRegistration.getVersion()+"] (not merging)");
                 }
             }catch(esg.common.InvalidVersionStringException e) {
-                log.error("Peer node registration has unsupported version*: "+myRegistration.getVersion(),e);
+                log.error("Peer node registration has unsupported version*: ["+myRegistration.getVersion()+"] (not merging)",e);
+            }catch(NullPointerException e) {
+                log.warn("Peer node apparently does not even have a version field! (not merging)");
+                log.error(e);
             }
 
             log.debug("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
