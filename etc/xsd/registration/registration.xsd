@@ -219,6 +219,7 @@ That does make it more wordy, and require and reconstruction. -->
               <xsd:element name="Node" type="tns:Node" minOccurs="1" maxOccurs="unbounded"/>
             </xsd:sequence>
             <xsd:attribute name="timeStamp" type="xsd:long" use="required"/>
+            <xsd:attribute name="version" type="xsd:string" use="required"/>
         </xsd:complexType>
     </xsd:element>
 

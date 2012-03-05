@@ -644,6 +644,7 @@ public class RegistrationGleaner {
 
         if(null == myRegistration) myRegistration = new Registration();
         myRegistration.getNode().add(node);
+        myRegistration.setVersion(ESGFRegistry.PROTOCOL_VERSION);
         myRegistration.setTimeStamp(timestamp); //touch'ing the registration...
         return this;
     }

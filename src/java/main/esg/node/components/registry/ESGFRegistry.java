@@ -95,6 +95,8 @@ import static esg.node.components.registry.NodeTypes.*;
 */
 public class ESGFRegistry extends AbstractDataNodeComponent {
 
+    public static String PROTOCOL_VERSION="v0.0.1";
+
     private static Log log = LogFactory.getLog(ESGFRegistry.class);
     private Properties props = null;
     private boolean isBusy = false;
@@ -466,12 +468,24 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             //log.trace("myRegistration = ["+myRegistration+"]");
             //log.trace("peerRegistration = ["+peerRegistration+"]");
 
-            Set<Node> updatedNodes = mergeNodes(myRegistration,peerRegistration);
+            //Don't even consider registrations that are not within version range!
+            Set<Node> updatedNodes = null;
+            try {
+                if(Utils.versionCompare(peerRegistration.getVersion(), ESGFRegistry.PROTOCOL_VERSION) >= 0) {
+                    updatedNodes = mergeNodes(myRegistration,peerRegistration);
+                }else{
+                    log.warn("Peer node registration has unsupported version: ["+myRegistration.getVersion()+"] (not merging)");
+                }
+            }catch(esg.common.InvalidVersionStringException e) {
+                log.error("Peer node registration has unsupported version*: ["+myRegistration.getVersion()+"] (not merging)",e);
+            }catch(NullPointerException e) {
+                log.warn("Peer node apparently does not even have a version field! (not merging)");
+            }
 
             log.debug("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
             processedMap.put(sourceServiceURL, payloadChecksum);
 
-            if(updatedNodes.isEmpty()) {
+            if(updatedNodes == null || updatedNodes.isEmpty()) {
                 log.debug("No New Information Learned :-(");
                 return false;
             }
