@@ -188,6 +188,7 @@ public class Utils {
        @return 1 if candidate > reference; -1 if candidate < reference; 0 if candidate = refernece;
      */
     public static int versionCompare(String candidate, String reference) throws esg.common.InvalidVersionStringException {
+        if(candidate.equals(reference)) return 0;
         return versionCompare(candidate, versionPattern.matcher(candidate),
                               reference, versionPattern.matcher(reference));
     }
