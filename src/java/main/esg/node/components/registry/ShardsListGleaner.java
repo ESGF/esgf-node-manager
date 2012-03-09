@@ -197,14 +197,19 @@ public class ShardsListGleaner {
                     if(log.isTraceEnabled()) e.printStackTrace();
                     continue;
                 }
-                urlMatcher.reset(indexes.getEndpoint());
-                if(urlMatcher.find()) {
-                    endpointBase = urlMatcher.group(1);
-                    port = ":"+indexes.getPort();
-                    //shardlist.getValue().add(endpointBase+port+"/solr");
-                    shardlist.getValue().add(node.getIp()+port+"/solr");
-                    indexNodes++;
+
+                port = ":"+indexes.getPort();
+                if(Boolean.valueOf(props.getProperty("node.use.ips","false"))) {
+                    endpointBase = node.getIp();
+                }else {
+                    urlMatcher.reset(indexes.getEndpoint());
+                    if(urlMatcher.find()) {
+                        endpointBase = urlMatcher.group(1);
+                    }
                 }
+                shardlist.getValue().add(endpointBase+port+"/solr");
+                indexNodes++;
+
             }
             log.trace(indexNodes+" of "+numNodes+" gleaned");
         } catch(Exception e) {
