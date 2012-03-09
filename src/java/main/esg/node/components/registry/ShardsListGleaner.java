@@ -185,7 +185,7 @@ public class ShardsListGleaner {
                     continue;
                 }
                 try{
-                    if(doChecks && !poke(node.getHostname(),
+                    if(doChecks && !poke(node.getIp(),
                                          Integer.parseInt(indexes.getPort()), //standard search port 8983
                                          Integer.parseInt(props.getProperty("node.poke.timeout","200")) ) ) { //timeout in millis
                         log.trace(node.getHostname()+" skipping... could not connect to search port!!");
@@ -201,7 +201,8 @@ public class ShardsListGleaner {
                 if(urlMatcher.find()) {
                     endpointBase = urlMatcher.group(1);
                     port = ":"+indexes.getPort();
-                    shardlist.getValue().add(endpointBase+port+"/solr");
+                    //shardlist.getValue().add(endpointBase+port+"/solr");
+                    shardlist.getValue().add(node.getIp()+port+"/solr");
                     indexNodes++;
                 }
             }

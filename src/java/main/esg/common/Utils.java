@@ -109,7 +109,7 @@ public class Utils {
         boolean ret = false;
         Socket socket = null;
         try{
-            (socket = new Socket()).connect(new InetSocketAddress(host,port),timeout);
+            (socket = new Socket()).connect(new InetSocketAddress(java.net.InetAddress.getByName(host),port),timeout);
             socket.close();
             ret=true;
         }catch(Throwable t) {
