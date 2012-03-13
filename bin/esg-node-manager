@@ -405,25 +405,31 @@ EOF
 
 #--------------------------------------------------
 #NOTE: This must be run AFTER the esg node web app
-#      installation/configuration (setup_node_manager) 
+#      installation/configuration (setup_node_manager)
 #--------------------------------------------------
 configure_postgress() {
     init
-    
+
     echo
     echo "*******************************"
     echo "Configuring Postgres... for ESGF Node Manager"
     echo "*******************************"
     echo
-    
+
     start_postgress
 
-    #Create the database...
-    echo "Creating esg node database: [${node_db_name}]"
-    echo "${postgress_install_dir}/bin/createdb ${node_db_name}"
-    PGPASSWORD=${PGPASSWORD:-${pg_sys_acct_passwd}} ${postgress_install_dir}/bin/createdb ${node_db_name} >& /dev/null
-    (( $? > 1 )) && echo " ERROR: Could not create esg node database: ${node_db_name}" && return 0
-    echo 
+    # Determine if the node database already exists
+    if [ X"$(postgres_list_dbs ${node_db_name})" = "X" ] ; then
+        #Create the database...
+        echo "Creating esg node database: [${node_db_name}]"
+        echo "createdb ${node_db_name}"
+        PGPASSWORD=${PGPASSWORD:-${pg_sys_acct_passwd}} createdb ${node_db_name} >& /dev/null
+        (( $? > 1 )) && echo " ERROR: Could not create esg node database: ${node_db_name}" && return 0
+    else
+        echo "Database '${node_db_name}' already exists, not recreating for the node manager"
+    fi
+
+    echo
 
     pushd ${workdir}/${node_dist_dir:-esgf-node-manager-${esgf_node_manager_version}}/db >& /dev/null
     [ $? != 0 ] && echo " ERROR: Could not find node distribution dir ${workdir}/${node_dist_dir}" && checked_done 1
@@ -516,6 +522,21 @@ clean_node_manager_database_subsystem_installation() {
         else
             echo " Could not find node manager tables in the database."
         fi
-    fi 
+    fi
     return 0
+}
+
+
+postgres_list_dbs() {
+    # This prints a list of all databases known to postgres.
+    # If $1 is specified, it is used a grep filter
+    # Returns the return value of the final grep
+    #
+    # 'psql' must be in the path for this to work
+    #
+    PGDBFILTER="."
+    if [ X"$1" != "X" ] ; then
+        PGDBFILTER=$1
+    fi
+    psql -lat | cut -d' ' -f2 | grep -Ev "^(template[0-9]|postgres)$" | grep ${PGDBFILTER}
 }
