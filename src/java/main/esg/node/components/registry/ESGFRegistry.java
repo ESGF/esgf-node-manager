@@ -479,7 +479,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             }catch(esg.common.InvalidVersionStringException e) {
                 log.error("Peer node registration has unsupported version*: ["+myRegistration.getVersion()+"] (not merging)",e);
             }catch(NullPointerException e) {
-                log.warn("Peer node apparently does not even have a version field! (not merging)");
+                log.trace("Peer node apparently does not even have a version field! (not merging)");
             }
 
             log.debug("Recording this interaction with "+sourceServiceURL+" - "+payloadChecksum);
