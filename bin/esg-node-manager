@@ -188,11 +188,11 @@ setup_node_manager() {
         echo
 
         dobackup="Y"
-        read -p "Do you want to make a back up of the existing database [${node_db_name}]?? [Y/n] " dobackup
+        read -p "Do you want to make a back up of the existing database [${node_db_name}:esgf_node_manager]?? [Y/n] " dobackup
         [ -z "${dobackup}" ] && dobackup=${default}
         if [ "${dobackup}" = "Y" ] || [ "${dobackup}" = "y" ]; then
-            echo "Creating a backup archive of the manager's database [$node_db_name]"
-            backup_db ${node_db_name}
+            echo "Creating a backup archive of the manager database schema [${node_db_name}:esgf_node_manager]"
+            backup_db -db ${node_db_name} -s node_manager
         fi
         unset dobackup
         echo
@@ -504,7 +504,7 @@ clean_node_manager_database_subsystem_installation() {
             [ $? != 0 ] && echo " WARNING: Could not verify ${scripts_dir}/esg-node-manager, aborting this uninstall" && return 3
             echo "[VERIFIED]"
             
-            backup_db esgcet node_manager
+            backup_db -db ${node_db_name} -s node_manager
             [ $? != 0 ] && echo "unable to successfully backup database... will NOT proceed with database removal" && return 2
             
             echo "removing esgf_node_manager.* schema and tables and DATA"
