@@ -421,10 +421,10 @@ configure_postgress() {
     # Determine if the node database already exists
     if [ -z "$(postgres_list_dbs ${node_db_name})" ] ; then
         #Create the database...
-        echo "Creating esg node database: [${node_db_name}]"
+        echo "Creating esgf node database: [${node_db_name}]"
         echo "createdb ${node_db_name}"
         PGPASSWORD=${PGPASSWORD:-${pg_sys_acct_passwd}} createdb ${node_db_name} >& /dev/null
-        (( $? > 1 )) && echo " ERROR: Could not create esg node database: ${node_db_name}" && return 0
+        (( $? > 1 )) && echo " ERROR: Could not create esgf node database: ${node_db_name}" && return 0
     else
         echo "Database '${node_db_name}' already exists, not recreating for the node manager"
     fi
