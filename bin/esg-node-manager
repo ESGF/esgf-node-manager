@@ -151,9 +151,9 @@ setup_node_manager() {
     check_webapp_version "esgf-node-manager" ${esgf_node_manager_version}
     local ret=$?
     ((ret == 0)) && (( ! force_install )) && echo " [OK]" && return 0
-    
+
     init
-    
+
     echo
     echo "*******************************"
     echo "Setting up The ESGF Node Manager..."
@@ -165,7 +165,7 @@ setup_node_manager() {
     local default="Y"
     ((force_install)) && default="N"
     local dosetup
-    if [ -d ${node_manager_service_app_home} ]; then 
+    if [ -d ${node_manager_service_app_home} ]; then
         echo "Detected an existing node manager installation..."
         read -p "Do you want to continue with node manager installation and setup? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dosetup
         [ -z "${dosetup}" ] && dosetup=${default}
@@ -176,7 +176,7 @@ setup_node_manager() {
             esgf_node_manager_version=$(get_current_webapp_version esgf_node_manager)
             return 0
         fi
-        
+
         local dobackup="Y"
         read -p "Do you want to make a back up of the existing distribution [${node_manager_app_context_root}]?? [Y/n] " dobackup
         [ -z "${dobackup}" ] && dobackup=${default}
@@ -219,17 +219,17 @@ setup_node_manager() {
             (rm -rf ${node_dist_dir} && echo "[OK]" || (echo "[FAILED]" && checked_done 1)) && \
             clean_node_manager_webapp_subsystem
     fi
-    
+
     echo "unpacking ${node_dist_file}..."
     tar xzf ${node_dist_file}
     [ $? != 0 ] && echo " ERROR: Could not extract the ESG Node: ${node_dist_file}" && popd && checked_done 1
-    
+
     pushd ${node_dist_dir} >& /dev/null
 
     stop_tomcat
 
     #strip the version number off(#.#.#) the dir and append .war to get the name of war file
-    #(Ex: esgf-node-manager-0.9.0 -> esgf-node-manager.war) 
+    #(Ex: esgf-node-manager-0.9.0 -> esgf-node-manager.war)
     local trimmed_name=$(pwd)/${node_dist_dir%-*}
     node_war_file=${trimmed_name}.war
     echo "node_war_file = "${node_war_file}
@@ -256,7 +256,7 @@ setup_node_manager() {
     local _ret=$?
     ((upgrade == 0)) && set_aside_web_app_cleanup ${node_manager_service_app_home} ${_ret}
     unset _ret
-    
+
     #----------------------------
     #Property file fetching and token replacement...
     #----------------------------
@@ -268,7 +268,7 @@ setup_node_manager() {
     unset fetch_file
     popd >& /dev/null
     #----------------------------
-    
+
     popd >& /dev/null
 
     #NOTE TODO: Create a function that reads the property file and for
@@ -276,7 +276,7 @@ setup_node_manager() {
     #properties go through and ask the user to assign a value. -gavin
 
     if [ -z "${mail_admin_address}" ]; then
-        while [ 1 ]; do 
+        while [ 1 ]; do
             local input
             read -p "What email address should notifications be sent as? " input
             [ -n "${input}" ] && mail_admin_address=${input}  && unset input && break
@@ -299,7 +299,7 @@ setup_node_manager() {
     fetch_p2p_spotchecker
 
     checked_done 0
-    
+
 }
 
 touch_generated_whitelist_files() {
@@ -405,25 +405,31 @@ EOF
 
 #--------------------------------------------------
 #NOTE: This must be run AFTER the esg node web app
-#      installation/configuration (setup_node_manager) 
+#      installation/configuration (setup_node_manager)
 #--------------------------------------------------
 configure_postgress() {
     init
-    
+
     echo
     echo "*******************************"
     echo "Configuring Postgres... for ESGF Node Manager"
     echo "*******************************"
     echo
-    
+
     start_postgress
 
-    #Create the database...
-    echo "Creating esg node database: [${node_db_name}]"
-    echo "${postgress_install_dir}/bin/createdb ${node_db_name}"
-    PGPASSWORD=${PGPASSWORD:-${pg_sys_acct_passwd}} ${postgress_install_dir}/bin/createdb ${node_db_name} >& /dev/null
-    (( $? > 1 )) && echo " ERROR: Could not create esg node database: ${node_db_name}" && return 0
-    echo 
+    # Determine if the node database already exists
+    if [ -n "$(postgres_list_dbs ${node_db_name})" ] ; then
+        #Create the database...
+        echo "Creating esg node database: [${node_db_name}]"
+        echo "createdb ${node_db_name}"
+        PGPASSWORD=${PGPASSWORD:-${pg_sys_acct_passwd}} createdb ${node_db_name} >& /dev/null
+        (( $? > 1 )) && echo " ERROR: Could not create esg node database: ${node_db_name}" && return 0
+    else
+        echo "Database '${node_db_name}' already exists, not recreating for the node manager"
+    fi
+
+    echo
 
     pushd ${workdir}/${node_dist_dir:-esgf-node-manager-${esgf_node_manager_version}}/db >& /dev/null
     [ $? != 0 ] && echo " ERROR: Could not find node distribution dir ${workdir}/${node_dist_dir}" && checked_done 1
@@ -431,12 +437,12 @@ configure_postgress() {
     #------------------------------------------------------------------------
     #Based on the node type selection we build the appropriate database tables
     #------------------------------------------------------------------------
-    
-    
+
+
     #download the egg file from the distribution server is necessary....
     checked_get ${esgf_node_manager_egg_file} ${esg_dist_url}/esgf-node-manager/${esgf_node_manager_egg_file} $((force_install))
     (( $? > 1 )) && return 0
-    
+
     #install the egg....
     ((DEBUG)) && echo "$cdat_home/bin/easy_install ${esgf_node_manager_egg_file}"
     $cdat_home/bin/easy_install ${esgf_node_manager_egg_file}
@@ -449,7 +455,7 @@ configure_postgress() {
 
     write_node_manager_db_install_log
     echo
-    
+
     popd >& /dev/null
     echo
     echo
@@ -473,7 +479,7 @@ clean_node_manager_webapp_subsystem() {
         read -p "remove ESG Node Manager web service? (${node_manager_service_app_home}) [y/N]: " doit
         if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
             echo "removing ${node_manager_service_app_home}"
-            if [ -n ${node_manager_service_app_home} ] ; then 
+            if [ -n ${node_manager_service_app_home} ] ; then
                 rm -rf ${node_manager_service_app_home}
                 [ $? != 0 ] && echo "ERROR: Unable to remove ${node_manager_service_app_home}" && return 1
                 perl -n -i -e'print unless m!webapp:esgf-node-manager!' ${install_manifest}
@@ -483,7 +489,7 @@ clean_node_manager_webapp_subsystem() {
     if [ ! -e ${node_manager_service_app_home} ]; then
         remove_property node_manager_service_app_home
         remove_property node_manager_service_endpoint
-    fi    
+    fi
     return 0
 }
 
@@ -498,7 +504,7 @@ clean_node_manager_database_subsystem_installation() {
     if [ "doit" = "Y" ] || [ "$doit" = "y" ]; then
         start_postgress
         if $(psql -U ${postgress_user} esgcet -c "\dt esgf_node_manager.;" | egrep '^\([1-9]* row[s]?\)' >& /dev/null); then
-            
+
             #Call me paranoid but I want some integrity check that this code is what is meant to be straight from the distribution.
             diff <(md5sum ${scripts_dir}/esg-node-manager | tr -s " " | cut -d " " -f 1) <(curl -s -L --insecure ${esg_dist_url}/esgf-node-manager/esg-node-manager.md5 | tr -s " " | cut -d " " -f 1) >& /dev/null
             [ $? != 0 ] && echo " WARNING: Could not verify ${scripts_dir}/esg-node-manager, aborting this uninstall" && return 3
@@ -506,7 +512,7 @@ clean_node_manager_database_subsystem_installation() {
             
             backup_db -db ${node_db_name} -s node_manager
             [ $? != 0 ] && echo "unable to successfully backup database... will NOT proceed with database removal" && return 2
-            
+
             echo "removing esgf_node_manager.* schema and tables and DATA"
             ${cdat_home}/bin/esgf_node_manager_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@localhost:${postgress_port}/esgcet -d 0
             [ $? != 0 ] && echo "ERROR: Unable to remove ${tomcat_install_dir}/webapps/${node_manager_app_context_root}" && return 1
@@ -516,6 +522,17 @@ clean_node_manager_database_subsystem_installation() {
         else
             echo " Could not find node manager tables in the database."
         fi
-    fi 
+    fi
     return 0
+}
+
+
+postgres_list_dbs() {
+    # This prints a list of all databases known to postgres.
+    # If $1 is specified, it is used a grep filter
+    # Returns the return value of the final grep
+    #
+    # 'psql' must be in the path for this to work
+    #
+    (PGPASSWORD=${PGPASSWORD:-${pg_sys_acct_passwd}} psql -lat | cut -d' ' -f2 | grep -Ev "^(template[0-9]|postgres)$" | grep ${1:-"."})
 }
