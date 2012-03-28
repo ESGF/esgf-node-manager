@@ -120,6 +120,8 @@ init() {
 
     #Database information....
     node_db_name=${node_db_name:-"esgcet"}
+    node_db_node_manager_schema_name="esgf_node_manager"
+
     postgress_driver=${postgress_driver:-org.postgresql.Driver}
     postgress_protocol=${postgress_protocol:-jdbc:postgresql:}
     postgress_host=${PGHOST:-localhost}
@@ -426,7 +428,19 @@ configure_postgress() {
         PGPASSWORD=${PGPASSWORD:-${pg_sys_acct_passwd}} createdb ${node_db_name} >& /dev/null
         (( $? > 1 )) && echo " ERROR: Could not create esgf node database: ${node_db_name}" && return 0
     else
-        echo "Database '${node_db_name}' already exists, not recreating for the node manager"
+        echo "Database '${node_db_name}' already exists..."
+
+            if [ -n "$(postgres_list_db_schemas ${node_db_node_manager_schema_name})" ]; then
+                echo "Detected an existing node manager schema installation..."
+            else
+                # NOTE: Important Dependency....
+                # The SQL LIKE statement contains "ESGF Node Manager"
+                # This defined in esgf-security/src/python/esgf/esgf-node-manager/schema_migration/migrate.cfg
+                if (( $(PGPASSWORD=${pg_sys_acct_passwd:=${security_admin_password}} psql -U ${postgress_user} ${node_db_name} -c "select count(*) from esgf_migrate_version where repository_id LIKE '%ESGF Node Manager%'" | tail -n +3 | head -n 1) > 0 )); then
+                    echo "cleaning out schema migration bookeeping for esgf_node_manager..."
+                    $(PGPASSWORD=${pg_sys_acct_passwd:=${security_admin_password}} psql -U ${postgress_user} ${node_db_name} -c "delete from esgf_migrate_version where repository_id LIKE '%ESGF Node Manager%'" >& /dev/null)
+                fi
+            fi
     fi
 
     echo
@@ -438,7 +452,6 @@ configure_postgress() {
     #Based on the node type selection we build the appropriate database tables
     #------------------------------------------------------------------------
 
-
     #download the egg file from the distribution server is necessary....
     checked_get ${esgf_node_manager_egg_file} ${esg_dist_url}/esgf-node-manager/${esgf_node_manager_egg_file} $((force_install))
     (( $? > 1 )) && return 0
@@ -447,6 +460,21 @@ configure_postgress() {
     ((DEBUG)) && echo "$cdat_home/bin/easy_install ${esgf_node_manager_egg_file}"
     $cdat_home/bin/easy_install ${esgf_node_manager_egg_file}
     [ $? != 0 ] && echo "ERROR: Could not create esgf node manager python module" && checked_done 1
+
+    if [ -n "$(postgres_list_db_schemas ${node_db_node_manager_schema_name})" ]; then
+        local default="N"
+        ((force_install)) && default="Y"
+        local dobackup
+        read -p "Do you want to make a back up of the existing database schema [${node_db_name}:${node_db_node_manager_schema_name}]? $([ "$default" = "N" ] && echo "[y/N]" || echo "[Y/n]") " dobackup
+        [ -z "${dobackup}" ] && dobackup=${default}
+        if [ "${dobackup}" = "Y" ] || [ "${dobackup}" = "y" ]; then
+            echo "Creating a backup archive of the database schema [$node_db_name:${node_db_node_manager_schema_name}]"
+            backup_db -db ${node_db_name} -s ${node_db_node_manager_schema_name}
+        fi
+        unset dobackup
+        unset default
+        echo
+    fi
 
     #run the code to build the database and install sql migration...
     ((DEBUG)) && echo "$cdat_home/bin/esgf_node_manager_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@${postgress_host}:${postgress_port}/${node_db_name} -c"
