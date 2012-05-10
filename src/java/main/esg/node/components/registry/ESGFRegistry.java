@@ -317,7 +317,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     i++;
                 }else{
                     if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
-                        (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
+                        (removedNodeTimeStamp < (otherList.get(j)).getTimeStamp()) ) {
                         removedMap.remove(removedNodeHostname);
                         if( peerFilter.isInNetwork(otherList.get(j)) && !exList.isExcluded((otherList.get(j)).getHostname()) ) {
                             newNodes.add(otherList.get(j));
@@ -327,7 +327,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                             log.trace("   Skipping "+(otherList.get(j)).getHostname()+", Not in our peer network (+)");
                         }
                     }else {
-                        log.debug("   NOT accepting older candidate remote entry, ["+(otherList.get(j)).getHostname()+"], have more recent knowledge of removal by ["+(removedNodeTimeStamp > otherRegistration.getTimeStamp())+"]ms than candidate entry (+)");
+                        log.debug("   NOT accepting older candidate remote entry, ["+(otherList.get(j)).getHostname()+"], have more recent knowledge of removal by ["+(removedNodeTimeStamp > (otherList.get(j)).getTimeStamp())+"]ms than candidate entry (+)");
                     }
                     j++;
                 }
@@ -348,7 +348,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         while( j < otherList.size() ) {
             try{
                 if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
-                    (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
+                    (removedNodeTimeStamp < (otherList.get(j)).getTimeStamp()) ) {
                     removedMap.remove(removedNodeHostname);
                     if( peerFilter.isInNetwork(otherList.get(j)) && !exList.isExcluded((otherList.get(j)).getHostname()) ) {
                         newNodes.add(otherList.get(j));
@@ -358,7 +358,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                         log.trace("   Skipping "+(otherList.get(j)).getHostname()+", Not in our peer network (++)");
                     }
                 }else {
-                    log.debug("   NOT accepting older candidate remote entry, ["+(otherList.get(j)).getHostname()+"], have more recent knowledge of removal by ["+(removedNodeTimeStamp > otherRegistration.getTimeStamp())+"]ms than candidate entry (++)");
+                    log.debug("   NOT accepting older candidate remote entry, ["+(otherList.get(j)).getHostname()+"], have more recent knowledge of removal by ["+(removedNodeTimeStamp > (otherList.get(j)).getTimeStamp())+"]ms than candidate entry (++)");
                 }
             }catch(Throwable t) {
                 log.error(t);
