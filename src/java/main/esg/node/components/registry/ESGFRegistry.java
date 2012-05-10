@@ -195,7 +195,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                             synchronized(gleaner) {
                                 //"touch" the registration.xml file (update timestamp via call to createMyRegistration, and resave)
                                 log.debug("re-posting registration...");
-                                
+
                                 gleaner.saveRegistration();
 
                                 enqueueESGEvent(new ESGEvent(this,
@@ -273,7 +273,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             log.trace("otherList = ["+otherList+"] - size ("+otherList.size()+") "+otherList.get(0).getHostname());
         }catch(Throwable t) {
             log.error(t);
-            log.trace("Malformed Registration: hostname field not set!!!!"); 
+            log.trace("Malformed Registration: hostname field not set!!!!");
         }
         Long removedNodeTimeStamp = null;
         String removedNodeHostname = null;
@@ -333,7 +333,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 }
             }catch(Throwable t) {
                 log.error(t);
-                log.warn("[=+] Skipping MALFORMED Node Entry...(i="+(i)+") (j="+(j)+")"); 
+                log.warn("[=+] Skipping MALFORMED Node Entry...(i="+(i)+") (j="+(j)+")");
                 j++;
                 continue;
             }
@@ -362,13 +362,13 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 }
             }catch(Throwable t) {
                 log.error(t);
-                log.warn("Skipping MALFORMED Node Entry... (j="+(j)+")"); 
+                log.warn("Skipping MALFORMED Node Entry... (j="+(j)+")");
                 j++;
                 continue;
             }
             j++;
         }
-        
+
         log.trace("updatedNodes: ("+updatedNodes.size()+")");
         for(Node n : updatedNodes) {
             log.debug("updating registry with info on: "+n.getHostname());
@@ -421,7 +421,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         if(handled) lastDispatchTime = (new Date()).getTime();
         return handled;
     }
-    
+
     protected boolean handleUnRegistrationEvent(ESGEvent event) {
         log.trace("handling unregister enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: Got An Unregister QueuedEvent!!!!: "+event);
         try{
@@ -464,7 +464,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             //payload from the incoming event into object form, via the gleaner.
             Registration myRegistration = gleaner.getMyRegistration();
             Registration peerRegistration = gleaner.createRegistrationFromString((String)event.getRemoteEvent().getPayload());
-            
+
             //log.trace("myRegistration = ["+myRegistration+"]");
             //log.trace("peerRegistration = ["+peerRegistration+"]");
 
