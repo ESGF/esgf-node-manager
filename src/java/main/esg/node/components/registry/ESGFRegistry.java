@@ -548,9 +548,10 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             if(event.hasLeft()) {
                 log.debug("Detected That A Peer Node Has Left: "+event.getJoiner().getName());
                 synchronized(gleaner) {
-                    if(gleaner.removeNode(peerHostname)) {
+                    Node removedNode = null;
+                    if(null != (removedNode = gleaner.removeNode(peerHostname))) {
                         processedMap.remove(peerUrl);
-                        removedMap.put(peerHostname,event.getTimeStamp());
+                        removedMap.put(peerHostname,removedNode.getTimeStamp());
                         gleaner.saveRegistration(true); //NOTE: When a peer goes away do full check when constructing registration
                         sendOutNewRegistryState(gleaner);
                     }
