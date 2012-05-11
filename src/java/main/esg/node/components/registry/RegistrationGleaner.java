@@ -74,7 +74,10 @@ import java.io.StringWriter;
 import java.util.Date;
 import java.util.Properties;
 import java.util.HashMap;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import javax.xml.transform.stream.StreamSource;
+
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -97,6 +100,12 @@ public class RegistrationGleaner {
 
     //NOTE: IF OTHER STATES BECOME APPARENT MAKE AN ENUM...
     public static final String NOT_AVAILABLE = "NOT_AVAILABLE";
+
+    //NOTE: Content of metrics file looks like: DOWNLOADCOUNT=0,DOWNLOADSIZE=0,USERS=4
+    private static final String DATA_METRICS_FILENAME = "data_users.metrics";
+    private static final String dashboardMetricsFileRegex = "DOWNLOADCOUNT=([0-9]*),DOWNLOADSIZE=([0-9]*),USERS=([0-9]*)$";
+    private static final Pattern dashboardMetricsFilePattern = Pattern.compile(dashboardMetricsFileRegex, Pattern.CASE_INSENSITIVE);
+    private Matcher dashboardMetricsMatcher = null;
 
     private static final String registrationFile = "registration.xml";
     private static final boolean DEBUG=true;
@@ -503,6 +512,53 @@ public class RegistrationGleaner {
                 PEMCert cert = new PEMCert();
                 cert.setCert(fetchMyPemCert());
                 node.setPEMCert(cert);
+
+                //For download metrics information (provided by dashboard's information provider)
+                File dataUsersMetricsFile = null;
+                if( (dataUsersMetricsFile = new File(props.getProperty("dashboard.ip.app.home","/tmp/asvcsesa")+File.separator+DATA_METRICS_FILENAME)).exists() ) {
+                    String dataUsersMetricsContent = null;
+
+                    //----------------------------------------
+                    //NOTE:
+                    // As an optimization... should watch the file for
+                    // updated content and only then read the file's
+                    // contents.  Right now there is a lot of "new"s
+                    // and operations as this gets called for every
+                    // generation of the local registration.xml
+                    // -gavin
+                    //----------------------------------------
+
+                    try {
+                        BufferedReader in = new BufferedReader(new FileReader(dataUsersMetricsFile));
+                        try{
+                            dataUsersMetricsContent = in.readLine().trim();
+                            log.trace(dataUsersMetricsFile.getAbsolutePath()+" : "+dataUsersMetricsContent);
+                        }catch(java.io.IOException ex) {
+                            log.error(ex);
+                        }finally {
+                            if(null != in) in.close();
+                        }
+                    }catch(Throwable t) {
+                        log.error(t);
+                    }
+
+                    if(dataUsersMetricsContent != null && !dataUsersMetricsContent.isEmpty()) {
+                        Matcher m = dashboardMetricsFilePattern.matcher(dataUsersMetricsContent);
+                        if(m.find()) {
+                            Metrics metrics = new Metrics();
+                            DownloadedData  downloadedData  = new DownloadedData();
+                            downloadedData.setCount(m.group(1)); //value of "DOWNLOADCOUNT"
+                            downloadedData.setSize(m.group(2));  //value of "DOWNLOADSIZE"
+                            RegisteredUsers registeredUsers = new RegisteredUsers();
+                            registeredUsers.setCount(m.group(3));//value of "USERS"
+
+                            metrics.setDownloadedData(downloadedData);
+                            metrics.setRegisteredUsers(registeredUsers);
+                            node.setMetrics(metrics);
+                        }
+                    }
+                }
+
             }
 
             //************************************************
