@@ -101,9 +101,9 @@ public class RegistrationGleaner {
     //NOTE: IF OTHER STATES BECOME APPARENT MAKE AN ENUM...
     public static final String NOT_AVAILABLE = "NOT_AVAILABLE";
 
-    //NOTE: Content of metrics file looks like: DOWNLOADCOUNT=0,DOWNLOADSIZE=0,USERS=4
+    //NOTE: Content of metrics file looks like: DOWNLOADCOUNT=0,DOWNLOADSIZE=0,DOWNLOADUSERS=5,REGISTEREDUSERS=20
     private static final String DATA_METRICS_FILENAME = "data_users.metrics";
-    private static final String dashboardMetricsFileRegex = "DOWNLOADCOUNT=([0-9]*),DOWNLOADSIZE=([0-9]*),USERS=([0-9]*)$";
+    private static final String dashboardMetricsFileRegex = "DOWNLOADCOUNT=([0-9]*),DOWNLOADSIZE=([0-9]*),DOWNLOADUSERS=([0-9]*)(?:,REGISTEREDUSERS=([0-9]*))*$";
     private static final Pattern dashboardMetricsFilePattern = Pattern.compile(dashboardMetricsFileRegex, Pattern.CASE_INSENSITIVE);
     private Matcher dashboardMetricsMatcher = null;
 
@@ -544,16 +544,29 @@ public class RegistrationGleaner {
 
                     if(dataUsersMetricsContent != null && !dataUsersMetricsContent.isEmpty()) {
                         Matcher m = dashboardMetricsFilePattern.matcher(dataUsersMetricsContent);
+                        String downloadCount = null;
+                        String downloadSize = null;
+                        String downloadUsers = null;
+                        String registeredUserCount = null;
                         if(m.find()) {
+                            downloadCount = m.group(1);
+                            downloadSize = m.group(2);
+                            downloadUsers = m.group(3);
+                            registeredUserCount = m.group(4);
+
                             Metrics metrics = new Metrics();
                             DownloadedData  downloadedData  = new DownloadedData();
-                            downloadedData.setCount(m.group(1)); //value of "DOWNLOADCOUNT"
-                            downloadedData.setSize(m.group(2));  //value of "DOWNLOADSIZE"
-                            RegisteredUsers registeredUsers = new RegisteredUsers();
-                            registeredUsers.setCount(m.group(3));//value of "USERS"
-
+                            downloadedData.setCount(downloadCount); //value of "DOWNLOADCOUNT"
+                            downloadedData.setSize(downloadSize);  //value of "DOWNLOADSIZE"
+                            downloadedData.setUsers(downloadUsers); //value of "DOWNLOADUSERS"
                             metrics.setDownloadedData(downloadedData);
-                            metrics.setRegisteredUsers(registeredUsers);
+
+                            //The value of registered users is optional...
+                            if(registeredUserCount != null) {
+                                RegisteredUsers registeredUsers = new RegisteredUsers();
+                                registeredUsers.setCount(registeredUserCount);//value of "REGISTEREDUSERS"
+                                metrics.setRegisteredUsers(registeredUsers);
+                            }
                             node.setMetrics(metrics);
                         }
                     }

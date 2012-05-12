@@ -138,6 +138,7 @@ That does make it more wordy, and require and reconstruction. -->
       <xsd:complexType>
         <xsd:attribute name="count" type="xsd:string" use="required"/>
         <xsd:attribute name="size"  type="xsd:string" use="required"/>
+        <xsd:attribute name="users"  type="xsd:string" use="required"/>
       </xsd:complexType>
     </xsd:element>
     <xsd:element name="RegisteredUsers">
@@ -149,7 +150,7 @@ That does make it more wordy, and require and reconstruction. -->
       <xsd:complexType>
         <xsd:sequence>
           <xsd:element ref="tns:DownloadedData"  minOccurs="1" maxOccurs="1"/>
-          <xsd:element ref="tns:RegisteredUsers" minOccurs="1" maxOccurs="1"/>
+          <xsd:element ref="tns:RegisteredUsers" minOccurs="0" maxOccurs="1"/>
         </xsd:sequence>
       </xsd:complexType>
     </xsd:element>
