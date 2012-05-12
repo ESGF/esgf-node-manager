@@ -562,7 +562,7 @@ public class RegistrationGleaner {
                             metrics.setDownloadedData(downloadedData);
 
                             //The value of registered users is optional...
-                            if(registeredUserCount != null) {
+                            if(registeredUserCount != null || registeredUserCount.trim().equals("0")) {
                                 RegisteredUsers registeredUsers = new RegisteredUsers();
                                 registeredUsers.setCount(registeredUserCount);//value of "REGISTEREDUSERS"
                                 metrics.setRegisteredUsers(registeredUsers);
