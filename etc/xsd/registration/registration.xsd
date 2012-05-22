@@ -155,6 +155,20 @@ That does make it more wordy, and require and reconstruction. -->
       </xsd:complexType>
     </xsd:element>
 
+    <xsd:element name="RSSFeed">
+        <xsd:complexType>
+            <xsd:attribute name="url" type="xsd:string" use="required"/>
+            <xsd:attribute name="title" type="xsd:string" use="required"/>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="RSSFeeds">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="tns:RSSFeed" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
     <xsd:element name="LASService">
         <xsd:complexType>
             <xsd:attributeGroup ref="tns:ServiceAttributes"/>
@@ -225,6 +239,7 @@ That does make it more wordy, and require and reconstruction. -->
             <xsd:element ref="tns:GridFTPService" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:MetricsService" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:Metrics" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="tns:RSSFeeds" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:LASService" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:MyProxyService" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="tns:PublishingService" minOccurs="0" maxOccurs="1"/>

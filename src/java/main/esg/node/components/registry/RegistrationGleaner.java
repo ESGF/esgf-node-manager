@@ -680,6 +680,22 @@ public class RegistrationGleaner {
                 }catch(Throwable t) {
                     log.error(t);
                 }
+
+                try{
+                    String title=null;
+                    String host=null;
+                    if( (null != (title=props.getProperty("esgf.feed.datasets.title"))) &&
+                        (null != (host=props.getProperty("esgf.host"))) ) {
+                        RSSFeeds feeds = new RSSFeeds();
+                        RSSFeed feed = new RSSFeed();
+                        feed.setTitle(title);
+                        feed.setUrl("http://"+host+"/esg-search/feed/node.rss");
+                        feeds.getRSSFeed().add(feed);
+                        node.setRSSFeeds(feeds);
+                    }
+                }catch(Throwable t) {
+                    log.error(t);
+                }
             }
 
             //************************************************
