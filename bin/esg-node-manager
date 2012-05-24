@@ -116,7 +116,7 @@ init() {
     write_as_property node_manager_service_endpoint "http://${esgf_host}/${node_manager_app_context_root}/node"
 
     get_property node_use_ips && [ -z "${node_use_ips}" ] && write_as_property node_use_ips true
-    get_property node_poke_timeout && [ -z "${node_poke_timeout}" ] && write_as_property node_poke_timeout 2000
+    get_property node_poke_timeout && [ -z "${node_poke_timeout}" ] && write_as_property node_poke_timeout 6000
 
     #Database information....
     node_db_name=${node_db_name:-"esgcet"}
