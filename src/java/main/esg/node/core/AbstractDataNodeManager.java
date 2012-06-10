@@ -97,6 +97,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
     
     public AbstractDataNodeManager() {
         myName="DN_MGR";
+        //NOTE: May want to create these as either Synchronized Maps or ConcurrentHashMaps
         peers = new HashMap<String,ESGPeer>();
         components = new HashMap<String,DataNodeComponent>();
         propCache = new HashMap<String,Properties>();
@@ -265,12 +266,13 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
         peer.init();
         if(peer.isValid()) {
             peers.put(peer.getName(), peer);
-            log.trace("5)) Sending Join Notification...");
-            sendJoinNotification(peer);
+            log.trace("5)) Sending Queued Join Notification...");
+            sendQueuedJoinNotification(peer);
             peer.addESGListener(this);
             return true;
         }
         log.warn("Sorry Not Able To Register This Peer: "+peer);
+        peers.remove(peer); //just to be extra extra sure it isn't there
         return false;
     }
     
@@ -284,7 +286,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
         }
         log.trace("Removing Peer: ["+peerName+"]");
         peer.removeESGListener(this);
-        sendUnjoinNotification(peer);
+        sendQueuedUnjoinNotification(peer);
     }
 
     //overloaded delegation of above
@@ -322,7 +324,7 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
 
 
     //--------------------------------------------
-    //Event dispatching to all registered ESGListeners
+    //ESGListener dispatch methods: to all registered ESGListeners
     //calling their handleESGEvent method
     //--------------------------------------------
 
@@ -370,6 +372,41 @@ public abstract class AbstractDataNodeManager implements DataNodeManager {
         }
     }
 
+    //-------------------------------------------
+    //ESGQueueListener Dispatch methods to: ESGQueueListeners
+    //calling their handleESGQueueEvent method via enqueueEvent()
+    //putting on on their own event handling thread!
+    //-------------------------------------------
+
+    private void sendQueuedJoinNotification(DataNodeComponent component) {
+        log.trace("Sending Queued Join Notifications for: "+component.getName());
+        ESGJoinEvent joinEvent = new ESGJoinEvent(this,
+                                                  component.getName(),
+                                                  component,
+                                                  ESGJoinEvent.JOIN);
+        fireQueuedESGEvent(joinEvent);
+    }
+
+    private void sendQueuedUnjoinNotification(DataNodeComponent component) {
+        log.trace("Sending Queued UN-Join Notifications for :"+component.getName());
+        ESGJoinEvent unjoinEvent = new ESGJoinEvent(this,
+                                                    component.getName(),
+                                                    component,
+                                                    ESGJoinEvent.UNJOIN);
+        fireQueuedESGEvent(unjoinEvent);
+    }
+
+    /**
+       Puts the event on the event queues of all registered
+       (listening) components.
+     */
+    protected void fireQueuedESGEvent(ESGEvent esgEvent) {
+        Collection<? extends ESGQueueListener> esgListeners = components.values();
+        log.trace("Firing ESGQueuedEvent: "+esgEvent);
+        for(ESGQueueListener listener: esgListeners) {
+            listener.getESGEventQueue().enqueueEvent(esgEvent);
+        }
+    }
 
     //-------------------------------------------
     //ESGListener Interface Implementation...
