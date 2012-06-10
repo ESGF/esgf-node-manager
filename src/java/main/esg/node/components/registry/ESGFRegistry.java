@@ -384,7 +384,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     //Dispatch method for dealing with types of queued events...
     //The two we are concerned with are registering and unregistering peers
     public boolean handleESGQueuedEvent(ESGEvent event) {
-        log.trace("delegating enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: "+event);
+        log.trace("handling enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: "+event);
         boolean handled = false;
 
         if(event.hasRemoteEvent()) {
@@ -413,12 +413,16 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 log.warn("Unknown Event Type: ["+eventType+"]... blindly forwarding to next state");
                 break;
             }
-        }else if(event instanceof ESGCallableEvent) {
+            lastDispatchTime = (new Date()).getTime();
+        } else if(event instanceof ESGJoinEvent) {
+            //pretty much to unregister a peer node that has left that we are being locally notified about
+            //(originating from peer stub, via conn mgr, to node manager to here)
+            if(handled=this.handlePeerJoinEvent((ESGJoinEvent)event));
+        } else if(event instanceof ESGCallableEvent) {
                 log.trace("Registry: got Callable event: "+event);
                 ((ESGCallableEvent)event).doCall(this);
                 handled=true;
         }
-        if(handled) lastDispatchTime = (new Date()).getTime();
         return handled;
     }
     
@@ -537,11 +541,42 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             startRegistry();
         }
 
+        //-------------------------------------
+        //WE ONLY CARE BOUT PEER JOINING BEYOND THIS POINT...
+        //-------------------------------------
         if(!(esgEvent instanceof ESGJoinEvent)) return;
-        //we only care bout peer joining beyond this point...
 
         ESGJoinEvent event = (ESGJoinEvent)esgEvent;
 
+        //-----
+        //NOTE: Should not be triggering peer join/unjoin behavior
+        //based on mananger dispatch logic but here for completeness
+        if(handlePeerJoinEvent(event)) return;
+        //-----
+
+        if(event.getJoiner() instanceof ESGConnectionManager) {
+            if(event.hasJoined()) {
+                log.trace("Detected That The ESGConnectionManager Has Joined: "+event.getJoiner().getName());
+                addESGQueueListener(event.getJoiner());
+            }else {
+                log.trace("Detected That The ESGConnectionManager Has Left: "+event.getJoiner().getName());
+                removeESGQueueListener(event.getJoiner());
+            }
+        }
+
+    }
+
+    /**
+       Method encapsulating logic for specifically handling PEER
+       joining and leaving... This directly changes the representation
+       of the network that this component manages.
+
+       (This is primarily for handling the REMOVAL of peer nodes.  The
+       message to remove a peer node is a local event. Note; the way
+       nodes are added is from the network froma REGISTER remote
+       event)
+     */
+    private boolean handlePeerJoinEvent(ESGJoinEvent event) {
         if(event.getJoiner() instanceof ESGPeer) {
             String peerUrl = null;
             String peerHostname = Utils.asHostname(peerUrl = event.getJoiner().getName());
@@ -555,21 +590,13 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                         sendOutNewRegistryState(gleaner);
                     }
                 }
+                return true;
             }else if(event.hasJoined()) {
                 removedMap.remove(peerHostname);
+                return true;
             }
         }
-
-        if(event.getJoiner() instanceof ESGConnectionManager) {
-            if(event.hasJoined()) {
-                log.trace("Detected That The ESGConnectionManager Has Joined: "+event.getJoiner().getName());
-                addESGQueueListener(event.getJoiner());
-            }else {
-                log.trace("Detected That The ESGConnectionManager Has Left: "+event.getJoiner().getName());
-                removeESGQueueListener(event.getJoiner());
-            }
-        }
-
+        return false;
     }
 
     public boolean saveRegistration() { return this.saveRegistration(false); }
