@@ -98,8 +98,8 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     private String myServiceUrl = null;
     
     public ESGDataNodeServiceImpl() {
+        super("DNODE_SVC");
         log.info("ESGDataNodeServiceImpl instantiated...");
-        setMyName("DNODE_SVC");
         myServiceUrl = Utils.getMyServiceUrl();
         boot();
     }
