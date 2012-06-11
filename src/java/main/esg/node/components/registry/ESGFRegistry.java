@@ -577,24 +577,24 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
        event)
      */
     private boolean handlePeerJoinEvent(ESGJoinEvent event) {
-        if(event.getJoiner() instanceof ESGPeer) {
-            String peerUrl = null;
-            String peerHostname = Utils.asHostname(peerUrl = event.getJoiner().getName());
-            if(event.hasLeft()) {
-                log.debug("Detected That A Peer Node Has Left: "+event.getJoiner().getName());
-                synchronized(gleaner) {
-                    if(gleaner.removeNode(peerHostname)) {
-                        processedMap.remove(peerUrl);
-                        removedMap.put(peerHostname,event.getTimeStamp());
-                        gleaner.saveRegistration(true); //NOTE: When a peer goes away do full check when constructing registration
-                        sendOutNewRegistryState(gleaner);
-                    }
+        if(!(event.getJoiner() instanceof ESGPeer)) return false;
+
+        String peerUrl = null;
+        String peerHostname = Utils.asHostname(peerUrl = event.getJoiner().getName());
+        if(event.hasLeft()) {
+            log.debug("Detected That A Peer Node Has Left: "+event.getJoiner().getName());
+            synchronized(gleaner) {
+                if(gleaner.removeNode(peerHostname)) {
+                    processedMap.remove(peerUrl);
+                    removedMap.put(peerHostname,event.getTimeStamp());
+                    gleaner.saveRegistration(true); //NOTE: When a peer goes away do full check when constructing registration
+                    sendOutNewRegistryState(gleaner);
                 }
-                return true;
-            }else if(event.hasJoined()) {
-                removedMap.remove(peerHostname);
-                return true;
             }
+            return true;
+        }else if(event.hasJoined()) {
+            removedMap.remove(peerHostname);
+            return true;
         }
         return false;
     }

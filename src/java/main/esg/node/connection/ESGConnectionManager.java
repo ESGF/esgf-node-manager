@@ -611,6 +611,8 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                     log.trace(event);
                     break;
                 }
+            }else if(event instanceof ESGJoinEvent) {
+                if(handled=this.handlePeerJoinEvent((ESGJoinEvent)event));
             }else if(event instanceof ESGCallableEvent) {
                 log.trace("ConnMgr: got Callable event: "+event);
                 ((ESGCallableEvent)event).doCall(this);
@@ -625,11 +627,13 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     public void handleESGEvent(ESGEvent esgEvent) {
         //we only care about join events
         if(!(esgEvent instanceof ESGJoinEvent)) return;
-
-        ESGJoinEvent event = (ESGJoinEvent)esgEvent;
+        //should not be called but here for completeness...
+        handlePeerJoinEvent((ESGJoinEvent)esgEvent);
+    }
     
+    private boolean handlePeerJoinEvent(ESGJoinEvent event) {
         //we only care bout ESGPeers joining
-        if(!(event.getJoiner() instanceof ESGPeer)) return;
+        if(!(event.getJoiner() instanceof ESGPeer)) return false;
 
         //manage the data structure for peer 'stubs' locally while
         //object is a participating managed component.
@@ -637,9 +641,9 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             log.trace("6)) Detected That A Peer Component Has Joined: "+event.getJoiner().getName());
             ESGPeer peer = (ESGPeer)event.getJoiner();
             String peerUrl = peer.getServiceURL();
-            if(Utils.getMyServiceUrl().equals(peerUrl)) { log.warn("I may not be my own peer ;-)"); return; }
+            if(Utils.getMyServiceUrl().equals(peerUrl)) { log.warn("I may not be my own peer ;-)"); return true; }
             if(peerUrl != null) {
-        
+
                 //Have the newly joined peer (stub) attempt to contact
                 //it's endpoint to establish notification.  By adding
                 //"this" connection manager, the peer stub can now
@@ -648,16 +652,18 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 peer.addPeerListener(this);
                 peers.put(peer.getName(),peer);
                 if (peer.getPeerType() == ESGPeer.DEFAULT_PEER) defaultPeer = peer;
-        
+
             }else{
                 log.warn("Dropping "+peer+"... (no null service urls accepted)");
             }
+            log.trace("Number of active service managed peers == "+peers.size());
         }else {
             log.trace("Detected That A Peer Component Has Left: "+event.getJoiner().getName());
             peers.remove(event.getJoiner().getName());
             unavailablePeers.remove(event.getJoiner().getName());
+            log.trace("Number of active service managed peers = "+peers.size());
         }
-        log.trace("Number of active service managed peers = "+peers.size());
+        return false;
     }
 
     //--------------------------------------------
