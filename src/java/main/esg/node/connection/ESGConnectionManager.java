@@ -612,7 +612,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                     break;
                 }
             }else if(event instanceof ESGJoinEvent) {
-                log.trace("Handling Queueed Join Event -->> delegating to handling method handlePeerJoinEvent()")
+                log.trace("Handling Queueed Join Event -->> delegating to handling method handlePeerJoinEvent()");
                 if(handled=this.handlePeerJoinEvent((ESGJoinEvent)event));
             }else if(event instanceof ESGCallableEvent) {
                 log.trace("ConnMgr: got Callable event: "+event);

@@ -208,8 +208,8 @@ public class RegistrationGleaner {
         //pull from registry to create las sisters file.
         try{
             String endpoint=null;
-            if( (null != (endpoint=props.getProperty("las.endpoint"))) &&
-                (new File(props.getProperty("las.app.home"))).exists() ) {
+            if( (null != (endpoint=props.getProperty("las.service.endpoint"))) &&
+                (new File(props.getProperty("las.service.app.home"))).exists() ) {
                 LasSistersGleaner lasSisterGleaner = new LasSistersGleaner(props);
                 log.trace("My LAS endpoint = ["+endpoint+"]");
                 log.trace("Current Registration = ["+registration+"]");
