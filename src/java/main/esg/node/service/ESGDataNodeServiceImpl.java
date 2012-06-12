@@ -299,6 +299,14 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
         log.trace("connMgr = "+connMgr);
     }
 
+    public boolean handleESGQueuedEvent(ESGEvent event) {
+        log.trace("(no-op) handling ingress enqueued event ["+event+"]");
+        //TODO: Upon handling of this event pass it on to the next event in the chain.
+        //Call enqueueESGEvent(<name_of_next_component>, event);
+        //enqueueESGEvent(event);
+        log.trace("DROPPING... DON'T NEED TO HANDLE INGRESS QUEUED EVENTS FROM SERVICE!!!!");
+        return false;
+    }
 
 
 }
