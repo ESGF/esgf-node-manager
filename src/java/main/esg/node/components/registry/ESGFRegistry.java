@@ -69,6 +69,7 @@ import java.util.HashSet;
 import java.util.TreeSet;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -104,7 +105,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
     private Map<String,String> processedMap = null;
     private Map<String,Long> removedMap = null;
     private NodeHostnameComparator nodecomp = null;
-    private long lastDispatchTime = -1L;
+    private AtomicLong lastDispatchTime = null;
     private PeerNetworkFilter peerFilter = null;
     private ExclusionListReader.ExclusionList exList = null;
 
@@ -123,6 +124,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             processedMap = new HashMap<String,String>();
             removedMap = new HashMap<String,Long>();
             peerFilter = new PeerNetworkFilter(props);
+            lastDispatchTime = new AtomicLong(-1L);
             if(ExclusionListReader.getInstance().loadExclusionList()) {
                 exList = ExclusionListReader.getInstance().getExclusionList().useType(PRIVATE_BIT);
             }
@@ -151,7 +153,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                                                               gleaner.getMyChecksum(),
                                                               loadedNodes),
                                      "Initializing..."));
-        lastDispatchTime = (new Date()).getTime();
+        lastDispatchTime.set((new Date()).getTime());
         //----------------------------------
 
         log.trace("Launching registry timer");
@@ -187,7 +189,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     //won't hurt a thing.
                     //-gavin
                     Date now = new Date();
-                    long delta=(now.getTime() - lastDispatchTime);
+                    long delta=(now.getTime() - lastDispatchTime.longValue());
                     if ( delta > (period*1000)) {
                         if(!ESGFRegistry.this.isBusy) {
                             ESGFRegistry.this.isBusy = true;
@@ -203,7 +205,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                                                                                       gleaner.getMyChecksum(),
                                                                                       new HashSet<Node>()),
                                                              "Re-Posting Registration State"));
-                                lastDispatchTime = (new Date()).getTime();
+                                lastDispatchTime.set((new Date()).getTime());
                             }
                             ESGFRegistry.this.isBusy = false;
                         }
@@ -413,7 +415,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                 log.warn("Unknown Event Type: ["+eventType+"]... blindly forwarding to next state");
                 break;
             }
-            lastDispatchTime = (new Date()).getTime();
+            lastDispatchTime.set((new Date()).getTime());
         } else if(event instanceof ESGJoinEvent) {
             //pretty much to unregister a peer node that has left that we are being locally notified about
             //(originating from peer stub, via conn mgr, to node manager to here)
