@@ -79,6 +79,8 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Properties;
+import java.util.Date;
+import java.util.concurrent.atomic.AtomicLong;
 
 import esg.common.Utils;
 import esg.common.util.ESGFProperties;
@@ -106,6 +108,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 
     private Properties props = null;
 
+    private AtomicLong lastDispatchTime = null;
     private Map<String,ESGPeer> peers = null;
     private Map<String,ESGPeer> unavailablePeers = null;
     private RegistryUpdateDigest lastRud = null;
@@ -227,7 +230,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     private void periodicallyRegisterToPeers() {
         log.trace("Launching connection manager's registration push timer...");
         long delay  = Long.parseLong(props.getProperty("conn.mgr.initialDelay","10"));
-        long period = Long.parseLong(props.getProperty("conn.mgr.period","300"));
+        final long period = Long.parseLong(props.getProperty("conn.mgr.period","30"));
         log.trace("connection registration delay:  "+delay+" sec");
         log.trace("connection registration period: "+period+" sec");
 	
@@ -237,6 +240,9 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         timer.schedule(new TimerTask() {
                 public final void run() {
                     log.debug("(Timer) Re-Pushing My Last Registry State (Event)");
+                    Date now = new Date();
+                    long delta=(now.getTime() - lastDispatchTime.longValue());
+                    if ( delta > (period*1000)) {
                     ESGConnectionManager.this.getESGEventQueue().enqueueEvent(
                                      new ESGCallableFutureEvent<Boolean>(ESGConnectionManager.this,
                                                                          Boolean.valueOf(false),
@@ -258,6 +264,9 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                                              return handled;
                                          }
                                      });
+                    }else {
+                        log.debug("NOT performing re-push - last message sent "+delta+"secs ago < "+period+"secs");
+                    }
                 }
             },delay*1000,period*1000);
     }
@@ -316,7 +325,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     
     //Cached last registry data and checksum in lastRud.
     //Send out the same info to another random pair of neighbors.
-    private boolean sendOutRegistryState() {
+    private synchronized boolean sendOutRegistryState() {
         //Bootstrap condition...
         if(lastRud == null && defaultPeer != null) {
             //Damnit, I didn't want this dependency..!!!
@@ -463,6 +472,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             }
             if(numDispatchedPeers >= branchFactor) break;
         }
+        lastDispatchTime.set((new Date()).getTime());
         return (numDispatchedPeers > 1); //I was at least able to get one off!
     }
     
