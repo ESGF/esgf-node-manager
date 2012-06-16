@@ -123,6 +123,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     //Bootstrap the rest of the subsystems... (ESGDataNodeServiceImpl really bootstraps)
     public void init() {
         log.info("Initializing ESGFConnectionManager...");
+        lastDispatchTime = new AtomicLong(-1L);
 
         //NOTE:
         //Just to make sure we have these guys if we decide to re-register.
