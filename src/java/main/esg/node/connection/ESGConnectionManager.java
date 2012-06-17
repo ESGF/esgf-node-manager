@@ -79,7 +79,7 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Properties;
-import java.util.Date;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 import esg.common.Utils;
@@ -231,7 +231,11 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     private void periodicallyRegisterToPeers() {
         log.trace("Launching connection manager's registration push timer...");
         long delay  = Long.parseLong(props.getProperty("conn.mgr.initialDelay","10"));
+
         final long period = Long.parseLong(props.getProperty("conn.mgr.period","30"));
+        final long slop_bounds=15000; //represents 15000ms or 15 seconds of slop.... slop/period is the ratio of period misses
+        final Random random = new Random(System.currentTimeMillis());
+
         log.trace("connection registration delay:  "+delay+" sec");
         log.trace("connection registration period: "+period+" sec");
 	
@@ -241,9 +245,12 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         timer.schedule(new TimerTask() {
                 public final void run() {
                     log.debug("(Timer) Re-Pushing My Last Registry State (Event)");
-                    Date now = new Date();
-                    long delta=(now.getTime() - lastDispatchTime.longValue());
-                    if ( delta > (period*1000)) {
+                    long elapsedTime=(System.currentTimeMillis() - ESGConnectionManager.this.lastDispatchTime.longValue());
+                    long window=((period*1000) + (Math.abs(random.nextLong()) % slop_bounds)); //milliseconds
+
+                    log.trace("Re-push: elapsedTime="+elapsedTime+"ms >? window="+window+"ms");
+
+                    if ( elapsedTime > window ) {
                     ESGConnectionManager.this.getESGEventQueue().enqueueEvent(
                                      new ESGCallableFutureEvent<Boolean>(ESGConnectionManager.this,
                                                                          Boolean.valueOf(false),
@@ -266,7 +273,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                                          }
                                      });
                     }else {
-                        log.debug("NOT performing re-push - last message sent "+delta+"secs ago < "+period+"secs");
+                        log.debug("NOT performing re-push - last message sent approx "+(elapsedTime/1000)+"secs ago < "+(window/1000)+"secs");
                     }
                 }
             },delay*1000,period*1000);
@@ -473,7 +480,8 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
             }
             if(numDispatchedPeers >= branchFactor) break;
         }
-        lastDispatchTime.set((new Date()).getTime());
+        lastDispatchTime.set(System.currentTimeMillis());
+        log.trace("resetting last dispatch time to: "+lastDispatchTime.longValue());
         return (numDispatchedPeers > 1); //I was at least able to get one off!
     }
     
@@ -517,7 +525,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 
     private boolean dispatchUnRegisterToPeers() {
         System.out.println("I am dispatching UnRegister Event To Peers");
-        String now = (new java.util.Date()).getTime()+""; //yeah... ugly... :-\
+        String now = (System.currentTimeMillis()+""); //yeah... ugly... conversion :- \
         ESGRemoteEvent unregisterEvent = new ESGRemoteEvent(Utils.getMyServiceUrl(),
                                                             ESGRemoteEvent.UNREGISTER,
                                                             now,
