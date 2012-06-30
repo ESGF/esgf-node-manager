@@ -20,16 +20,16 @@ quick_check() {
     target_node=${1:-esgf-node3.llnl.gov}
     local peers
     local count=0    
-    for site in $(curl -s http://${target_node}/esgf-node-manager/registration.xml | sed -n 's#\(.*hostname="\)\([^"]*\)\(".*>\)#http://\2/esgf-node-manager/registration.xml#p'); do 
+    for site in $(curl -s -m 15 http://${target_node}/esgf-node-manager/registration.xml | sed -n 's#\(.*hostname="\)\([^"]*\)\(".*>\)#http://\2/esgf-node-manager/registration.xml#p'); do 
         echo -n "  [$((++count))] looking at site $site -> "
         if ((VERBOSE)); then
-            peers=( $(curl -s ${site} | grep hostname | sed -n 's/.*hostname="\([^"]*\)".*$/\1/p' | xargs) )
+            peers=( $(curl -s -m ${time_out_secs:-3} ${site} | grep hostname | sed -n 's/.*hostname="\([^"]*\)".*$/\1/p' | xargs) )
             echo ${#peers[@]}
             for peer in ${peers[@]}; do
                 echo "      $peer"
             done
         else
-            curl -s -m 3 $site | grep hostname | wc -l
+            curl -s -m ${time_out_secs:-3} $site | grep hostname | wc -l
         fi
 
     done;
@@ -46,7 +46,7 @@ spot_check() {
 
 _usage() {
     echo "usage:"
-    echo "  %> $0 <fqdn of server to inspect>"
+    echo "  %> $0 <fqdn of server to inspect> [--timeout | -t <timeout seconds> ]"
     echo
     echo "Ex: spotcheck pcmdi9.llnl.gov"
     echo
@@ -70,6 +70,10 @@ while [ -n "$1" ]; do
             ;;
         --debug)
             DEBUG=1;
+            ;;
+        --timeout | -t)
+            shift
+            time_out_secs=${1};
             ;;
         --help | -h)
             _usage
