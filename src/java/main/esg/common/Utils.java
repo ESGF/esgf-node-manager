@@ -80,6 +80,8 @@ public class Utils {
     private static AtomicLong msgCounter = new AtomicLong(0);
     private static String myHostname = null;
     private static String myServiceUrl = null;
+    private static final String standardUrlRegex = "(http)(.*)";
+    private static final Pattern standardUrlPattern = Pattern.compile(standardUrlRegex,Pattern.CASE_INSENSITIVE);
     private static final String urlRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/(.*/)*(.*$)";
     private static final Pattern urlPattern = Pattern.compile(urlRegex,Pattern.CASE_INSENSITIVE);
     private static final String serviceUrlRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/esgf-node-manager/node";
@@ -152,6 +154,13 @@ public class Utils {
     }
 
     public static String asServiceUrl(String hostname) { return  asServiceUrl(hostname,false); }
+
+    public static String asSSLUrl(String url) {
+        if(url.startsWith("https")) return url;
+        Matcher m = standardUrlPattern.matcher(url);
+        if(m.find()) url = "https"+m.group(2);
+        return url;
+    }
 
     //NOTE: If there is a point where we want to support running the
     //node manager on another port that 80 Then we may want to always

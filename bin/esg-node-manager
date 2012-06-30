@@ -111,9 +111,11 @@ init() {
     node_dist_url=${esg_dist_url}/esgf-node-manager/esgf-node-manager-${esgf_node_manager_version}.tar.gz
     node_manager_app_context_root=esgf-node-manager
 
+    get_property node_use_ssl && [ -z "${node_use_ssl}" ] && write_as_property node_use_ssl true
+
     get_property node_manager_service_app_home ${tomcat_install_dir}/webapps/${node_manager_app_context_root}
     write_as_property node_manager_service_app_home
-    write_as_property node_manager_service_endpoint "http://${esgf_host}/${node_manager_app_context_root}/node"
+    write_as_property node_manager_service_endpoint "http$([ "${node_use_ssl}" = "true" ] && echo "s" || echo "")://${esgf_host}/${node_manager_app_context_root}/node"
 
     get_property node_use_ips && [ -z "${node_use_ips}" ] && write_as_property node_use_ips true
     get_property node_poke_timeout && [ -z "${node_poke_timeout}" ] && write_as_property node_poke_timeout 6000

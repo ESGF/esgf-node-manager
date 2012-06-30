@@ -112,7 +112,7 @@ public class ESGDataNodeManager extends AbstractDataNodeManager {
             
             
             if((null != myDefaultPeer) && !(myDefaultPeer.equalsIgnoreCase(myHostname))) {
-                ESGPeer peer = new BasicPeer(Utils.asServiceUrl(myDefaultPeer), ESGPeer.DEFAULT_PEER);
+                ESGPeer peer = new BasicPeer(Utils.asServiceUrl(myDefaultPeer, Boolean.valueOf(getNodeProperty("node.use.ssl","false"))), ESGPeer.DEFAULT_PEER);
                 log.trace("1)) Created default peer attempting to register it");
                 registerPeer(peer);
             }else{

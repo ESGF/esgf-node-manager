@@ -180,7 +180,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
     //TODO: Instead of making this a sync'ed method, turn this into a
     //"future" tracking invocation and 'catch' responses or lack there
     //of without locking things up.
-    private synchronized void pingToPeers() {
+    private void pingToPeers() {
         java.util.Vector<ESGPeer> peers_ = new java.util.Vector<ESGPeer>();
         peers_.addAll(unavailablePeers.values());
         for(ESGPeer peer: peers_) {
@@ -570,6 +570,11 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
 
                     try{
                         peerServiceUrl = node.getNodeManager().getEndpoint();
+                        if(Boolean.valueOf(props.getProperty("node.use.ssl","false"))) {
+                            log.trace("Changing standard Url "+peerServiceUrl+" into SSL Url...");
+                            peerServiceUrl = Utils.asSSLUrl(peerServiceUrl);
+                        }
+
                     }catch (Throwable t) { 
                         log.warn(node.getHostname()+" does not seem to be running a node manager thus, not qualified to be a peer... dropping'em"); 
                         continue;
