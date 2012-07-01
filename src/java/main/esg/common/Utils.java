@@ -80,8 +80,10 @@ public class Utils {
     private static AtomicLong msgCounter = new AtomicLong(0);
     private static String myHostname = null;
     private static String myServiceUrl = null;
-    private static final String standardUrlRegex = "(http)(.*)";
-    private static final Pattern standardUrlPattern = Pattern.compile(standardUrlRegex,Pattern.CASE_INSENSITIVE);
+    private static final String httpSchemeRegex = "(http)(:.*)";
+    private static final Pattern httpSchemePattern = Pattern.compile(httpSchemeRegex,Pattern.CASE_INSENSITIVE);
+    private static final String httpsSchemeRegex = "(https)(:.*)";
+    private static final Pattern httpsSchemePattern = Pattern.compile(httpsSchemeRegex,Pattern.CASE_INSENSITIVE);
     private static final String urlRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/(.*/)*(.*$)";
     private static final Pattern urlPattern = Pattern.compile(urlRegex,Pattern.CASE_INSENSITIVE);
     private static final String serviceUrlRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/esgf-node-manager/node";
@@ -157,7 +159,15 @@ public class Utils {
 
     public static String asSSLUrl(String url) {
         if(url.startsWith("https")) return url;
-        Matcher m = standardUrlPattern.matcher(url);
+        Matcher m = httpSchemePattern.matcher(url);
+        if(m.find()) url = "https"+m.group(2);
+        return url;
+    }
+
+    //Note: Uses Regex to check for https scheme instead of String's startsWith()...
+    public static String asSSLUrlx(String url) {
+        if ((httpsSchemePattern.matcher(url)).find()) return url;
+        Matcher m = httpSchemePattern.matcher(url);
         if(m.find()) url = "https"+m.group(2);
         return url;
     }
