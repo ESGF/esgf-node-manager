@@ -80,9 +80,9 @@ public class Utils {
     private static AtomicLong msgCounter = new AtomicLong(0);
     private static String myHostname = null;
     private static String myServiceUrl = null;
-    private static final String httpSchemeRegex = "(http)(:.*)";
+    private static final String httpSchemeRegex = "(http)(://.*)";
     private static final Pattern httpSchemePattern = Pattern.compile(httpSchemeRegex,Pattern.CASE_INSENSITIVE);
-    private static final String httpsSchemeRegex = "(https)(:.*)";
+    private static final String httpsSchemeRegex = "(https)(://.*)";
     private static final Pattern httpsSchemePattern = Pattern.compile(httpsSchemeRegex,Pattern.CASE_INSENSITIVE);
     private static final String urlRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/(.*/)*(.*$)";
     private static final Pattern urlPattern = Pattern.compile(urlRegex,Pattern.CASE_INSENSITIVE);
