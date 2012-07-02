@@ -197,7 +197,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                             synchronized(gleaner) {
                                 //"touch" the registration.xml file (update timestamp via call to createMyRegistration, and resave)
                                 log.debug("re-posting registration...");
-                                
+
                                 gleaner.saveRegistration();
 
                                 enqueueESGEvent(new ESGEvent(this,
@@ -275,7 +275,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             log.trace("otherList = ["+otherList+"] - size ("+otherList.size()+") "+otherList.get(0).getHostname());
         }catch(Throwable t) {
             log.error(t);
-            log.trace("Malformed Registration: hostname field not set!!!!"); 
+            log.trace("Malformed Registration: hostname field not set!!!!");
         }
         Long removedNodeTimeStamp = null;
         String removedNodeHostname = null;
@@ -319,7 +319,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                     i++;
                 }else{
                     if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
-                        (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
+                        (removedNodeTimeStamp < (otherList.get(j)).getTimeStamp()) ) {
                         removedMap.remove(removedNodeHostname);
                         if( peerFilter.isInNetwork(otherList.get(j)) && !exList.isExcluded((otherList.get(j)).getHostname()) ) {
                             newNodes.add(otherList.get(j));
@@ -329,13 +329,13 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                             log.trace("   Skipping "+(otherList.get(j)).getHostname()+", Not in our peer network (+)");
                         }
                     }else {
-                        log.debug("   NOT accepting older candidate remote entry, ["+(otherList.get(j)).getHostname()+"], have more recent knowledge of removal by ["+(removedNodeTimeStamp > otherRegistration.getTimeStamp())+"]ms than candidate entry (+)");
+                        log.debug("   NOT accepting older candidate remote entry, ["+(otherList.get(j)).getHostname()+"], have more recent knowledge of removal by ["+(removedNodeTimeStamp > (otherList.get(j)).getTimeStamp())+"]ms than candidate entry (+)");
                     }
                     j++;
                 }
             }catch(Throwable t) {
                 log.error(t);
-                log.warn("[=+] Skipping MALFORMED Node Entry...(i="+(i)+") (j="+(j)+")"); 
+                log.warn("[=+] Skipping MALFORMED Node Entry...(i="+(i)+") (j="+(j)+")");
                 j++;
                 continue;
             }
@@ -350,7 +350,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         while( j < otherList.size() ) {
             try{
                 if( (null == (removedNodeTimeStamp = removedMap.get(removedNodeHostname = otherList.get(j).getHostname()))) ||
-                    (removedNodeTimeStamp < otherRegistration.getTimeStamp()) ) {
+                    (removedNodeTimeStamp < (otherList.get(j)).getTimeStamp()) ) {
                     removedMap.remove(removedNodeHostname);
                     if( peerFilter.isInNetwork(otherList.get(j)) && !exList.isExcluded((otherList.get(j)).getHostname()) ) {
                         newNodes.add(otherList.get(j));
@@ -360,17 +360,17 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
                         log.trace("   Skipping "+(otherList.get(j)).getHostname()+", Not in our peer network (++)");
                     }
                 }else {
-                    log.debug("   NOT accepting older candidate remote entry, ["+(otherList.get(j)).getHostname()+"], have more recent knowledge of removal by ["+(removedNodeTimeStamp > otherRegistration.getTimeStamp())+"]ms than candidate entry (++)");
+                    log.debug("   NOT accepting older candidate remote entry, ["+(otherList.get(j)).getHostname()+"], have more recent knowledge of removal by ["+(removedNodeTimeStamp > (otherList.get(j)).getTimeStamp())+"]ms than candidate entry (++)");
                 }
             }catch(Throwable t) {
                 log.error(t);
-                log.warn("Skipping MALFORMED Node Entry... (j="+(j)+")"); 
+                log.warn("Skipping MALFORMED Node Entry... (j="+(j)+")");
                 j++;
                 continue;
             }
             j++;
         }
-        
+
         log.trace("updatedNodes: ("+updatedNodes.size()+")");
         for(Node n : updatedNodes) {
             log.debug("updating registry with info on: "+n.getHostname());
@@ -427,7 +427,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         }
         return handled;
     }
-    
+
     protected boolean handleUnRegistrationEvent(ESGEvent event) {
         log.trace("handling unregister enqueued event ["+getName()+"]:["+this.getClass().getName()+"]: Got An Unregister QueuedEvent!!!!: "+event);
         try{
@@ -470,7 +470,7 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
             //payload from the incoming event into object form, via the gleaner.
             Registration myRegistration = gleaner.getMyRegistration();
             Registration peerRegistration = gleaner.createRegistrationFromString((String)event.getRemoteEvent().getPayload());
-            
+
             //log.trace("myRegistration = ["+myRegistration+"]");
             //log.trace("peerRegistration = ["+peerRegistration+"]");
 
@@ -586,9 +586,10 @@ public class ESGFRegistry extends AbstractDataNodeComponent {
         if(event.hasLeft()) {
             log.debug("Detected That A Peer Node Has Left: "+event.getJoiner().getName());
             synchronized(gleaner) {
-                if(gleaner.removeNode(peerHostname)) {
+                Node removedNode = null;
+                if(null != (removedNode = gleaner.removeNode(peerHostname))) {
                     processedMap.remove(peerUrl);
-                    removedMap.put(peerHostname,event.getTimeStamp());
+                    removedMap.put(peerHostname,removedNode.getTimeStamp());
                     gleaner.saveRegistration(true); //NOTE: When a peer goes away do full check when constructing registration
                     sendOutNewRegistryState(gleaner);
                 }

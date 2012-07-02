@@ -793,13 +793,14 @@ public class RegistrationGleaner {
         return this;
     }
 
-    public synchronized boolean removeNode(String nodeHostname) {
+    public synchronized Node removeNode(String nodeHostname) {
         sync();
-        if (myRegistration.getNode().remove(myNodeMap.remove(nodeHostname))) {
+        Node removedNode = null;
+        if (myRegistration.getNode().remove(removedNode = myNodeMap.remove(nodeHostname))) {
             dirty = true;
             touch();
         }
-        return dirty;
+        return removedNode;
     }
 
     protected void touch() { myRegistration.setTimeStamp((new Date()).getTime()); }

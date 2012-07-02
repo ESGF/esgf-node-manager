@@ -172,6 +172,9 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
             return false;
         }
         
+        long startTime = 0;
+        if (log.isDebugEnabled()) startTime=System.currentTimeMillis();
+
         //NOTE: This extra bit of gymnastics is to provide a way to
         //create a synchronous call around an asynchronous activity.
         //So we create an event that knows how to call us back
@@ -196,6 +199,8 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
             log.warn("NOT generating and posting local prune rpc event: connection Manager not yet available... ["+connMgr+"]"); 
             return ret;
         }
+
+        if(startTime > 0) { log.debug("Total elapsed time for Prune call: "+(System.currentTimeMillis() - startTime)+"ms"); }
 
         return ret;
     }

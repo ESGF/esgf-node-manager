@@ -108,6 +108,12 @@ public class Utils {
         return nodeID.toString();
     }
 
+    /**
+       "Poke" at a given host's port to see if a connection can be
+       established i.e. if they are alive.  If so then return TRUE, if
+       cannot be contacted the return is FALSE.  (default timeout
+       value is 200ms)
+     */
     public static boolean poke(String host, int port) { return poke(host,port,200); }
     public static boolean poke(String host, int port, int timeout) {
         boolean ret = false;
