@@ -233,11 +233,14 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         long delay  = Long.parseLong(props.getProperty("conn.mgr.initialDelay","10"));
 
         final long period = Long.parseLong(props.getProperty("conn.mgr.period","30"));
-        final long slop_bounds=15000; //represents 15000ms or 15 seconds of slop.... slop/period is the ratio of period misses
-        final Random random = new Random(System.currentTimeMillis());
+        final long percent_slop=Long.parseLong(props.getProperty("conn.mgr.period.percent.slop","25"));
+        final long slop_bounds=(period*1000)*(percent_slop/100); //represents the percentage of the period such that slop/period is the ratio of period misses
+        log.trace("conn.mgr.initialDelay = "+delay+" seconds");
+        log.trace("conn.mgr.period = "+period+" seconds");
+        log.trace("conn.mgr.period.percent.slop = "+percent_slop+"%");
+        log.trace("slop_bounds = "+(slop_bounds/1000)+" seconds");
 
-        log.trace("connection registration delay:  "+delay+" sec");
-        log.trace("connection registration period: "+period+" sec");
+        final Random random = new Random(System.currentTimeMillis());
 	
         Timer timer = new Timer("Reg-Repush-Timer");
         
@@ -246,11 +249,13 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 public final void run() {
                     log.debug("(Timer) Re-Pushing My Last Registry State (Event)");
                     long elapsedTime=(System.currentTimeMillis() - ESGConnectionManager.this.lastDispatchTime.longValue());
-                    long window=((period*1000) + (Math.abs(random.nextLong()) % slop_bounds)); //milliseconds
+                    long rand_slop=0;
+                    if (slop_bounds != 0) rand_slop = Math.abs(random.nextLong()) % slop_bounds;
+                    long window=((period*1000) + rand_slop); //milliseconds
 
                     log.trace("Re-push: elapsedTime="+elapsedTime+"ms >? window="+window+"ms");
 
-                    if ( elapsedTime > window ) {
+                    if ( elapsedTime >= window ) {
                     ESGConnectionManager.this.getESGEventQueue().enqueueEvent(
                                      new ESGCallableFutureEvent<Boolean>(ESGConnectionManager.this,
                                                                          Boolean.valueOf(false),
