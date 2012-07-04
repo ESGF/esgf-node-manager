@@ -254,7 +254,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                         //in order to give other nodes the chance to initiate a push cascade we throw in 
                         //a bit of "slop" just a random chance for this node to skip a push.
                         if ( (percentSlop > 0) && ((r=(Math.abs(random.nextLong()) % 100)) >= (100 - percentSlop)) ) {
-                            log.trace("Randomly selecting to NOT send out this re-push...("+percentSlop+"%) ["+r+" is not "+(100-percentSlop)+" to 100]");
+                            log.trace("Randomly selecting to NOT send out this re-push...("+percentSlop+"%) ["+r+" is in slop zone "+(100-percentSlop)+" to 100]");
                             return;
                         }
                         ESGConnectionManager.this.getESGEventQueue().enqueueEvent(
