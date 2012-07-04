@@ -232,13 +232,11 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
         log.trace("Launching connection manager's registration push timer...");
         long delay  = Long.parseLong(props.getProperty("conn.mgr.initialDelay","10"));
 
-        final long period = Long.parseLong(props.getProperty("conn.mgr.period","30"));
-        final long percent_slop=Long.parseLong(props.getProperty("conn.mgr.period.percent.slop","25"));
-        final long slop_bounds=(period*1000)*(percent_slop/100); //represents the percentage of the period such that slop/period is the ratio of period misses
+        final long period = Long.parseLong(props.getProperty("conn.mgr.period","15"));//seconds
+        final long percentSlop=Long.parseLong(props.getProperty("conn.mgr.period.percent.slop","10"));//percentage
         log.trace("conn.mgr.initialDelay = "+delay+" seconds");
         log.trace("conn.mgr.period = "+period+" seconds");
-        log.trace("conn.mgr.period.percent.slop = "+percent_slop+"%");
-        log.trace("slop_bounds = "+(slop_bounds/1000)+" seconds");
+        log.trace("conn.mgr.period.percent.slop = "+percentSlop+"%");
 
         final Random random = new Random(System.currentTimeMillis());
 	
@@ -249,14 +247,17 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                 public final void run() {
                     log.debug("(Timer) Re-Pushing My Last Registry State (Event)");
                     long elapsedTime=(System.currentTimeMillis() - ESGConnectionManager.this.lastDispatchTime.longValue());
-                    long rand_slop=0;
-                    if (slop_bounds != 0) rand_slop = Math.abs(random.nextLong()) % slop_bounds;
-                    long window=((period*1000) + rand_slop); //milliseconds
+                    log.trace("Re-push: elapsedTime="+elapsedTime+"ms >? period="+(period * 1000)+"ms");
 
-                    log.trace("Re-push: elapsedTime="+elapsedTime+"ms >? window="+window+"ms");
-
-                    if ( elapsedTime >= window ) {
-                    ESGConnectionManager.this.getESGEventQueue().enqueueEvent(
+                    long r=0L;
+                    if ( elapsedTime >= (period * 1000) ) {
+                        //in order to give other nodes the chance to initiate a push cascade we throw in 
+                        //a bit of "slop" just a random chance for this node to skip a push.
+                        if ( (percentSlop > 0) && ((r=(Math.abs(random.nextLong()) % 100)) >= (100 - percentSlop)) ) {
+                            log.trace("Randomly selecting to NOT send out this re-push...("+percentSlop+"%) ["+r+" is not "+(100-percentSlop)+" to 100]");
+                            return;
+                        }
+                        ESGConnectionManager.this.getESGEventQueue().enqueueEvent(
                                      new ESGCallableFutureEvent<Boolean>(ESGConnectionManager.this,
                                                                          Boolean.valueOf(false),
                                                                          "Registration Re-push Event") {
@@ -278,7 +279,7 @@ public class ESGConnectionManager extends AbstractDataNodeComponent implements E
                                          }
                                      });
                     }else {
-                        log.debug("NOT performing re-push - last message sent approx "+(elapsedTime/1000)+"secs ago < "+(window/1000)+"secs");
+                        log.debug("NOT performing re-push - last message sent approx "+(elapsedTime/1000)+"secs ago < "+period+"secs (too soon)");
                     }
                 }
             },delay*1000,period*1000);
