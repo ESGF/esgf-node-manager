@@ -96,7 +96,7 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     private ESGDataNodeManager datanodeMgr = null;
     private ESGConnectionManager connMgr = null;
     private String myServiceUrl = null;
-    
+
     public ESGDataNodeServiceImpl() {
         super("DNODE_SVC");
         log.info("ESGDataNodeServiceImpl instantiated...");
@@ -109,6 +109,7 @@ public class ESGDataNodeServiceImpl extends AbstractDataNodeComponent
     //******************************
     public void boot() {
         log.trace("Bootstrapping System...");
+        ExclusionListReader.getInstance().loadExclusionList();
         datanodeMgr = new ESGDataNodeManager();
         datanodeMgr.registerComponent(this);
         datanodeMgr.init();
