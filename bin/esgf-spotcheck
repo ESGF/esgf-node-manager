@@ -88,11 +88,22 @@ spot_check() {
 }
 
 _usage() {
-    echo "usage:"
-    echo "  %> $0 <fqdn of server to inspect> [--timeout | -t <timeout seconds> ]"
-    echo
-    echo "Ex: spotcheck pcmdi9.llnl.gov"
-    echo
+    printf "usage:
+     > $0 <fqdn of server to inspect> [--timeout | -t <timeout seconds> ]
+          options:
+               --timeout | -t <timeout seconds> (default 3 seconds - on secondary hop nodes)
+               --show-type [ data &| index $| idp &| compute ] | [all] - displays only nodes that match ALL node types (performs logical AND)
+                           (no args to this flag can be considered \"ANY\" all detected nodes are shown; equivalent to not using this flag)
+
+               --debug - prints debug output
+               --verbose - shows each node visibile by secondary hop nodes
+               --version | -v - version
+               --help | -h - this help information
+
+     Ex: spotcheck pcmdi9.llnl.gov
+         spotcheck --show-type index compute pcmdi9.llnl.gov
+"
+ 
     exit 1
 }
 
