@@ -16,12 +16,47 @@
 # respective registries.  As the program suggests a quick P2P 'spot
 # check'. :-)
 
+#The DEFINITIVE values of the following declarations are in the esg-node script!!!!!!
+# (be sure that they match exactly - a brittle dependency, maybe clean up later)
+#---------------
+# s'all about the bits... :-)
+#---------------
+declare -r INSTALL_BIT=1
+declare -r TEST_BIT=2
+declare -r DATA_BIT=4
+declare -r INDEX_BIT=8
+declare -r IDP_BIT=16
+declare -r COMPUTE_BIT=32
+declare -r WRITE_ENV_BIT=64
+#declare -r PRIVATE_BIT=128
+#NOTE: remember to adjust (below) when adding new bits!!
+declare -r MIN_BIT=4
+declare -r MAX_BIT=64
+declare -r ALL_BIT=$((DATA_BIT+INDEX_BIT+IDP_BIT+COMPUTE_BIT))
+#---------------
+
+queryNodeType=${ALL_BIT}
+
+show_node_type() {
+    local sel=${sel:=$1}
+    local resolved_to
+    [ $((sel & DATA_BIT)) != 0 ] && resolved_to+="data "
+    [ $((sel & INDEX_BIT)) != 0 ] && resolved_to+="index "
+    [ $((sel & IDP_BIT)) != 0 ] && resolved_to+="idp "
+    [ $((sel & COMPUTE_BIT)) != 0 ] && resolved_to+="compute "
+    echo "[ ${resolved_to}$( ((DEBUG)) && echo "($sel)" )]"
+}
+
 quick_check() {
-    target_node=${1:-esgf-node3.llnl.gov}
+    target_node=${1:-pcmdi9.llnl.gov}
     local peers
-    local count=0    
-    for site in $(curl -s -m 15 http://${target_node}/esgf-node-manager/registration.xml | sed -n 's#\(.*hostname="\)\([^"]*\)\(".*>\)#http://\2/esgf-node-manager/registration.xml#p'); do 
-        echo -n "  [$((++count))] looking at site $site -> "
+    local count=0 
+    local site
+    while read line ; do
+        eval $line
+        ((DEBUG)) && echo "$queryNodeType & $nodeType > $((queryNodeType & nodeType))"
+        [ $((queryNodeType & nodeType)) == 0 ] && continue
+        echo -n "  [$((++count))] looking at site $site $(show_node_type $nodeType) -> "
         if ((VERBOSE)); then
             peers=( $(curl -s -m ${time_out_secs:-3} ${site} | grep hostname | sed -n 's/.*hostname="\([^"]*\)".*$/\1/p' | xargs) )
             echo ${#peers[@]}
@@ -32,7 +67,7 @@ quick_check() {
             curl -s -m ${time_out_secs:-3} $site | grep hostname | wc -l
         fi
 
-    done;
+    done < <(curl -s -m 15 http://${target_node}/esgf-node-manager/registration.xml | sed -n 's#.*hostname="\([^"]*\)".*nodeType="\([^"]*\).*$#site=http://\1/esgf-node-manager/registration.xml; nodeType=\2#p')
 }
 
 spot_check() {
@@ -56,9 +91,12 @@ _usage() {
 ############################################
 # Main
 ############################################
-
-while [ -n "$1" ]; do 
-    case $1 in 
+myargs=($@)
+i=0
+((DEBUG)) && echo ${myargs[@]}
+while [ -n "${myargs[i]}" ]; do 
+    ((DEBUG)) && echo "now on token ${myargs[i]}"
+    case ${myargs[i]} in 
 	-v | --version)
 	    echo "Earth Systems Grid Federation (http://esgf.org)"
 	    echo "ESGF P2P Spot Check Utility"
@@ -72,17 +110,40 @@ while [ -n "$1" ]; do
             DEBUG=1;
             ;;
         --timeout | -t)
-            shift
-            time_out_secs=${1};
+            ((i++))
+            time_out_secs=${myargs[i]};
+            ;;
+        --show-type)
+            let sel=0
+            ((i++))
+            until [ -z "${myargs[i]}" ]; do
+                tvalue=$(echo "${myargs[i]}" | tr 'A-Z' 'a-z')
+                hit=0
+                    #turn on the proper bit when string is detected
+                [ "all"   = "${tvalue}" ] && sel=$ALL_BIT && ((hit++))
+                [ "data"  = "${tvalue}" ] && ((sel+=DATA_BIT))  && ((hit++))
+                [ "index" = "${tvalue}" ] && ((sel+=INDEX_BIT)) && ((hit++))
+                [ "idp"   = "${tvalue}" ] && ((sel+=IDP_BIT))   && ((hit++))
+                [ "compute" = "${tvalue}" ] && ((sel+=COMPUTE_BIT)) && ((hit++))
+                ((DEBUG)) && echo "hit = ${hit}"
+                if ((hit == 0)); then
+                    ((--i)) && break
+                else
+                    ((i++))
+                fi
+            done
+            ((sel != 0)) && queryNodeType=${sel}
+            ((DEBUG)) && echo "node type set to: ${queryNodeType} (sel=${sel}) "
+            unset sel
             ;;
         --help | -h)
             _usage
             ;;
         *)
-            spotcheck_hosts=( "${spotcheck_hosts[@]}" "$1" )
+            spotcheck_hosts=( "${spotcheck_hosts[@]}" "${myargs[i]}" )
             ;;
     esac
-    shift
+    ((i++))
 done
 
 spot_check ${spotcheck_hosts[@]}
