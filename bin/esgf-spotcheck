@@ -56,6 +56,7 @@ quick_check() {
     local peers
     local count=0 
     local site
+    local node
     while read line ; do
         eval $line
         ((DEBUG)) && echo "$queryNodeType & $nodeType ==> $((queryNodeType & nodeType))"
@@ -64,7 +65,7 @@ quick_check() {
 
         #AND LOGIC
         [ $((queryNodeType & nodeType)) != "${queryNodeType}" ] && continue
-        echo -n "  [$((++count))] looking at site $site $(show_node_type $nodeType) -> "
+        echo -n "  [$((++count))] looking at $( ((VERBOSE | SHOW_URL)) && echo "site ${site}" || echo "node ${node}") $(show_node_type $nodeType) -> "
         if ((VERBOSE)); then
             peers=( $(curl -s -m ${time_out_secs:-3} ${site} | grep hostname | sed -n 's/.*hostname="\([^"]*\)".*$/\1/p' | xargs) )
             echo ${#peers[@]}
@@ -75,7 +76,7 @@ quick_check() {
             curl -s -m ${time_out_secs:-3} $site | grep hostname | wc -l
         fi
 
-    done < <(curl -s -m 15 http://${target_node}/esgf-node-manager/registration.xml | sed -n 's#.*hostname="\([^"]*\)".*nodeType="\([^"]*\).*$#site=http://\1/esgf-node-manager/registration.xml; nodeType=\2#p')
+    done < <(curl -s -m 15 http://${target_node}/esgf-node-manager/registration.xml | sed -n 's#.*hostname="\([^"]*\)".*nodeType="\([^"]*\).*$#node=\1; site=http://\1/esgf-node-manager/registration.xml; nodeType=\2#p')
 }
 
 spot_check() {
@@ -131,6 +132,9 @@ while [ -n "${myargs[i]}" ]; do
         --timeout | -t)
             ((i++))
             time_out_secs=${myargs[i]};
+            ;;
+        --show-url)
+            SHOW_URL=1
             ;;
         --show-type)
             let sel=0
