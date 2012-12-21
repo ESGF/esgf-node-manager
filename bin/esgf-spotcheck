@@ -54,8 +54,12 @@ quick_check() {
     local site
     while read line ; do
         eval $line
-        ((DEBUG)) && echo "$queryNodeType & $nodeType > $((queryNodeType & nodeType))"
-        [ $((queryNodeType & nodeType)) == 0 ] && continue
+        ((DEBUG)) && echo "$queryNodeType & $nodeType ==> $((queryNodeType & nodeType))"
+        #OR LOGIC
+        #[ $((queryNodeType & nodeType)) == 0 ] && continue
+
+        #AND LOGIC
+        [ $((queryNodeType & nodeType)) != "${queryNodeType}" ] && continue
         echo -n "  [$((++count))] looking at site $site $(show_node_type $nodeType) -> "
         if ((VERBOSE)); then
             peers=( $(curl -s -m ${time_out_secs:-3} ${site} | grep hostname | sed -n 's/.*hostname="\([^"]*\)".*$/\1/p' | xargs) )
