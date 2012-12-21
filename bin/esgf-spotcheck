@@ -97,9 +97,10 @@ _usage() {
      > $0 <fqdn of server to inspect> [--timeout | -t <timeout seconds> ]
           options:
                --timeout | -t <timeout seconds> (default 3 seconds - on secondary hop nodes)
-               --show-type [ data &| index $| idp &| compute ] | [all] - displays only nodes that match ALL node types (performs logical AND)
-                           (no args to this flag can be considered \"ANY\" all detected nodes are shown; equivalent to not using this flag)
-
+               --show-type [ data &| index $| idp &| compute ] | [all] 
+                            - filtering on node type:
+                              displays only nodes that match any combination of specified node types (performs logical AND)
+                              (no args to this flag can be considered \"ANY\": i.e. all detected nodes are shown; equivalent to not using this flag)
                --show-url - to show full url to registration document in output
                --debug - prints debug output
                --verbose - shows each node visibile by secondary hop nodes
