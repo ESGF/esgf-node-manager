@@ -21,18 +21,18 @@
 #---------------
 # s'all about the bits... :-)
 #---------------
-declare -r INSTALL_BIT=1
-declare -r TEST_BIT=2
-declare -r DATA_BIT=4
-declare -r INDEX_BIT=8
-declare -r IDP_BIT=16
-declare -r COMPUTE_BIT=32
-declare -r WRITE_ENV_BIT=64
-#declare -r PRIVATE_BIT=128
+declare -r INSTALL_BIT=1 >& /dev/null
+declare -r TEST_BIT=2 >& /dev/null
+declare -r DATA_BIT=4 >& /dev/null
+declare -r INDEX_BIT=8 >& /dev/null
+declare -r IDP_BIT=16 >& /dev/null
+declare -r COMPUTE_BIT=32 >& /dev/null
+declare -r WRITE_ENV_BIT=64 >& /dev/null
+#declare -r PRIVATE_BIT=128 >& /dev/null
 #NOTE: remember to adjust (below) when adding new bits!!
-declare -r MIN_BIT=4
-declare -r MAX_BIT=64
-declare -r ALL_BIT=$((DATA_BIT+INDEX_BIT+IDP_BIT+COMPUTE_BIT))
+declare -r MIN_BIT=4 >& /dev/null
+declare -r MAX_BIT=64 >& /dev/null
+declare -r ALL_BIT=$((DATA_BIT+INDEX_BIT+IDP_BIT+COMPUTE_BIT)) >& /dev/null
 #---------------
 
 #for OR logic
@@ -66,15 +66,19 @@ quick_check() {
         #AND LOGIC
         [ $((queryNodeType & nodeType)) != "${queryNodeType}" ] && continue
         echo -n "  [$((++count))] looking at $( ((VERBOSE | SHOW_URL)) && echo "site ${site}" || echo "node ${node}") $(show_node_type $nodeType) -> "
-        if ((VERBOSE)); then
-            peers=( $(curl -s -m ${time_out_secs:-3} ${site} | grep hostname | sed -n 's/.*hostname="\([^"]*\)".*$/\1/p' | xargs) )
-            echo ${#peers[@]}
-            for peer in ${peers[@]}; do
-                echo "      $peer"
-            done
-        else
-            curl -s -m ${time_out_secs:-3} $site | grep hostname | wc -l
-        fi
+
+        #explore each one hop peer in a subshell... (for variable scoping reasons)
+        ( ((VERBOSE)) && echo
+            count=0
+            while read line2; do
+                eval $line2
+                [ $((queryNodeType & nodeType)) != "${queryNodeType}" ] && continue
+                ((count++))
+                if((VERBOSE)); then
+                    echo $node $(show_node_type $nodeType)
+                fi
+            done < <(curl -s -m ${time_out_secs:-3} $site | sed -n 's#.*hostname="\([^"]*\)".*nodeType="\([^"]*\).*$#node=\1; site=http://\1/esgf-node-manager/registration.xml; nodeType=\2#p')
+            echo $count)
 
     done < <(curl -s -m 15 http://${target_node}/esgf-node-manager/registration.xml | sed -n 's#.*hostname="\([^"]*\)".*nodeType="\([^"]*\).*$#node=\1; site=http://\1/esgf-node-manager/registration.xml; nodeType=\2#p')
 }
