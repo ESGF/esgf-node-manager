@@ -35,7 +35,11 @@ declare -r MAX_BIT=64
 declare -r ALL_BIT=$((DATA_BIT+INDEX_BIT+IDP_BIT+COMPUTE_BIT))
 #---------------
 
-queryNodeType=${ALL_BIT}
+#for OR logic
+#queryNodeType=${ALL_BIT}
+
+#for AND logic
+queryNodeType=0
 
 show_node_type() {
     local sel=${sel:=$1}
