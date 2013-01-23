@@ -214,6 +214,7 @@ public class AccessLoggingFilter implements Filter {
         
         boolean success = false;
         int id=-1;
+        long duration = -1;
 
         //Record identifying tuple
         String userID = null;
@@ -313,11 +314,12 @@ public class AccessLoggingFilter implements Filter {
         
         long startTime = System.currentTimeMillis();
         chain.doFilter(request, response);
-        long duration = System.currentTimeMillis() - startTime;
+        duration = System.currentTimeMillis() - startTime;
         //NOTE: I Don't think duration means what Nate thinks it means...
 
         try{
             if((accessLoggingDAO != null) && success) {
+                if(success) {success = feasibilityHeuristic(duration); }
                 accessLoggingDAO.logEgressInfo(id, success, duration);
             }
         }catch(Throwable t) {
@@ -325,6 +327,30 @@ public class AccessLoggingFilter implements Filter {
             HttpServletResponse resp = (HttpServletResponse)response;
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
         }
+    }
+
+    //The issue: We are getting quite a few "false positives" in the
+    //database indicating that the number of successfull downloads is
+    //larger than reality.  This is because we have no signal to
+    //detect a download failure or partial download (i.e. failure).
+    //The only signal at our disposal is the duration value that
+    //indicates how long this filter has been engaged in the service
+    //of file transfer.  This problem is certainly under constrained.
+    //Because we know we have files that average in size of over a GB
+    //and in general bandwidth for a node is about around 15MB/sec, we
+    //assert that if a duration is one second (1000ms) or less it is
+    //suspicious and thus deem it a failure.  Clearly this is a
+    //heuristic, however, when dealing with statistics over petabytes
+    //of data the small files that may get spuriously caught in this
+    //heuristic won't impact much on the overall size. Thus for the
+    //moment, until we have a better way, we will apply this heuristic
+    //to clean up the reporting so it is closer to reality.
+
+    //(time given in milliseconds)
+    private boolean feasibilityHeuristic(long time) {
+        //The heuristic is that it takes more than a second to transfer any file in the corpus
+        //(modulo super tiny fx files... which because they are super tiny won't have a huge effect on the gross value that is on the order of tera/peta bytes)
+        return (time > 1000);
     }
     
 }
