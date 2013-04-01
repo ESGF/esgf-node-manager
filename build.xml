@@ -121,6 +121,7 @@ Builds the project via ant (obviously).
 
 
 
+  <property name="ivy_retrieve_type" value="jar, bundle"/>
   <property name="filter" value="false"/>
   <property name="sign"   value="false"/>
   <property name="seal"   value="false"/>
