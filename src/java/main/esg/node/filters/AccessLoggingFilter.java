@@ -1,13 +1,6 @@
 /***************************************************************************
 *                                                                          *
-*  Organization: Lawrence Livermore National Lab (LLNL)                    *
-*   Directorate: Computation                                               *
-*    Department: Computing Applications and Research                       *
-*      Division: S&T Global Security                                       *
-*        Matrix: Atmospheric, Earth and Energy Division                    *
-*       Program: PCMDI                                                     *
-*       Project: Earth Systems Grid Federation (ESGF) Data Node Software   *
-*  First Author: Gavin M. Bell (gavin@llnl.gov)                            *
+*  Organization: Earth System Grid Federation                              *
 *                                                                          *
 ****************************************************************************
 *                                                                          *
@@ -19,7 +12,7 @@
 *   All rights reserved. This file is part of the:                         *
 *   Earth System Grid Federation (ESGF) Data Node Software Stack           *
 *                                                                          *
-*   For details, see http://esgf.org/esg-node/                             *
+*   For details, see http://esgf.org/                                      *
 *   Please also read this link                                             *
 *    http://esgf.org/LICENSE                                               *
 *                                                                          *
@@ -212,9 +205,7 @@ public class AccessLoggingFilter implements Filter {
         
         if(filterConfig == null) return;
         
-        boolean success = false;
-        int id=-1;
-        long duration = -1;
+        int id = -1;
 
         //Record identifying tuple
         String userID = null;
@@ -294,8 +285,8 @@ public class AccessLoggingFilter implements Filter {
                     dateFetched = System.currentTimeMillis()/1000;
                     batchUpdateTime = dateFetched; //For the life of my I am not sure why this is there, something from the gridftp metrics collection. -gmb
                     
-                    success = ((id = accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,serviceName,batchUpdateTime,dateFetched)) > 0);
-
+                    id = accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,serviceName,batchUpdateTime,dateFetched);
+                    
                 }else {
                     log.debug("No match against: "+url);
                 }
@@ -312,45 +303,47 @@ public class AccessLoggingFilter implements Filter {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
         }
         
-        long startTime = System.currentTimeMillis();
-        chain.doFilter(request, response);
-        duration = System.currentTimeMillis() - startTime;
-        //NOTE: I Don't think duration means what Nate thinks it means...
+        ByteCountListener byteCountListener = new ByteCountListener() {
+                long byteCount = 0;
+                int myID = -1;
+                boolean success = false;
+                long duration = -1;
+                long startTime = -1;
+                
+                public void setRecordID(int id) { this.myID = id; }
+                public void setStartTime(long startTime) { this.startTime = startTime; }
 
-        try{
-            if((accessLoggingDAO != null) && success) {
-                if(success) {success = feasibilityHeuristic(duration); }
-                accessLoggingDAO.logEgressInfo(id, success, duration);
-            }
-        }catch(Throwable t) {
-            log.error(t);
-            HttpServletResponse resp = (HttpServletResponse)response;
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
-        }
+                //This callback method should get called by the ByteCountingResponseStream when it is *closed*
+                public void setByteCount(long numBytes) {
+                    byteCount=numBytes;
+                    System.out.println("**** setByteCount to: "+numBytes);
+                    try{
+                        if((AccessLoggingFilter.this.accessLoggingDAO != null) && (myID > 0)) {
+                            //TODO: put in file size comparison function to determine success value
+                            //      pull out the filename to stat for size!
+                            success = AccessLoggingFilter.this.fileSizeCheck("foo", numBytes);
+                            duration = System.currentTimeMillis() - startTime;
+                            AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID, success, duration /*,numBytes*/);
+                        }
+                    }catch(Throwable t) {
+                        AccessLoggingFilter.this.log.error(t);
+                        /HttpServletResponse resp = (HttpServletResponse)response;
+                        //resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
+                    }
+                }
+                public long getByteCount() { return byteCount; }
+            };
+        byteCountListener.setRecordID(id);
+        byteCountListener.setStartTime(System.currentTimeMillis());
+        AccessLoggingResponseWrapper accessLoggingResponseWrapper = new AccessLoggingResponseWrapper((HttpServletResponse)response, byteCountListener);
+        chain.doFilter(request, accessLoggingResponseWrapper);
     }
 
-    //The issue: We are getting quite a few "false positives" in the
-    //database indicating that the number of successfull downloads is
-    //larger than reality.  This is because we have no signal to
-    //detect a download failure or partial download (i.e. failure).
-    //The only signal at our disposal is the duration value that
-    //indicates how long this filter has been engaged in the service
-    //of file transfer.  This problem is certainly under constrained.
-    //Because we know we have files that average in size of over a GB
-    //and in general bandwidth for a node is about around 15MB/sec, we
-    //assert that if a duration is one second (1000ms) or less it is
-    //suspicious and thus deem it a failure.  Clearly this is a
-    //heuristic, however, when dealing with statistics over petabytes
-    //of data the small files that may get spuriously caught in this
-    //heuristic won't impact much on the overall size. Thus for the
-    //moment, until we have a better way, we will apply this heuristic
-    //to clean up the reporting so it is closer to reality.
-
-    //(time given in milliseconds)
-    private boolean feasibilityHeuristic(long time) {
+    private boolean fileSizeCheck(String filename, long streamSize) {
+        boolean answer = false;
         //The heuristic is that it takes more than a second to transfer any file in the corpus
         //(modulo super tiny fx files... which because they are super tiny won't have a huge effect on the gross value that is on the order of tera/peta bytes)
-        return (time > 1000);
+        return answer;
     }
     
 }

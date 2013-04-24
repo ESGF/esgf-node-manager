@@ -50,5 +50,67 @@
 
 /**
    Description:
-
+   Routes the response to using custom stream
 **/
+package esg.node.filters;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
+import java.io.PrintWriter;
+import java.io.IOException;
+
+public class AccessLoggingResponseWrapper extends HttpServletResponseWrapper {
+
+    protected ServletOutputStream stream = null;
+    protected PrintWriter writer = null;
+    protected int buffSize = 1024; //one kilobyte 
+    protected HttpServletResponse origResponse = null;
+    protected ByteCountListener byteCountListener = null;
+
+    public AccessLoggingResponseWrapper(HttpServletResponse response, ByteCountListener byteCountListener) {
+        super(response);
+        this.origResponse = response;
+        this.byteCountListener = byteCountListener;
+    }
+
+    public AccessLoggingResponseWrapper(HttpServletResponse response) {
+        super(response);
+        this.origResponse = response;
+    }
+    
+    public void setByteCountListener(ByteCountListener byteCountListener) {
+        this.byteCountListener=byteCountListener;
+    }
+
+    public void setBuffSize(int buffSize) {
+        this.buffSize = buffSize;
+    }
+
+    public ServletOutputStream createOutputStream() throws IOException {
+        return (new ByteCountingResponseStream(origResponse, byteCountListener));
+    }
+
+    public ServletOutputStream getOutputStream() throws IOException {
+        if (writer != null) {
+            throw new IllegalStateException("getOutputStream() has already been called for this response");
+        }
+
+        if (stream == null) { stream = createOutputStream(); }
+        
+        ((ByteCountingResponseStream)stream).setBuffer(buffSize);
+        return stream;
+    }
+
+    public PrintWriter getWriter() throws IOException {
+        if (writer != null) { return writer; }
+        if (stream != null) {
+            throw new IllegalStateException("getOutputStream() has already been called for this response");
+        }
+
+        stream = createOutputStream();
+        ((ByteCountingResponseStream)stream).setBuffer(buffSize);
+        writer = new PrintWriter(stream);
+        return writer;
+    }
+}
