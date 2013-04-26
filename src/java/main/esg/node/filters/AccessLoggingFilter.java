@@ -317,30 +317,35 @@ public class AccessLoggingFilter implements Filter {
                 public void setByteCount(long numBytes) {
                     byteCount=numBytes;
                     System.out.println("**** setByteCount to: "+numBytes);
-                    try{
-                        if((AccessLoggingFilter.this.accessLoggingDAO != null) && (myID > 0)) {
-                            //TODO: put in file size comparison function to determine success value
-                            //      pull out the filename to stat for size!
-                            success = AccessLoggingFilter.this.fileSizeCheck("foo", numBytes);
-                            duration = System.currentTimeMillis() - startTime;
-                            AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID, success, duration /*,numBytes*/);
-                        }
-                    }catch(Throwable t) {
-                        AccessLoggingFilter.this.log.error(t);
-                        /HttpServletResponse resp = (HttpServletResponse)response;
-                        //resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
+
+                    if((AccessLoggingFilter.this.accessLoggingDAO != null) && (myID > 0)) {
+                        //TODO: put in file size comparison function to determine success value
+                        //      pull out the filename to stat for size!
+                        success = AccessLoggingFilter.this.fileSizeCheck("foo", numBytes);
+                        duration = System.currentTimeMillis() - startTime;
+                        AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID, success, duration /*,numBytes*/);
                     }
+                    
                 }
                 public long getByteCount() { return byteCount; }
             };
         byteCountListener.setRecordID(id);
         byteCountListener.setStartTime(System.currentTimeMillis());
         AccessLoggingResponseWrapper accessLoggingResponseWrapper = new AccessLoggingResponseWrapper((HttpServletResponse)response, byteCountListener);
-        chain.doFilter(request, accessLoggingResponseWrapper);
+        try{
+            chain.doFilter(request, accessLoggingResponseWrapper);
+        }catch(Throwable t) {
+            log.error(t);
+            HttpServletResponse resp = (HttpServletResponse)response;
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
+        }
     }
 
-    private boolean fileSizeCheck(String filename, long streamSize) {
+    private boolean fileSizeCheck(String filename, long xfrBytes) {
         boolean answer = false;
+        System.out.println("fileSizeCheck(...)");
+        System.out.println(" |-Filename: "+filename);
+        System.out.println(" |-Xfer'd Bytes: "+xfrBytes);
         //The heuristic is that it takes more than a second to transfer any file in the corpus
         //(modulo super tiny fx files... which because they are super tiny won't have a huge effect on the gross value that is on the order of tera/peta bytes)
         return answer;
