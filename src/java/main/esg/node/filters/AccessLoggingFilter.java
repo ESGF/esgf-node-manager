@@ -286,6 +286,7 @@ public class AccessLoggingFilter implements Filter {
                     batchUpdateTime = dateFetched; //For the life of my I am not sure why this is there, something from the gridftp metrics collection. -gmb
                     
                     id = accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,serviceName,batchUpdateTime,dateFetched);
+                    System.out.println("myID: ["+id+"] = accessLoggingDAO.logIngressInfo(userID: ["+userID+"], email, url: ["+url+"], fileID, remoteAddress, userAgent, serviceName, batchUpdateTime, dateFetched)");
                     
                 }else {
                     log.debug("No match against: "+url);
@@ -316,13 +317,14 @@ public class AccessLoggingFilter implements Filter {
                 //This callback method should get called by the ByteCountingResponseStream when it is *closed*
                 public void setByteCount(long numBytes) {
                     byteCount=numBytes;
-                    System.out.println("**** setByteCount to: "+numBytes);
+                    System.out.println("**** setByteCount("+numBytes+")");
 
                     if((AccessLoggingFilter.this.accessLoggingDAO != null) && (myID > 0)) {
                         //TODO: put in file size comparison function to determine success value
                         //      pull out the filename to stat for size!
                         success = AccessLoggingFilter.this.fileSizeCheck("foo", numBytes);
                         duration = System.currentTimeMillis() - startTime;
+                        System.out.println("AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID: ["+myID+"], success: ["+success+"], duration: ["+duration+"]ms, {numBytes: ["+numBytes+"]} );");
                         AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID, success, duration /*,numBytes*/);
                     }
                     
