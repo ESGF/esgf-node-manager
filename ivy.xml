@@ -113,6 +113,7 @@ Note: Check Maven for propery dependency parameter values @
     </dependency>
     <dependency org="javax.mail" name="mail" rev="1.4.4"/>
     <dependency org="postgresql" name="postgresql" rev="8.3-603.jdbc3"/>
+    <dependency org="javax.servlet" name="javax.servlet-api" rev="3.0.1"/>
 
   </dependencies>
 </ivy-module>

@@ -333,9 +333,9 @@ public class AccessLoggingFilter implements Filter {
             };
         byteCountListener.setRecordID(id);
         byteCountListener.setStartTime(System.currentTimeMillis());
-        //System.out.println("Content-Length = "+response.getHeader("Content-Length"));
+        System.out.println("Content-Length = "+((HttpServletResponse)response).getHeader("Content-Length"));
         try{
-            byteCountListener.setDataSizeBytes(Long.parseLong( "2" /*((HttpServletResponse)response).getHeader("Content-Length")*/));
+            byteCountListener.setDataSizeBytes(Long.parseLong(((HttpServletResponse)response).getHeader("Content-Length")));
         }catch (NumberFormatException nfe) { nfe.printStackTrace(); }
 
         AccessLoggingResponseWrapper accessLoggingResponseWrapper = new AccessLoggingResponseWrapper((HttpServletResponse)response, byteCountListener);
@@ -346,16 +346,6 @@ public class AccessLoggingFilter implements Filter {
             HttpServletResponse resp = (HttpServletResponse)response;
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
         }
-    }
-
-    private boolean fileSizeCheck(String filename, long xfrBytes) {
-        boolean answer = false;
-        System.out.println("fileSizeCheck(...)");
-        System.out.println(" |-Filename: "+filename);
-        System.out.println(" |-Xfer'd Bytes: "+xfrBytes);
-        //The heuristic is that it takes more than a second to transfer any file in the corpus
-        //(modulo super tiny fx files... which because they are super tiny won't have a huge effect on the gross value that is on the order of tera/peta bytes)
-        return answer;
     }
     
 }
