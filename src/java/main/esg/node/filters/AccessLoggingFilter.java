@@ -305,14 +305,16 @@ public class AccessLoggingFilter implements Filter {
         }
         
         ByteCountListener byteCountListener = new ByteCountListener() {
-                long byteCount = 0;
                 int myID = -1;
-                boolean success = false;
                 long duration = -1;
                 long startTime = -1;
+                long dataSizeBytes = -1;
+                long byteCount = -1;
+                boolean success = false;
                 
                 public void setRecordID(int id) { this.myID = id; }
                 public void setStartTime(long startTime) { this.startTime = startTime; }
+                public void setDataSizeBytes(long dataSizeBytes) { this.dataSizeBytes = dataSizeBytes; }
 
                 //This callback method should get called by the ByteCountingResponseStream when it is *closed*
                 public void setByteCount(long numBytes) {
@@ -320,12 +322,10 @@ public class AccessLoggingFilter implements Filter {
                     System.out.println("**** setByteCount("+numBytes+")");
 
                     if((AccessLoggingFilter.this.accessLoggingDAO != null) && (myID > 0)) {
-                        //TODO: put in file size comparison function to determine success value
-                        //      pull out the filename to stat for size!
-                        success = AccessLoggingFilter.this.fileSizeCheck("foo", numBytes);
+                        if (dataSizeBytes == numBytes) { success = true; }
                         duration = System.currentTimeMillis() - startTime;
-                        System.out.println("AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID: ["+myID+"], success: ["+success+"], duration: ["+duration+"]ms, {numBytes: ["+numBytes+"]} );");
-                        AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID, success, duration /*,numBytes*/);
+                        System.out.println("AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID: ["+myID+"], success: ["+success+"], duration: ["+duration+"]ms, dataSizeBytes ["+dataSizeBytes+"], numBytes: ["+numBytes+"] );");
+                        AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID, success, duration, dataSizeBytes, numBytes);
                     }
                     
                 }
@@ -333,6 +333,11 @@ public class AccessLoggingFilter implements Filter {
             };
         byteCountListener.setRecordID(id);
         byteCountListener.setStartTime(System.currentTimeMillis());
+        //System.out.println("Content-Length = "+response.getHeader("Content-Length"));
+        try{
+            byteCountListener.setDataSizeBytes(Long.parseLong( "2" /*((HttpServletResponse)response).getHeader("Content-Length")*/));
+        }catch (NumberFormatException nfe) { nfe.printStackTrace(); }
+
         AccessLoggingResponseWrapper accessLoggingResponseWrapper = new AccessLoggingResponseWrapper((HttpServletResponse)response, byteCountListener);
         try{
             chain.doFilter(request, accessLoggingResponseWrapper);

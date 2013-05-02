@@ -87,7 +87,7 @@ public class AccessLoggingDAO implements Serializable {
         "insert into esgf_node_manager.access_logging (id, user_id, user_id_hash, user_idp, email, url, file_id, remote_addr, user_agent, service_type, batch_update_time, date_fetched, success) "+
         "values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     private static final String accessLoggingEgressQuery = 
-        "update esgf_node_manager.access_logging set success = ?, duration = ? where id = ?";
+        "update esgf_node_manager.access_logging set success = ?, duration = ?, data_size = ?, xfer_size = ? where id = ?";
     
     private static final Log log = LogFactory.getLog(AccessLoggingDAO.class);
 
@@ -172,10 +172,13 @@ public class AccessLoggingDAO implements Serializable {
     //Once the record is uniquely identified then the egress
     //information (the last pair) can be updated.
     public int logEgressInfo(int id, 
-                             boolean success, long duration) {
+                             boolean success,
+                             long duration,
+                             long dataSize,
+                             long xferSize) {
         int ret = -1;
         try {
-            ret = queryRunner.update(accessLoggingEgressQuery,success,duration,id);
+            ret = queryRunner.update(accessLoggingEgressQuery,success,duration,dataSize,xferSize,id);
         }catch(SQLException ex) {
             log.error(ex);
         }
