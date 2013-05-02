@@ -308,24 +308,24 @@ public class AccessLoggingFilter implements Filter {
                 int myID = -1;
                 long duration = -1;
                 long startTime = -1;
-                long dataSizeBytes = -1;
+                long dataSize = -1;
                 long byteCount = -1;
                 boolean success = false;
                 
                 public void setRecordID(int id) { this.myID = id; }
                 public void setStartTime(long startTime) { this.startTime = startTime; }
-                public void setDataSizeBytes(long dataSizeBytes) { this.dataSizeBytes = dataSizeBytes; }
+                public void setDataSizeBytes(long dataSize) { this.dataSize = dataSize; }
 
                 //This callback method should get called by the ByteCountingResponseStream when it is *closed*
-                public void setByteCount(long numBytes) {
-                    byteCount=numBytes;
-                    System.out.println("**** setByteCount("+numBytes+")");
+                public void setByteCount(long xferSize) {
+                    byteCount=xferSize;
+                    System.out.println("**** setByteCount("+xferSize+")");
 
                     if((AccessLoggingFilter.this.accessLoggingDAO != null) && (myID > 0)) {
-                        if (dataSizeBytes == numBytes) { success = true; }
+                        if (dataSize == xferSize) { success = true; }
                         duration = System.currentTimeMillis() - startTime;
-                        System.out.println("AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID: ["+myID+"], success: ["+success+"], duration: ["+duration+"]ms, dataSizeBytes ["+dataSizeBytes+"], numBytes: ["+numBytes+"] );");
-                        AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID, success, duration, dataSizeBytes, numBytes);
+                        System.out.println("AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID: ["+myID+"], success: ["+success+"], duration: ["+duration+"]ms, dataSize ["+dataSize+"], xferSize: ["+xferSize+"] );");
+                        AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID, success, duration, dataSize, xferSize);
                     }
                     
                 }
