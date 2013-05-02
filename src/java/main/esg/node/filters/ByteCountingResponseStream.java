@@ -133,6 +133,7 @@ public class ByteCountingResponseStream extends ServletOutputStream {
         output.close();
         closed = true;
         if(byteCountListener != null) byteCountListener.setByteCount(totalBytes);
+        totalBytes=0;
     }
 
 
@@ -245,6 +246,7 @@ public class ByteCountingResponseStream extends ServletOutputStream {
 
         // write direct to output stream
         output.write(b, off, len);
+        totalBytes+=len;
     }
 
     /**
