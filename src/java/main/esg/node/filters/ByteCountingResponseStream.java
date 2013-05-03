@@ -69,7 +69,7 @@ public class ByteCountingResponseStream extends ServletOutputStream {
     
     private ByteCountListener byteCountListener = null;
 
-    private int debug = 2;
+    private int debug = 0;
     protected int buffSize = 0;
     protected byte[] buffer = null;
     protected int bufferCount = 0;

@@ -332,12 +332,10 @@ public class AccessLoggingFilter implements Filter {
                 public long getByteCount() { return byteCount; }
             };
         byteCountListener.setRecordID(id);
-        byteCountListener.setStartTime(System.currentTimeMillis());
-        System.out.println("Content-Length = "+((HttpServletResponse)response).getHeader("Content-Length"));
         try{
-            byteCountListener.setDataSizeBytes(Long.parseLong(((HttpServletResponse)response).getHeader("Content-Length")));
-        }catch (NumberFormatException nfe) { nfe.printStackTrace(); }
-
+            byteCountListener.setDataSizeBytes((new java.io.File(resolveUrlToFilename(url))).length());
+        }catch (Exception e) { e.printStackTrace(); }
+        byteCountListener.setStartTime(System.currentTimeMillis());
         AccessLoggingResponseWrapper accessLoggingResponseWrapper = new AccessLoggingResponseWrapper((HttpServletResponse)response, byteCountListener);
         try{
             chain.doFilter(request, accessLoggingResponseWrapper);
@@ -348,4 +346,8 @@ public class AccessLoggingFilter implements Filter {
         }
     }
     
+    //Here we resolve the URL passed in to where the bits reside on the filesystem.
+    private String resolveUrlToFilename(String url) {
+        return null;
+    }
 }
