@@ -52,11 +52,19 @@
    Description:
 
 **/
-package esg.node.Filters;
+package esg.node.filters;
 
-public class MountedPathResolver implments esg.common.Resolver {
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
+
+public class MountedPathResolver implements esg.common.Resolver {
     
-    private Map<String,String> mountpoints = null;
+    private static Log log = LogFactory.getLog(MountedPathResolver.class);
+
+    private Map<String,String> mountPoints = null;
 
     public MountedPathResolver() { }
     public MountedPathResolver(Map<String,String> mountPoints) {

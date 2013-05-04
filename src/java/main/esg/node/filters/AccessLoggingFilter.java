@@ -106,6 +106,7 @@
 **/
 package esg.node.filters;
 
+import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
 import java.util.Properties;
@@ -186,7 +187,7 @@ public class AccessLoggingFilter implements Filter {
         urlPattern = Pattern.compile(regex,Pattern.CASE_INSENSITIVE);
         
         log.trace(accessLoggingDAO.toString());
-        mpResolver = new MountedPathResolver((new esg.common.util.EsgIni()).getMounts());
+        mpResolver = new MountedPathResolver((new esg.common.util.ESGIni()).getMounts());
     }
 
     public void destroy() { 
@@ -341,16 +342,16 @@ public class AccessLoggingFilter implements Filter {
         }catch(Throwable t) {
             log.error(t);
             HttpServletResponse resp = (HttpServletResponse)response;
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter "t.getMessage());
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter "+t.getMessage());
         }
     }
     
     //Here we resolve the URL passed in to where the bits reside on the filesystem.
-    private String resolveUrlToFile(String url) {
+    private File resolveUrlToFile(String url) {
         //TODO:
         //1 - Strip url down to the path...
         String path = url;
-        java.io.File resolvedFile = new java.io.File(mpResolver.resolve(path));
-        return resolvedFile.exists() ? resolvedFile : null;
+        File resolvedFile = new File(mpResolver.resolve(path));
+        if (resolvedFile.exists()) { return resolvedFile; } else { return null; }
     }
 }

@@ -56,22 +56,36 @@
 package esg.common.util;
 
 import java.io.File;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.*;
 
 public class ESGIni {
 
-    File esgIniFile = null;
-    Map mountPoints = null;
+    private static Log log = LogFactory.getLog(ESGIni.class);
+    
+    private File esgIniFile = null;
+    private Map<String,String> mountPoints = null;
 
     public ESGIni() { 
         //Loads the default esg.ini file from $ESGF_HOME/conf/esgcet/esg.ini
-        String defaultFilename = System.getenv().get("ESGF_HOME","/esg")+"/conf/esgcet/esg.ini";
-        loadFile(defaultFilename);
+        String prefix = System.getenv().get("ESGF_HOME");
+        if(prefix != null) {
+            loadFile(prefix+File.separator+"conf/esgcet/esg.ini");
+        }else{
+            log.warn("No ini file loaded - could not get value for $ESGF_HOME!!!!");
+        }
     }
     public ESGIni(String esgIniFilename) {
         this.loadFile(new File(esgIniFilename));
     }
     public ESGIni(File esgIniFile) {
         this.loadFile(esgIniFile);
+    }
+    public ESGIni loadFile(String esgIniFilename) {
+        return this.loadFile(new File(esgIniFilename));
     }
     public ESGIni loadFile(File esgIniFile) {
         this.esgIniFile=esgIniFile;
