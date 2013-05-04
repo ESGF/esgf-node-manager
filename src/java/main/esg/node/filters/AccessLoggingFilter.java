@@ -138,7 +138,7 @@ public class AccessLoggingFilter implements Filter {
     AccessLoggingDAO accessLoggingDAO = null;
     Properties dbProperties = null;
     private Pattern urlPattern = null;
-    
+    private MountedPathResolver mpResolver = null;
     private String serviceName = null;
 
 
@@ -186,6 +186,7 @@ public class AccessLoggingFilter implements Filter {
         urlPattern = Pattern.compile(regex,Pattern.CASE_INSENSITIVE);
         
         log.trace(accessLoggingDAO.toString());
+        mpResolver = new MountedPathResolver((new esg.common.util.EsgIni()).getMounts());
     }
 
     public void destroy() { 
@@ -332,9 +333,7 @@ public class AccessLoggingFilter implements Filter {
                 public long getByteCount() { return byteCount; }
             };
         byteCountListener.setRecordID(id);
-        try{
-            byteCountListener.setDataSizeBytes((new java.io.File(resolveUrlToFilename(url))).length());
-        }catch (Exception e) { e.printStackTrace(); }
+        byteCountListener.setDataSizeBytes(resolveUrlToFile(url).length());
         byteCountListener.setStartTime(System.currentTimeMillis());
         AccessLoggingResponseWrapper accessLoggingResponseWrapper = new AccessLoggingResponseWrapper((HttpServletResponse)response, byteCountListener);
         try{
@@ -342,12 +341,16 @@ public class AccessLoggingFilter implements Filter {
         }catch(Throwable t) {
             log.error(t);
             HttpServletResponse resp = (HttpServletResponse)response;
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter "t.getMessage());
         }
     }
     
     //Here we resolve the URL passed in to where the bits reside on the filesystem.
-    private String resolveUrlToFilename(String url) {
-        return null;
+    private String resolveUrlToFile(String url) {
+        //TODO:
+        //1 - Strip url down to the path...
+        String path = url;
+        java.io.File resolvedFile = new java.io.File(mpResolver.resolve(path));
+        return resolvedFile.exists() ? resolvedFile : null;
     }
 }
