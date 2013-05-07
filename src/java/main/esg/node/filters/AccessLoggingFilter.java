@@ -139,6 +139,7 @@ public class AccessLoggingFilter implements Filter {
     AccessLoggingDAO accessLoggingDAO = null;
     Properties dbProperties = null;
     private Pattern urlPattern = null;
+    private static final Pattern mountedPathPattern;
     private MountedPathResolver mpResolver = null;
     private String serviceName = null;
 
@@ -187,6 +188,9 @@ public class AccessLoggingFilter implements Filter {
         urlPattern = Pattern.compile(regex,Pattern.CASE_INSENSITIVE);
         
         log.trace(accessLoggingDAO.toString());
+        String svc_prefix = esgfProperties.getProperty("node.download.svc.prefix","thredds/fileServer");
+        String mountedPathRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/"+svc_prefix+"(.*$)";
+        mountedPathPattern = Pattern.compile(mountedPathRegex,Pattern.CASE_INSENSITIVE);
         mpResolver = new MountedPathResolver((new esg.common.util.ESGIni()).getMounts());
     }
 
@@ -348,9 +352,11 @@ public class AccessLoggingFilter implements Filter {
     
     //Here we resolve the URL passed in to where the bits reside on the filesystem.
     private File resolveUrlToFile(String url) {
-        //TODO:
-        //1 - Strip url down to the path...
-        String path = url;
+        //Strip url down to just the path...
+        Matcher m = mountedPathPattern.matcher(url);
+        if (!m.find(url)) return null;
+        String path = m.group(3); //the path AFTER the 
+        System.out.println(" --> stripping url ["+url+"] to path ["+path+"]")
         File resolvedFile = new File(mpResolver.resolve(path));
         if (resolvedFile.exists()) { return resolvedFile; } else { return null; }
     }
