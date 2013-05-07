@@ -62,22 +62,63 @@ import org.apache.commons.logging.impl.*;
 
 public class MountedPathResolver implements esg.common.Resolver {
     
-    private static Log log = LogFactory.getLog(MountedPathResolver.class);
+    
+    private List<MountPoint> mountPoints = null;
 
-    private Map<String,String> mountPoints = null;
+    public MountPathResolver() {
+        this.mountPoints = new ArrayList<MountPoint>(5);
+    }
 
-    public MountedPathResolver() { }
-    public MountedPathResolver(Map<String,String> mountPoints) {
-        this.setMountPoints(mountPoints);
+    //Up-front loading, getting data into the resolver
+    //adding an unordered mountpoint map
+    public void addMountPoints(Map<String,String> readMountpoints) {
+        this.mountPoints.clear();
+
+        Comparator stringLengthComparator = new Comparator<String>() {
+            public int compare(String o1, String o2) {
+                System.out.print("length of "+o1+" = "+o1.length()); System.out.println(" ? length of "+o2+" = "+o2.length());
+                if(o1.length() > o2.length())      { return -1; }
+                else if(o1.length() < o2.length()) { return  1;}
+                else { return  0; }
+            }
+        };
+        
+        SortedMap ordered = new TreeMap<String,String>(stringLengthComparator);
+        ordered.putAll(readMountpoints);
+        
+        for(String key : readMountpoints.keySet()) {
+            addMountPoint(key,readMountpoints.get(key));
+        }
+        System.out.println();
     }
     
-    public void setMountPoints(Map<String,String> mountPoints) {
-        this.mountPoints = mountPoints;
+    private synchronized void addMountPoint(String mountpoint, String localpath) {
+        System.out.println("Adding mountpoint: "+mountpoint+" --> "+localpath);
+        this.mountPoints.add(new MountPoint(Pattern.compile("/"+mountpoint+"/(.*$)").matcher(""),localpath));
     }
-
+    
     public String resolve(String input) {
-        //TODO using the map search for the longest matching substring and return that...
-        return null;
+        String out = null;
+        System.out.println("Resolving "+input);
+        for(MountPoint mp : mountPoints) {
+            mp.mountmatcher.reset(input);
+            if(mp.mountmatcher.find()) {
+                out = mp.localpath+java.io.File.separator+mp.mountmatcher.group(1);
+                break;
+            }
+        }
+        System.out.println("Resolved to local path: ["+out+"]");
+        return out;
     }
-    
+
+    private class MountPoint {
+        Matcher mountmatcher = null;
+        String localpath = null;
+        MountPoint(Matcher mountmatcher, String localpath) {
+            this.mountmatcher = mountmatcher;
+            this.localpath = localpath;
+        }
+    }
+
+    public String toString() { return mountPoints.toString(); }
 }
