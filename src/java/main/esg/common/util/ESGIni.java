@@ -55,8 +55,15 @@
 **/
 package esg.common.util;
 
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.FileInputStream;
 import java.io.File;
 import java.util.Map;
+import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -65,36 +72,88 @@ import org.apache.commons.logging.impl.*;
 public class ESGIni {
 
     private static Log log = LogFactory.getLog(ESGIni.class);
+
+    private static final String regexBegin = "[ ]*thredds_dataset_roots[ ]*=";
+    private static final Pattern beginPat = Pattern.compile(regexBegin,Pattern.CASE_INSENSITIVE);
+
+    private static final String regexEnd = "[ ]*=[ ]*";
+    private static final Pattern endPat = Pattern.compile(regexEnd,Pattern.CASE_INSENSITIVE);
+
+    private static final String regexEntries = "[ ]*([^|]*)(.*)$";
+    private static final Pattern entryPat = Pattern.compile(regexEntries,Pattern.CASE_INSENSITIVE);
     
-    private File esgIniFile = null;
-    private Map<String,String> mountPoints = null;
+    private Map<String,String> mountPoints = new HashMap<String,String>(5);
 
     public ESGIni() { 
         //Loads the default esg.ini file from $ESGF_HOME/conf/esgcet/esg.ini
-        String prefix = System.getenv().get("ESGF_HOME");
-        if(prefix != null) {
-            loadFile(prefix+File.separator+"conf/esgcet/esg.ini");
+        String esgfHome = System.getenv().get("ESGF_HOME");
+        if(esgfHome != null) {
+            loadFile(esgfHome+File.separator+"conf/esgcet/esg.ini");
         }else{
             log.warn("No ini file loaded - could not get value for $ESGF_HOME!!!!");
         }
     }
-    public ESGIni(String esgIniFilename) {
-        this.loadFile(new File(esgIniFilename));
-    }
-    public ESGIni(File esgIniFile) {
-        this.loadFile(esgIniFile);
-    }
-    public ESGIni loadFile(String esgIniFilename) {
-        return this.loadFile(new File(esgIniFilename));
-    }
-    public ESGIni loadFile(File esgIniFile) {
-        this.esgIniFile=esgIniFile;
-        System.out.println("Loading File: "+esgIniFile.getAbsolutePath());
-        //TODO parse the file into its parts
+
+    public ESGIni loadFile(String filename) { 
+        File file = new File(filename);
+        if (file.exists()) {
+            this.loadFile(file);
+        }else {
+            System.out.println("Sorry file ["+filename+"] does not exist on local filesystem");
+            //return this;
+        }
         return this;
     }
-    
+
+    public ESGIni loadFile(File f) {
+        System.out.println("Loading File: "+f.getAbsolutePath());
+        BufferedReader buff = null;
+        try{
+            buff = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+            String line = null;
+            Matcher begin = beginPat.matcher("");
+            Matcher end = endPat.matcher("");
+            Matcher entry = entryPat.matcher("");
+            boolean in = false;
+            while((line = buff.readLine()) != null) {
+                //System.out.println("buff -> "+line);
+                begin.reset(line);
+                if(begin.find()) { in=true; continue; }
+                if(in) {
+                    //System.out.println("IN -> "+line);
+                    entry.reset(line);
+                    if(entry.find()) {
+                        String mountPoint = entry.group(1).trim();
+                        String localpath = entry.group(2);
+                        if (localpath.startsWith("|")) localpath = localpath.substring(1).trim();
+                        //System.out.println("Entry = m:["+mountPoint+"] -> l:["+localpath+"]");
+                        if( !mountPoint.isEmpty() && !localpath.isEmpty()) {
+                            System.out.println("Mount Point: ["+mountPoint+"] --> ["+localpath+"]");
+                            mountPoints.put(mountPoint,localpath);
+                        }
+                    }else {
+                        in=false;
+                        break;
+                    }
+                }
+                end.reset(line);
+                if(end.find() && in) { in=false; break; }
+            }
+        }catch(java.io.IOException e) {
+            e.printStackTrace();
+        }finally {
+            try { buff.close(); } catch(Throwable t) { }
+        }
+        return this;
+    }
+
     public Map<String,String> getMounts() {
         return mountPoints;
     }
+
+    public ESGIni clear() {
+        mountPoints.clear();
+        return this;
+    }
+
 }

@@ -88,7 +88,6 @@ public class MountedPathResolver implements esg.common.Resolver {
 
         Comparator<? super String> stringLengthComparator = new Comparator<String>() {
             public int compare(String o1, String o2) {
-                System.out.print("length of "+o1+" = "+o1.length()); System.out.println(" ? length of "+o2+" = "+o2.length());
                 if(o1.length() > o2.length())      { return -1; }
                 else if(o1.length() < o2.length()) { return  1;}
                 else { return  0; }
@@ -98,11 +97,10 @@ public class MountedPathResolver implements esg.common.Resolver {
         //Just sort the keys in length order.
         TreeSet<String> rmpSorted = new TreeSet<String>(stringLengthComparator);
         rmpSorted.addAll(readMountpoints.keySet());
-
+        
         for(String key : rmpSorted) {
             addMountPoint(key,readMountpoints.get(key));
         }
-        System.out.println();
     }
     
     private synchronized void addMountPoint(String mountpoint, String localpath) {
