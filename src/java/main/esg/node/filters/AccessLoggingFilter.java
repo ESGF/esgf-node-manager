@@ -310,38 +310,38 @@ public class AccessLoggingFilter implements Filter {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
         }
         
-        ByteCountListener byteCountListener = new ByteCountListener() {
-                int myID = -1;
-                long duration = -1;
-                long startTime = -1;
-                long dataSize = -1;
-                long byteCount = -1;
-                boolean success = false;
-                
-                public void setRecordID(int id) { this.myID = id; }
-                public void setStartTime(long startTime) { this.startTime = startTime; }
-                public void setDataSizeBytes(long dataSize) { this.dataSize = dataSize; }
-
-                //This callback method should get called by the ByteCountingResponseStream when it is *closed*
-                public void setByteCount(long xferSize) {
-                    byteCount=xferSize;
-                    System.out.println("**** setByteCount("+xferSize+")");
-
-                    if((AccessLoggingFilter.this.accessLoggingDAO != null) && (myID > 0)) {
-                        if (dataSize == xferSize) { success = true; }
-                        duration = System.currentTimeMillis() - startTime;
-                        System.out.println("AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID: ["+myID+"], success: ["+success+"], duration: ["+duration+"]ms, dataSize ["+dataSize+"], xferSize: ["+xferSize+"] );");
-                        AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID, success, duration, dataSize, xferSize);
-                    }
-                    
-                }
-                public long getByteCount() { return byteCount; }
-            };
-        byteCountListener.setRecordID(id);
-        byteCountListener.setDataSizeBytes(resolveUrlToFile(url).length());
-        byteCountListener.setStartTime(System.currentTimeMillis());
-        AccessLoggingResponseWrapper accessLoggingResponseWrapper = new AccessLoggingResponseWrapper((HttpServletResponse)response, byteCountListener);
         try{
+
+            ByteCountListener byteCountListener = new ByteCountListener() {
+                    int myID = -1;
+                    long duration = -1;
+                    long startTime = -1;
+                    long dataSize = -1;
+                    long byteCount = -1;
+                    boolean success = false;
+
+                    public void setRecordID(int id) { this.myID = id; }
+                    public void setStartTime(long startTime) { this.startTime = startTime; }
+                    public void setDataSizeBytes(long dataSize) { this.dataSize = dataSize; }
+
+                    //This callback method should get called by the ByteCountingResponseStream when it is *closed*
+                    public void setByteCount(long xferSize) {
+                        byteCount=xferSize;
+                        System.out.println("**** setByteCount("+xferSize+")");
+
+                        if((AccessLoggingFilter.this.accessLoggingDAO != null) && (myID > 0)) {
+                            if (dataSize == xferSize) { success = true; }
+                            duration = System.currentTimeMillis() - startTime;
+                            System.out.println("AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID: ["+myID+"], success: ["+success+"], duration: ["+duration+"]ms, dataSize ["+dataSize+"], xferSize: ["+xferSize+"] );");
+                            AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID, success, duration, dataSize, xferSize);
+                        }
+                    }
+                    public long getByteCount() { return byteCount; }
+                };
+            byteCountListener.setRecordID(id);
+            byteCountListener.setDataSizeBytes(resolveUrlToFile(url).length());
+            byteCountListener.setStartTime(System.currentTimeMillis());
+            AccessLoggingResponseWrapper accessLoggingResponseWrapper = new AccessLoggingResponseWrapper((HttpServletResponse)response, byteCountListener);
             chain.doFilter(request, accessLoggingResponseWrapper);
         }catch(Throwable t) {
             log.error(t);
@@ -356,8 +356,15 @@ public class AccessLoggingFilter implements Filter {
         Matcher m = mountedPathPattern.matcher(url);
         if (!m.find(url)) return null;
         String path = m.group(3); //the path AFTER the 
-        System.out.println(" --> stripping url ["+url+"] to path ["+path+"]")
-        File resolvedFile = new File(mpResolver.resolve(path));
-        if (resolvedFile.exists()) { return resolvedFile; } else { return null; }
+        System.out.println(" --> stripping url ["+url+"] to path ["+path+"]");
+        File resolvedFile = null;
+        try{
+            resolvedFile = new File(mpResolver.resolve(path));
+            if ((resolvedFile != null) && resolvedFile.exists()) {
+                log.warn("Unable to resolve file to existing filesystem location");
+                return resolvedFile;
+            }
+        }catch(Exception e) { log.err(e); }
+        return resolvedFile;
     }
 }
