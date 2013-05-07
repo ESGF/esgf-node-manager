@@ -72,8 +72,13 @@ public class MountedPathResolver implements esg.common.Resolver {
     
     private List<MountPoint> mountPoints = null;
 
-    public MountPathResolver() {
+    public MountedPathResolver() {
         this.mountPoints = new ArrayList<MountPoint>(5);
+    }
+
+    public MountedPathResolver(Map<String,String> readMountpoints) {
+        this();
+        addMountPoints(readMountpoints);
     }
 
     //Up-front loading, getting data into the resolver
@@ -81,7 +86,7 @@ public class MountedPathResolver implements esg.common.Resolver {
     public void addMountPoints(Map<String,String> readMountpoints) {
         this.mountPoints.clear();
 
-        Comparator stringLengthComparator = new Comparator<String>() {
+        Comparator<? super String> stringLengthComparator = new Comparator<String>() {
             public int compare(String o1, String o2) {
                 System.out.print("length of "+o1+" = "+o1.length()); System.out.println(" ? length of "+o2+" = "+o2.length());
                 if(o1.length() > o2.length())      { return -1; }
@@ -89,11 +94,12 @@ public class MountedPathResolver implements esg.common.Resolver {
                 else { return  0; }
             }
         };
-        
-        SortedMap ordered = new TreeMap<String,String>(stringLengthComparator);
-        ordered.putAll(readMountpoints);
-        
-        for(String key : readMountpoints.keySet()) {
+                
+        //Just sort the keys in length order.
+        TreeSet<String> rmpSorted = new TreeSet<String>(stringLengthComparator);
+        rmpSorted.addAll(readMountpoints.keySet());
+
+        for(String key : rmpSorted) {
             addMountPoint(key,readMountpoints.get(key));
         }
         System.out.println();
