@@ -59,8 +59,7 @@ import java.util.regex.Matcher;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.Comparator;
 
 import org.apache.commons.logging.Log;
@@ -111,9 +110,12 @@ public class MountedPathResolver implements esg.common.Resolver {
     public String resolve(String input) {
         String out = null;
         System.out.println("Resolving "+input);
+        System.out.println("Scanning over ["+mountPoints.size()+"] mounts");
         for(MountPoint mp : mountPoints) {
+            System.out.print("-");
             mp.mountmatcher.reset(input);
             if(mp.mountmatcher.find()) {
+                System.out.print("+");
                 out = mp.localpath+java.io.File.separator+mp.mountmatcher.group(1);
                 break;
             }

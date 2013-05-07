@@ -139,7 +139,7 @@ public class AccessLoggingFilter implements Filter {
     AccessLoggingDAO accessLoggingDAO = null;
     Properties dbProperties = null;
     private Pattern urlPattern = null;
-    private static final Pattern mountedPathPattern;
+    private Pattern mountedPathPattern;
     private MountedPathResolver mpResolver = null;
     private String serviceName = null;
 
@@ -354,17 +354,18 @@ public class AccessLoggingFilter implements Filter {
     private File resolveUrlToFile(String url) {
         //Strip url down to just the path...
         Matcher m = mountedPathPattern.matcher(url);
-        if (!m.find(url)) return null;
-        String path = m.group(3); //the path AFTER the 
+        if (!m.find()) return null;
+        String path = m.group(3); //the path AFTER the service prefix
         System.out.println(" --> stripping url ["+url+"] to path ["+path+"]");
         File resolvedFile = null;
         try{
             resolvedFile = new File(mpResolver.resolve(path));
             if ((resolvedFile != null) && resolvedFile.exists()) {
-                log.warn("Unable to resolve file to existing filesystem location");
                 return resolvedFile;
+            }else{
+                log.warn("Unable to resolve file to existing filesystem location");
             }
-        }catch(Exception e) { log.err(e); }
+        }catch(Exception e) { log.error(e); }
         return resolvedFile;
     }
 }

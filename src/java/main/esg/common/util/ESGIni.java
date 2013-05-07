@@ -88,25 +88,25 @@ public class ESGIni {
         //Loads the default esg.ini file from $ESGF_HOME/conf/esgcet/esg.ini
         String esgfHome = System.getenv().get("ESGF_HOME");
         if(esgfHome != null) {
-            loadFile(esgfHome+File.separator+"conf/esgcet/esg.ini");
+            loadFile(esgfHome+File.separator+"config/esgcet/esg.ini");
         }else{
             log.warn("No ini file loaded - could not get value for $ESGF_HOME!!!!");
         }
     }
 
     public ESGIni loadFile(String filename) { 
+        System.out.println("ESGIni, Loading File:* "+filename);
         File file = new File(filename);
         if (file.exists()) {
             this.loadFile(file);
         }else {
             System.out.println("Sorry file ["+filename+"] does not exist on local filesystem");
-            //return this;
         }
         return this;
     }
 
     public ESGIni loadFile(File f) {
-        System.out.println("Loading File: "+f.getAbsolutePath());
+        System.out.println("ESGIni, Loading File:  "+f.getAbsolutePath());
         BufferedReader buff = null;
         try{
             buff = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
@@ -148,6 +148,7 @@ public class ESGIni {
     }
 
     public Map<String,String> getMounts() {
+        System.out.println("esg.ini returning ["+mountPoints.size()+"] mounts");
         return mountPoints;
     }
 
