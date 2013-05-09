@@ -112,13 +112,13 @@ public class MountedPathResolver implements esg.common.Resolver {
         System.out.println("Resolving "+input);
         System.out.println("Scanning over ["+mountPoints.size()+"] mounts");
         for(MountPoint mp : mountPoints) {
-            System.out.print("-");
             mp.mountmatcher.reset(input);
             if(mp.mountmatcher.find()) {
                 System.out.print("+");
                 out = mp.localpath+java.io.File.separator+mp.mountmatcher.group(1);
                 break;
             }
+            System.out.print("-");
         }
         System.out.println("Resolved to local path: ["+out+"]");
         return out;
