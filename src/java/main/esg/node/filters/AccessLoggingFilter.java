@@ -94,6 +94,8 @@
       <param-value>thredds</param-value>
     </init-param>
     <init-param>
+      <param-name>exempt_extensions</param-name>
+      <param-value>.xml</param-value>
       <param-name>extensions</param-name>
       <param-value>.nc,.foo,.bar</param-value>
     </init-param>
@@ -139,6 +141,7 @@ public class AccessLoggingFilter implements Filter {
     AccessLoggingDAO accessLoggingDAO = null;
     Properties dbProperties = null;
     private Pattern urlPattern = null;
+    private Pattern exemptUrlPattern = null;
     private Pattern mountedPathPattern;
     private MountedPathResolver mpResolver = null;
     private String serviceName = null;
@@ -171,7 +174,9 @@ public class AccessLoggingFilter implements Filter {
         DatabaseResource.getInstance().showDriverStats();
         accessLoggingDAO = new AccessLoggingDAO(DatabaseResource.getInstance().getDataSource());
         
-        
+        //------------------------------------------------------------------------
+        // Extensions that this filter will handle...
+        //------------------------------------------------------------------------
         String extensionsParam = filterConfig.getInitParameter("extensions");
         if (extensionsParam == null) { extensionsParam=""; } //defensive program against null for this param
         String[] extensions = (".nc,"+extensionsParam.toString()).split(",");
@@ -186,6 +191,27 @@ public class AccessLoggingFilter implements Filter {
         System.out.println("Regex = "+regex);
         
         urlPattern = Pattern.compile(regex,Pattern.CASE_INSENSITIVE);
+        //------------------------------------------------------------------------
+
+
+        //------------------------------------------------------------------------
+        // Extensions that this filter will NOT handle...
+        //------------------------------------------------------------------------
+        String exemptExtensionsParam = filterConfig.getInitParameter("exempt_extensions");
+        if (exemptExtensionsParam == null) { exemptExtensionsParam=""; } //defensive program against null for this param
+        String[] exemptExtensions = (".xml,"+exemptExtensionsParam.toString()).split(",");
+
+        sb = new StringBuffer();
+        for(int i=0 ; i<extensions.length; i++) {
+            sb.append(exemptExtensions[i].trim());
+            if(i<exemptExtensions.length-1) sb.append("|");
+        }
+        System.out.println("looking for exempt extensions: "+sb.toString());
+        regex = "http.*(?:"+sb.toString()+")$";
+        System.out.println("Exempt Regex = "+regex);
+
+        exemptUrlPattern = Pattern.compile(regex,Pattern.CASE_INSENSITIVE);
+        //------------------------------------------------------------------------
         
         log.trace(accessLoggingDAO.toString());
         String svc_prefix = esgfProperties.getProperty("node.download.svc.prefix","thredds/fileServer");
@@ -226,6 +252,7 @@ public class AccessLoggingFilter implements Filter {
 
         //firewall off any errors so that nothing stops the show...
         try {
+            log.warn("accessLogging DAO -> "+accessLoggingDAO);
             if(accessLoggingDAO != null) {
                 
                 //This filter should only appy to specific requests
@@ -233,8 +260,19 @@ public class AccessLoggingFilter implements Filter {
                 
                 HttpServletRequest req = (HttpServletRequest)request;
                 url = req.getRequestURL().toString().trim();
+                log.warn("Requested URL: "+url);
+
+                Matcher exemptMatcher = exemptUrlPattern.matcher(url);
                 Matcher m = urlPattern.matcher(url);
-                
+
+                if(exemptMatcher.matches()) {
+                    log.warn("I am not logging this, punting!!!! on "+url);
+                    chain.doFilter(request, response);
+                    return;
+                }
+
+                System.out.println("+");
+
                 if(m.matches()) {
 
                     // only proceed if the request has been authorized
@@ -246,7 +284,7 @@ public class AccessLoggingFilter implements Filter {
                         return;
                     }
 
-                    log.debug("Executing filter on: "+url);
+                    log.warn("Executing filter on: "+url);
 
                     //------------------------------------------------------------------------------------------
                     //For Token authentication there is a Validation Map present with user and email information
@@ -267,7 +305,7 @@ public class AccessLoggingFilter implements Filter {
                         req.removeAttribute("validationMap");
                         
                     }else{
-                        log.debug("Validation Map is ["+validationMap+"] - (not a token based request)");
+                        log.warn("Validation Map is ["+validationMap+"] - (not a token based request)");
                     }
                     //------------------------------------------------------------------------------------------
                     
@@ -279,7 +317,7 @@ public class AccessLoggingFilter implements Filter {
                     if (userID == null || userID.isEmpty()) {
                         userID = ((req.getAttribute("esg.openid") == null) ? "<no-id>" : req.getAttribute("esg.openid").toString());
                         if(userID == null || userID.isEmpty()) { log.warn("This request is apparently not a \"tokenless\" request either - no openid attribute!!!!!"); }
-                        log.debug("AccessLoggingFilter - Tokenless: UserID = ["+userID+"]");
+                        log.warn("AccessLoggingFilter - Tokenless: UserID = ["+userID+"]");
                     }
                     //------------------------------------------------------------------------------------------
                     
@@ -295,7 +333,7 @@ public class AccessLoggingFilter implements Filter {
                     System.out.println("myID: ["+id+"] = accessLoggingDAO.logIngressInfo(userID: ["+userID+"], email, url: ["+url+"], fileID, remoteAddress, userAgent, serviceName, batchUpdateTime, dateFetched)");
                     
                 }else {
-                    log.debug("No match against: "+url);
+                    log.warn("No match against: "+url);
                 }
                 
             }else{
@@ -346,7 +384,7 @@ public class AccessLoggingFilter implements Filter {
         }catch(Throwable t) {
             log.error(t);
             HttpServletResponse resp = (HttpServletResponse)response;
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter "+t.getMessage());
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter* "+t.getMessage());
         }
     }
     
