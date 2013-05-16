@@ -86,6 +86,7 @@
   <!-- ******************************************************** -->
   <!-- ACCESS LOG DATA FETCHING SERVICE                         -->
   <!-- ******************************************************** -->
+<!--
   <servlet>
    <servlet-name>accesslog</servlet-name>
    <servlet-class>com.caucho.hessian.server.HessianServlet</servlet-class>
@@ -104,6 +105,7 @@
     <url-pattern>/accesslog</url-pattern>
     <servlet-name>accesslog</servlet-name>
   </servlet-mapping>
+-->
   <!-- ******************************************************** -->
 
 </web-app>

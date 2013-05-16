@@ -12,6 +12,8 @@
       <param-value>@service.name@</param-value>
     </init-param>
     <init-param>
+      <param-name>exempt_extensions</param-name>
+      <param-value>@exempt_extensions@</param-value>
       <param-name>extensions</param-name>
       <param-value>@extensions@</param-value>
     </init-param>
