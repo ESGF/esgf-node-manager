@@ -262,18 +262,25 @@ public class AccessLoggingFilter implements Filter {
                 url = req.getRequestURL().toString().trim();
                 System.out.println("Requested URL: "+url);
 
-                Matcher exemptMatcher = exemptUrlPattern.matcher(url);
-                Matcher m = urlPattern.matcher(url);
+                Matcher exemptFilesMatcher = exemptUrlPattern.matcher(url);
+                Matcher forThreddsFileServiceMatcher = mountedPathPattern.matcher(url);
+                Matcher allowedFilesMatcher = urlPattern.matcher(url);
 
-                if(exemptMatcher.matches()) {
+                if(exemptFilesMatcher.matches()) {
                     System.out.println("I am not logging this, punting!!!! on "+url);
                     chain.doFilter(request, response);
                     return;
                 }
-
                 System.out.println("+");
 
-                if(m.matches()) {
+                if (!forThreddsFileServiceMatcher.find()) {
+                    System.out.println("url not for thredds' fileService, punting!!!! on "+url);
+                    chain.doFilter(request, response);
+                    return;
+                }
+                System.out.println("+");
+
+                if(allowedFilesMatcher.matches()) {
 
                     // only proceed if the request has been authorized
                     final Boolean requestIsAuthorized = (Boolean)request.getAttribute(AUTHORIZATION_REQUEST_ATTRIBUTE);
