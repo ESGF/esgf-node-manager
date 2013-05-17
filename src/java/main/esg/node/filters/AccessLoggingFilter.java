@@ -148,7 +148,7 @@ public class AccessLoggingFilter implements Filter {
 
 
     public void init(FilterConfig filterConfig) throws ServletException {
-        log.debug("Initializing filter: "+this.getClass().getName());
+        System.out.println("Initializing filter: "+this.getClass().getName());
         this.filterConfig = filterConfig;
         ESGFProperties esgfProperties = null;
         try{
@@ -186,7 +186,7 @@ public class AccessLoggingFilter implements Filter {
             sb.append(extensions[i].trim());
             if(i<extensions.length-1) sb.append("|");
         }
-        System.out.println("looking for extensions: "+sb.toString());
+        System.out.println("Looking for extensions: "+sb.toString());
         String regex = "http.*(?:"+sb.toString()+")$";
         System.out.println("Regex = "+regex);
         
@@ -202,11 +202,11 @@ public class AccessLoggingFilter implements Filter {
         String[] exemptExtensions = (".xml,"+exemptExtensionsParam.toString()).split(",");
 
         sb = new StringBuffer();
-        for(int i=0 ; i<extensions.length; i++) {
+        for(int i=0 ; i<exemptExtensions.length; i++) {
             sb.append(exemptExtensions[i].trim());
             if(i<exemptExtensions.length-1) sb.append("|");
         }
-        System.out.println("looking for exempt extensions: "+sb.toString());
+        System.out.println("Looking for exempt extensions: "+sb.toString());
         regex = "http.*(?:"+sb.toString()+")$";
         System.out.println("Exempt Regex = "+regex);
 
@@ -260,13 +260,13 @@ public class AccessLoggingFilter implements Filter {
                 
                 HttpServletRequest req = (HttpServletRequest)request;
                 url = req.getRequestURL().toString().trim();
-                log.warn("Requested URL: "+url);
+                System.out.println("Requested URL: "+url);
 
                 Matcher exemptMatcher = exemptUrlPattern.matcher(url);
                 Matcher m = urlPattern.matcher(url);
 
                 if(exemptMatcher.matches()) {
-                    log.warn("I am not logging this, punting!!!! on "+url);
+                    System.out.println("I am not logging this, punting!!!! on "+url);
                     chain.doFilter(request, response);
                     return;
                 }
@@ -279,12 +279,12 @@ public class AccessLoggingFilter implements Filter {
                     final Boolean requestIsAuthorized = (Boolean)request.getAttribute(AUTHORIZATION_REQUEST_ATTRIBUTE);
                     log.debug("AUTHORIZATION_REQUEST_ATTRIBUTE="+requestIsAuthorized);
                     if (requestIsAuthorized==null || requestIsAuthorized==false) {
-                        log.warn("UnAuthorized Request for: "+req.getRequestURL().toString().trim());
+                        System.out.println("UnAuthorized Request for: "+req.getRequestURL().toString().trim());
                         chain.doFilter(request, response);
                         return;
                     }
 
-                    log.warn("Executing filter on: "+url);
+                    System.out.println("Executing filter on: "+url);
 
                     //------------------------------------------------------------------------------------------
                     //For Token authentication there is a Validation Map present with user and email information
@@ -384,15 +384,19 @@ public class AccessLoggingFilter implements Filter {
         }catch(Throwable t) {
             log.error(t);
             HttpServletResponse resp = (HttpServletResponse)response;
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter* "+t.getMessage());
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter* (may not be resolvable url) "+t.getMessage());
         }
     }
     
     //Here we resolve the URL passed in to where the bits reside on the filesystem.
     private File resolveUrlToFile(String url) {
         //Strip url down to just the path...
+        System.out.println("AccessLoggingFilter.resolveUrlToFile("+url+")");
         Matcher m = mountedPathPattern.matcher(url);
-        if (!m.find()) return null;
+        if (!m.find()) {
+            System.out.println("url not of resolvable form (returning null)");
+            return null;
+        }
         String path = m.group(3); //the path AFTER the service prefix
         System.out.println(" --> stripping url ["+url+"] to path ["+path+"]");
         File resolvedFile = null;
