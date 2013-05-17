@@ -140,9 +140,10 @@ public class AccessLoggingFilter implements Filter {
     FilterConfig filterConfig = null;
     AccessLoggingDAO accessLoggingDAO = null;
     Properties dbProperties = null;
-    private Pattern urlPattern = null;
+    private Pattern urlExtensionPattern = null;
     private Pattern exemptUrlPattern = null;
     private Pattern mountedPathPattern;
+    private Pattern urlPattern = null;
     private MountedPathResolver mpResolver = null;
     private String serviceName = null;
 
@@ -190,7 +191,7 @@ public class AccessLoggingFilter implements Filter {
         String regex = "http.*(?:"+sb.toString()+")$";
         System.out.println("Regex = "+regex);
         
-        urlPattern = Pattern.compile(regex,Pattern.CASE_INSENSITIVE);
+        urlExtensionPattern = Pattern.compile(regex,Pattern.CASE_INSENSITIVE);
         //------------------------------------------------------------------------
 
 
@@ -217,6 +218,10 @@ public class AccessLoggingFilter implements Filter {
         String svc_prefix = esgfProperties.getProperty("node.download.svc.prefix","thredds/fileServer");
         String mountedPathRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/"+svc_prefix+"(.*$)";
         mountedPathPattern = Pattern.compile(mountedPathRegex,Pattern.CASE_INSENSITIVE);
+
+        String urlRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/(.*$)";
+        urlPattern = Pattern.compile(urlRegex,Pattern.CASE_INSENSITIVE);
+
         mpResolver = new MountedPathResolver((new esg.common.util.ESGIni()).getMounts());
     }
 
@@ -252,7 +257,7 @@ public class AccessLoggingFilter implements Filter {
 
         //firewall off any errors so that nothing stops the show...
         try {
-            log.warn("accessLogging DAO -> "+accessLoggingDAO);
+            System.out.println("accessLogging DAO -> "+accessLoggingDAO);
             if(accessLoggingDAO != null) {
                 
                 //This filter should only appy to specific requests
@@ -263,30 +268,21 @@ public class AccessLoggingFilter implements Filter {
                 System.out.println("Requested URL: "+url);
 
                 Matcher exemptFilesMatcher = exemptUrlPattern.matcher(url);
-                Matcher forThreddsFileServiceMatcher = mountedPathPattern.matcher(url);
-                Matcher allowedFilesMatcher = urlPattern.matcher(url);
-
                 if(exemptFilesMatcher.matches()) {
-                    System.out.println("I am not logging this, punting!!!! on "+url);
+                    System.out.println("I am not logging this, punting on: "+url);
                     chain.doFilter(request, response);
                     return;
                 }
                 System.out.println("+");
-
-                if (!forThreddsFileServiceMatcher.find()) {
-                    System.out.println("url not for thredds' fileService, punting!!!! on "+url);
-                    chain.doFilter(request, response);
-                    return;
-                }
-                System.out.println("+");
-
+                
+                Matcher allowedFilesMatcher = urlExtensionPattern.matcher(url);
                 if(allowedFilesMatcher.matches()) {
 
                     // only proceed if the request has been authorized
                     final Boolean requestIsAuthorized = (Boolean)request.getAttribute(AUTHORIZATION_REQUEST_ATTRIBUTE);
                     log.debug("AUTHORIZATION_REQUEST_ATTRIBUTE="+requestIsAuthorized);
                     if (requestIsAuthorized==null || requestIsAuthorized==false) {
-                        System.out.println("UnAuthorized Request for: "+req.getRequestURL().toString().trim());
+                        System.out.println("**UnAuthorized Request, punting on: "+req.getRequestURL().toString().trim());
                         chain.doFilter(request, response);
                         return;
                     }
@@ -348,7 +344,7 @@ public class AccessLoggingFilter implements Filter {
                 HttpServletResponse resp = (HttpServletResponse)response;
                 resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Invalid State Of ESG Access Logging Filter: DAO=["+accessLoggingDAO+"]");
             }
-                    
+            
         }catch(Throwable t) {
             log.error(t);
             HttpServletResponse resp = (HttpServletResponse)response;
@@ -356,7 +352,7 @@ public class AccessLoggingFilter implements Filter {
         }
         
         try{
-
+            
             ByteCountListener byteCountListener = new ByteCountListener() {
                     int myID = -1;
                     long duration = -1;
@@ -391,7 +387,7 @@ public class AccessLoggingFilter implements Filter {
         }catch(Throwable t) {
             log.error(t);
             HttpServletResponse resp = (HttpServletResponse)response;
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter* (may not be resolvable url) "+t.getMessage());
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter (url may not be resolvable to an exisiting file) "+t.getMessage());
         }
     }
     
@@ -399,22 +395,29 @@ public class AccessLoggingFilter implements Filter {
     private File resolveUrlToFile(String url) {
         //Strip url down to just the path...
         System.out.println("AccessLoggingFilter.resolveUrlToFile("+url+")");
-        Matcher m = mountedPathPattern.matcher(url);
-        if (!m.find()) {
-            System.out.println("url not of resolvable form (returning null)");
-            return null;
+        Matcher fsMatcher = mountedPathPattern.matcher(url);
+        Matcher urlMatcher = urlPattern.matcher(url);
+        String path = null;
+
+        if (fsMatcher.find()) {
+            System.out.println("Group 3 = "+fsMatcher.group(3));
+            path = mpResolver.resolve(fsMatcher.group(3));
+            System.out.println("Mountpoint transformation of url path: ["+url+"] -to-> ["+path+"]");
+        }else if (urlMatcher.find()) {
+            System.out.println("Group 3 = "+urlMatcher.group(3));
+            path = urlMatcher.group(3);
+            System.out.println("*NO Mountpoint transformation of url path: ["+url+"] -to-> ["+path+"]");
         }
-        String path = m.group(3); //the path AFTER the service prefix
-        System.out.println(" --> stripping url ["+url+"] to path ["+path+"]");
+
         File resolvedFile = null;
         try{
-            resolvedFile = new File(mpResolver.resolve(path));
+            resolvedFile = new File(path);
             if ((resolvedFile != null) && resolvedFile.exists()) {
                 return resolvedFile;
             }else{
-                log.warn("Unable to resolve file to existing filesystem location");
+                log.error("Unable to resolve ["+path+"] to existing filesystem location");
             }
-        }catch(Exception e) { log.error(e); }
+        }catch(Exception e) { e.printStackTrace(); log.error(e); }
         return resolvedFile;
     }
 }
