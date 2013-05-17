@@ -257,7 +257,7 @@ public class AccessLoggingFilter implements Filter {
 
         //firewall off any errors so that nothing stops the show...
         try {
-            System.out.println("accessLogging DAO -> "+accessLoggingDAO);
+            log.debug("accessLogging DAO -> "+accessLoggingDAO);
             if(accessLoggingDAO != null) {
                 
                 //This filter should only appy to specific requests
@@ -265,80 +265,76 @@ public class AccessLoggingFilter implements Filter {
                 
                 HttpServletRequest req = (HttpServletRequest)request;
                 url = req.getRequestURL().toString().trim();
-                System.out.println("Requested URL: "+url);
+                System.out.println("Requested URL: ["+url+"]");
 
                 Matcher exemptFilesMatcher = exemptUrlPattern.matcher(url);
                 if(exemptFilesMatcher.matches()) {
-                    System.out.println("I am not logging this, punting on: "+url);
+                    System.out.println("I am not logging this, punting on: ["+url+"]");
                     chain.doFilter(request, response);
                     return;
                 }
-                System.out.println("+");
                 
                 Matcher allowedFilesMatcher = urlExtensionPattern.matcher(url);
-                if(allowedFilesMatcher.matches()) {
-
-                    // only proceed if the request has been authorized
-                    final Boolean requestIsAuthorized = (Boolean)request.getAttribute(AUTHORIZATION_REQUEST_ATTRIBUTE);
-                    log.debug("AUTHORIZATION_REQUEST_ATTRIBUTE="+requestIsAuthorized);
-                    if (requestIsAuthorized==null || requestIsAuthorized==false) {
-                        System.out.println("**UnAuthorized Request, punting on: "+req.getRequestURL().toString().trim());
-                        chain.doFilter(request, response);
-                        return;
-                    }
-
-                    System.out.println("Executing filter on: "+url);
-
-                    //------------------------------------------------------------------------------------------
-                    //For Token authentication there is a Validation Map present with user and email information
-                    //------------------------------------------------------------------------------------------
-                    Map<String,String> validationMap = (Map<String,String>)req.getAttribute("validationMap");
-                    if(validationMap != null) {
-                        
-                        userID = validationMap.get("user");
-                        email = validationMap.get("email");
-                        
-                        //Want to make sure that any snooping filters
-                        //behind this one does not have access to this
-                        //information (posted by the
-                        //authorizationTokenValidationFilter, which should
-                        //immediately preceed this one).  This is in
-                        //effort to limit information exposure the
-                        //best we can.
-                        req.removeAttribute("validationMap");
-                        
-                    }else{
-                        log.warn("Validation Map is ["+validationMap+"] - (not a token based request)");
-                    }
-                    //------------------------------------------------------------------------------------------
-                    
-                    
-                    
-                    //------------------------------------------------------------------------------------------
-                    //For TokenLESS authentication the userid information is in a parameter called "esg.openid"
-                    //------------------------------------------------------------------------------------------
-                    if (userID == null || userID.isEmpty()) {
-                        userID = ((req.getAttribute("esg.openid") == null) ? "<no-id>" : req.getAttribute("esg.openid").toString());
-                        if(userID == null || userID.isEmpty()) { log.warn("This request is apparently not a \"tokenless\" request either - no openid attribute!!!!!"); }
-                        log.warn("AccessLoggingFilter - Tokenless: UserID = ["+userID+"]");
-                    }
-                    //------------------------------------------------------------------------------------------
-                    
-                    
-                    
-                    fileID = "0A";
-                    remoteAddress = req.getRemoteAddr();
-                    userAgent = (String)req.getAttribute("userAgent");
-                    dateFetched = System.currentTimeMillis()/1000;
-                    batchUpdateTime = dateFetched; //For the life of my I am not sure why this is there, something from the gridftp metrics collection. -gmb
-                    
-                    id = accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,serviceName,batchUpdateTime,dateFetched);
-                    System.out.println("myID: ["+id+"] = accessLoggingDAO.logIngressInfo(userID: ["+userID+"], email, url: ["+url+"], fileID, remoteAddress, userAgent, serviceName, batchUpdateTime, dateFetched)");
-                    
-                }else {
-                    log.warn("No match against: "+url);
+                if(!allowedFilesMatcher.matches()) {
+                    System.out.println("This is not a url that we are interested in logging: ["+url+"]");
+                    chain.doFilter(request, response);
+                    return;
                 }
-                
+
+                // only proceed if the request has been authorized
+                final Boolean requestIsAuthorized = (Boolean)request.getAttribute(AUTHORIZATION_REQUEST_ATTRIBUTE);
+                log.debug("AUTHORIZATION_REQUEST_ATTRIBUTE="+requestIsAuthorized);
+                if (requestIsAuthorized==null || requestIsAuthorized==false) {
+                    System.out.println("**UnAuthorized Request, punting on: "+req.getRequestURL().toString().trim());
+                    chain.doFilter(request, response);
+                    return;
+                }
+
+                System.out.println("Executing filter on: "+url);
+
+                //------------------------------------------------------------------------------------------
+                //For Token authentication there is a Validation Map present with user and email information
+                //------------------------------------------------------------------------------------------
+                Map<String,String> validationMap = (Map<String,String>)req.getAttribute("validationMap");
+                if(validationMap != null) {
+
+                    userID = validationMap.get("user");
+                    email = validationMap.get("email");
+
+                    //Want to make sure that any snooping filters
+                    //behind this one does not have access to this
+                    //information (posted by the
+                    //authorizationTokenValidationFilter, which should
+                    //immediately preceed this one).  This is in
+                    //effort to limit information exposure the
+                    //best we can.
+                    req.removeAttribute("validationMap");
+
+                }else{
+                    log.warn("Validation Map is ["+validationMap+"] - (not a token based request)");
+                }
+                //------------------------------------------------------------------------------------------
+
+
+                //------------------------------------------------------------------------------------------
+                //For TokenLESS authentication the userid information is in a parameter called "esg.openid"
+                //------------------------------------------------------------------------------------------
+                if (userID == null || userID.isEmpty()) {
+                    userID = ((req.getAttribute("esg.openid") == null) ? "<no-id>" : req.getAttribute("esg.openid").toString());
+                    if(userID == null || userID.isEmpty()) { log.warn("This request is apparently not a \"tokenless\" request either - no openid attribute!!!!!"); }
+                    log.warn("AccessLoggingFilter - Tokenless: UserID = ["+userID+"]");
+                }
+                //------------------------------------------------------------------------------------------
+
+                fileID = "0A";
+                remoteAddress = req.getRemoteAddr();
+                userAgent = (String)req.getAttribute("userAgent");
+                dateFetched = System.currentTimeMillis()/1000;
+                batchUpdateTime = dateFetched; //For the life of my I am not sure why this is there, something from the gridftp metrics collection. -gmb
+
+                id = accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,serviceName,batchUpdateTime,dateFetched);
+                System.out.println("myID: ["+id+"] = accessLoggingDAO.logIngressInfo(userID: ["+userID+"], email, url: ["+url+"], fileID, remoteAddress, userAgent, serviceName, batchUpdateTime, dateFetched)");
+
             }else{
                 log.error("DAO is null :["+accessLoggingDAO+"]");
                 HttpServletResponse resp = (HttpServletResponse)response;
