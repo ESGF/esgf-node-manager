@@ -267,6 +267,9 @@ public class AccessLoggingFilter implements Filter {
                 url = req.getRequestURL().toString().trim();
                 System.out.println("Requested URL: ["+url+"]");
 
+                //Don't need this anymore... but too much of a pain at the moment to change
+                //Remember to change the filter xml entry file in the installer
+                //filters/esg-access-logging-filter b/filters/esg-access-logging-filter
                 Matcher exemptFilesMatcher = exemptUrlPattern.matcher(url);
                 if(exemptFilesMatcher.matches()) {
                     System.out.println("I am not logging this, punting on: ["+url+"]");
