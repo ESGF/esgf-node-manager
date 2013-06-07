@@ -372,6 +372,7 @@ public class ESGFShell {
         //-------------------------
         if (commands[0].compareTo("rehash") == 0) {
             loadCommands();
+            return;
         }
 
         //-------------------------
