@@ -378,11 +378,12 @@ public class ESGFShell {
         //-------------------------
 
         for(String commandLine : commands) {
+            System.out.println("======> commandLine ["+commandLine+"] ");
             String[] commandLineParts = commandLine.trim().split(" ",2);
             String commandName = commandLineParts[0].trim();
             if((commandName == null) || (commandName.equals(""))) continue;
             
-            log.trace("======> command ["+commandName+"] ");
+            System.out.println("======> command ["+commandName+"] ");
 
             ESGFCommand command = commandMap.get(commandName);
             if(null == command) {
@@ -396,11 +397,11 @@ public class ESGFShell {
                 args = commandLineParts[1].trim().split("\\s");
                 
                 if(log.isTraceEnabled()) {
-                    log.trace("args ("+args.length+") <");
+                    System.out.println("args ("+args.length+") <");
                     for(String arg : args) {
-                        log.trace("["+arg+"] ");
+                        System.out.println("["+arg+"] ");
                     }
-                    log.trace(">");
+                    System.out.println(">");
                 }
             }
             command.eval(args,env);
