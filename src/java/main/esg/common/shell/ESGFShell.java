@@ -94,7 +94,7 @@ public class ESGFShell {
     public static final String PIPE_RE = "\\|";
     public static final String SEMI_RE = ";";
 
-    private static final Pattern commandLineParsingPattern = Pattern.compile("((?<=(\"))[\\w ]*(?=(\"(\\s|$))))|((?<!\")\\w+(?!\"))",Pattern.CASE_INSENSITIVE);
+    private static final Pattern commandLineParsingPattern = Pattern.compile("((?<=(\"))[-\\w ]*(?=(\"(\\s|$))))|((?<!\")[-]*[\\w-]+(?!\"))",Pattern.CASE_INSENSITIVE);
     private final Matcher commandLineMatcher = commandLineParsingPattern.matcher("");
 
     private static final String commandTypeRegex = "^[ ]*\\[([a-zA-Z]*)\\][ ]*$";
@@ -393,7 +393,7 @@ public class ESGFShell {
                 }
                 else {
                     argsList.add(commandLineMatcher.group());
-                    System.out.println("arg("+(i-1)+"): "+argList.get(i-1);
+                    System.out.println("arg("+(i-1)+"): "+argsList.get(i-1));
                 }
             }
 
