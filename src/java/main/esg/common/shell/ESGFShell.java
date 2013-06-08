@@ -94,6 +94,9 @@ public class ESGFShell {
     public static final String PIPE_RE = "\\|";
     public static final String SEMI_RE = ";";
 
+    private static final Pattern commandLineParsingPattern = Pattern.compile("((?<=(\"))[\\w ]*(?=(\"(\\s|$))))|((?<!\")\\w+(?!\"))",Pattern.CASE_INSENSITIVE);
+    private final Matcher commandLineMatcher = commandLineParsingPattern.matcher("");
+
     private static final String commandTypeRegex = "^[ ]*\\[([a-zA-Z]*)\\][ ]*$";
     private static final Pattern commandTypePattern = Pattern.compile(commandTypeRegex,Pattern.CASE_INSENSITIVE);
     private final Matcher typeMatcher = commandTypePattern.matcher("");
@@ -379,10 +382,22 @@ public class ESGFShell {
 
         for(String commandLine : commands) {
             System.out.println("======> commandLine ["+commandLine+"] ");
-            String[] commandLineParts = commandLine.trim().split(" ",2);
-            String commandName = commandLineParts[0].trim();
+            commandLineMatcher.reset(commandLine);
+
+            List<String> argsList = new ArrayList<String>();
+            String commandName = null;
+               for(int i=0; commandLineMatcher.find(); i++) {
+                if(i == 0) {
+                    commandName = commandLineMatcher.group();
+                    System.out.println("Command: "+commandName);
+                }
+                else {
+                    argsList.add(commandLineMatcher.group());
+                    System.out.println("arg("+(i-1)+"): "+argList.get(i-1);
+                }
+            }
+
             if((commandName == null) || (commandName.equals(""))) continue;
-            
             System.out.println("======> command ["+commandName+"] ");
 
             ESGFCommand command = commandMap.get(commandName);
@@ -392,19 +407,7 @@ public class ESGFShell {
             }
 
             command.init(env);
-            String[] args = null;
-            if(commandLineParts.length == 2) {
-                args = commandLineParts[1].trim().split("\\s");
-                
-                if(log.isTraceEnabled()) {
-                    System.out.println("args ("+args.length+") <");
-                    for(String arg : args) {
-                        System.out.println("["+arg+"] ");
-                    }
-                    System.out.println(">");
-                }
-            }
-            command.eval(args,env);
+            command.eval(argsList.toArray(new String[] {}),env);
         }
         env.getWriter().flush();
     }
