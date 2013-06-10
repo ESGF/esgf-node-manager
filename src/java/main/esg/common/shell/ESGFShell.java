@@ -398,7 +398,7 @@ public class ESGFShell {
             }
 
             if((commandName == null) || (commandName.equals(""))) continue;
-            System.out.println("======> command ["+commandName+"] ");
+            System.out.println("======> command ["+commandName+"] args "+argsList);
 
             ESGFCommand command = commandMap.get(commandName);
             if(null == command) {
