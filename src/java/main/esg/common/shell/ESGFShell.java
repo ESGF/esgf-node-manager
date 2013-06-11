@@ -381,7 +381,7 @@ public class ESGFShell {
         //-------------------------
 
         for(String commandLine : commands) {
-            System.out.println("======> commandLine ["+commandLine+"] ");
+            log.trace("======> commandLine ["+commandLine+"] ");
             commandLineMatcher.reset(commandLine);
 
             List<String> argsList = new ArrayList<String>();
@@ -389,16 +389,16 @@ public class ESGFShell {
                for(int i=0; commandLineMatcher.find(); i++) {
                 if(i == 0) {
                     commandName = commandLineMatcher.group();
-                    System.out.println("Command: "+commandName);
+                    log.trace("Command: "+commandName);
                 }
                 else {
                     argsList.add(commandLineMatcher.group());
-                    System.out.println("arg("+(i-1)+"): "+argsList.get(i-1));
+                    log.trace("arg("+(i-1)+"): "+argsList.get(i-1));
                 }
             }
 
             if((commandName == null) || (commandName.equals(""))) continue;
-            System.out.println("======> command ["+commandName+"] args "+argsList);
+            log.trace("======> command ["+commandName+"] args "+argsList);
 
             ESGFCommand command = commandMap.get(commandName);
             if(null == command) {
