@@ -61,6 +61,8 @@ package esg.common.shell;
    Top level class for ESGF Shell implementation...
 **/
 
+import static esg.common.CPrint.*;
+
 import jline.*;
 
 import java.io.*;
@@ -481,7 +483,7 @@ public class ESGFShell {
         String mode = null;
         String line = null;
 
-        while ((line = reader.readLine(shell.getUserName(env)+"@"+hostname+":[esgf-sh]"+( ((mode = shell.getMode(env)) == null) ? "" : ":["+mode+"]")+"> ")) != null) {
+        while ((line = reader.readLine(yellow_b(shell.getUserName(env)+"@"+hostname)+":["+white_b("esgf-sh")+"]"+( ((mode = shell.getMode(env)) == null) ? "" : ":["+green_b(mode)+"]")+white_b("> "))) != null) {
         
             try{
                 shell.eval(line.trim().split(SEMI_RE),env);
