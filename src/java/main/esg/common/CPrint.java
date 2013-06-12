@@ -58,9 +58,11 @@ public class CPrint {
     public static String cyan_b(String msg){ return colorPrint(CPrint.CYAN,CPrint.BOLD,0,msg); }
     public static String white_b(String msg){ return colorPrint(CPrint.WHITE,CPrint.BOLD,0,msg); }
 
+    public static String OK = CPrint.green_b("[OK]");
+    public static String FAIL = CPrint.red_b("[FAIL]");
+
+    //for testing...
     public static void main(String[] args) {
-        CPrint p = new CPrint();
-        
         System.out.println(" and this is "+CPrint.black("BLACK")+", right?");
         System.out.println(" and this is "+CPrint.red("RED")+", right?");
         System.out.println(" and this is "+CPrint.green("GREEN")+", right?");
@@ -80,6 +82,9 @@ public class CPrint {
         System.out.println(" and this is "+CPrint.white_b("WHITE")+", right?");
 
         System.out.println(" and this is "+CPrint.colorPrint(RED,BOLD,GREEN,"Something nice")+", right?");
+
+        System.out.println(OK);
+        System.out.println(FAIL+" failure");
 
     }
 }
