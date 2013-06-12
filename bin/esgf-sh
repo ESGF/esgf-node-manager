@@ -11,14 +11,31 @@ envfile="/etc/esg.env"
 
 runshell() {
     printf "Welcome, $(whoami) to the ESGF Shell...
-v0.0.1 - by Gavin M. Bell (gavin@llnl.gov)
+v0.0.1 - by Gavin M. Bell (gavin@llnl.gov)"
+
+local color_capable=$(sed -n -e '/[0-9]/p' <<< $(tput colors))
+
+if [[ ${color_capable} ]]; then
+printf "
+\033[01;31m                     __              _     
+   ___  ___   __ _  / _|        ___ | |__  \033[0m
+\033[01;33m  / _ \/ __| / _  || |_  _____ / __||  _ \ 
+ |  __/\__ \| (_| ||  _||_____|\__ \| | | |\033[0m
+\033[01;32m  \___||___/ \__, ||_|         |___/|_| |_|
+             |___/                        
+\033[0m
+"
+else
+printf "
                      __              _     
    ___  ___   __ _  / _|        ___ | |__  
   / _ \/ __| / _  || |_  _____ / __||  _ \ 
  |  __/\__ \| (_| ||  _||_____|\__ \| | | |
   \___||___/ \__, ||_|         |___/|_| |_|
              |___/                        
+
 "
+fi
     
     local my_classpath=$(build_jarpath ${devel})
     
