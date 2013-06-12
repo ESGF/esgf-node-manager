@@ -483,7 +483,7 @@ public class ESGFShell {
         String mode = null;
         String line = null;
 
-        while ((line = reader.readLine(yellow_b(shell.getUserName(env)+"@"+hostname)+":["+white_b("esgf-sh")+"]"+( ((mode = shell.getMode(env)) == null) ? "" : ":["+green_b(mode)+"]")+white_b("> "))) != null) {
+        while ((line = reader.readLine(yellow(shell.getUserName(env)+"@"+hostname)+":["+red("esgf-sh")+"]"+( ((mode = shell.getMode(env)) == null) ? "" : ":["+green(mode)+"]")+white_b("> "))) != null) {
         
             try{
                 shell.eval(line.trim().split(SEMI_RE),env);
