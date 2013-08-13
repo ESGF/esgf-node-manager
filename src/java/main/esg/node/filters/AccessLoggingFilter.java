@@ -253,6 +253,7 @@ public class AccessLoggingFilter implements Filter {
         String userAgent = null;
         long   dateFetched = 0L;
         long   batchUpdateTime = 0L;
+        boolean hasNoBackingFile = false;
         //(note: serviceName defined in global scope)
 
         //firewall off any errors so that nothing stops the show...
