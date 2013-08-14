@@ -142,6 +142,7 @@ public class AccessLoggingFilter implements Filter {
     Properties dbProperties = null;
     private Pattern urlExtensionPattern = null;
     private Pattern exemptUrlPattern = null;
+    private Pattern exemptServicePattern = null;
     private Pattern mountedPathPattern;
     private Pattern urlPattern = null;
     private MountedPathResolver mpResolver = null;
@@ -214,6 +215,19 @@ public class AccessLoggingFilter implements Filter {
         exemptUrlPattern = Pattern.compile(regex,Pattern.CASE_INSENSITIVE);
         //------------------------------------------------------------------------
         
+
+        //------------------------------------------------------------------------
+        // Patterns that this filter will NOT handle: Because the output is not file based...
+        //------------------------------------------------------------------------
+        String exemptServiceParam = filterConfig.getInitParameter("exempt_service");
+        if (exemptServiceParam == null) { exemptServiceParam="x"; } //defensive program against null for this param
+
+        String exemptServiceRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/"+exemptServiceParam+"(.*$)";
+        exemptServicePattern = Pattern.compile(exemptServiceRegex,Pattern.CASE_INSENSITIVE);
+
+        System.out.println("Exempt Service Regex = "+regex);
+        //------------------------------------------------------------------------
+
         log.trace(accessLoggingDAO.toString());
         String svc_prefix = esgfProperties.getProperty("node.download.svc.prefix","thredds/fileServer");
         String mountedPathRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/"+svc_prefix+"(.*$)";
@@ -273,14 +287,21 @@ public class AccessLoggingFilter implements Filter {
                 //filters/esg-access-logging-filter b/filters/esg-access-logging-filter
                 Matcher exemptFilesMatcher = exemptUrlPattern.matcher(url);
                 if(exemptFilesMatcher.matches()) {
-                    System.out.println("I am not logging this, punting on: ["+url+"]");
+                    System.out.println("I am not logging requested files with this extension..., punting on: ["+url+"]");
                     chain.doFilter(request, response);
                     return;
                 }
                 
+                Matcher exemptServiceMatcher = exemptServicePattern.matcher(url);
+                if(exemptServiceMatcher.matches()) {
+                    System.out.println("I am not logging this, it is an exempt service..., punting on: ["+url+"]");
+                    chain.doFilter(request, response);
+                    return;
+                }
+
                 Matcher allowedFilesMatcher = urlExtensionPattern.matcher(url);
                 if(!allowedFilesMatcher.matches()) {
-                    System.out.println("This is not a url that we are interested in logging: ["+url+"]");
+                    System.out.println("This is not an url that we are interested in logging: ["+url+"]");
                     chain.doFilter(request, response);
                     return;
                 }
