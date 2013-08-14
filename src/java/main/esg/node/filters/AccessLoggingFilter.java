@@ -219,13 +219,13 @@ public class AccessLoggingFilter implements Filter {
         //------------------------------------------------------------------------
         // Patterns that this filter will NOT handle: Because the output is not file based...
         //------------------------------------------------------------------------
-        String exemptServiceParam = filterConfig.getInitParameter("exempt_service");
+        String exemptServiceParam = filterConfig.getInitParameter("exempt_services");
         if (exemptServiceParam == null) { exemptServiceParam="x"; } //defensive program against null for this param
 
         String exemptServiceRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/"+exemptServiceParam+"(.*$)";
         exemptServicePattern = Pattern.compile(exemptServiceRegex,Pattern.CASE_INSENSITIVE);
 
-        System.out.println("Exempt Service Regex = "+regex);
+        System.out.println("Exempt Service Regex = "+exemptServiceRegex);
         //------------------------------------------------------------------------
 
         log.trace(accessLoggingDAO.toString());
@@ -287,7 +287,7 @@ public class AccessLoggingFilter implements Filter {
                 //filters/esg-access-logging-filter b/filters/esg-access-logging-filter
                 Matcher exemptFilesMatcher = exemptUrlPattern.matcher(url);
                 if(exemptFilesMatcher.matches()) {
-                    System.out.println("I am not logging requested files with this extension..., punting on: ["+url+"]");
+                    System.out.println("I am not logging requested file with this extension..., punting on: ["+url+"]");
                     chain.doFilter(request, response);
                     return;
                 }
