@@ -188,7 +188,7 @@ public class AccessLoggingFilter implements Filter {
             sb.append(extensions[i].trim());
             if(i<extensions.length-1) sb.append("|");
         }
-        System.out.println("Looking for extensions: "+sb.toString());
+        System.out.println("Applying filter for files with extensions: "+sb.toString());
         String regex = "http.*(?:"+sb.toString()+")$";
         System.out.println("Regex = "+regex);
         
@@ -208,7 +208,7 @@ public class AccessLoggingFilter implements Filter {
             sb.append(exemptExtensions[i].trim());
             if(i<exemptExtensions.length-1) sb.append("|");
         }
-        System.out.println("Looking for exempt extensions: "+sb.toString());
+        System.out.println("Exempt extensions: "+sb.toString());
         regex = "http.*(?:"+sb.toString()+")$";
         System.out.println("Exempt Regex = "+regex);
 
@@ -222,6 +222,7 @@ public class AccessLoggingFilter implements Filter {
         String exemptServiceParam = filterConfig.getInitParameter("exempt_services");
         if (exemptServiceParam == null) { exemptServiceParam="x"; } //defensive program against null for this param
 
+        System.out.println("Exempt services: "+exemptServiceParam);
         String exemptServiceRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/"+exemptServiceParam+"(.*$)";
         exemptServicePattern = Pattern.compile(exemptServiceRegex,Pattern.CASE_INSENSITIVE);
 
