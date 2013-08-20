@@ -94,8 +94,14 @@
       <param-value>thredds</param-value>
     </init-param>
     <init-param>
+      <param-name>exempt_services</param-name>
+      <param-value>thredds/wms</param-value>
+    </init-param>
+    <init-param>
       <param-name>exempt_extensions</param-name>
       <param-value>.xml</param-value>
+    </init-param>
+    <init-param>
       <param-name>extensions</param-name>
       <param-value>.nc,.foo,.bar</param-value>
     </init-param>
@@ -222,8 +228,16 @@ public class AccessLoggingFilter implements Filter {
         String exemptServiceParam = filterConfig.getInitParameter("exempt_services");
         if (exemptServiceParam == null) { exemptServiceParam="x"; } //defensive program against null for this param
 
+        String[] exemptServiceParams = (exemptExtensionsParam.toString()).split(",");
+
+        sb = new StringBuffer();
+        for(int i=0 ; i<exemptServiceParams.length; i++) {
+            sb.append(exemptServiceParams[i].trim());
+            if(i<exemptServiceParams.length-1) sb.append("|");
+        }
+
         System.out.println("Exempt services: "+exemptServiceParam);
-        String exemptServiceRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/"+exemptServiceParam+"(.*$)";
+        String exemptServiceRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/(?:"+sb.toString()+")(.*$)";
         exemptServicePattern = Pattern.compile(exemptServiceRegex,Pattern.CASE_INSENSITIVE);
 
         System.out.println("Exempt Service Regex = "+exemptServiceRegex);
