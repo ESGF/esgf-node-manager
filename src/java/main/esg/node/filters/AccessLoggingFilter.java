@@ -237,7 +237,7 @@ public class AccessLoggingFilter implements Filter {
         }
 
         System.out.println("Exempt services: "+exemptServiceParam);
-        String exemptServiceRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/(?:"+sb.toString()+")(.*$)";
+        String exemptServiceRegex = "http[s]?://([^:/]*)(:(?:[0-9]*))?/(?:"+sb.toString()+")/(.*$)";
         exemptServicePattern = Pattern.compile(exemptServiceRegex,Pattern.CASE_INSENSITIVE);
 
         System.out.println("Exempt Service Regex = "+exemptServiceRegex);
