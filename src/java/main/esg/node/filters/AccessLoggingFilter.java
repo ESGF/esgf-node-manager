@@ -228,7 +228,7 @@ public class AccessLoggingFilter implements Filter {
         String exemptServiceParam = filterConfig.getInitParameter("exempt_services");
         if (exemptServiceParam == null) { exemptServiceParam="x"; } //defensive program against null for this param
 
-        String[] exemptServiceParams = (exemptExtensionsParam.toString()).split(",");
+        String[] exemptServiceParams = (exemptServiceParam.toString()).split(",");
 
         sb = new StringBuffer();
         for(int i=0 ; i<exemptServiceParams.length; i++) {
