@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <title>ESGF: shell</title>
+    <!-- the syle sheet link  -->
+    <link rel='stylesheet' href='styles.css' type='text/css'>
+    <!-- favorite icon - needs to have the http://full_path link  -->
+    <link rel="icon" type="image/png" href="images/esgf-favicon.png">
+    
+    <!-- keywords for search  engines  -->
+    <!-- keywords for search  engines  -->
+    <meta name="keywords" content="earth systems grid, go-essp, esg, esgf, distributed computing, distributed storage, climate science">
+    <meta name="description" content="A distributed database for structured data.">
+    <meta http-equiv='Content-Type' content='text/html;charset=utf-8'> 
+  </head>
+  
+  <!-- the page code starts here -->    
+  <body>
+    <div >  <!-- body -->    
+      <!-- header starts here -->
+      <div id="header" style="overflow: hidden">
+        <!-- image floats tot the right -->
+        <div style='float: right; margin-right: 20px'> 
+	  <img src='../images/shell.jpg' width="70" height="70" >
+        </div>
+
+        <div id='logo' style='float: left; margin-right: 20px; margin-left: -10px'> 
+          <a href="http://esgf.org/"><img src='images/esgf-logo.png' width="70" height="70" border="0"></a>
+        </div>
+	
+	<div>  <!-- inside header -->   
+	  <div class="title">ESGF</div>
+	  <div class="subtitle">Earth System Grid Federation</div>
+          <!-- projects top navigation -->  
+	  <div class="projects">  <!-- projects -->   
+            <a href="http://esgf.org/esgf-installer/">installer</a> &middot;
+            <a href="http://esgf.org/esgf-node-manager/"><b>node-manager</b></a> &middot;
+	    <a href="http://esgf.org/esg-publisher/">publisher</a> &middot;
+	    <a href="http://esgf.org/esgf-idp/">idp</a> &middot;
+	    <a href="http://esgf.org/esg-orp/">orp</a> &middot;
+	    <a href="http://esgf.org/esgf-security/">security</a> &middot;
+	    <a href="http://esgf.org/esg-search/">search</a> &middot; 
+	    <a href="http://esgf.org/esg-script-gen/">script-gen</a> &middot;
+	    <a href="http://esgf.org/esgf-drslib/">drslib</a> &middot;
+	    <a href="http://esgf.org/esgf-stager/">stager</a> &middot;
+	    <a href="http://esgf.org/projects.html">...</a>
+          </div> <!-- projects -->    
+	  
+        </div>  <!-- inside header -->
+      </div>  <!-- header -->
+      
+      <!-- left side navigation bar starts here -->
+      <div class="lsidebar">  <!-- lsidebar -->
+	<ul>
+	  <li>   <a href="http://esgf.org/">esgf</a> </li>
+          <li>   <a href="design.html">design</a> </li>
+          <li>   <a href="">download</a> </li>
+          <li>   <a href="quickstart.html">quickstart</a>  </li>
+          <li>   <a href="developer.html">developer&nbsp;info</a> </li>
+          <li>   <a href="performance.html">performance</a> </li>
+
+          <li>   <a href="https://github.com/esgf/esgf-node-manager">repo</a> </li>
+          <li>   <a href="http://devel.esgf.org/esgf-node-manager/docs-generated/javadocs/">code docs</a> </li>
+          <li>   <a href="http://devel.esgf.org/esgf-node-manager/docs-generated/dep-reports/org.esgf-esgf-node-manager-default.html">dep-report</a> </li>
+          <li>   <a href="http://devel.esgf.org/esgf-node-manager/docs-generated/test-reports/">unit tests</a> </li>
+          <li>   <a href="http://devel.esgf.org/esgf-node-manager/docs-generated/coverage-reports/">coverage</a> </li>
+          <li>   <a href="http://esgf-node2.llnl.gov/jenkins/job/esgf-node-manager/">ci</a> </li>
+          <li>   <a href="faq.html">faq</a> </li>
+          <li>   <a href="mailing_list.html">mailing list</a> </li>
+          <li>   <a href="https://github.com/esgf/esgf-node-manager/issues">bugs</a>  </li>
+          <li>   <a href="http://github.com/esgf/esgf-node-manager/wiki">wiki</a>   </li>
+	  <li>   <a href="http://esgf.org/blog" target="_blank">blog</a> </li>
+          <p>
+          <li>   <a href="http://esgf.org/esgf-dashboard/">dashboard*</a> </li>
+        </ul>
+        
+	
+      </div>   <!-- lsidebar -->
+      
+      <!-- main text comes here -->
+      <div class='content'>
+	
+	<!-- make titles to be <h3> tags -->
+	<h3>node manager => esgf shell... <i>(esgf-sh)</i></h3>
+        The esgf shell provides a simple shell and command line
+        interface to the node's services.  Users can use the shell to
+        perform any of the tasks that may be performed through the web
+        user interface.  To help end users leverage the shell to it's
+        maximum the shell provides the ability for end-users to
+        develop custom shell commands.  Commands can be written in
+        Java, Closure, Scala, Jython, Groovy, or BeanShell.  Through
+        custom commands end-users have a direct mechanism for extending the
+        node features and creating new ones!
+	<h3>power, simplicity, flexibility, extensibility, etc...</h3>
+        	
+      </div> <!-- content -->
+      
+      <br class="clearfloat" />
+      <!-- footer section here -->
+      <div id="footer"> 
+	<div >  
+	  <div class="projects"> 
+	    <a href="http://www-pcmdi.llnl.gov" target="_other">PCMDI</a> &middot;
+	    <a href="http://cmip-pcmdi.llnl.gov/cmip5/" target="_other">CMIP5</a> &middot; 
+	    <a href="http://www.llnl.gov" target="_other">LLNL</a> &middot;
+            <a href="https://www.llnl.gov/disclaimer.html" target="_other">Privacy &amp; Legal Notice</a> &middot;
+            <a  > LLNL-WEB-460643 &nbsp;&nbsp;&nbsp; </a &middot;></div>
+	</div>
+      </div>    <!-- footer -->      
+      
+    </div> <!-- body -->    
+  </body>
+</html>
