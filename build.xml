@@ -1008,6 +1008,19 @@ Builds the project via ant (obviously).
     </exec>
   </target>
 
+  <macrodef name="git">
+  	<attribute name="command" />
+  	<attribute name="dir" default="${ivy.esgf-repo-local.default.root.dir}/esgf-artifacts/"/>
+  	<element name="args" optional="true" />
+  	<sequential>
+  		<echo message="git @{command}" />
+  		<exec executable="git" dir="@{dir}">
+  			<arg value="@{command}" />
+  			<args/>
+  		</exec>
+  	</sequential>
+  </macrodef>
+
   <target name="publish" depends="publish_local" description="(publishes built artifacts to remote repository: https://github.com/ESGF/esgf-artifacts)">
   	<input message="Commit message" addproperty="commit-message" />
   	<echo message="Commiting all changes with message ${commit-message}" />
@@ -1035,19 +1048,6 @@ Builds the project via ant (obviously).
       <artifacts pattern="dist/[artifact].war" />
     </ivy:publish>
   </target>
-
-  <macrodef name="git">
-  	<attribute name="command" />
-  	<attribute name="dir" default="${ivy.esgf-repo-local.default.root.dir}/esgf-artifacts/"/>
-  	<element name="args" optional="true" />
-  	<sequential>
-  		<echo message="git @{command}" />
-  		<exec executable="git" dir="@{dir}">
-  			<arg value="@{command}" />
-  			<args/>
-  		</exec>
-  	</sequential>
-  </macrodef>
 
   <target name="pull" description="Git clone ESGF Maven Repositories from Github">
   	<mkdir dir="${ivy.esgf-repo-local.default.root.dir}" />
