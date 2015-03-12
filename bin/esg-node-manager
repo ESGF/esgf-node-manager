@@ -81,7 +81,11 @@ cdat_home=${cdat_home:-${install_prefix}/cdat}
 esg_root_dir=${esg_root_dir:-"/esg"}
 workdir=${workdir:-~/workbench/esg}
 install_manifest=${install_manifest:-"${esg_root_dir}/esgf-install-manifest"}
+esg_functions_file=${install_prefix}/bin/esg-functions
 #--------------
+
+# Sourcing esg-installarg esg-functions file and esg-init file
+[ -e ${esg_functions_file} ] && source ${esg_functions_file} && ((VERBOSE)) && printf "sourcing from: ${esg_functions_file} \n"
 
 date_format=${date_format:-"+%Y_%m_%d_%H%M%S"}
 compress_extensions=${compress_extensions:-".tar.gz|.tar.bz2|.tgz|.bz2"}
@@ -125,6 +129,8 @@ init() {
 
     #Notification component information...
     mail_smtp_host=${mail_smtp_host:-smtp.`hostname --domain`} #standard guess.
+    #Overwrite mail_smtp_host value if already defined in props file
+    get_property mail_smtp_host ${mail_smtp_host}
     mail_admin_address=${mail_admin_address}
 
     #Launcher script for the esgf-sh
