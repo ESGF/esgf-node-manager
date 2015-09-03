@@ -624,7 +624,7 @@ Builds the project via ant (obviously).
         </section>
       </manifest>
       <zipgroupfileset dir="${lib_fetched_dir}">
-        <include name="postgresql-9.4-1201.jdbc41.jar"/>
+        <include name="postgresql-8.4-703.jdbc3.jar"/>
         <include name="log4j*.jar"/>
         <include name="hessian-*.jar"/>
         <include name="commons-db*.jar"/>
