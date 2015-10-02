@@ -128,7 +128,7 @@ Builds the project via ant (obviously).
   <property name="filter" value="false"/>
   <property name="sign"   value="false"/>
   <property name="seal"   value="false"/>
-  <property name="java.version.val" value="1.7"/>
+  <property name="java.version.val" value="1.8"/>
 
   <!-- **static defines** -->
   <property name="version_num" value="0.0.0"/>
@@ -624,7 +624,7 @@ Builds the project via ant (obviously).
         </section>
       </manifest>
       <zipgroupfileset dir="${lib_fetched_dir}">
-        <include name="postgresql-8.3-603.jdbc3.jar"/>
+        <include name="postgresql-8.4-703.jdbc3.jar"/>
         <include name="log4j*.jar"/>
         <include name="hessian-*.jar"/>
         <include name="commons-db*.jar"/>
