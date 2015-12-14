@@ -395,7 +395,7 @@ public class AccessLoggingFilter implements Filter {
                     long startTime = -1;
                     long dataSize = -1;
                     long byteCount = -1;
-                    boolean success = true;
+                    boolean success = false;
 
                     public void setRecordID(int id) { this.myID = id; }
                     public void setStartTime(long startTime) { this.startTime = startTime; }
@@ -407,6 +407,7 @@ public class AccessLoggingFilter implements Filter {
                         System.out.println("**** setByteCount("+xferSize+")");
 
                         if((AccessLoggingFilter.this.accessLoggingDAO != null) && (myID > 0)) {
+                            if (dataSize == xferSize) { success = true; }
                             duration = System.currentTimeMillis() - startTime;
                             System.out.println("AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID: ["+myID+"], success: ["+success+"], duration: ["+duration+"]ms, dataSize ["+dataSize+"], xferSize: ["+xferSize+"] );");
                             AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID, success, duration, dataSize, xferSize);
