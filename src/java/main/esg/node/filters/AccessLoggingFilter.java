@@ -288,6 +288,7 @@ public class AccessLoggingFilter implements Filter {
         //firewall off any errors so that nothing stops the show...
         try {
             log.debug("accessLogging DAO -> "+accessLoggingDAO);
+            
             if(accessLoggingDAO != null) {
                 
                 //This filter should only appy to specific requests
@@ -381,50 +382,33 @@ public class AccessLoggingFilter implements Filter {
                 resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Invalid State Of ESG Access Logging Filter: DAO=["+accessLoggingDAO+"]");
             }
             
-        }catch(Throwable t) {
-            log.error(t);
+        }catch(Exception e) {
+            log.error(e);
+            e.printStackTrace();
             HttpServletResponse resp = (HttpServletResponse)response;
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Caught unforseen Exception in ESG Access Logging Filter");
         }
         
+        ByteCountListener byteCountListener = new ByteCountListenerImpl();
+        AccessLoggingResponseWrapper accessLoggingResponseWrapper = new AccessLoggingResponseWrapper((HttpServletResponse)response, byteCountListener);
+        
         try{
-            
-            ByteCountListener byteCountListener = new ByteCountListener() {
-                    int myID = -1;
-                    long duration = -1;
-                    long startTime = -1;
-                    long dataSize = -1;
-                    long byteCount = -1;
-                    boolean success = false;
-
-                    public void setRecordID(int id) { this.myID = id; }
-                    public void setStartTime(long startTime) { this.startTime = startTime; }
-                    public void setDataSizeBytes(long dataSize) { this.dataSize = dataSize; }
-
-                    //This callback method should get called by the ByteCountingResponseStream when it is *closed*
-                    public void setByteCount(long xferSize) {
-                        byteCount=xferSize;
-                        System.out.println("**** setByteCount("+xferSize+")");
-
-                        if((AccessLoggingFilter.this.accessLoggingDAO != null) && (myID > 0)) {
-                            if (dataSize == xferSize) { success = true; }
-                            duration = System.currentTimeMillis() - startTime;
-                            System.out.println("AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID: ["+myID+"], success: ["+success+"], duration: ["+duration+"]ms, dataSize ["+dataSize+"], xferSize: ["+xferSize+"] );");
-                            AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID, success, duration, dataSize, xferSize);
-                        }
-                    }
-                    public long getByteCount() { return byteCount; }
-                };
+        	
             byteCountListener.setRecordID(id);
             byteCountListener.setDataSizeBytes(resolveUrlToFile(url).length());
             byteCountListener.setStartTime(System.currentTimeMillis());
-            AccessLoggingResponseWrapper accessLoggingResponseWrapper = new AccessLoggingResponseWrapper((HttpServletResponse)response, byteCountListener);
             chain.doFilter(request, accessLoggingResponseWrapper);
-            accessLoggingResponseWrapper.stream.close();
-        }catch(Throwable t) {
-            log.error(t);
-            HttpServletResponse resp = (HttpServletResponse)response;
+            
+        }catch(Exception e) {
+        	
+            log.error(e.getMessage());
+            e.printStackTrace();
+            chain.doFilter(request, response);
+            
+        } finally {
+        	accessLoggingResponseWrapper.stream.close();
         }
+        
     }
     
     //Here we resolve the URL passed in to where the bits reside on the filesystem.
@@ -456,4 +440,37 @@ public class AccessLoggingFilter implements Filter {
         }catch(Exception e) { e.printStackTrace(); log.error(e); }
         return resolvedFile;
     }
+        
+    private class ByteCountListenerImpl implements ByteCountListener {
+    	
+        int myID = -1;
+        long duration = -1;
+        long startTime = -1;
+        long dataSize = -1;
+        long byteCount = -1;
+        boolean success = false;
+
+        ByteCountListenerImpl() {}
+        
+        public void setRecordID(int id) { this.myID = id; }
+        public void setStartTime(long startTime) { this.startTime = startTime; }
+        public void setDataSizeBytes(long dataSize) { this.dataSize = dataSize; }
+
+        //This callback method should get called by the ByteCountingResponseStream when it is *closed*
+        public void setByteCount(long xferSize) {
+            byteCount=xferSize;
+            System.out.println("**** setByteCount("+xferSize+")");
+
+            if((AccessLoggingFilter.this.accessLoggingDAO != null) && (myID > 0)) {
+                if (dataSize == xferSize) { success = true; }
+                duration = System.currentTimeMillis() - startTime;
+                System.out.println("AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID: ["+myID+"], success: ["+success+"], duration: ["+duration+"]ms, dataSize ["+dataSize+"], xferSize: ["+xferSize+"] );");
+                AccessLoggingFilter.this.accessLoggingDAO.logEgressInfo(myID, success, duration, dataSize, xferSize);
+            }
+        }
+        
+        public long getByteCount() { return byteCount; }
+        
+    };
+    
 }
