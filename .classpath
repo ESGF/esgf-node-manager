@@ -2,12 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src/java/main"/>
 	<classpathentry kind="src" path="src/java/test"/>
-	<classpathentry kind="lib" path="dist/esgf-node-manager-0.7.12.jar"/>
-	<classpathentry kind="lib" path="dist/esgf-node-manager-accesslog-client-0.7.12.jar"/>
-	<classpathentry kind="lib" path="dist/esgf-node-manager-accesslog-service-0.7.12.jar"/>
-	<classpathentry kind="lib" path="dist/esgf-node-manager-common-0.7.12.jar"/>
-	<classpathentry kind="lib" path="dist/esgf-node-manager-connector-0.7.12.jar"/>
-	<classpathentry kind="lib" path="dist/esgf-node-manager-filters-0.7.12.jar"/>
 	<classpathentry kind="lib" path="lib/fetched/activation-1.1.jar"/>
 	<classpathentry kind="lib" path="lib/fetched/ant-1.7.0.jar"/>
 	<classpathentry kind="lib" path="lib/fetched/ant-launcher-1.7.0.jar"/>
