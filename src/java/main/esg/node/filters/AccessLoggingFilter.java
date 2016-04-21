@@ -170,6 +170,8 @@ public class AccessLoggingFilter implements Filter {
         long dateFetched = 0L;
         long batchUpdateTime = 0L;
         long startTime = System.currentTimeMillis();
+
+        int dashboard_id = -1;   // esgf_dashboard
         
         // 1) INTERCEPT REQUEST BEFORE IT IS PROCESSED BY SERVLET
         try {
@@ -213,7 +215,12 @@ public class AccessLoggingFilter implements Filter {
 
             id = accessLoggingDAO.logIngressInfo(userID,email,url,fileID,remoteAddress,userAgent,serviceName,batchUpdateTime,dateFetched);          
             if (log.isInfoEnabled()) log.info("myID: ["+id+"] = accessLoggingDAO.logIngressInfo(userID: ["+userID+"], email, url: ["+url+"], fileID, remoteAddress, userAgent, serviceName, batchUpdateTime, dateFetched)");
-            
+   
+            /* esgf_dashboard start */
+            dashboard_id = accessLoggingDAO.dashboard_IngressInfo(userID, url, remoteAddress, serviceName, dateFetched);
+            if (log.isInfoEnabled()) log.info("myDashboardID: [" + dashboard_id + "] = accessLoggingDAO.dashboard_IngressInfo(userID: [" + userID + "], url: [" + url + "], remoteAddress, serviceName, dateFetched)");
+            /* esgf_dashboard end */
+
         } catch(Exception e) {
             log.error(e);
             e.printStackTrace();
@@ -235,12 +242,17 @@ public class AccessLoggingFilter implements Filter {
             }
 
             // fields to be recorded after response completes
-	        boolean success = false;
-	        if (resp.getStatus()==200) success=true;
-	        long duration = System.currentTimeMillis() - startTime;
-	        long xferSize = -1; // not known since we are not counting the actual bytes transferred
-	        if (log.isInfoEnabled()) log.info("AccessLoggingFilter: intercepting response for URL="+url+" Status="+resp.getStatus()+" Content-Length="+dataSize+" Duration="+duration);
-	        accessLoggingDAO.logEgressInfo(id, success, duration, dataSize, xferSize);
+	    boolean success = false;
+	    if (resp.getStatus()==200) success=true;
+	    long duration = System.currentTimeMillis() - startTime;
+	    long xferSize = -1; // not known since we are not counting the actual bytes transferred
+	    if (log.isInfoEnabled()) log.info("AccessLoggingFilter: intercepting response for URL="+url+" Status="+resp.getStatus()+" Content-Length="+dataSize+" Duration="+duration);
+	    accessLoggingDAO.logEgressInfo(id, success, duration, dataSize, xferSize);
+
+            /* esgf_dashboard start */
+            accessLoggingDAO.dashboard_EgressInfo(dashboard_id, success, duration, dataSize);
+            if (log.isInfoEnabled()) log.info("AccessLoggingFilter for esgf_dashboard: update done!");
+            /* esgf_dashboard end */
 	        
         } catch(Exception e) {
             log.error(e);

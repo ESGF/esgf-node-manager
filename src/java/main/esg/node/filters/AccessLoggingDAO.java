@@ -91,6 +91,15 @@ public class AccessLoggingDAO implements Serializable {
     private static final String accessLoggingEgressQuery = 
         "update esgf_node_manager.access_logging set success = ?, duration = ?, data_size = ?, xfer_size = ? where id = ?";
     
+    /* esgf_dashboard start */
+    private static final String dashboard_getNextPrimaryKeyValQuery = "select nextval('esgf_dashboard.dashboard_queue_id_seq')";
+    private static final String dashboard_IngressQuery =
+        "insert into esgf_dashboard.dashboard_queue (id, url_path, remote_addr, user_id_hash, user_idp, service_type, success, timestamp) "+
+        "values (?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String dashboard_EgressQuery =
+        "update esgf_dashboard.dashboard_queue set success = ?, duration = ?, size = ? where id = ?";
+    /* esgf_dashboard end */
+
     private static final Log log = LogFactory.getLog(AccessLoggingDAO.class);
 
     //URL Pattern: "http[s]?://([^:/]*)(:(?:[0-9]*))?/(.*/)*(.*$)"
@@ -179,6 +188,40 @@ public class AccessLoggingDAO implements Serializable {
         return ret;
         
     }
+
+    /* esgf_dashboard start */
+    public synchronized int dashboard_IngressInfo(String userID,
+                              String url,
+                              String remoteAddress,
+                              String serviceName,
+                              long dateFetched) {
+        int id = -1;
+        int numRecordsInserted = -1;
+        try {
+            // fetch the next available sequence value to use as the primary key for this record
+            id = queryRunner.query(dashboard_getNextPrimaryKeyValQuery, idResultSetHandler);
+            String strippedUrl = url; // strip(url); do NOT strip the first part of the URL
+            numRecordsInserted = queryRunner.update(dashboard_IngressQuery,
+                                                    id, strippedUrl, remoteAddress, quickHash.sum(userID), userIdp(userID), serviceName, false, dateFetched);
+        } catch(SQLException ex) {
+            log.error(ex);
+        }
+        return (numRecordsInserted > 0) ? id : -1;
+    }
+
+    public int dashboard_EgressInfo(int id,
+                             boolean success,
+                             long duration,
+                             long dataSize) {
+        int ret = -1;
+        try {
+            ret = queryRunner.update(dashboard_EgressQuery, success, duration, dataSize, id);
+        } catch(SQLException ex) {
+            log.error(ex);
+        }
+        return ret;
+    }
+    /* esgf_dashboard end */
 
     private String userIdp(String userid) {
         String idpHostname = "<no-idp>";
