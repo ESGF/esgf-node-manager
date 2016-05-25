@@ -63,29 +63,31 @@
 package esg.node.filters;
 
 import java.io.Serializable;
-import java.util.Properties;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import javax.sql.DataSource;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.sql.DataSource;
 
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.logging.impl.*;
 
 import esg.common.QuickHash;
 
 public class AccessLoggingDAO implements Serializable {
 
-    //TODO figure out what these queries should be!
+	private static final long serialVersionUID = 1L;
+	
+	// Postgres documentation: "Advance sequence and return new value"
     private static final String getNextPrimaryKeyValQuery = "select nextval('esgf_node_manager.access_logging_id_seq')";
+    
     private static final String accessLoggingIngressQuery = 
         "insert into esgf_node_manager.access_logging (id, user_id, user_id_hash, user_idp, email, url, file_id, remote_addr, user_agent, service_type, batch_update_time, date_fetched, success) "+
         "values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    
     private static final String accessLoggingEgressQuery = 
         "update esgf_node_manager.access_logging set success = ?, duration = ?, data_size = ?, xfer_size = ? where id = ?";
     
@@ -109,22 +111,25 @@ public class AccessLoggingDAO implements Serializable {
     private QuickHash quickHash = null;
     
     public AccessLoggingDAO(DataSource dataSource) {
+    	
         this.setDataSource(dataSource);
-        try{
+        try {
             this.quickHash = new QuickHash("SHA1");
-        }catch(java.security.NoSuchAlgorithmException e) {
+        } catch(java.security.NoSuchAlgorithmException e) {
             log.error(e);
         }
+        
     }
     
-    //Not preferred constructor but here for serialization requirement.
+    // Not preferred constructor but here for serialization requirement.
     public AccessLoggingDAO() { this(null); }
 
-    //Initialize result set handlers...
+    // Initialize result set handlers...
     public void init() { }
     
     public void setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
+       
+    	this.dataSource = dataSource;
         this.queryRunner = new QueryRunner(dataSource);
         this.idResultSetHandler = new ResultSetHandler<Integer>() {
 		    public Integer handle(ResultSet rs) throws SQLException {
@@ -135,7 +140,7 @@ public class AccessLoggingDAO implements Serializable {
         
     }
     
-    //(NOTE: The variable serviceName maps to database field service_type)
+    // (NOTE: The variable serviceName maps to database field service_type)
     public synchronized int logIngressInfo(String userID,  
                               String email, 
                               String url, 
@@ -147,30 +152,19 @@ public class AccessLoggingDAO implements Serializable {
                               long dateFetched) {
         int id = -1;
         int numRecordsInserted = -1;
-        try{
-            //fetch the next value to use as the primary key for this record
+        try {
+        	
+            // fetch the next available sequence value to use as the primary key for this record
             id = queryRunner.query(getNextPrimaryKeyValQuery,idResultSetHandler);
-
-            //TODO: Perhaps the url can be used to resolve the dataset???
-            //That is the bit of information we really want to also have.
-            //What we really need is an absolute id for a file!!!
-            log.info("logging issuing:\n queryRunner.update(accessLoggingIngressQuery,\n"+id+",\n"+userID+",\n"+quickHash.sum(userID)+",\n"+userIdp(userID)+",\n"+email+",\n"+strip(url)+",\n"+fileID+",\n"+remoteAddress+",\n"+userAgent+",\n"+serviceName+",\n"+batchUpdateTime+",\n"+dateFetched+",\n"+false+");");
+            String strippedUrl = url; // strip(url); do NOT strip the first part of the URL
             numRecordsInserted = queryRunner.update(accessLoggingIngressQuery,
-                                                    id,userID,quickHash.sum(userID),userIdp(userID),email,strip(url),fileID,remoteAddress,userAgent,serviceName,batchUpdateTime,dateFetched,false);
-            log.info("numRecordsInserted: "+numRecordsInserted);
-        }catch(SQLException ex) {
+                                                    id,userID,quickHash.sum(userID),userIdp(userID),email,strippedUrl,fileID,remoteAddress,userAgent,serviceName,batchUpdateTime,dateFetched,false);
+        } catch(SQLException ex) {
             log.error(ex);
         }
         return (numRecordsInserted > 0) ? id : -1;
     }
     
-    //Upon egress update the ingress record with additional
-    //information that can only be obtained on egress of the filter
-    //this information is duration (though I am skeptical that it
-    //means what Nate things it means) and success.  the identifying
-    //tuple of information is the same as the ingress log fields.
-    //Once the record is uniquely identified then the egress
-    //information (the last pair) can be updated.
     public int logEgressInfo(int id, 
                              boolean success,
                              long duration,
@@ -179,28 +173,21 @@ public class AccessLoggingDAO implements Serializable {
         int ret = -1;
         try {
             ret = queryRunner.update(accessLoggingEgressQuery,success,duration,dataSize,xferSize,id);
-        }catch(SQLException ex) {
+        } catch(SQLException ex) {
             log.error(ex);
         }
         return ret;
+        
     }
 
-    //NOTE: w.r.t performance... we could move the Matcher off the
-    //stack on make it final on the heap so we don't have to
-    //instantiate it per call.  That may be faster ,but at the cost of
-    //concurrency since we would then have to make this static.
-    //However, right now the call to logIngressInfo that calls this is
-    //sync'd so we could sync this to and there won't be any extra
-    //penalty.  Think about it... Right now let's save optimization
-    //for later. -gavin
     private String userIdp(String userid) {
         String idpHostname = "<no-idp>";
         Matcher m = urlPattern.matcher(userid);
-        if(m.find()) idpHostname=m.group(1);
+        if (m.find()) idpHostname=m.group(1);
         return idpHostname;
     }
 
-    //pulls off the first
+    // pulls off the first part of the URL
     private String strip(String url) {
         String strippedUrl = url;
         Matcher m = urlStripPattern.matcher(url);
