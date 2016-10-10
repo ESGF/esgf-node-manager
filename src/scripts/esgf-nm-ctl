@@ -1,0 +1,102 @@
+#!/bin/bash
+#  Node manager control script - run as root
+
+
+
+NODEMGR_DIR=/usr/local/esgf-node-manager/scripts
+NODEMGR_CMD=esgf-nodemgr-doc/code/esgfnmd
+PIDFILE=/var/run/esgf-nm.pid
+LOCKFILE=/var/lock/subsys/esgf-nm
+
+NMUSER=nodemgr
+OUT_LOG=/esg/log/esgfnmd.out.log
+ERR_LOG=/esg/log/esgfnmd.err.log
+
+nm_start() {
+    if [ -f $LOCKFILE ] ; then
+	echo -n $NODEMGR_CMD already started
+	return 0
+    else
+    
+        echo -n "Starting : " $NODEMGR_CMD
+	
+	echo >> $OUT_LOG
+	date >> $OUT_LOG
+        echo -n "Starting : " $NODEMGR_CMD >> $OUT_LOG
+
+	echo >> $ERR_LOG
+	date >> $ERR_LOG
+        echo -n "Starting : " $NODEMGR_CMD >> $ERR_LOG
+
+		
+	su $NMUSER -c  "$NODEMGR_DIR/$NODEMGR_CMD $1" >> $OUT_LOG 2>> $ERR_LOG &
+	
+
+        RETVAL=$?	
+        echo
+	sleep 1
+	TMP1=`ps -fe | grep basic_node | grep -v grep` 
+	PID=`echo $TMP1 | awk '{print $2}'`
+	echo $PID > $PIDFILE
+        [ $RETVAL = 0 ] && touch $LOCKFILE
+        return $RETVAL
+    fi
+}
+
+nm_stop() {
+        echo -n "Shutting down : " $NODEMGR_CMD
+	kill -9 `cat $PIDFILE`
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0 ] && rm -f $LOCKFILE $PIDFILE
+
+}
+
+nm_update_sn_list() {
+    peergroup=`grep node.peer.group /esg/config/esgf.properties | cut -d'=' -f 2`
+    if [ $peergroup == "esgf-demo" ] ; then
+        FED_NAME="demonet"
+    else
+        FED_NAME=$peergroup
+    fi
+    
+   
+    echo fetching supernodes list
+    wget -O /esg/config/esgf_supernodes_list.json http://aims1.llnl.gov/nm-cfg/$FED_NAME/esgf_supernodes_list.json
+
+}
+
+
+case "$1" in
+    update)
+	nm_update_sn_list
+	nm_start "SPOT_DEPLOY"
+	;;
+    start)
+        nm_start
+        ;;
+    stop)
+        nm_stop
+        ;;
+    status)
+	x=`ps -fe | grep basic_nodem | head -n 1`
+	gr=`echo $x | awk '{print $8}'`
+	if [ $gr == "grep" ] ; then
+	    echo "Node Manager is not running"
+	else
+	    echo "Node Manager running"
+	fi
+        ;;
+    restart)
+        nm_stop
+        nm_start
+        ;;
+    cleanup)
+	rm -f $LOCKFILE $PIDFILE
+	;;
+    *)
+        echo "Usage:  {start|stop|status|restart|cleanup}"
+        exit 1
+        ;;
+esac
+exit $?
