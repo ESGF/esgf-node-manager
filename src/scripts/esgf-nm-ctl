@@ -1,10 +1,8 @@
 #!/bin/bash
-#  Node manager control script - run as root
-
-
+#  Node manager control script - run as root/sudo
 
 NODEMGR_DIR=/usr/local/esgf-node-manager/scripts
-NODEMGR_CMD=esgf-nodemgr-doc/code/esgfnmd
+NODEMGR_CMD=esgfnmd
 PIDFILE=/var/run/esgf-nm.pid
 LOCKFILE=/var/lock/subsys/esgf-nm
 
