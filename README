@@ -10,3 +10,17 @@
 #*****************************************************************
 
 README:
+
+The ESGF Node Manager is transitioning.  We are repurposing this repo to contain the material essential for installing the new node manager while keeping the original parts of the previous version.
+
+1)  java source needed for access logging filter only - future work is to migrate this to another module within ESGF
+
+2) python sources  
+    a) for database table creation - also should be migrated elsewhere
+
+    b) for node manager request and worker daemon
+
+    c) django REST service API
+3) bash control scripts
+
+See pchengi/nm-workspace for installation info on the new node manager
