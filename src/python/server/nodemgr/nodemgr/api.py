@@ -27,8 +27,16 @@ def nodemgrapi(request):
 
     resp_code="OK"
 
+    qd = {}
 
-    qd = request.GET
+
+    if    request.META.get('REQUEST_METHOD') == "GET":
+
+        qd = request.GET
+    elif   request.META.get('REQUEST_METHOD') == "POST":
+        qd = request.POST
+    else
+        return HttpResponse("METHOD_NOT_SUPPORTED")  
 
     try:
         action = qd["action"]

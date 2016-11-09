@@ -3,10 +3,12 @@ import os, json
 
 from threading import Thread
 
-from nodemgr.nodemgr.healthcheck import RunningCheck
-from httplib import HTTPConnection, HTTPException
+from nodemgr.nodemgr.healthcheck import RunningCheck, BasicSender
+#from httplib import HTTPConnection, HTTPException
+
+import requests
+
 from nodemgr.nodemgr.simplequeue import write_task
-from nodemgr.nodemgr.settings import PORT
 
 from nodemgr.nodemgr.site_profile import gen_reg_xml, REG_FN
 
@@ -19,12 +21,12 @@ import logging
 
 def quick_check():
 
-    conn = HTTPConnection("localhost", PORT, timeout=1)
+    #conn = HTTPConnection("localhost", PORT, timeout=1)
     URLpath = "/esgf-nm"
     
     try:
-        conn.request("GET", URLpath)
-        resp = conn.getresponse()
+   #     conn.request("GET", URLpath)
+   #     resp = conn.getresponse()
         if resp.status == 200:
             return True
     except Exception as e:
@@ -34,7 +36,8 @@ def quick_check():
 
 
 
-class NMapSender(Thread):
+
+class NMapSender(BasicSender):
 
     def __init__(self,nmap, nn, ts=0):
         super(NMapSender, self).__init__()
@@ -46,8 +49,6 @@ class NMapSender(Thread):
 
     def run(self):
 
-        conn = HTTPConnection(self.target, PORT, timeout=30)
-
 #        print self.target, PORT 
 
         tstr = ""
@@ -57,10 +58,11 @@ class NMapSender(Thread):
         
 
         try:
-            conn.request("GET", "/esgf-nm/api?action=node_map_update" + tstr + "&from=" + self.fromnode , json.dumps(self.nodemap) )
-            resp = conn.getresponse()
-            if resp.status == 500:
-                self.logger.error(resp.read())
+
+            resp = requests.post(mkurl("/esgf-nm/api?action=node_map_update" + tstr + "&from=" + self.fromnode) , data=json.dumps(self.nodemap), verify='/etc/grid-security/certificates/' )
+
+            if resp.status_code == 500:
+                self.logger.error(resp.text)
 
         except Exception as e:
             print "Connection problem: " + str(e)
@@ -69,8 +71,7 @@ class NMapSender(Thread):
         conn.close()
 
 
-
-class SNInitSender(Thread):
+class SNInitSender(BasicSender):
 
     def __init__(self, nn, ts, nmap):
         super(SNInitSender, self).__init__()
@@ -84,16 +85,13 @@ class SNInitSender(Thread):
 
 #        print self.target, PORT 
 
-        conn = HTTPConnection(self.target, PORT, timeout=30)
-
-
         tstr = "&timestamp=" + str(self.ts)
 
-        try:
-            conn.request("GET", "/esgf-nm/api?action=sn_init" + tstr + "&from=" + self.fromnode)
-            resp = conn.getresponse()
-            if resp.status == 500:
-                self.logger.error(resp.read())
+        try: 
+            resp = requests.get(mkurl("/esgf-nm/api?action=sn_init" + tstr + "&from=" + self.fromnode), verify='/etc/grid-security/certificates/' )
+            
+            if resp.status_code == 500:
+                self.logger.error(resp.text)
 
 
         except Exception as e:
@@ -101,7 +99,7 @@ class SNInitSender(Thread):
 
         conn.close()
 
-class NMRepoSender(Thread):
+class NMRepoSender(BasicSender):
 
     def __init__(self, nn, task_d, nmap, ts):
         super(NMRepoSender, self).__init__()
@@ -130,13 +128,12 @@ class NMRepoSender(Thread):
 
 
 #        print self.target, PORT 
-        conn = HTTPConnection(self.target, PORT, timeout=30)
-
+ 
 
         tstr = "&timestamp=" + str(self.ts)
 
         try:
-            conn.request("GET", "/esgf-nm/api?action=nm_repo_update" + tstr + "&from=" + self.fromnode + get_url_str(), json.dumps(self.task_d["update"]) )
+            requests.post(mkurl("/esgf-nm/api?action=nm_repo_update" + tstr + "&from=" + self.fromnode + get_url_str()), data=json.dumps(self.task_d["update"]) , verify='/etc/grid-security/certificates/')
             resp = conn.getresponse()
             if resp.status == 500:
                 self.logger.error(resp.read())

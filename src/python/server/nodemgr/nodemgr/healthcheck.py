@@ -3,8 +3,7 @@ from time import time, sleep
 
 from nodemap import get_instance
 
-from httplib import HTTPConnection as Conn
-from httplib import HTTPException
+import requests
 
 from simplequeue import write_task
 
@@ -39,10 +38,24 @@ localhostname = os.uname()[1]
 # MAPFILE = "/export/ames4/node_mgr_map.json"
 
 
-from settings import PORT
+from settings import PROTO
+
+class BasicSender(Thread):
+
+    def __init__(self):
+
+        self.target = ""
+
+    def mkurl(self, stn):
+
+        if self.target == "":
+
+            raise Exception("No target server configured")
+
+        return PROTO + "/" + self.target
 
 
-class RunningCheck(Thread):
+class RunningCheck(BasicSender):
 
     def __init__(self, nodename, fwdcheck, first=False, checkarr=None, fromnode=""):
         super(RunningCheck, self).__init__()
@@ -55,7 +68,7 @@ class RunningCheck(Thread):
         self.logger = logging.getLogger("esgf_nodemanager")
 
     def handle_resp(self, resp):
-        buf = resp.read()
+        buf = resp.text
 
 
         if len(buf) > 10:
@@ -86,20 +99,18 @@ class RunningCheck(Thread):
         ts = time()
 #        print "Health check on", self.nodename
 
-        conn = Conn(self.nodename, PORT, timeout=30)
-
-
         eltime = -1
         error = ""
         try:
-            conn.request("GET", "/esgf-nm/health-check-api?from=" + localhostname + "&forward=" + str(self.fwdcheck))
+            self.target = self.nodename
+            resp = requests.get(mkurl("/esgf-nm/health-check-api?from=" + localhostname + "&forward=" + str(self.fwdcheck)), verify='/etc/grid-security/certificates/')
         
-            resp = conn.getresponse()
-
-            if resp.status == 500:
+            if resp.status_code == 500:
                 print "500 error" 
-                self.logger.error(resp.read())
-            
+                self.logger.error(resp.text)
+            elif resp.status_code != 200:
+
+
             eltime = time() - ts
             
             self.handle_resp(resp)
@@ -123,8 +134,8 @@ class RunningCheck(Thread):
             if (self.first):
                 if len(node_list) > len(self.checkarr) + 2:
                     sleep(.01)
-                conn = Conn(self.fromnode, PORT, timeout=30)
-                url = "/esgf-nm/health-check-rep?from=" + localhostname
+                self.target = self.fromnode
+                url = mkurl("/esgf-nm/health-check-rep?from=" + localhostname)
 
                 for n in self.checkarr:
                     url = url + "&" + n
@@ -132,8 +143,10 @@ class RunningCheck(Thread):
                 error = ""
                 resp = ""
                 try:
-                    conn.request("GET", url)
-                    resp = conn.getresponse()
+                    resp = requests.get(url, verify='/etc/grid-security/certificates/')
+
+
+
                     self.handle_resp(resp)
 
                 except Exception as e:

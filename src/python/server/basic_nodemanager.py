@@ -131,11 +131,11 @@ while (True):
     # this is the inital timestamp to be distributed to supernodes for determining when each performs its lead in the health check.  
 
 
-    sleep(SLEEP_TIME)
+        sleep(SLEEP_TIME)
 
     
 
-    if quick_check(): 
+#    if quick_check(): 
 
         handle_tasks(nodemap_instance)
     
@@ -171,11 +171,11 @@ while (True):
         nodemap_instance.write_back()            
         supernode_count = len(nodemap_instance.nodemap["supernodes"])        
 
-    else:
-        print "failed check (apache issue)"
+#    else:
+#        print "failed check (apache issue)"
 
-    sys.stdout.flush()
-    sys.stderr.flush()
+        sys.stdout.flush()
+        sys.stderr.flush()
 
 
     
