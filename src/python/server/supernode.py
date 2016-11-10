@@ -40,7 +40,7 @@ def quick_check():
 class NMapSender(BasicSender):
 
     def __init__(self,nmap, nn, ts=0):
-        super(NMapSender).__init__()
+        super(NMapSender, self).__init__()
         self.nodemap = nmap.nodemap
         self.target = nn
         self.ts = ts
@@ -74,7 +74,7 @@ class NMapSender(BasicSender):
 class SNInitSender(BasicSender):
 
     def __init__(self, nn, ts, nmap):
-        super(SNInitSender).__init__()
+        super(SNInitSender, self).__init__()
 
         self.target = nn
         self.ts = ts
@@ -102,7 +102,7 @@ class SNInitSender(BasicSender):
 class NMRepoSender(BasicSender):
 
     def __init__(self, nn, task_d, nmap, ts):
-        super(NMRepoSender).__init__()
+        super(NMRepoSender, self).__init__()
 
         self.target = nn
         self.task_d = task_d

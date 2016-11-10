@@ -54,8 +54,8 @@ from settings import PROTO
 
 class BasicSender(Thread):
 
-    def __init__(self, classname):
-        super(classname, self).__init__()
+    def __init__(self):
+        super(BasicSender, self).__init__()
         self.target = ""
 
     def mkurl(self, stn):
@@ -70,7 +70,7 @@ class BasicSender(Thread):
 class RunningCheck(BasicSender):
 
     def __init__(self, nodename, fwdcheck, first=False, checkarr=None, fromnode=""):
-        super(RunningCheck).__init__()
+        super(RunningCheck, self).__init__()
         self.nodename = nodename
         self.fwdcheck = fwdcheck
         self.eltime = -1
