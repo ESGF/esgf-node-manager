@@ -54,8 +54,8 @@ from settings import PROTO
 
 class BasicSender(Thread):
 
-    def __init__(self):
-
+    def __init__(self, classname):
+        super(classname, self).__init__()
         self.target = ""
 
     def mkurl(self, stn):
