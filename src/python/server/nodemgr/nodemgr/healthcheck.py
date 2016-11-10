@@ -9,8 +9,20 @@ from simplequeue import write_task
 
 import os, logging
 
+from config_root import RUN_IN_DJ
+
+
+
 logger = logging.getLogger("esgf_nodemanager")
-fh = logging.FileHandler("/esg/log/esgf_nm_dj.log")
+
+fh = None
+
+if RUN_IN_DJ:
+    fh = logging.FileHandler("/esg/log/esgf_nm_dj.log")
+else:
+    fh = logging.FileHandler("/esg/log/esgf_nm.log")
+
+
 fh.setLevel(logging.ERROR)
 logger.addHandler(fh)
 
