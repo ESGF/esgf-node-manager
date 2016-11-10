@@ -34,11 +34,11 @@ metrics_fn = "/tmp/esgf-db-metrics"
 SECRET_KEY = 'changeme'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-TEMPLATE_DEBUG = False
+TEMPLATE_DEBUG =  True
 
-ALLOWED_HOSTS = []
+#ALLOWED_HOSTS = []
 
 # TODOO  the esgf-nm path prefix should be a seting
 

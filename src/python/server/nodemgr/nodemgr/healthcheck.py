@@ -109,7 +109,7 @@ class RunningCheck(BasicSender):
                 print "500 error" 
                 self.logger.error(resp.text)
             elif resp.status_code != 200:
-
+                pass
 
             eltime = time() - ts
             

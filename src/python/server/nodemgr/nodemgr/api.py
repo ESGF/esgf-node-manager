@@ -35,7 +35,7 @@ def nodemgrapi(request):
         qd = request.GET
     elif   request.META.get('REQUEST_METHOD') == "POST":
         qd = request.POST
-    else
+    else:
         return HttpResponse("METHOD_NOT_SUPPORTED")  
 
     try:
