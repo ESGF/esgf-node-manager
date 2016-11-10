@@ -70,7 +70,7 @@ class BasicSender(Thread):
 class RunningCheck(BasicSender):
 
     def __init__(self, nodename, fwdcheck, first=False, checkarr=None, fromnode=""):
-        super(RunningCheck, self).__init__()
+        super(RunningCheck).__init__()
         self.nodename = nodename
         self.fwdcheck = fwdcheck
         self.eltime = -1
