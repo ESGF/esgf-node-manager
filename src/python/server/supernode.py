@@ -68,9 +68,6 @@ class NMapSender(BasicSender):
             print "Connection problem: " + str(e)
 
 
-        conn.close()
-
-
 class SNInitSender(BasicSender):
 
     def __init__(self, nn, ts, nmap):
@@ -97,7 +94,6 @@ class SNInitSender(BasicSender):
         except Exception as e:
             print "Connection problem: " + str(e)
 
-        conn.close()
 
 class NMRepoSender(BasicSender):
 
@@ -133,16 +129,14 @@ class NMRepoSender(BasicSender):
         tstr = "&timestamp=" + str(self.ts)
 
         try:
-            requests.post(mkurl("/esgf-nm/api?action=nm_repo_update" + tstr + "&from=" + self.fromnode + get_url_str()), data=json.dumps(self.task_d["update"]) , verify='/etc/grid-security/certificates/')
-            resp = conn.getresponse()
-            if resp.status == 500:
-                self.logger.error(resp.read())
+            resp = requests.post(mkurl("/esgf-nm/api?action=nm_repo_update" + tstr + "&from=" + self.fromnode + get_url_str()), data=json.dumps(self.task_d["update"]) , verify='/etc/grid-security/certificates/')
+            if resp.status_code == 500:
+                print "500 error - Logged"
+                self.logger.error(resp.text)
 
 
         except Exception as e:
             print "Connection problem: " + str(e)
-
-        conn.close()
 
 
 localhostname = os.uname()[1]
@@ -327,16 +321,16 @@ def check_properties(nodemap_instance):
             err = ""
             
             try:
-                conn = HTTPConnection(target, PORT, timeout=30)    
-                conn.request("GET", "/esgf-nm/node-props.json" )
-                resp = conn.getresponse()
+                resp = requests.get(mkurl("/esgf-nm/node-props.json"))
+
+
             except Exception as e:
                 print "Connection problem: " + str(e)
                 err = str(e)
 
 
-            if not resp is None and resp.status == 200:
-                dat = resp.read()
+            if not resp is None and resp.status_code == 200:
+                dat = resp.text
 
 #                print dat
                 if dat == "NO_FILE":
