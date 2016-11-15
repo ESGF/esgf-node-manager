@@ -14,7 +14,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 MAP_FN = "/esg/config/esgf_nodemgr_map.json"
 
-PROTO = "https://"
+PROTO = "https"
 
 PORT = 80
 

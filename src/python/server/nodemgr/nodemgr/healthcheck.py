@@ -64,7 +64,7 @@ class BasicSender(Thread):
 
             raise Exception("No target server configured")
 
-        return PROTO + "/" + self.target
+        return PROTO + "://" + self.target + stn 
 
 
 class RunningCheck(BasicSender):
