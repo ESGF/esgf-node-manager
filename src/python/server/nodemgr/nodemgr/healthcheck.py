@@ -115,7 +115,7 @@ class RunningCheck(BasicSender):
         error = ""
         try:
             self.target = self.nodename
-            resp = requests.get(mkurl("/esgf-nm/health-check-api?from=" + localhostname + "&forward=" + str(self.fwdcheck)), verify='/etc/grid-security/certificates/')
+            resp = requests.get(self.mkurl("/esgf-nm/health-check-api?from=" + localhostname + "&forward=" + str(self.fwdcheck)), verify='/etc/grid-security/certificates/')
         
             if resp.status_code == 500:
                 print "500 error" 
@@ -147,7 +147,7 @@ class RunningCheck(BasicSender):
                 if len(node_list) > len(self.checkarr) + 2:
                     sleep(.01)
                 self.target = self.fromnode
-                url = mkurl("/esgf-nm/health-check-rep?from=" + localhostname)
+                url = self.mkurl("/esgf-nm/health-check-rep?from=" + localhostname)
 
                 for n in self.checkarr:
                     url = url + "&" + n

@@ -59,7 +59,7 @@ class NMapSender(BasicSender):
 
         try:
 
-            resp = requests.post(mkurl("/esgf-nm/api?action=node_map_update" + tstr + "&from=" + self.fromnode) , data=json.dumps(self.nodemap), verify='/etc/grid-security/certificates/' )
+            resp = requests.post(self.mkurl("/esgf-nm/api?action=node_map_update" + tstr + "&from=" + self.fromnode) , data=json.dumps(self.nodemap), verify='/etc/grid-security/certificates/' )
 
             if resp.status_code == 500:
                 self.logger.error(resp.text)
@@ -85,7 +85,7 @@ class SNInitSender(BasicSender):
         tstr = "&timestamp=" + str(self.ts)
 
         try: 
-            resp = requests.get(mkurl("/esgf-nm/api?action=sn_init" + tstr + "&from=" + self.fromnode), verify='/etc/grid-security/certificates/' )
+            resp = requests.get(self.mkurl("/esgf-nm/api?action=sn_init" + tstr + "&from=" + self.fromnode), verify='/etc/grid-security/certificates/' )
             
             if resp.status_code == 500:
                 self.logger.error(resp.text)
@@ -129,7 +129,7 @@ class NMRepoSender(BasicSender):
         tstr = "&timestamp=" + str(self.ts)
 
         try:
-            resp = requests.post(mkurl("/esgf-nm/api?action=nm_repo_update" + tstr + "&from=" + self.fromnode + get_url_str()), data=json.dumps(self.task_d["update"]) , verify='/etc/grid-security/certificates/')
+            resp = requests.post(self.mkurl("/esgf-nm/api?action=nm_repo_update" + tstr + "&from=" + self.fromnode + get_url_str()), data=json.dumps(self.task_d["update"]) , verify='/etc/grid-security/certificates/')
             if resp.status_code == 500:
                 print "500 error - Logged"
                 self.logger.error(resp.text)
@@ -321,7 +321,7 @@ def check_properties(nodemap_instance):
             err = ""
             
             try:
-                resp = requests.get(mkurl("/esgf-nm/node-props.json"))
+                resp = requests.get(self.mkurl("/esgf-nm/node-props.json"))
 
 
             except Exception as e:
