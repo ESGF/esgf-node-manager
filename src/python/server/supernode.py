@@ -12,6 +12,8 @@ from nodemgr.nodemgr.simplequeue import write_task
 
 from nodemgr.nodemgr.site_profile import gen_reg_xml, REG_FN
 
+from nodemgr.nodemgr.settings import PROTO
+
 
 import logging
 
@@ -320,8 +322,10 @@ def check_properties(nodemap_instance):
 
             err = ""
             
+            snder = BasicSender()
+
             try:
-                resp = requests.get(self.mkurl("/esgf-nm/node-props.json"))
+                resp = requests.get(snder.mkurl("/esgf-nm/node-props.json"))
 
 
             except Exception as e:
