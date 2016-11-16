@@ -326,7 +326,7 @@ def check_properties(nodemap_instance):
             snder.target = target 
 
             try:
-                resp = requests.get(snder.mkurl("/esgf-nm/node-props.json"))
+                resp = requests.get(snder.mkurl("/esgf-nm/node-props.json"), verify='/etc/grid-security/certificates/')
 
 
             except Exception as e:
