@@ -323,6 +323,7 @@ def check_properties(nodemap_instance):
             err = ""
             
             snder = BasicSender()
+            snder.target = target 
 
             try:
                 resp = requests.get(snder.mkurl("/esgf-nm/node-props.json"))
@@ -362,7 +363,7 @@ def check_properties(nodemap_instance):
                 lg = logging.getLogger("esgf_nodemanager")
 
                 if not resp is None:
-                    lg.error(resp.read())
+                    lg.error(resp.text)
                 else:
                     lg.error("Connection Problem:" + err)
 
