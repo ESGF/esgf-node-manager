@@ -131,7 +131,7 @@ class RunningCheck(BasicSender):
 
         except Exception as e:
             error = "connectivity problem"
-            print e
+            print "Connectvity Problem:", e, self.target 
 
         self.eltime = eltime
 
@@ -163,7 +163,7 @@ class RunningCheck(BasicSender):
 
                 except Exception as e:
                     error = "connectivity problem"
-                    print e
+                    print "Connectvity Problem:", e, self.target
                 
 
 # def do_checks(fwdcheck):

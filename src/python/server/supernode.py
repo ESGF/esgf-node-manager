@@ -67,7 +67,7 @@ class NMapSender(BasicSender):
                 self.logger.error(resp.text)
 
         except Exception as e:
-            print "Connection problem: " + str(e)
+            print "Connection problem: ",e, self.target
 
 
 class SNInitSender(BasicSender):
@@ -94,7 +94,7 @@ class SNInitSender(BasicSender):
 
 
         except Exception as e:
-            print "Connection problem: " + str(e)
+            print "Connection problem: ",e, self.target
 
 
 class NMRepoSender(BasicSender):
@@ -138,7 +138,7 @@ class NMRepoSender(BasicSender):
 
 
         except Exception as e:
-            print "Connection problem: " + str(e)
+            print "Connection problem: ",e, self.target
 
 
 localhostname = os.uname()[1]
@@ -330,7 +330,7 @@ def check_properties(nodemap_instance):
 
 
             except Exception as e:
-                print "Connection problem: " + str(e)
+                print "Connection problem: ",e, self.target
                 err = str(e)
 
 
@@ -339,7 +339,7 @@ def check_properties(nodemap_instance):
 
 #                print dat
                 if dat == "NO_FILE":
-                    print no_file
+                    print "No File found: ", target
                     continue
                 
 
@@ -347,7 +347,7 @@ def check_properties(nodemap_instance):
                 try:
                     obj = json.loads(dat)
                 except:
-                    print "JSON error"
+                    print "JSON error: " , target
                     continue
 
                 # TODO: Are we producing duplicate entries?
