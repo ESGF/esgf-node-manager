@@ -446,14 +446,12 @@ configure_postgress() {
     #download the egg file from the distribution server is necessary....
     checked_get ${esgf_node_manager_egg_file} ${esg_dist_url}/esgf-node-manager/${esgf_node_manager_egg_file} $((force_install))
     (( $? > 1 )) && return 0
-b
+
     #install the egg....
     ((DEBUG)) && echo "easy_install ${esgf_node_manager_egg_file}"
 
 
-#    /opt/miniconda/bin/conda create -y -n esgf-nm-db
-    source /opt/miniconda/bin/activate esgf-pub
-#    /opt/miniconda/bin/conda install -y setuptools
+    source ${cdat_home}/bin/activate esgf-pub
 
     easy_install ${esgf_node_manager_egg_file}
     [ $? != 0 ] && echo "ERROR: Could not create esgf node manager python module" && checked_done 1
@@ -541,10 +539,15 @@ clean_node_manager_database_subsystem_installation() {
             [ $? != 0 ] && echo "unable to successfully backup database... will NOT proceed with database removal" && return 2
 
             echo "removing esgf_node_manager.* schema and tables and DATA"
-            ${cdat_home}/bin/esgf_node_manager_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@localhost:${postgress_port}/esgcet -d 0
+
+            source ${cdat_home}/bin/activate esgf-pub
+
+            esgf_node_manager_initialize --dburl ${postgress_user}:${pg_sys_acct_passwd}@localhost:${postgress_port}/esgcet -d 0
             [ $? != 0 ] && echo "ERROR: Unable to remove ${tomcat_install_dir}/webapps/${node_manager_app_context_root}" && return 1
+            source deactivate
+
             rm -rvf ${cdat_home}/bin/esgf_node_manager_initialize && \
-                rm -rf ${cdat_home}/lib/python${python_version}/${esgf_node_manager_egg_file} && \
+                rm -rf ${cdat_home}/envs/esgf-pub/python${python_version}/${esgf_node_manager_egg_file} && \
                 perl -n -i -e'print unless m!python:esgf_node_manager!' ${install_manifest} && echo "[REMOVED]"
         else
             echo " Could not find node manager tables in the database."
