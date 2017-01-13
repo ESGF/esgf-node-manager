@@ -12,7 +12,7 @@ from nodemgr.nodemgr.simplequeue import write_task
 
 from nodemgr.nodemgr.site_profile import gen_reg_xml, REG_FN
 
-from nodemgr.nodemgr.settings import PROTO
+from nodemgr.nodemgr.settings import PROTO, metrics_fn
 
 
 import logging
@@ -374,7 +374,21 @@ def check_properties(nodemap_instance):
         val = nodemap_instance.prop_store[n]
 
         if not n in tmp_props:
+
             
+            tmp_props[n] = val
+
+#Always have up to date metrics
+    for n in tmp_props:
+
+        if n == nodemap_instance.myname:
+
+            val = tmp_props[n]
+
+            metrics = json.loads(open(metrics_fn).read())
+
+            val.update(metrics) 
+
             tmp_props[n] = val
     
     #TODO update the prop store with more recent info
