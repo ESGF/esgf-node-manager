@@ -330,7 +330,7 @@ def check_properties(nodemap_instance):
 
 
             except Exception as e:
-                print "Connection problem: ",e, self.target
+                print "Connection problem: ",e, target
                 err = str(e)
 
 
