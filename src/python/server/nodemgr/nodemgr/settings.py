@@ -38,7 +38,7 @@ DEBUG = True
 
 TEMPLATE_DEBUG =  True
 
-#ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [defaulthostname]
 
 # TODOO  the esgf-nm path prefix should be a seting
 

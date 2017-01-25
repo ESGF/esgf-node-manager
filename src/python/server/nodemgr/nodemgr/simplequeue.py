@@ -17,7 +17,8 @@ if TASK_DIR is None or len(TASK_DIR) < 1:
 
 TASK_PID = os.getpid()
 
-# This module is not thread safe.  The intention is to use within single-threaded processes that have unique PID.  There should be a single consumer but multiple producers 
+# This module is not thread safe.  The intention is to use within single-threaded processes that have unique PID.  There should be a single consumer but multi
+ple producers 
 
 def inc_task_code():
     

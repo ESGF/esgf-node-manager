@@ -196,7 +196,7 @@ def hello_world(request):
     return HttpResponse(resp)
 
 
-urlpatterns = patterns('',
+urlpatterns = [
     # Examples:
     # url(r'^$', 'nodemgr.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
@@ -208,5 +208,6 @@ urlpatterns = patterns('',
                        url(r'^'+url_prefix+'node-props.json', get_json),
                        url(r'^'+url_prefix+'metrics.json', get_metrics),
                        url(r'^'+url_prefix+'registration.xml', get_reg_xml),
-                       url(r'^'+url_prefix, hello_world))
+                       url(r'^'+url_prefix, hello_world)
+]
 
