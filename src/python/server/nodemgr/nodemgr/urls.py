@@ -1,6 +1,6 @@
 import os, json
 
-from django.conf.urls import patterns, include, url
+from django.conf.urls import url
 from django.contrib import admin
 
 from django.http import HttpResponse #, QueryDict
@@ -22,8 +22,6 @@ MET_FN = metrics_fn
 
 url_prefix = ""
 
-if not os.environ.get("NM_TEST_SRV") is None and os.environ.get("NM_TEST_SRV") == "true":
-    url_prefix = "esgf-nm/"
 
 # TODO - need to 
 #hostname = os.uname()[1]

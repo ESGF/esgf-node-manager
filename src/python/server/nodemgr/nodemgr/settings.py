@@ -38,7 +38,7 @@ DEBUG = True
 
 TEMPLATE_DEBUG =  True
 
-ALLOWED_HOSTS = [defaulthostname]
+ALLOWED_HOSTS = [os.environ.get("HOSTNAME")]
 
 # TODOO  the esgf-nm path prefix should be a seting
 
@@ -108,10 +108,6 @@ LOGGING = {
         },
     },
     'handlers': {
-        'null': {
-            'level':'DEBUG',
-            'class':'django.utils.log.NullHandler',
-        },
         'dj_logfile': {
             'level':'DEBUG',
             'class':'logging.handlers.RotatingFileHandler',

@@ -14,7 +14,7 @@ framework.
 import os, sys
 
 sys.path.insert(0, '/usr/local/esgf-node-manager/src/python/server/nodemgr')
-
+os.environ["SSL_CERT_DIR"] = "/etc/grid-security/certificates"
 
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "nodemgr.settings")
