@@ -1,7 +1,7 @@
 #nm-http rules start here
 
-\\tWSGIDaemonProcess esgfnm python-path=/usr/local/conda/envs/esgf-nm/lib/python2.7/site-packages:/usr/local/esgf-node-manager/src/python/server user=apache group=apache threads=5
-\\tWSGIScriptAlias /esgf-nm /usr/local/esgf-node-manager/src/python/server/nodemgr/apache/django.wsgi
+\\tWSGIDaemonProcess esgfnm python-path=/opt/esgf/virtual/python/lib/python2.7/site-packages:/usr/local/esgf-node-manager/src/python/server user=apache group=apache threads=5
+\\tWSGIScriptAlias /esgf-nm /usr/local/esgf-node-manager/src/python/server/nodemgr/apache/wsgi.py
 \\t<Directory /usr/local/esgf-nodemgr-doc/code/server/nodemgr/apache>
 \\t\\tOrder allow,deny
 \\t\\tAllow from all
