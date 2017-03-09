@@ -36,29 +36,33 @@ class EsgfProperties:
 
     def __init__(self):
 
-    pdict = {}
-
-    f = open(PROPERTIES)
-
-    pdict["timestamp"] = ts_func()
-    for line in f:
-        ll = line.strip()
+        pdict = {}
         
-        if len(ll) > 0 and ll[0] != '#':
-            parts = line.split('=')
-            pdict[ parts[0].strip() ] = parts[1].strip()
+        try:
+            f = open(PROPERTIES)
 
-    f.close()
+            pdict["timestamp"] = ts_func()
+            for line in f:
+                ll = line.strip()
+        
+                if len(ll) > 0 and ll[0] != '#':
+                    parts = line.split('=')
+                    pdict[ parts[0].strip() ] = parts[1].strip()
 
-    f = open(TYPE_FN)
-    val=f.read()
-    pdict["node.type"] = val.strip()
-    pdict["action"] = "node_properties"
-    f.close()
+            f.close()
+
+            f = open(TYPE_FN)
+            val=f.read()
+            pdict["node.type"] = val.strip()
+            pdict["action"] = "node_properties"
+            f.close()
+        except:
+            print "Error opening properties"
+
+        self.pdict = pdict
 
 
-    self.pdict = pdict
- 
+     
     def __dict__(self, x):
         return pdict.get(x)
 

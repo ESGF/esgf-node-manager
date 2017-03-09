@@ -385,10 +385,14 @@ def check_properties(nodemap_instance):
 
             val = tmp_props[n]
 
-            metrics = json.loads(open(metrics_fn).read())
-
-            val.update(metrics) 
-
+            if os.path.exists(metrics_fn):
+                try:
+                    metrics_str = open(metrics_fn).read()
+                    metrics = json.loads(metrics_str)
+                    val.update(metrics) 
+                except:
+                    lg = logging.getLogger("esgf_nodemanager")
+                    lg.error("Problem with metrics file")
             tmp_props[n] = val
     
     #TODO update the prop store with more recent info

@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from threading import Thread
 from time import sleep
 
-from site_profile import get_prop_st
+from nodemgr.nodemgr.site_profile import get_prop_st
 
 import os, json
 
@@ -26,8 +26,6 @@ def  init_db():
     passwd = f.read().strip()
     
     properties_obj = get_prop_st()
-
-    if properties
 
     # Defaults based on conventional node installation
 
