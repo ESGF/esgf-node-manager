@@ -639,10 +639,11 @@ setup_nm_repo() {
 
     #generate a secret key and apply to the settings
     d=`date`
-    ho=`hostname`
+    ho=`hostname -f`
     sk=`echo $d $ho | sha256sum | awk '{print $1}'`
 
-    sed -i s/changeme/$sk src/python/server/nodemgr/nodemgr/settings.py
+    sed -i s/changeme1/$sk src/python/server/nodemgr/nodemgr/settings.py
+    sed -i s/changeme2/$ho src/python/server/nodemgr/nodemgr/settings.py
     popd
 
 
@@ -680,9 +681,9 @@ setup_nm_repo() {
     chown apache:apache /esg/log/esgf_nm_dj.log
     chown apache:apache /esg/log/django.log
     
-    if [ -z $NO_ESGF ] ; then
-        chmod g+r /esg/config/.esg_pg_pass
-    fi
+
+    chmod g+r /esg/config/.esg_pg_pass
+    
     
     #rm -rf /root/apache_frontend
     pushd $NM_DIR/python/server

@@ -31,14 +31,14 @@ metrics_fn = "/tmp/esgf-db-metrics"
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'changeme'
+SECRET_KEY = 'changeme1'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 TEMPLATE_DEBUG =  True
 
-ALLOWED_HOSTS = [os.environ.get("HOSTNAME")]
+ALLOWED_HOSTS = ['changeme2']
 
 # TODOO  the esgf-nm path prefix should be a seting
 
