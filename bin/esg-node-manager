@@ -632,7 +632,7 @@ setup_nm_repo() {
     count=`grep -c esgfnm /etc/httpd/conf/esgf-httpd.conf`
 
     if [ $count > 0 ] ; then
-        mystr=''; while read ln; do mystr=${mystr}\\n\\t"$ln"; done < src/scripts/nm-httpconf-lines
+        mystr=''; while read ln; do mystr=${mystr}\\n\\t"$ln"; done < scripts/nm-httpconf-lines
         quotedmystr=`echo $mystr|sed 's/[./*?|#%!^]/\\\\&/g'`
         sed -i "s/WSGIDaemonProcess\ cog\-site/$quotedmystr/" /etc/httpd/conf/esgf-httpd.conf
     fi
@@ -648,6 +648,7 @@ setup_nm_repo() {
 
 
     cp $NM_DIR/scripts/esgf-nm-ctl $INST_DIR/bin/esgf-nm-ctl
+    cp $NM_DIR/scripts/esgf-nm-func $INST_DIR/bin/esgf-nm-func
 
 
     chmod u+x $INST_DIR/bin/esgf-nm-ctl  $NM_DIR/scripts/esgfnmd
