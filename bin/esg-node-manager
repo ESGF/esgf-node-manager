@@ -563,6 +563,7 @@ clean_node_manager_database_subsystem_installation() {
 
 setup_py_pkgs() {
 
+    export LD_LIBRARY_PATH=/opt/esgf/python/lib:/opt/esgf/python/lib/python2.7
     source /opt/esgf/virtual/python/bin/activate
     
 #    pipcmd="pip install  --index-url=http://pypi.python.org/simple --trusted-host pypi.python.org"
@@ -574,7 +575,7 @@ setup_py_pkgs() {
     $pipcmd install psycopg2
     $pipcmd install sqlalchemy
     source deactivate
-         
+    unset LD_LIBRARY_PATH 
 }
 
 
@@ -642,8 +643,8 @@ setup_nm_repo() {
     ho=`hostname -f`
     sk=`echo $d $ho | sha256sum | awk '{print $1}'`
 
-    sed -i s/changeme1/$sk src/python/server/nodemgr/nodemgr/settings.py
-    sed -i s/changeme2/$ho src/python/server/nodemgr/nodemgr/settings.py
+    sed -i s/changeme1/$sk/ python/server/nodemgr/nodemgr/settings.py
+    sed -i s/changeme2/$ho/ python/server/nodemgr/nodemgr/settings.py
     popd
 
 
