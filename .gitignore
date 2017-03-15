@@ -48,3 +48,4 @@ src/python/esgf/scripts/esgf_node_manager_initialize
 bin/post.manif
 .emacs*
 .lein-env
+.pydevproject
