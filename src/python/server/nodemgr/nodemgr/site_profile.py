@@ -6,20 +6,35 @@ TYPE_FN = "/esg/config/config_type"
 REG_FN = "/esg/config/registration.xml"
 
 
+CERT_FN = "/etc/grid-security/hostcert.pem"
+
 properties_struct = None
 
 
-
 from types import DictType
-
 def get_prop_st():
-    return properties_struct
+    return properties_struct.pdict
 
 def ts_func():
 
     return str(int(time()*1000))
 
-def parse_properties():
+
+def get_cert():
+
+    try:
+        f  = open(CERT_FN)
+        return f.read()
+    except:
+        print "ERROR: default Globus/Gridftp certificate file not found or not readable."      
+
+
+    return "NOT_AVAILABLE"
+
+class EsgfProperties:
+
+
+    def __init__(self):
 
     pdict = {}
 
@@ -42,8 +57,13 @@ def parse_properties():
     f.close()
 
 
-    return pdict
+    self.pdict = pdict
+ 
+    def __dict__(self, x):
+        return pdict.get(x)
 
+    def get(self,x):
+        return pdict.get(x)
 
 #def add_sn(pdict,sn):
     
@@ -77,8 +97,6 @@ def gen_reg_xml(arr_in):
             print str(x)
             continue
 
-        # FIXME: retrieval or x[] values should be made more resilient
-        # by using a placeholder in case the key is not found
         outarr.append("    <Node ")
 
         outarr.append('organization="' )
@@ -119,23 +137,22 @@ def gen_reg_xml(arr_in):
 #        outarr.append(x[""])
         outarr.append('">\n')
 
-        # FIXME: uncomment all of the code below
-        # make x[] more resilient
-        '''
+        # make x[] more resilient  - SKA: is resillient when using "blah" in x
+    
 # TODO: populate CA hash and correct endpoint
 # for now uses the hostname
         outarr.append('        <CA hash="dunno" endpoint="')
-        outarr.append(x["esgf.host"])
+        outarr.append(x.get("esgf.host","esgf.host") )
         outarr.append('" dn="dunno"/>\n')
 
         if "node.geolocation.lat" in x:
             outarr.append('       <GeoLocation lat="')
-            outarr.append(x["node.geolocation.lat"])
+            outarr.append(x.get("node.geolocation.lat", "NA"))
             outarr.append('" lon="')
-            outarr.append(x["node.geolocation.lon"])
+            outarr.append(x.get("node.geolocation.lon", "NA"))
             if "node.geolocation.city" in x:
                 outarr.append('" city="')
-                outarr.append(x["node.geolocation.city"])
+                outarr.append(x.get("node.geolocation.city", "NA" ))
             outarr.append('"/>\n')
 
         if "node.manager.service.endpoint" in x:
@@ -153,10 +170,9 @@ def gen_reg_xml(arr_in):
              outarr.append(x["idp.service.endpoint"]) 
              outarr.append('"/>\n')
 
-
 #        <OpenIDProvider endpoint="https://pcmdi9.llnl.gov/esgf-idp/idp/openidServer.htm"/>
 
-
+#  TODO - should add a CoG service endpoint ? 
 #        <FrontEnd endpoint="http://pcmdi9.llnl.gov/esgf-web-fe/"/>
         if "index.service.endpoint" in x:
             outarr.append('        <IndexService port="80" endpoint="')
@@ -164,20 +180,12 @@ def gen_reg_xml(arr_in):
             outarr.append('"/>\n')
 
 
-#        <IndexService port="8983" endpoint="http://pcmdi9.llnl.gov/esg-search/search"/>
-
 # TODO get groups for attribute service
 #        <AttributeService endpoint="https://pcmdi9.llnl.gov/esgf-idp/saml/soap/secure/attributeService.htm">
-
-
 
 #        outarr.append('" ="')
 #        outarr.append(x[""]) 
 #        outarr.append('">\n')
-
-
-
-
 
 
         if "thredds.service.endpoint" in x:
@@ -193,14 +201,14 @@ def gen_reg_xml(arr_in):
         #     <Configuration serviceType="Download" port="2811"/>
         # </GridFTPService>
 
-            if "gridftp.service.endpoint" in x:
-                outarr.append('<GridFTPService endpoint="')
-                outarr.append(x["gridftp.service.endpoint"])
+        if "gridftp.service.endpoint" in x:
+            outarr.append('<GridFTPService endpoint="')
+            outarr.append(x["gridftp.service.endpoint"])
 
-                outarr.append('">\n')
-                outarr.append('<Configuration serviceType="Replication" port="2812"/>')
-                outarr.append('<Configuration serviceType="Download" port="2811"/>')
-                outarr.append('         </GridFTPService>\n')
+            outarr.append('">\n')
+            outarr.append('<Configuration serviceType="Replication" port="2812"/>')
+            outarr.append('<Configuration serviceType="Download" port="2811"/>')
+            outarr.append('         </GridFTPService>\n')
 
 # TODO metricz - download count size users , registered users
 
@@ -214,9 +222,9 @@ def gen_reg_xml(arr_in):
             outarr.append('       <DownloadedData count="')
             outarr.append(str(x["download.count"]))
             outarr.append('" size="')
-            outarr.append(str(x["download.bytes"]))
+            outarr.append(str(x.get("download.bytes", "NA")))
             outarr.append('" users="')
-            outarr.append(str(x["download.users"]))
+            outarr.append(str(x.get("download.users","NA")))
             outarr.append('"/> \n')
         if "users_count" in x:
             outarr.append('       <RegisteredUsers count="')
@@ -231,13 +239,12 @@ def gen_reg_xml(arr_in):
             outarr.append(x["orp.service.endpoint"]) 
             outarr.append('"/>\n')            
 
-#TODO get public cert
-        outarr.append("   <PEMCert>\n         <Cert>NOT_AVAILABLE</Cert>\n   </PEMCert>\n")
-        '''
+        cert_str = get_cert()  # this can be updated an any time so best to reload
 
-
+        outarr.append("   <PEMCert>\n         <Cert>"+cert_str+"</Cert>\n   </PEMCert>\n")
+        
         outarr.append("    </Node>\n")
     outarr.append("</Registration>\n")
     return ''.join(outarr)    
 
-properties_struct = parse_properties()
+properties_struct = EsgfProperties()

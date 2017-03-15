@@ -2,6 +2,8 @@ from sqlalchemy import create_engine
 from threading import Thread
 from time import sleep
 
+from site_profile import get_prop_st
+
 import os, json
 
 has_db = False
@@ -12,6 +14,8 @@ PASS_FN = '/esg/config/.esg_pg_pass'
 
 QUERY_INTERVAL=240
 
+
+
 def  init_db():
     
     if not os.path.exists(PASS_FN):
@@ -21,10 +25,17 @@ def  init_db():
 
     passwd = f.read().strip()
     
-    # FIXME
-    # connection values should be retrieved from esgf.properties, especially must replace 'localhost'
-    # hard-code host name for now
-    db_str = ( 'postgresql://dbsuper:' + passwd + '@my-node.esgf.org:5432/esgcet')
+    properties_obj = get_prop_st()
+
+    if properties
+
+    # Defaults based on conventional node installation
+
+    db_user = properties_obj.get('db.user', 'dbsuper')
+    db_host = properties_obj.get('db.host', 'localhost')
+    db_port = properties_obj.get('db.port', '5432')
+    db_database = properties_obj.get('db.database', 'esgcet')
+    db_str = ( 'postgresql://' + db_user +  ':' + passwd + '@' + db_host  +  ':' + db_port+ '/' + db_database)
 
     engine = create_engine(db_str)
 

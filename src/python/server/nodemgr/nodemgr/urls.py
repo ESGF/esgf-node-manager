@@ -79,6 +79,7 @@ def write_resp(full):
         f.close()
 
 
+
 # TODO if need to not full handle that
 #    if not served:  -- for now just serve all the data each tim
 # TODO work on requests based on absense of data, with timestamp of last for comparison later
@@ -157,7 +158,7 @@ def get_json(request):
 
     else:
 #        print "no file"
-        resp = "NO_FILE"
+        resp = '{"ERROR": "NO_FILE"}\n'
 
     return HttpResponse(resp, content_type='text/json')
 
@@ -189,7 +190,7 @@ def get_reg_xml(request):
 
 def hello_world(request):
 
-    resp = "<h1>Hello World</h1>"
+    resp = "<h1>ESGF Node Manager</h1>"
 
     return HttpResponse(resp)
 
