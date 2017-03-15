@@ -77,46 +77,51 @@ def gen_reg_xml(arr_in):
             print str(x)
             continue
 
+        # FIXME: retrieval or x[] values should be made more resilient
+        # by using a placeholder in case the key is not found
         outarr.append("    <Node ")
 
         outarr.append('organization="' )
-        outarr.append(x["esg.root.id"])
-        outarr.append('" namespace="') 
-        outarr.append(x["node.namespace"])
+        outarr.append(x.get("esg.root.id","esg.root.id"))
+        outarr.append('" namespace="')
+        outarr.append(x.get("node.namespace","node.namespace"))
         outarr.append('" nodePeerGroup="')
-        outarr.append(x["node.peer.group"]) 
+        outarr.append(x.get("node.peer.group","node.peer.group"))
         outarr.append('" supportEmail="')
-        outarr.append(x["mail.admin.address"]) 
+        outarr.append(x.get("mail.admin.address","mail.admin.address"))
         outarr.append('" hostname="')
-        outarr.append(x["esgf.host"]) 
+        outarr.append(x.get("esgf.host","esgf.host"))
         outarr.append('" ip="')
-        outarr.append(x["esgf.host.ip"]) 
+        outarr.append(x.get("esgf.host.ip","esgf.host.ip"))
         outarr.append('" shortName="')
-        outarr.append(x["node.short.name"]) 
+        outarr.append(x.get("node.short.name","node.short.name"))
         outarr.append('" longName="')
-        outarr.append(x["node.long.name"]) 
+        outarr.append(x.get("node.long.name","node.long.name"))
         outarr.append('" timeStamp="')
 # generated on properties file read
-        outarr.append(x["timestamp"]) 
+        outarr.append(x.get("timestamp","timestamp"))
         outarr.append('" version="')
-        outarr.append(x["version"]) 
+        outarr.append(x.get("version","version"))
         outarr.append('" release="')
-        outarr.append(x["release"]) 
+        outarr.append(x.get("release","release"))
         outarr.append('" nodeType="')
-        outarr.append(x["node.type"]) 
+        outarr.append(x.get("node.type","node.type"))
         outarr.append('" adminPeer="')
 #  This should correspond to super-node for member-nodes
 #  adjacent super-node for super-nodes
-#        outarr.append(x["admin.peer"]) 
-        outarr.append(x["esgf.default.peer"]) 
-        
+#        outarr.append(x.get("admin.peer","admin.peer"))
+        outarr.append(x.get("esgf.default.peer","esgf.default.peer"))
+
         outarr.append('" defaultPeer="')
-        outarr.append(x["esgf.default.peer"]) 
+        outarr.append(x.get("esgf.default.peer","esgf.default.peer"))
 
 #        outarr.append('" ="')
-#        outarr.append(x[""]) 
+#        outarr.append(x[""])
         outarr.append('">\n')
 
+        # FIXME: uncomment all of the code below
+        # make x[] more resilient
+        '''
 # TODO: populate CA hash and correct endpoint
 # for now uses the hostname
         outarr.append('        <CA hash="dunno" endpoint="')
@@ -228,7 +233,7 @@ def gen_reg_xml(arr_in):
 
 #TODO get public cert
         outarr.append("   <PEMCert>\n         <Cert>NOT_AVAILABLE</Cert>\n   </PEMCert>\n")
-
+        '''
 
 
         outarr.append("    </Node>\n")

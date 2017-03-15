@@ -21,7 +21,10 @@ def  init_db():
 
     passwd = f.read().strip()
     
-    db_str = ( 'postgresql://dbsuper:' + passwd + '@localhost:5432/esgcet')
+    # FIXME
+    # connection values should be retrieved from esgf.properties, especially must replace 'localhost'
+    # hard-code host name for now
+    db_str = ( 'postgresql://dbsuper:' + passwd + '@my-node.esgf.org:5432/esgcet')
 
     engine = create_engine(db_str)
 

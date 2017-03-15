@@ -32,7 +32,12 @@ class NodeMap():
         
         self.nodemap = json.loads(f.read())
         f.close()
-        self.myname = os.uname()[1]
+        # FIXME: self.myname should be retrieved from the value of "esgf.host" in esgf.porperties
+        # since inside a Docker container os.uname()[1] returns the effimeral name of the container
+        # hard-code value for now
+        #self.myname = os.uname()[1]
+        self.myname = "my-node.esgf.org"
+        print 'Using hostname=%s' % self.myname 
 
         self.snidx = {}
         myid = -1

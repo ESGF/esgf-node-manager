@@ -66,6 +66,9 @@ def task_health_check_fwd(task_d, nmap):
 def task_health_check_report(task_d, nmap):
 
     from_node = task_d["from"]
+    # FIXME: must use value from esgf.host
+    # hard-code for now
+    from_node = "my-node.esgf.org"
 
     from_id = nmap.snidx[from_node]
 
