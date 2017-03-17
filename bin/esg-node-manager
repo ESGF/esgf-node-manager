@@ -644,7 +644,6 @@ setup_nm_repo() {
     sk=`echo $d $ho | sha256sum | awk '{print $1}'`
 
     sed -i s/changeme1/$sk/ python/server/nodemgr/nodemgr/settings.py
-    sed -i s/changeme2/$ho/ python/server/nodemgr/nodemgr/settings.py
     popd
 
 
