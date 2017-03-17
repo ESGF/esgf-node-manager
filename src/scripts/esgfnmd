@@ -1,5 +1,6 @@
 source /opt/esgf/virtual/python/bin/activate
-export LD_LIBRARY_PATH=/opt/esgf/python/lib
+# look for shared library in multiple locations
+export LD_LIBRARY_PATH=/opt/esgf/python/lib:/usr/local/lib
 export SSL_CERT_DIR=/etc/grid-security/certificates
 
 python /usr/local/esgf-node-manager/src/python/server/basic_nodemanager.py $1

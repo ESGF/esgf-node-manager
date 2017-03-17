@@ -10,6 +10,9 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+
+from site_profile import get_prop_st
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 MAP_FN = "/esg/config/esgf_nodemgr_map.json"
@@ -38,7 +41,7 @@ DEBUG = True
 
 TEMPLATE_DEBUG =  True
 
-ALLOWED_HOSTS = ['changeme2']
+ALLOWED_HOSTS = [get_prop_st().get("esgf.host", "esgf.host")]
 
 # TODOO  the esgf-nm path prefix should be a seting
 

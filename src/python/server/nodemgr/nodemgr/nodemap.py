@@ -9,7 +9,7 @@ MAXREF = 20
 
 PROPS_FN = '/esg/config/nm.properties'
 
-from site_profile import ts_func
+from site_profile import ts_func, get_prop_st
 
 class NodeMap():
     
@@ -32,7 +32,13 @@ class NodeMap():
         
         self.nodemap = json.loads(f.read())
         f.close()
-        self.myname = os.uname()[1]
+
+        self.myname = get_prop_st().get("esgf.host", "")
+
+        if self.myname == "":
+            raise Exception("Error: host name not set in esgf.properties")
+
+        print 'Using hostname=%s' % self.myname 
 
         self.snidx = {}
         myid = -1
