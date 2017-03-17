@@ -1,6 +1,6 @@
 import os, json
 
-from django.conf.urls import patterns, include, url
+from django.conf.urls import url
 from django.contrib import admin
 
 from django.http import HttpResponse #, QueryDict
@@ -22,8 +22,6 @@ MET_FN = metrics_fn
 
 url_prefix = ""
 
-if not os.environ.get("NM_TEST_SRV") is None and os.environ.get("NM_TEST_SRV") == "true":
-    url_prefix = "esgf-nm/"
 
 # TODO - need to 
 #hostname = os.uname()[1]
@@ -79,6 +77,7 @@ def write_resp(full):
         except:
             print "JSON error with metrics file"
         f.close()
+
 
 
 # TODO if need to not full handle that
@@ -159,7 +158,7 @@ def get_json(request):
 
     else:
 #        print "no file"
-        resp = "NO_FILE"
+        resp = '{"ERROR": "NO_FILE"}\n'
 
     return HttpResponse(resp, content_type='text/json')
 
@@ -191,12 +190,12 @@ def get_reg_xml(request):
 
 def hello_world(request):
 
-    resp = "<h1>Hello World</h1>"
+    resp = "<h1>ESGF Node Manager</h1>"
 
     return HttpResponse(resp)
 
 
-urlpatterns = patterns('',
+urlpatterns = [
     # Examples:
     # url(r'^$', 'nodemgr.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
@@ -208,5 +207,6 @@ urlpatterns = patterns('',
                        url(r'^'+url_prefix+'node-props.json', get_json),
                        url(r'^'+url_prefix+'metrics.json', get_metrics),
                        url(r'^'+url_prefix+'registration.xml', get_reg_xml),
-                       url(r'^'+url_prefix, hello_world))
+                       url(r'^'+url_prefix, hello_world)
+]
 

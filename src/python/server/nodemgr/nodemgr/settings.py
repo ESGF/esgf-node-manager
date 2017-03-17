@@ -10,6 +10,9 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+
+from site_profile import get_prop_st
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 MAP_FN = "/esg/config/esgf_nodemgr_map.json"
@@ -31,14 +34,14 @@ metrics_fn = "/tmp/esgf-db-metrics"
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'changeme'
+SECRET_KEY = 'changeme1'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 TEMPLATE_DEBUG =  True
 
-#ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [get_prop_st().get("esgf.host", "esgf.host")]
 
 # TODOO  the esgf-nm path prefix should be a seting
 
@@ -108,10 +111,6 @@ LOGGING = {
         },
     },
     'handlers': {
-        'null': {
-            'level':'DEBUG',
-            'class':'django.utils.log.NullHandler',
-        },
         'dj_logfile': {
             'level':'DEBUG',
             'class':'logging.handlers.RotatingFileHandler',

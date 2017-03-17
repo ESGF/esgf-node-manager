@@ -1,0 +1,64 @@
+#!/bin/bash
+#  Node manager control script - run as root/sudo
+
+NODEMGR_DIR=/usr/local/esgf-node-manager/src/scripts
+NODEMGR_CMD=esgfnmd
+NM_PIDFILE=/var/run/esgf-nm.pid
+NM_LOCKFILE=/var/lock/subsys/esgf-nm
+
+NMUSER=nodemgr
+NM_OUT_LOG=/esg/log/esgfnmd.out.log
+NM_ERR_LOG=/esg/log/esgfnmd.err.log
+
+nm_start() {
+    if [ -f $NM_LOCKFILE ] ; then
+	echo -n $NODEMGR_CMD already started
+	return 0
+    else
+    
+        echo -n "Starting : " $NODEMGR_CMD
+	
+	echo >> $NM_OUT_LOG
+	date >> $NM_OUT_LOG
+        echo -n "Starting : " $NODEMGR_CMD >> $NM_OUT_LOG
+
+	echo >> $NM_ERR_LOG
+	date >> $NM_ERR_LOG
+        echo -n "Starting : " $NODEMGR_CMD >> $NM_ERR_LOG
+
+		
+	su $NMUSER -c  "$NODEMGR_DIR/$NODEMGR_CMD $1" >> $NM_OUT_LOG 2>> $NM_ERR_LOG &
+	
+
+        RETVAL=$?	
+        echo
+	sleep 1
+	TMP1=`ps -fe | grep basic_node | grep -v grep` 
+	PID=`echo $TMP1 | awk '{print $2}'`
+	echo $PID > $NM_PIDFILE
+        [ $RETVAL = 0 ] && touch $NM_LOCKFILE
+        return $RETVAL
+    fi
+}
+
+nm_stop() {
+        echo -n "Shutting down : " $NODEMGR_CMD
+	kill -9 `cat $PIDFILE`
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0 ] && rm -f $NM_LOCKFILE $NM_PIDFILE
+
+}
+
+
+nm_status() {
+
+    x=`ps -fe | grep basic_nodem | head -n 1`
+    gr=`echo $x | awk '{print $8}'`
+    if [ $gr == "grep" ] ; then
+        echo "Node Manager is not running"
+    else
+        echo "Node Manager running"
+    fi
+}
+
