@@ -690,10 +690,13 @@ setup_nm_repo() {
     pushd $NM_DIR/python/server
 
     fqdn=`grep esgf.host= /esg/config/esgf.properties | cut -d'=' -f 2`
-
+    # get python to work
+    source /usr/local/conda/bin/activate esgf-pub
     cmd="python gen_nodemap.py $NM_INIT $fqdn"
     echo $cmd
     $cmd
+    source deactivate
+    
     chmod 755 /esg/config/esgf_nodemgr_map.json
     chown nodemgr:apache /esg/config/esgf_nodemgr_map.json
 
