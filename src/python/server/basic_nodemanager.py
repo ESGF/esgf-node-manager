@@ -22,7 +22,7 @@ import logging
 
 from nodemgr.nodemgr.settings import MAP_FN, TIMESTAMP
 from gen_nodemap import do_gen_nodemap
-
+from member_node import member_node_fetch_xml
 
 def usage():
     print "Usage:  python", sys.argv[0], "<node-map-file> [timestamp-file if SN]"
@@ -167,9 +167,9 @@ while (True):
                     print "start properties check"
                     check_properties(nodemap_instance)
                     print "end properties check"
-#        else:
-#           member_node_fetch_xml(count)
-            count = count + 1 
+       else:
+           member_node_fetch_xml(count)
+           count = count + 1 
 
         nodemap_instance.write_back()            
         supernode_count = len(nodemap_instance.nodemap["supernodes"])        

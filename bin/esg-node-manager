@@ -572,8 +572,8 @@ setup_py_pkgs() {
     $pipcmd mod_wsgi    
     $pipcmd django==1.10.3
     $pipcmd requests
-    $pipcmd install psycopg2
-    $pipcmd install sqlalchemy
+    $pipcmd psycopg2
+    $pipcmd sqlalchemy
     source deactivate
     unset LD_LIBRARY_PATH 
 }

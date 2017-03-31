@@ -43,11 +43,18 @@ nm_start() {
 
 nm_stop() {
         echo -n "Shutting down : " $NODEMGR_CMD
+
+	x=`ps -fe | grep basic_nodem | head -n 1`
+	gr=`echo $x | awk '{print $8}'`
+	if [ $gr == "grep" ] ; then
+	    echo "Node Manager process not present.  Use esgf-nm-ctl cleanup to wipe PIDFILE and LOCKFILE"
+	    return 0
+	fi
 	kill -9 `cat $PIDFILE`
         RETVAL=$?
         echo
         [ $RETVAL = 0 ] && rm -f $NM_LOCKFILE $NM_PIDFILE
-
+	return $RETVAL
 }
 
 

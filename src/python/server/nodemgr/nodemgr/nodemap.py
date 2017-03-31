@@ -22,6 +22,22 @@ class NodeMap():
     def set_ro(self):
         self.readonly = True
 
+    def set_member_id(self):
+
+        self.myid = "0"
+
+        for ll in self.nodemap["membernodes"]:
+
+            for mm in ll['members']:
+
+                if mm['hostname'] == self.myname:
+                    self.myid = mm['id']
+                    return
+
+        if self.myid == "0":
+            raise Exception('Error:  No supernode has been assigned.  Please run "membernode_cmd add"')
+
+
     def load_map(self,MAPFILE):
 
         if (self.filename != ""):
@@ -52,7 +68,10 @@ class NodeMap():
         
         if myid == -1:
             print "Node not in supernode list.  run as a member node"
+            self.set_member_id()
         #     exit (1)
+
+
 
         self.myid = myid
         self.dirty = False
