@@ -47,8 +47,10 @@ nm_stop() {
 	x=`ps -fe | grep basic_nodem | head -n 1`
 	gr=`echo $x | awk '{print $8}'`
 	if [ $gr == "grep" ] ; then
-	    echo "Node Manager process not present.  Use esgf-nm-ctl cleanup to wipe PIDFILE and LOCKFILE"
-	    return 0
+           echo "Node Manager process not present. Attempting to wipe  PIDFILE and LOCKFILE."
+            rm -f $NM_LOCKFILE $NM_PIDFILE
+           return $?
+
 	fi
 	kill -9 `cat $PIDFILE`
         RETVAL=$?
