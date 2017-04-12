@@ -8,7 +8,7 @@ def member_node_fetch_xml(count, nodemap_instance):
 		count = 0
 	elif ((count % REFRESH_TIME) == (REFRESH_TIME / 2)):
 		sn_id="0"
-		for ll in self.nodemap["membernodes"]:
+		for ll in nodemap_instance.nodemap["membernodes"]:
 
 		    sn_id = ll['supernode']
 		    for mm in ll['members']:

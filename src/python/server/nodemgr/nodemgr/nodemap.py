@@ -35,7 +35,7 @@ class NodeMap():
                     return
 
         if self.myid == "0":
-            raise Exception('Error:  No supernode has been assigned.  Please run "membernode_cmd add"')
+            print('WARNING:  No supernode has been assigned.  Please run "membernode_cmd add"')
 
 
     def load_map(self,MAPFILE):
