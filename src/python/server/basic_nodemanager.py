@@ -168,7 +168,7 @@ while (True):
                     check_properties(nodemap_instance)
                     print "end properties check"
         else:
-           member_node_fetch_xml(count)
+           member_node_fetch_xml(count, nodemap_instance)
            count = count + 1 
 
         nodemap_instance.write_back()            
