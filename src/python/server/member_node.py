@@ -22,7 +22,7 @@ def member_node_fetch_xml(count, nodemap_instance):
 
 		sn_hostname = ""
 
-		for ll in nodemap_instance.nodemap["snodes"]:
+		for ll in nodemap_instance.nodemap["supernodes"]:
 			if ll["id"] == sn_id:
 				sn_hostname = ll["hostname"]
 
