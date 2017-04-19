@@ -1,125 +1,111 @@
-import sys, os
-
-from httplib import HTTPConnection as Conn
-
-
+import sys, os, requests
 from time import time
 from json import loads as load_json
 
 
-if len(sys.argv) < 4:
+def main(argv):
 
-    print "Usage: ", sys.argv[0], " <add|delete> <project(s)> <standby?>"
-    exit (0)
+    cmd = argv[1]
+    myname = os.uname()[1]
 
-cmd = sys.argv[1]
+    from time import time
+    if cmd == "add":
 
-myname = os.uname()[1]
+        f = open ('/esg/config/esgf_supernodes_list.json')
+        arr = load_json(f.read())
 
-from nodemgr.nodemgr.settings import PORT
+        times_arr = []
 
-print "Port", PORT
+        for host in arr:
 
-from time import time
+            resp =None
+            st = time()
+            dt = 999
 
-if cmd == "add":
+            url = "https://" + host + "/esgf-nm"
 
+            try: 
 
-#    f = open("/esg/config/esgf_nodemgr_map.json")
+                resp = requests.get(url, verify=False)
+                et = time()
+                if not resp is None and resp.status_code == 200:
+                    dt = et - st
 
-#    nodemap = json.loads(f.read())
+            except:
+                print host, "unresponsive, skipping"
+            
+            times_arr.append([dt, host])
 
-#    for entry in nodemap["supernodes"]:
+        sorted_arr = sorted(times_arr)
 
-    #    target = sys.argv[2]
+        if len(sorted_arr)  == 0:
+            print
+            return
 
-    f = open ('/esg/config/esgf_supernodes_list.json')
-    arr = load_json(f.read())
+        target = sorted_arr[0][1]
+        proj = argv[2]
+        stdby = argv[3]
 
+        resp = None
+        url = "https://" + target + "/esgf-nm/api?action=add_member&from=" + myname + "&project=" + proj + "&standby=" + stdby
+         
+        try:
 
-    times_arr = []
+            resp = requests.get(url, verify=False)
+            if resp.status_code == 200:   
+                print "Contacted ", target, " wait for ping-back"
+            else:
+                print "WARNING:  " + target + " returned status ", resp.status_code, " - please contact the ESGF site administrator"
 
-    for host in arr:
+        except Exception as e:
+            print "ERROR in connect to", target, str(e)
 
-        resp =None
-        st = time()
-        dt = 999
+    elif cmd ==  "delete":
+        conf = "/esg/config/esgf_nodemgr_map.json"
 
-        try: 
-            conn = Conn(host, PORT, timeout=30)
-            conn.request("GET", "/esgf-nm")
-            resp = conn.getresponse()
-            conn.close()
+        f = open(conf)
 
-        except:
-            pass
+        target = ""
+        targetnum = 0
 
-        et = time()
+        nodemap = load_json(f.read())
 
-        if not resp is None and resp.status == 200:
+        for entry in nodemap["membernodes"]:
 
-            dt = et - st
-        
-        times_arr.append([dt, host])
+            if "members" in entry:
 
-    sorted_arr = sorted(times_arr)
+                for mn in entry["members"]:
+                    if mn["hostname"] == myname:
+                        targetnum = int(entry["supernode"])
+                        break
+            if targetnum > 0:
+                for sn in nodemap["supernodes"]:
+                    if int(sn["id"]) == targetnum:
+                        target = sn["hostname"]
+                        break
+                
+                break
+            
 
-    target = sorted_arr[0][1]
-    proj = sys.argv[2]
-    stdby = sys.argv[3]
+        if target == "":
+            print "An error has occurred.  The supernode managing this node not found in the node map."
+            exit
 
-    resp = None
-    conn = Conn(target, PORT, timeout=30)
-    
-    try:
-        conn.request("GET", "/esgf-nm/api?action=add_member&from=" + myname + "&project=" + proj + "&standby=" + stdby)
+            
+        print "Contacting", target, "to delete self from federation"
+        conn = Conn(target, PORT, timeout=30)
+
+        conn.request("GET", "/esgf-nm/api?action=remove_member&from=" + myname )
         resp = conn.getresponse()
         conn.close()
-        print "Contacted ", target, " wait for ping-back"
-    except:
-        print "Error in connect to found node"
-
-elif cmd ==  "delete":
-    conf = "/esg/config/esgf_nodemgr_map.json"
-
-    f = open(conf)
-
-    target = ""
-
-    targetnum = 0
-    
-    nodemap = load_json(f.read())
-
-    for entry in nodemap["membernodes"]:
-
-        if "members" in entry:
-
-            for mn in entry["members"]:
-                if mn["hostname"] == myname:
-                    targetnum = int(entry["supernode"])
-                    break
-        if targetnum > 0:
-            for sn in nodemap["supernodes"]:
-                if int(sn["id"]) == targetnum:
-                    target = sn["hostname"]
-                    break
-            
-            break
-        
-
-    if target == "":
-        print "An error has occurred.  The supernode managing this node not found in the node map."
-        exit
-
-        
-    print "Contacting", target, "to delete self from federation"
-    conn = Conn(target, PORT, timeout=30)
-
-    conn.request("GET", "/esgf-nm/api?action=remove_member&from=" + myname )
-    resp = conn.getresponse()
-    conn.close()
     
 
+if __name__ == "__main__":
 
-    
+    if len(sys.argv) < 4:
+
+        print "Usage: ", sys.argv[0], " <add|delete> <project(s)> <standby?>"
+        exit (0)
+
+    main(sys.argv)        
     

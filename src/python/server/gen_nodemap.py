@@ -47,7 +47,7 @@ def do_fetch_nodemap(fqdn):
             url = "https://" + host + "/esgf-nm/api?action=sync_node_map_file"
 
             try:
-                resp = requests.get(url)
+                resp = requests.get(url, verify=False)
                 data_str = resp.text
                 data = json.loads(data_str)
 
