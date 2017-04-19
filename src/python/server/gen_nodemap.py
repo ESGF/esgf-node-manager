@@ -56,7 +56,7 @@ def do_fetch_nodemap(fqdn):
 
             
             if not data is None and len(data_str) > 10:
-                write_json_file(MAP_FN, data_str) 
+                write_json_file(MAP_FN, str(data_str)) 
                 return True
             
         
