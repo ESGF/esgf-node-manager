@@ -26,13 +26,27 @@ def member_node_fetch_xml(count, nodemap_instance):
 			if ll["id"] == sn_id:
 				sn_hostname = ll["hostname"]
 
-		resp = requests.get("https://" + sn_hostname + "/esgf-nm/registration.xml")
+		resp = None
 
+		try:
+			resp = requests.get("https://" + sn_hostname + "/esgf-nm/registration.xml", verify='/etc/grid-security/certificates')
+		except Exception as e:
+			print "ERROR retrieving registration xml from primary supernode.  consider re-peering", e
+			return count
+
+		if resp is None:
+			print "ERROR retrieving registration xml from primary supernode.  consider re-peering"
+			return count
+
+		if resp.status_code != 200:
+			print "ERROR retrieving registration xml from primary supernode.  consider re-peering  Status:", resp.status_code
+			return count
 		try:
 			with open('/esg/config/registration.xml', 'w') as f:
 				f.write(resp.text)	
-		except Exception(e):
+		except Exception as e:
 			print "Error writing registration xml", e
+
 
 
 	return count
