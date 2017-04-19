@@ -65,12 +65,19 @@ def task_health_check_fwd(task_d, nmap):
 
 def task_health_check_report(task_d, nmap):
 
+
+
     from_node = task_d["from"]
     # FIXME: must use value from esgf.host  
     #     - ska: I don't think thats right
     # hard-code for now
     # TODO : figure this one out
     #from_node = "my-node.esgf.org"
+
+    if not from_node in nmap.snidx:
+
+        print "WARNING:  the supernode list is missing a key node: " + from_node
+        return
 
     from_id = nmap.snidx[from_node]
 

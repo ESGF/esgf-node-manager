@@ -1,16 +1,10 @@
 # Offline script to add supernode entries to node manager json configuration node map file
 
 import json, sys, os
-
-from httplib import HTTPConnection as Conn
-
+import requests
 from nodemgr.nodemgr.settings import MAP_FN
-
 from time import time
-
 from json import loads as load_json
-
-PORT = 80
 
 
 def write_json_file(in_fn, json_obj):
@@ -46,27 +40,20 @@ def do_fetch_nodemap(fqdn):
     for host in arr:
 
         
-
         data_str = ""
 
         if host != fqdn:
 
+            url = "https://" + host + "/esgf-nm/api?action=sync_node_map_file"
+
             try:
-                conn = Conn(host, PORT, timeout=10)
-                conn.request("GET", "/esgf-nm/api?action=sync_node_map_file")
-                resp = conn.getresponse()
-                
-                data_str = resp.read()
-            
+                resp = requests.get(url)
+                data_str = resp.text
                 data = json.loads(data_str)
 
-                conn.close()
-            
+            except Exception as e:
+                print "An Error occurred:", str(e)
 
-            
-
-            except:
-                pass
             
             if not data is None and len(data_str) > 10:
                 write_json_file(MAP_FN, data_str) 
@@ -169,14 +156,11 @@ def do_gen_nodemap(args):
 
 
     new_json["membernodes"] = membernodes
-
-
     new_json["supernodes"] = supernodes
 
     sn_count = len(supernodes)
 
     new_json["total_supernodes"] = sn_count
-
     new_json["total_membernodes"] = old_mcount
 
     for fr in range(1, sn_count):
@@ -202,6 +186,3 @@ if(__name__ == '__main__'):
     sys.exit(do_gen_nodemap(sys.argv[1:]))
 
     
-
-
-

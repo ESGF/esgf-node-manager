@@ -695,6 +695,15 @@ setup_nm_repo() {
     cmd="python gen_nodemap.py $NM_INIT $fqdn"
     echo $cmd
     $cmd
+
+    read -e -p "Automatic peer with super-node (if you administer one, ensure that it is running) [Y/n] " choice
+    choice=$(echo ${choice} | tr 'A-Z' 'a-z')
+    if [ $choice != "n" ] ; then
+        cmd="python ../client/membernode_cmd.py add default 0"
+        echo $cmd
+        $cmd
+
+    fi
     source deactivate
     
     chmod 755 /esg/config/esgf_nodemgr_map.json
