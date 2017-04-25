@@ -61,7 +61,7 @@ nm_update_sn_list() {
    
     echo fetching supernodes list
     wget -O /esg/config/esgf_supernodes_list.json http://aims1.llnl.gov/nm-cfg/$FED_NAME/esgf_supernodes_list.json
-
+    chown nodemgr /esg/config/esgf_supernodes_list.json
 }
 
 

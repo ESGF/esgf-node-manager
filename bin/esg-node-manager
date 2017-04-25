@@ -625,9 +625,13 @@ setup_nm_repo() {
 
     popd
 
-    pushd $NM_DIR   
-    git checkout devel
+    pushd $NM_DIR 
 
+    if [ $devel -eq 1 ]; then  
+        git checkout devel
+    else
+        git checkout master
+    fi
 
     # check for entry in apache conf and add if not present
     # count=`grep -c esgfnm /etc/httpd/conf/esgf-httpd.conf`
@@ -696,7 +700,11 @@ setup_nm_repo() {
     echo $cmd
     $cmd
 
+    local choice="Y"
     read -e -p "Automatic peer with super-node (if you administer one, ensure that it is running) [Y/n] " choice
+    if [ -z $choice]; then
+        choice="Y"
+    fi
     choice=$(echo ${choice} | tr 'A-Z' 'a-z')
     if [ $choice != "n" ] ; then
         cmd="python ../client/membernode_cmd.py add default 0"

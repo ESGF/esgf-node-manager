@@ -13,8 +13,8 @@ def member_node_fetch_xml(count, nodemap_instance):
 		    sn_id = ll['supernode']
 		    for mm in ll['members']:
 
-		    	mm['id'] == nodemap_instance.myid
-		    	break
+		    	if mm['id'] == nodemap_instance.myid:
+			    	break
 
 		if sn_id == "0":
 		    raise Exception('Error:  No supernode has been assigned.  Please run "membernode_cmd add"')
@@ -31,15 +31,15 @@ def member_node_fetch_xml(count, nodemap_instance):
 		try:
 			resp = requests.get("https://" + sn_hostname + "/esgf-nm/registration.xml", verify='/etc/grid-security/certificates')
 		except Exception as e:
-			print "ERROR retrieving registration xml from primary supernode.  consider re-peering", e
+			print "ERROR retrieving registration xml from primary supernode.  consider re-peering", sn_hostname, e
 			return count
 
 		if resp is None:
-			print "ERROR retrieving registration xml from primary supernode.  consider re-peering"
+			print "ERROR retrieving registration xml from primary supernode.  consider re-peering", sn_hostname
 			return count
 
 		if resp.status_code != 200:
-			print "ERROR retrieving registration xml from primary supernode.  consider re-peering  Status:", resp.status_code
+			print "ERROR retrieving registration xml from primary supernode.  consider re-peering  Status:", resp.status_code, sn_hostname
 			return count
 		try:
 			with open('/esg/config/registration.xml', 'w') as f:

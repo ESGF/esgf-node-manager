@@ -9,10 +9,30 @@ def main(argv):
     myname = os.uname()[1]
 
     from time import time
+
+    # doFetch = False
+
+    # nodemap_obj = None
+
+    # try:
+
+    #     f = open('/esg/config/esgf_nodemgr_map.json')
+    #     nodemap_obj = load_json(f.read())
+    #     f.close()
+
+    # except:
+    #     print "Missing a Nodemap file.  Will attempt to fetch from closest supernode."
+    #     doFetch = True
+    
     if cmd == "add":
 
         f = open ('/esg/config/esgf_supernodes_list.json')
         arr = load_json(f.read())
+
+        if myname in arr:
+
+            print "This server is a Super-node.  Exiting..."
+            exit(0)
 
         times_arr = []
 

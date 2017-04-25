@@ -52,7 +52,7 @@ nm_stop() {
            return $?
 
 	fi
-	kill -9 `cat $PIDFILE`
+	kill -9 `cat $NM_PIDFILE`
         RETVAL=$?
         echo
         [ $RETVAL = 0 ] && rm -f $NM_LOCKFILE $NM_PIDFILE

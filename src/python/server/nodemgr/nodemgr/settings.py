@@ -19,8 +19,6 @@ MAP_FN = "/esg/config/esgf_nodemgr_map.json"
 
 PROTO = "https"
 
-PORT = 80
-
 TS_THRESH = 90000
 
 if "ESGF_NM_PORT" in os.environ:
@@ -37,7 +35,7 @@ metrics_fn = "/tmp/esgf-db-metrics"
 SECRET_KEY = 'changeme1'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 TEMPLATE_DEBUG =  True
 
