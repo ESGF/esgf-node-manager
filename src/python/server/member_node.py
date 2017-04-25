@@ -8,12 +8,19 @@ def member_node_fetch_xml(count, nodemap_instance):
 		count = 0
 	elif ((count % REFRESH_TIME) == (REFRESH_TIME / 2)):
 		sn_id="0"
+
+        if nodemap_instance.myid == -1:
+			nodemap_instance.set_member_id()
+			if nodemap_instance.myid == -1: 
+				raise Exception("Error in member node id.  Please report t\
+his to support.")
 		for ll in nodemap_instance.nodemap["membernodes"]:
 
-		    sn_id = ll['supernode']
+
 		    for mm in ll['members']:
 
 		    	if mm['id'] == nodemap_instance.myid:
+				    sn_id = ll['supernode']
 			    	break
 
 		if sn_id == "0":
