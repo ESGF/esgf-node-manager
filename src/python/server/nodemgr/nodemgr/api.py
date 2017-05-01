@@ -4,6 +4,8 @@ from simplequeue import RunningWrite
 from django.http import HttpResponse
 import json, os
 
+from ConfigParser import ConfigParser 
+
 #import pdb
 
 from nodemap import get_instance
@@ -72,6 +74,14 @@ def nodemgrapi(request):
 
         task = json.dumps(outd)
 
+    elif action == "get_pub_config":
+
+        
+        f = open("/esg/config/esgcet/esg.ini")
+        cp = ConfigParser()
+        cp.readfp(f)
+
+        resp_code = str(cp.items("config:cmip6"))
         
     else:
         resp_code = "INVALID_REQ"
