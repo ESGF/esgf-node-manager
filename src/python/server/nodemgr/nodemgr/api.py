@@ -2,7 +2,7 @@ from simplequeue import RunningWrite
 
 
 from django.http import HttpResponse
-import json, os
+import json, os, string
 
 from ConfigParser import ConfigParser 
 
@@ -21,6 +21,9 @@ if MAP_FN is None or len(MAP_FN) < 2:
 nodemap_instance.load_map(MAP_FN)
 nodemap_instance.set_ro()
 
+from OpenSSL import crypto
+
+cacert_path = '/etc/grid-security/certificates/'
 
 def splitRecord(option, sep='|'):
     """Split a multi-line record in a .ini file.
@@ -67,14 +70,16 @@ def nodemgrapi(request):
 #    pdb.set_trace()
 
     resp_code="OK"
+    resp_status = 200
 
     qd = {}
 
+    method = request.META.get('REQUEST_METHOD')
 
-    if    request.META.get('REQUEST_METHOD') == "GET":
+    if   method  == "GET":
 
         qd = request.GET
-    elif   request.META.get('REQUEST_METHOD') == "POST":
+    elif  method == "POST":
         qd = request.POST
     else:
         return HttpResponse("METHOD_NOT_SUPPORTED")  
@@ -115,6 +120,34 @@ def nodemgrapi(request):
 
     elif action == "get_pub_config":
 
+        certificate = crypto.load_certificate(crypto.FILETYPE_PEM, open(certificate_path).read())
+
+        try:
+            crypto.verify(certificate, signature, data, DIGEST)
+        except Exception as e:
+
+            return HttpResponse("{ 'ERROR': 'signature verification' , 'Message': " + str(e) + "}", status=401, content_type="text/plain")
+
+        try:
+        # Create a truststore
+
+            store = crypto.X509Store()
+
+# TODO - get hash list from a deployed file (refresh from distribution mirror)
+
+            for cacert_filename in ['99eb76fc.0', '0597e90c.0', 'cd6ccc41.0', 'c6645765.0']:
+
+                cacert_file = cacert_path + cacert_filename
+                cert = crypto.load_certificate(crypto.FILETYPE_PEM, open(cacert_file).read())
+    #            print cert.get_subject()
+                store.add_cert(cert)
+
+            # Verify a certificate
+            store_ctx = crypto.X509StoreContext(store, certificate)
+            store_ctx.verify_certificate()
+
+        except Exception as e:
+            return HttpResponse("{ 'ERROR': 'certificate verification' , 'Message': " + str(e) + "}", status=401, content_type="text/plain")
 
         f = open("/esg/config/esgcet/esg.ini")
         cp = ConfigParser()
@@ -122,12 +155,13 @@ def nodemgrapi(request):
 
         if not "config:cmip6" in cp.sections():
 
-            resp.code = "{ 'ERROR': 'Missing config section.  Contact server administrator.'}"
+            resp_code = "{ 'ERROR': 'Missing config section.  Contact server administrator.'}"
+            resp_status = 500
         if not 'pid_credentials':
-            resp.code = "{ 'ERROR': 'Credentials not present.  Contact server administrator'}"
+            resp_code = "{ 'ERROR': 'Credentials not present.  Contact server administrator'}"
+            resp_status = 500
 
-
-        resp_code = json.dumps(splitRecord(cp.get("config:cmip6", "pid_credentials"), indent=2))
+        resp_code = json.dumps(splitRecord(cp.get("config:cmip6", "pid_credentials")), indent=2)
         
     else:
         resp_code = "INVALID_REQ"
@@ -137,5 +171,5 @@ def nodemgrapi(request):
         rw.start()
 
 
-    return HttpResponse(resp_code, content_type="text/plain")
+    return HttpResponse(resp_code, content_type="text/plain", status=resp_status)
 

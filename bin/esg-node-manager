@@ -574,6 +574,8 @@ setup_py_pkgs() {
     $pipcmd requests
     $pipcmd psycopg2
     $pipcmd sqlalchemy
+    $pipcmd pyopenssl
+    
     source deactivate
     unset LD_LIBRARY_PATH 
 }
