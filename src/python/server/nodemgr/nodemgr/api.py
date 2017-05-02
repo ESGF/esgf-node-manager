@@ -21,6 +21,45 @@ if MAP_FN is None or len(MAP_FN) < 2:
 nodemap_instance.load_map(MAP_FN)
 nodemap_instance.set_ro()
 
+
+def splitRecord(option, sep='|'):
+    """Split a multi-line record in a .ini file.
+
+    Returns a list of the form [[field, field, ...], [field, field, ...]]
+
+    option
+      String option in the .ini file.
+
+    sep
+      Separator character.
+
+    For example, if the init file option is
+
+    ::
+
+        creator_options =
+          Contact_1 | foo | http://bar
+          Contact_2 | boz@bat.net | 
+
+    then the code::
+
+        lines = config.get(section, 'creator_options')
+        result = splitRecord(lines)
+
+    returns::
+
+    [['Contact_1', 'foo', 'http://bar'], ['Contact_2', 'boz@bat.net', '']]
+
+    """
+    result = []
+    for record in option.split('\n'):
+        if record == '':
+            continue
+        fields = map(string.strip, record.split(sep))
+        result.append(fields)
+
+    return result
+
 def nodemgrapi(request):
     
 #    print "API request"
@@ -76,12 +115,19 @@ def nodemgrapi(request):
 
     elif action == "get_pub_config":
 
-        
+
         f = open("/esg/config/esgcet/esg.ini")
         cp = ConfigParser()
         cp.readfp(f)
 
-        resp_code = str(cp.items("config:cmip6"))
+        if not "config:cmip6" in cp.sections():
+
+            resp.code = "{ 'ERROR': 'Missing config section.  Contact server administrator.'}"
+        if not 'pid_credentials':
+            resp.code = "{ 'ERROR': 'Credentials not present.  Contact server administrator'}"
+
+
+        resp_code = json.dumps(splitRecord(cp.get("config:cmip6", "pid_credentials"), indent=2))
         
     else:
         resp_code = "INVALID_REQ"
