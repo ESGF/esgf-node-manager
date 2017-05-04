@@ -2,6 +2,7 @@ import os, json
 
 from django.conf.urls import url
 from django.contrib import admin
+from django.views.decorators.csrf import csrf_exempt
 
 from django.http import HttpResponse #, QueryDict
 
@@ -203,7 +204,7 @@ urlpatterns = [
     # url(r'^admin/', include(admin.site.urls)
                        url(r'^'+url_prefix+'health-check-api', healthcheckack),
                        url(r'^'+url_prefix+'health-check-rep', healthcheckreport),
-                       url(r'^'+url_prefix+'api', nodemgrapi),
+                       url(r'^'+url_prefix+'api', csrf_exempt(nodemgrapi)),
                        url(r'^'+url_prefix+'node-props.json', get_json),
                        url(r'^'+url_prefix+'metrics.json', get_metrics),
                        url(r'^'+url_prefix+'registration.xml', get_reg_xml),

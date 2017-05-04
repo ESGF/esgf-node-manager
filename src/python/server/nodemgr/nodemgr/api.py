@@ -2,6 +2,7 @@ from simplequeue import RunningWrite
 
 
 from django.http import HttpResponse
+
 import json, os, string
 
 from ConfigParser import ConfigParser 
@@ -23,6 +24,7 @@ nodemap_instance.set_ro()
 
 from OpenSSL import crypto
 
+DIGEST = b'sha256'
 cacert_path = '/etc/grid-security/certificates/'
 
 def splitRecord(option, sep='|'):
@@ -120,8 +122,10 @@ def nodemgrapi(request):
 
     elif action == "get_pub_config":
 
-        certificate = crypto.load_certificate(crypto.FILETYPE_PEM, open(certificate_path).read())
-
+        signature = qd['signature'].decode('base64')
+        data = qd['nonce']
+        certificate = crypto.load_certificate(crypto.FILETYPE_PEM, str(qd['cert']))
+        
         try:
             crypto.verify(certificate, signature, data, DIGEST)
         except Exception as e:

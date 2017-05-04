@@ -3,26 +3,28 @@ from OpenSSL import crypto
 from hashlib import md5
 from time import time
 
-from ConfigParser import ConfigParser
-from argparse import OptionParser
+from ConfigParser import RawConfigParser
+from argparse import ArgumentParser
 
 DEFAULT_CERT = '/etc/grid-security/hostcert.pem'
 DEFAULT_KEY = '/etc/grid-security/hostkey.pem'
 
 DIGEST = b'sha256'
 
+from  base64 import b64encode
+
 def main(insecure, server):
 
 	key = crypto.load_privatekey(crypto.FILETYPE_PEM, open(DEFAULT_KEY).read())
 
-	data = {}
+	data = dict(data=text)
 	data['cert'] = open(DEFAULT_CERT).read()
 
 	m = md5()
-	m.update(str(time.time()))
+	m.update(str(time()))
 
-	data['nonce'] = m.digest()
-	data['signature'] = crypto.sign(key, data['nonce'], DIGEST)
+	data['nonce'] = b64encode(m.digest())
+	data['signature'] = b64encode(crypto.sign(key, data['nonce'], DIGEST))
 
 	data['action'] = 'get_pub_config'
 
@@ -36,8 +38,18 @@ def main(insecure, server):
 		print e
 		exit(-1)
 
-	print res.text
+	arr = json.loads(res.text)
 
+	outstr = '\n'+'\n'.join(map(lambda x: ' | '.join(x), arr) )+'\n'
+
+	pub_cfg_file = "/esg/config/esgcet/esg.ini"
+
+	rcp = RawConfigParser()
+    cp.readfp(open(pub_cfg_file))
+
+    cp.set('config:cmip6', 'pid_credentials', outstr)
+
+    cp.write(open(pub_cfg_file, 'w'))
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -46,5 +58,5 @@ if __name__ == '__main__':
     # parser.add_option('-k', dest='key', help='RSA private key path')
     parser.add_argument('-i', '--insecure', action="store_true", help='Insecure operation (does not verify server)')
     parser.add_argument('server', type=str, help="Server FQDN")
-    parser.parse_args()
-    main(args.i, args.server)
+    args = parser.parse_args()
+    main(args.insecure, args.server)
