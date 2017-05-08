@@ -1,23 +1,12 @@
-import os, json
-
+import os, json, requests, logging
 
 from threading import Thread
-
 from nodemgr.nodemgr.healthcheck import RunningCheck, BasicSender
 #from httplib import HTTPConnection, HTTPException
 
-import requests
-
 from nodemgr.nodemgr.simplequeue import write_task
-
 from nodemgr.nodemgr.site_profile import gen_reg_xml, REG_FN
-
-from nodemgr.nodemgr.settings import PROTO, metrics_fn
-
-
-import logging
-
-
+from nodemgr.nodemgr.settings import PROTO, metrics_fn, DEBUG
 
 #TODO - health check should include a timestamp of the current properties in the nodes possession 
 
@@ -35,8 +24,6 @@ def quick_check():
         pass
 
     return False
-
-
 
 
 class NMapSender(BasicSender):
@@ -169,6 +156,7 @@ def node_redist(nm_inst, sn_id):
 
 
     if x is None:
+
         print "supernode node found"
         return True
     else:
@@ -315,8 +303,8 @@ def check_properties(nodemap_instance):
                     break
         
         if  fetch_cond and target != localhostname and snode_obj["health"] == "good":
-            
-            print "retrieving", target, "properties"
+            if DEBUG:
+                print "retrieving", target, "properties"
 
             resp = None
 
@@ -551,7 +539,8 @@ def member_node_check(nmap):
 
 def links_check(nmap):
 
-    print "Links Check"
+    if DEBUG:
+        print "Links Check"
 
 #    pdb.set_trace()
 
@@ -572,8 +561,8 @@ def links_check(nmap):
         if (nid == nmap.myid):
             snodes[i]["health"] = "good"
             continue
-
-        print "check on", i
+        if DEBUG:
+            print "check on", i
 
         for v in nmap.nodemap["links"]:
             
@@ -592,11 +581,11 @@ def links_check(nmap):
 
             new_down.append(snodes[i]["id"])
 
-            print "  changed bad"
+            print snodes[i]["id"], "  changed bad"
         elif (not down) and (snodes[i]["health"] == "unreachable"):
             snodes[i]["health"] = "good"
             changed = True
-            print "  change to good - reachable"
+            print snodes[i]["id"], "  change to good - reachable"
             new_back_up.append(snodes[i]["id"])
         elif (not down) and snodes[i]["health"] == "new":
             snodes[i]["health"] = "good"
@@ -627,10 +616,11 @@ def links_check(nmap):
                     n["health"] = "unhealthy"
                     changed = True
                 else:
-                    print n["health"], status
+                    if DEBUG:
+                        print n["health"], status
                     
                     if n["health"] in ["bad", "unhealthy"]:
-                        print "   change of health to good"
+                        print n["id"],   "change of health to good"
                         new_back_up.append(n["id"])
                         changed = True
                         n["health"] = "good"

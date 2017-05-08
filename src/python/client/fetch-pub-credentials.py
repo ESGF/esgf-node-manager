@@ -1,4 +1,4 @@
-import requests
+import requests, json
 from OpenSSL import crypto
 from hashlib import md5
 from time import time
@@ -17,7 +17,7 @@ def main(insecure, server):
 
 	key = crypto.load_privatekey(crypto.FILETYPE_PEM, open(DEFAULT_KEY).read())
 
-	data = dict(data=text)
+	data = {}
 	data['cert'] = open(DEFAULT_CERT).read()
 
 	m = md5()
@@ -42,14 +42,15 @@ def main(insecure, server):
 
 	outstr = '\n'+'\n'.join(map(lambda x: ' | '.join(x), arr) )+'\n'
 
-	pub_cfg_file = "/esg/config/esgcet/esg.ini"
+	pub_cfg_file = "/esg/config/esgcet/esg.ini.2"
 
 	rcp = RawConfigParser()
-    cp.readfp(open(pub_cfg_file))
+	rcp.readfp(open(pub_cfg_file))
+	
+	rcp.add_section('config:cmip6')
+	rcp.set('config:cmip6', 'pid_credentials', outstr)
 
-    cp.set('config:cmip6', 'pid_credentials', outstr)
-
-    cp.write(open(pub_cfg_file, 'w'))
+	rcp.write(open(pub_cfg_file, 'w'))
 
 if __name__ == '__main__':
     parser = ArgumentParser()

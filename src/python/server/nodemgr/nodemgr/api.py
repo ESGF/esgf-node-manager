@@ -112,8 +112,6 @@ def nodemgrapi(request):
 
     elif action in ["node_map_update", "nm_repo_update"]:
 
-        print "update map!"
-
         data = request.body
         outd = qd.copy()
         outd["update"] = data

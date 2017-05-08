@@ -20,9 +20,10 @@ from query import has_db, QueryRunner
 
 import logging
 
-from nodemgr.nodemgr.settings import MAP_FN, TIMESTAMP
+from nodemgr.nodemgr.settings import MAP_FN, TIMESTAMP, DEBUG
 from gen_nodemap import do_gen_nodemap
 from member_node import member_node_fetch_xml
+
 
 def usage():
     print "Usage:  python", sys.argv[0], "<node-map-file> [timestamp-file if SN]"
@@ -151,7 +152,8 @@ while (True):
 
         
                 if timestore_instance.ts > 0 and my_turn(cur_ts - timestore_instance.ts, int(nodemap_instance.myid), supernode_count, QUANTA * SLEEP_TIME ):
-                    print "SN check", count, cur_ts
+                    if DEBUG:
+                        print "supernode check", count, cur_ts
                     supernode_check(nodemap_instance)
                 
                 if nodemap_instance.myid > -1:
@@ -162,11 +164,14 @@ while (True):
             if count == LINK_CHECK_TIME:
 
                 if timestore_instance.ts > 0 and my_turn(cur_ts - timestore_instance.ts, int(nodemap_instance.myid), supernode_count, QUANTA * SLEEP_TIME ):
-                    print "Status review", count, cur_ts
+                    if DEBUG:
+                        print "Status review", count, cur_ts
                     links_check(nodemap_instance)
-                    print "start properties check"
+                    if DEBUG:
+                        print "start properties check"
                     check_properties(nodemap_instance)
-                    print "end properties check"
+                    if DEBUG:
+                        print "end properties check"
         else:
            member_node_fetch_xml(count, nodemap_instance)
            count = count + 1 
