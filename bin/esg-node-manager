@@ -709,7 +709,7 @@ setup_nm_repo() {
     fi
     choice=$(echo ${choice} | tr 'A-Z' 'a-z')
     if [ $choice != "n" ] ; then
-        cmd="python ../client/membernode_cmd.py add default 0"
+        cmd="python ../client/member_node_cmd.py add default 0"
         echo $cmd
         $cmd
 
