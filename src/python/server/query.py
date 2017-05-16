@@ -44,7 +44,7 @@ def  init_db():
 
 def execute_count_query(qstr):
 
-
+    result = []
     
     if not has_db:
         return 0
