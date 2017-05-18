@@ -9,19 +9,18 @@ def member_node_fetch_xml(count, nodemap_instance):
 	elif ((count % REFRESH_TIME) == (REFRESH_TIME / 2)):
 		sn_id="0"
 
-        if nodemap_instance.myid == -1:
+		if nodemap_instance.myid == -1:
 			nodemap_instance.set_member_id()
 			if nodemap_instance.myid == -1: 
-				raise Exception("Error in member node id.  Please report t\
-his to support.")
+				raise Exception("Error in member node id.  Please report this to support.")
 		for ll in nodemap_instance.nodemap["membernodes"]:
 
 
 		    for mm in ll['members']:
 
-		    	if mm['id'] == nodemap_instance.myid:
-				    sn_id = ll['supernode']
-			    	break
+				if mm['id'] == nodemap_instance.myid:
+					sn_id = ll['supernode']
+					break
 
 		if sn_id == "0":
 		    raise Exception('Error:  No supernode has been assigned.  Please run "membernode_cmd add"')
