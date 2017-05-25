@@ -704,7 +704,7 @@ setup_nm_repo() {
 
     local choice="Y"
     read -e -p "Automatic peer with super-node (if you administer one, ensure that it is running) [Y/n] " choice
-    if [ -z $choice]; then
+    if [ -z $choice ] ; then
         choice="Y"
     fi
     choice=$(echo ${choice} | tr 'A-Z' 'a-z')
