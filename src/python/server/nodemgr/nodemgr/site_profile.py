@@ -243,9 +243,9 @@ def gen_reg_xml(arr_in):
             outarr.append(x["orp.service.endpoint"]) 
             outarr.append('"/>\n')            
 
-        cert_str = get_cert()  # this can be updated an any time so best to reload
+        #cert_str = get_cert()  # this can be updated an any time so best to reload
 
-        outarr.append("   <PEMCert>\n         <Cert>"+cert_str+"</Cert>\n   </PEMCert>\n")
+        outarr.append("   <PEMCert>\n         <Cert>NA</Cert>\n   </PEMCert>\n")
         
         outarr.append("    </Node>\n")
     outarr.append("</Registration>\n")
