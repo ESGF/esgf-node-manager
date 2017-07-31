@@ -32,17 +32,29 @@ def main(insecure, server):
 
 	verify = not insecure
 
+	res = None
+
 	try:
 		res = requests.post(url, data=data, verify=verify)
 	except Exception as e:
 		print e
 		exit(-1)
 
-	arr = json.loads(res.text)
+	arr = []
+	try:
+		arr = json.loads(res.text)
+	except Exception as e:
+		print "ERROR!"
+		print
+		print res.text
+		print
+		print e
+		exit(-1)
+
 
 	outstr = '\n'+'\n'.join(map(lambda x: ' | '.join(x), arr) )+'\n'
 
-	pub_cfg_file = "/esg/config/esgcet/esg.ini.2"
+	pub_cfg_file = "/esg/config/esgcet/esg.ini"
 
 	rcp = RawConfigParser()
 	rcp.readfp(open(pub_cfg_file))
@@ -51,6 +63,7 @@ def main(insecure, server):
 	rcp.set('config:cmip6', 'pid_credentials', outstr)
 
 	rcp.write(open(pub_cfg_file, 'w'))
+	print "Retrieval of credentials and write to esg.ini complete."
 
 if __name__ == '__main__':
     parser = ArgumentParser()
