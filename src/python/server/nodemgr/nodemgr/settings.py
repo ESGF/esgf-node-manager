@@ -97,7 +97,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
 
 STATIC_URL = '/static/'
-
+CERTS_LIST = ['99eb76fc.0', '0597e90c.0', 'cd6ccc41.0']
 
 LOGGING = {
     'version': 1,

@@ -12,7 +12,7 @@ from ConfigParser import ConfigParser
 from nodemap import get_instance
 
 nodemap_instance = get_instance()
-from settings import MAP_FN
+from settings import MAP_FN, CERTS_LIST
 #MAP_FN = os.environ.get("ESGF_NODEMGR_MAP")
 
 if MAP_FN is None or len(MAP_FN) < 2:
@@ -137,7 +137,7 @@ def nodemgrapi(request):
 
 # TODO - get hash list from a deployed file (refresh from distribution mirror)
 
-            for cacert_filename in ['99eb76fc.0', '0597e90c.0', 'cd6ccc41.0', 'c6645765.0']:
+            for cacert_filename in CERTS_LIST:
 
                 cacert_file = cacert_path + cacert_filename
                 cert = crypto.load_certificate(crypto.FILETYPE_PEM, open(cacert_file).read())

@@ -166,9 +166,6 @@ setup_node_manager() {
     echo
 
     local upgrade=${1:-0}
-
-    db_set=0
-
     local default="Y"
     ((force_install)) && default="N"
     local dosetup
@@ -291,9 +288,9 @@ setup_node_manager() {
         done
     fi
 
-    if [ db_set > 0 ] ; then
-        (write_node_manager_config && configure_postgress) || checked_done 1
-    fi 
+
+    (write_node_manager_config && configure_postgress) || checked_done 1
+
 
 
     touch_generated_whitelist_files
