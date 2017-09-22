@@ -114,7 +114,7 @@ init() {
 
     get_property node_manager_service_app_home ${tomcat_install_dir}/webapps/${node_manager_app_context_root}
     write_as_property node_manager_service_app_home
-    write_as_property node_manager_service_endpoint "http$([ "${node_use_ssl}" = "true" ] && echo "s" || echo "")://${esgf_host}/${node_manager_app_context_root}/node"
+    write_as_property node_manager_service_endpoint "https://${esgf_host}/esgf-nm/"
 
     get_property node_use_ips && [ -z "${node_use_ips}" ] && write_as_property node_use_ips true
     get_property node_poke_timeout && [ -z "${node_poke_timeout}" ] && write_as_property node_poke_timeout 6000
@@ -670,8 +670,8 @@ setup_nm_repo() {
     touch /esg/config/nm.properties
     touch /esg/config/registration.xml
 
-    wget -O /esg/config/timestamp http://aims1.llnl.gov/nm-cfg/timestamp
-    wget -O /esg/config/esgf_supernodes_list.json http://aims1.llnl.gov/nm-cfg/$FED_NAME/esgf_supernodes_list.json
+    wget -O /esg/config/timestamp https://aims1.llnl.gov/nm-cfg/timestamp
+    wget -O /esg/config/esgf_supernodes_list.json https://aims1.llnl.gov/nm-cfg/$FED_NAME/esgf_supernodes_list.json
 
     chown nodemgr:nodemgr /esg/log/esgf_nm.log
     chown nodemgr:nodemgr /esg/log/esgfnmd.out.log
