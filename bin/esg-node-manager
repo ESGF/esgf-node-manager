@@ -549,7 +549,7 @@ clean_node_manager_database_subsystem_installation() {
             source deactivate
 
             rm -rvf ${cdat_home}/bin/esgf_node_manager_initialize && \
-                rm -rf ${cdat_home}/lib/python${python_version}/site-packages/${esgf_node_manager_egg_file} && \
+                rm -rf ${cdat_home}/envs/esgf-pub/python${python_version}/${esgf_node_manager_egg_file} && \
                 perl -n -i -e'print unless m!python:esgf_node_manager!' ${install_manifest} && echo "[REMOVED]"
         else
             echo " Could not find node manager tables in the database."
