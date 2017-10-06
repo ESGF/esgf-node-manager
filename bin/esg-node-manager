@@ -548,8 +548,8 @@ clean_node_manager_database_subsystem_installation() {
             [ $? != 0 ] && echo "ERROR: Unable to remove ${tomcat_install_dir}/webapps/${node_manager_app_context_root}" && return 1
             source deactivate
 
-            rm -rvf ${cdat_home}/bin/esgf_node_manager_initialize && \
-                rm -rf ${cdat_home}/envs/esgf-pub/python${python_version}/${esgf_node_manager_egg_file} && \
+            rm -rvf ${cdat_home}/envs/esgf-pub/bin/esgf_node_manager_initialize && \
+                rm -rf ${cdat_home}/envs/esgf-pub/lib/python${python_version}/site-packages/${esgf_node_manager_egg_file} && \
                 perl -n -i -e'print unless m!python:esgf_node_manager!' ${install_manifest} && echo "[REMOVED]"
         else
             echo " Could not find node manager tables in the database."
