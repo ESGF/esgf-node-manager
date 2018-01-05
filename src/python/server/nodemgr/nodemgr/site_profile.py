@@ -11,7 +11,6 @@ CERT_FN = "/etc/grid-security/hostcert.pem"
 
 properties_struct = None
 
-
 from types import DictType
 def get_prop_st():
 
@@ -41,8 +40,6 @@ class EsgfProperties:
         pdict = {}
         
         try:
-            ret_prop_lst=json.load(open(OUT_PROP_LIST))
-
             f = open(PROPERTIES)
 
             pdict["timestamp"] = ts_func()
@@ -52,11 +49,12 @@ class EsgfProperties:
                 if len(ll) > 0 and ll[0] != '#':
                     parts = line.split('=')
                     key = parts[0].strip()
-                    if key in ret_prop_lst:
-                        val = parts[1].strip()
+
+                    val = parts[1].strip()
                         # for security/privacy we don't want abs. paths on the host filesystem
-                        if val[0] != '/':
-                            pdict[ key ] = val
+
+                    if len(val) > 2 and val[0] != '/':
+                        pdict[ key ] = val
 
             f.close()
 
@@ -65,8 +63,8 @@ class EsgfProperties:
             pdict["node.type"] = val.strip()
             pdict["action"] = "node_properties"
             f.close()
-        except:
-            print "Error opening properties"
+        except Exception as e:
+            print "Error opening properties", e
 
         self.pdict = pdict
 
