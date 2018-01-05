@@ -596,15 +596,6 @@ setup_conda_env() {
 }
 
 setup_nm_repo() {
-
-    
-
-    peergroup=`grep node.peer.group /esg/config/esgf.properties | cut -d'=' -f 2`
-    if [ $peergroup == "esgf-demo" ] ; then
-        FED_NAME="demonet"
-        else
-        FED_NAME=$peergroup
-    fi
  
     
     # this can be integrated into the installer
@@ -649,73 +640,12 @@ setup_nm_repo() {
     sed -i s/changeme1/$sk/ python/server/nodemgr/nodemgr/settings.py
     popd
 
-
-    cp $NM_DIR/scripts/esgf-nm-ctl $INST_DIR/bin/esgf-nm-ctl
-    cp $NM_DIR/scripts/esgf-nm-func $INST_DIR/bin/esgf-nm-func
-
-
-    chmod u+x $INST_DIR/bin/esgf-nm-ctl  $NM_DIR/scripts/esgfnmd
-    adduser nodemgr
-    usermod -a -G tomcat nodemgr
-
-    usermod -a -G apache nodemgr
-
-    mkdir -p /esg/log /esg/tasks /esg/config
-
     touch /esg/log/django.log
-    touch /esg/log/esgf_nm.log
     touch /esg/log/esgf_nm_dj.log
-    touch /esg/log/esgfnmd.out.log
-    touch /esg/log/esgfnmd.err.log
-    touch /esg/config/nm.properties
-    touch /esg/config/registration.xml
 
-    wget -O /esg/config/timestamp https://aims1.llnl.gov/nm-cfg/timestamp
-    wget -O /esg/config/esgf_supernodes_list.json https://aims1.llnl.gov/nm-cfg/$FED_NAME/esgf_supernodes_list.json
-
-    chown nodemgr:nodemgr /esg/log/esgf_nm.log
-    chown nodemgr:nodemgr /esg/log/esgfnmd.out.log
-    chown nodemgr:nodemgr /esg/log/esgfnmd.err.log
-    chown nodemgr:apache /esg/config/nm.properties
-    chown nodemgr:apache /esg/config/registration.xml
-    chown nodemgr:nodemgr /esg/config/timestamp
-    chown nodemgr:nodemgr /esg/config/esgf_supernodes_list.json
-    chmod 777 /esg/tasks
-    chown nodemgr:nodemgr $NM_DIR/scripts/esgfnmd
     chown apache:apache /esg/log/esgf_nm_dj.log
     chown apache:apache /esg/log/django.log
-    
-
-    chmod g+r /esg/config/.esg_pg_pass
-    
-    
-    #rm -rf /root/apache_frontend
-    pushd $NM_DIR/python/server
-
-    fqdn=`grep esgf.host= /esg/config/esgf.properties | cut -d'=' -f 2`
-    # get python to work
-    source /usr/local/conda/bin/activate esgf-pub
-    cmd="python gen_nodemap.py $NM_INIT $fqdn"
-    echo $cmd
-    $cmd
-
-    local choice="Y"
-    read -e -p "Automatic peer with super-node (if you administer one, ensure that it is running) [Y/n] " choice
-    if [ -z $choice ] ; then
-        choice="Y"
-    fi
-    choice=$(echo ${choice} | tr 'A-Z' 'a-z')
-    if [ $choice != "n" ] ; then
-        cmd="python ../client/member_node_cmd.py add default 0"
-        echo $cmd
-        $cmd
-
-    fi
-    source deactivate
-    
-    chmod 755 /esg/config/esgf_nodemgr_map.json
-    chown nodemgr:apache /esg/config/esgf_nodemgr_map.json
-
+        
     popd 
 
 }
