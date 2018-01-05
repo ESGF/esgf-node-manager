@@ -68,11 +68,11 @@ def splitRecord(option, sep='|'):
     return result
 
 def nodemgrapi(request):
-"""
+    """
     API "switch" function to be called from Django urls.py 
     Django request as input
     returns django HTTPResponse
-"""
+    """
     
 #    print "API request"
 

@@ -58,9 +58,9 @@ localhostname = os.uname()[1]
 from settings import PROTO
 
 class BasicSender(Thread):
-"""
+    """
    middle (abstract) class for asynchronous calls, use by several classes
-"""
+    """
     def __init__(self):
         """
             initialize the target of the sender object
@@ -70,9 +70,9 @@ class BasicSender(Thread):
 
 
     def mkurl(self, stn):
-    """
+        """
         assembles url based on assigned protocol, the target server and string        
-    """
+        """
         if self.target == "":
 
             raise Exception("No target server configured")
@@ -84,10 +84,10 @@ class RunningCheck(BasicSender):
 
     def __init__(self, nodename, fwdcheck, first=False, checkarr=None, fromnode=""):
         """
-            Configures the health check based on a nodename, if the check is a forward (not initiated by the master node for the cycle)
-            first - indicates the first call in an iteration
-            checkarr - array of servers
-            fromnode - the originator
+        Configures the health check based on a nodename, if the check is a forward (not initiated by the master node for the cycle)
+        first - indicates the first call in an iteration
+        checkarr - array of servers
+        fromnode - the originator
         """
         super(RunningCheck, self).__init__()
         self.nodename = nodename
@@ -98,10 +98,11 @@ class RunningCheck(BasicSender):
         self.fromnode = fromnode
         self.logger = logging.getLogger("esgf_nodemanager")
 
-    """
-        loads response into json and writes to task queue
-    """
     def handle_resp(self, resp):
+        """
+        loads response into json and writes to task queue
+        """
+
         buf = resp.text
 
 
@@ -130,7 +131,7 @@ class RunningCheck(BasicSender):
 
     def run(self):
         """
-            Performs the health check
+        Performs the health check
         """
         ts = time()
 #        print "Health check on", self.nodename

@@ -1,6 +1,6 @@
 from time import time
 
-OUT_PROP_LIST = "/esg/config/esgf_reg_props.json"./
+OUT_PROP_LIST = "/esg/config/esgf_reg_props.json"
 PROPERTIES = "/esg/config/esgf.properties"
 TYPE_FN = "/esg/config/config_type"
 
