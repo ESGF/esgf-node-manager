@@ -1,3 +1,7 @@
+#  Script to run on command line - purpose to contact remote Tier 1 site that hosts publisher credentials
+#  You need to have a gridftp certificate signed by an ESGF root CA
+#
+#
 import requests, json
 from OpenSSL import crypto
 from hashlib import md5
@@ -13,8 +17,17 @@ DIGEST = b'sha256'
 
 from  base64 import b64encode
 
-def main(insecure, server):
 
+def main(insecure, server):
+"""
+	main
+
+	insecure
+	   Controls whether the client should not verify the remote servers SSL cert
+
+	server
+	   Remote server name
+"""
 	key = crypto.load_privatekey(crypto.FILETYPE_PEM, open(DEFAULT_KEY).read())
 
 	data = {}

@@ -1,3 +1,4 @@
+# TODO refactor with main() function
 import sys, os
 
 import nodemgr.nodemgr.config_root as config_root
@@ -26,6 +27,10 @@ from member_node import member_node_fetch_xml
 
 
 def usage():
+"""
+   Print the usage and exit 
+"""
+
     print "Usage:  python", sys.argv[0], "<node-map-file> [timestamp-file if SN]"
     exit(1)
     

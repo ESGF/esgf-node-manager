@@ -1,6 +1,8 @@
+###  
+#   File api.py  - 
+#   The node manager api under /api?action=xxx
+
 from simplequeue import RunningWrite
-
-
 from django.http import HttpResponse
 
 import json, os, string
@@ -66,6 +68,11 @@ def splitRecord(option, sep='|'):
     return result
 
 def nodemgrapi(request):
+"""
+    API "switch" function to be called from Django urls.py 
+    Django request as input
+    returns django HTTPResponse
+"""
     
 #    print "API request"
 

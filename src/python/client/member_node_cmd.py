@@ -1,10 +1,16 @@
+# TODO refactor into modular script
 import sys, os, requests
 from time import time
 from json import loads as load_json
 
 
 def main(argv):
+"""
+    main func 
 
+    argv - expects sys.argv or alternate representation of arguments
+
+"""
     cmd = argv[1]
     myname = os.uname()[1]
 

@@ -1,4 +1,4 @@
-
+# File to manage reading the esgf type configuration
 CONFIG_FN = '/esg/config/config_type'
 
 DATA_BIT = 4
@@ -9,7 +9,9 @@ COMPUTE_BIT = 32
 
 
 class EsgConfig():
-
+"""
+   Encapsulates the types of node deployments.  Supports Data and IdP for the expected presence of particular database schemata
+"""
     def __init__(self):
 
         val = 0
@@ -23,11 +25,16 @@ class EsgConfig():
         self.config_type = val
 
     def is_idp(self):
-
+"""
+    Returns true if the node is set as IdP
+"""
         return IDP_BIT & self.config_type
 
 
     def is_data(self):
+"""
+    Returns true if the node is set as Data node
+"""
 
         return DATA_BIT & self.config_type
 

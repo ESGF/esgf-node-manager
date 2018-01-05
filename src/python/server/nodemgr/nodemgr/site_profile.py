@@ -1,5 +1,6 @@
 from time import time
 
+OUT_PROP_LIST = "/esg/config/esgf_reg_props.json"./
 PROPERTIES = "/esg/config/esgf.properties"
 TYPE_FN = "/esg/config/config_type"
 
@@ -13,6 +14,7 @@ properties_struct = None
 
 from types import DictType
 def get_prop_st():
+
     return properties_struct.pdict
 
 def ts_func():
@@ -39,6 +41,8 @@ class EsgfProperties:
         pdict = {}
         
         try:
+            ret_prop_lst=json.load(open(OUT_PROP_LIST))
+
             f = open(PROPERTIES)
 
             pdict["timestamp"] = ts_func()
@@ -47,7 +51,12 @@ class EsgfProperties:
         
                 if len(ll) > 0 and ll[0] != '#':
                     parts = line.split('=')
-                    pdict[ parts[0].strip() ] = parts[1].strip()
+                    key = parts[0].strip()
+                    if key in ret_prop_lst:
+                        val = parts[1].strip()
+                        # for security/privacy we don't want abs. paths on the host filesystem
+                        if val[0] != '/':
+                            pdict[ key ] = val
 
             f.close()
 

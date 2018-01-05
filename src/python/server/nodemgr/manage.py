@@ -10,7 +10,10 @@ from threading import Thread
 
 
 def do_work():
-
+"""
+  DEPRECATED
+  Worker function for a thread to check on users - apparently not in use
+"""
     hostname = os.uname()[1]
 
     for x in range(3):

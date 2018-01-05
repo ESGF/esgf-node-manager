@@ -2,8 +2,16 @@ import requests
 
 REFRESH_TIME = 60
 
-def member_node_fetch_xml(count, nodemap_instance):
 
+def member_node_fetch_xml(count, nodemap_instance):
+"""
+	Used to pull down the latest registration.xml instance from the supernode
+
+	count
+	  The running loop count used to determine if time to refresh
+	nodemap_instance
+	  a NodeMap object 
+"""
 	if count == REFRESH_TIME:
 		count = 0
 	elif ((count % REFRESH_TIME) == (REFRESH_TIME / 2)):
