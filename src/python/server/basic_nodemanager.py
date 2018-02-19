@@ -27,9 +27,9 @@ from member_node import member_node_fetch_xml
 
 
 def usage():
-"""
+    """
    Print the usage and exit 
-"""
+    """
 
     print "Usage:  python", sys.argv[0], "<node-map-file> [timestamp-file if SN]"
     exit(1)

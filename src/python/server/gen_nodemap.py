@@ -8,7 +8,7 @@ from json import loads as load_json
 
 
 def write_json_file(in_fn, json_obj):
-"""
+    """
     Writes out the nodemap file.
 
     in_fn 
@@ -16,7 +16,7 @@ def write_json_file(in_fn, json_obj):
 
     json_obj
       A dictionary or list that is to be encoded as a string json in the file
-"""
+    """
     outf = open(in_fn, "w")
 
     outs = ""
@@ -33,12 +33,12 @@ def write_json_file(in_fn, json_obj):
 
 
 def do_fetch_nodemap(fqdn):
-"""
+    """
     Fetches an existing nodemap from a remote esgf node
 
     fqdn
       Fully-qualified domain name of the server.  Rest of url assumed for Node Manager service
-"""
+    """
     arr = []
 
     try:
@@ -80,12 +80,12 @@ def do_fetch_nodemap(fqdn):
 
 
 def do_gen_nodemap(args):
-"""
+    """
     generates the nodemap object
 
     args
       meant to be like sys.argv[]7    
-"""
+    """
     print "running as", args    
 
     filename = MAP_FN
