@@ -617,10 +617,12 @@ setup_nm_repo() {
 
     pushd $NM_DIR 
 
+
     if [ $devel -eq 1 ]; then  
         git checkout devel
     else
-        git checkout master
+        nmtag="v${esgf_node_manager_version}"
+        git checkout $nmtag 
     fi
 
     # check for entry in apache conf and add if not present
