@@ -375,7 +375,8 @@ class NodeMap():
         self.prop_dirty = True
 
 
-nodemap_instance = NodeMap()
+#nodemap_instance = NodeMap()
+nodemap_instance = None
 
 def get_instance():
     return nodemap_instance
