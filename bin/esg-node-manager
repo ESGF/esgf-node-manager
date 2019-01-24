@@ -301,9 +301,6 @@ setup_node_manager() {
     fetch_shell_launcher
 
 #    setup_conda_env
-    setup_py_pkgs
-    
-    setup_nm_repo
 
     checked_done 0
 
@@ -609,7 +606,7 @@ setup_nm_repo() {
         git clone https://github.com/ESGF/esgf-node-manager.git
     else
         export GIT_SSL_NO_VERIFY=true
-        pushd esgf-node-manager && git pull;
+        pushd esgf-node-manager && git fetch;
         popd
     fi
 
@@ -620,9 +617,11 @@ setup_nm_repo() {
 
     if [ $devel -eq 1 ]; then  
         git checkout devel
+        git pull
     else
         nmtag="v${esgf_node_manager_version}"
         git checkout $nmtag 
+        git pull
     fi
 
     # check for entry in apache conf and add if not present
