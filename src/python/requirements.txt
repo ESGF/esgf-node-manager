@@ -1,5 +1,5 @@
 # Node Manager application dependencies
-django==1.10.3
+django==2.2.24
 sqlalchemy
 psycopg2
 requests
